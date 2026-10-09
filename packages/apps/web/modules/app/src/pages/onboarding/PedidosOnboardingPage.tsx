@@ -129,7 +129,7 @@ export const PedidosOnboardingPage = observer(() => {
         pasoActual={paso}
         totalPasos={2}
         pasoLabel={paso === 1 ? "Rubro Comercial" : "Agentes IA"}
-        onBack={paso === 2 ? () => setPaso(1) : () => navigate("/onboarding/modulos")}
+        onBack={paso === 2 ? () => setPaso(1) : () => navigate("/onboarding/organizacion")}
         brandBadge={paso === 1 ? "Rubro Comercial" : "Automatización IA"}
         brandHeadline={
           paso === 1
@@ -346,7 +346,7 @@ export const PedidosOnboardingPage = observer(() => {
             {paso === 1 ? (
               <button
                 type="button"
-                onClick={() => navigate("/onboarding/modulos")}
+                onClick={() => navigate("/onboarding/organizacion")}
                 className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-gray-400 transition-colors hover:text-gray-700 dark:hover:text-white"
               >
                 <svg

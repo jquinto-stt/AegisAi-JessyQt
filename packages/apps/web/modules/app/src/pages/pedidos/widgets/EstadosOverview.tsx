@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { pedidosStore, type PedidoEstado } from "@/stores";
+import { useConteoAnimado } from "@/hooks/useConteoAnimado";
 import {
   CheckBadgeIcon,
   ClockIcon,
@@ -134,8 +135,82 @@ const ETAPAS: EtapaMeta[] = [
 ];
 
 /**
+ * Una tarjeta de etapa.
+ *
+ * Es un componente propio —y no el cuerpo de un `map` en línea— porque el
+ * contador necesita **un hook por tarjeta**: los hooks no se pueden llamar
+ * dentro de un bucle, y el número que sube es estado interno de cada tarjeta.
+ * Con las seis tarjetas en el mismo componente solo cabría un contador
+ * compartido, que es justo lo que no se quiere (cada una cuenta la suya).
+ */
+const EtapaCard = observer(
+  ({
+    etapa,
+    porcentaje,
+    onAbrir,
+  }: {
+    etapa: EtapaMeta & { cantidad: number };
+    porcentaje: number | null;
+    onAbrir: () => void;
+  }) => {
+    const Icon = etapa.icon;
+    // El conteo arranca en 0 y llega al valor real. El hook devuelve un número
+    // crudo a propósito, así que el redondeo vive aquí: una cantidad de pedidos
+    // es entera, y quien decide eso es la tarjeta, no el hook.
+    const cantidad = Math.round(useConteoAnimado(etapa.cantidad));
+
+    return (
+      <div
+        onClick={onAbrir}
+        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-3.5 sm:p-4 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900 flex flex-col justify-between"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div
+            className={`flex size-9 sm:size-10 items-center justify-center rounded-xl ${etapa.colorClases.badgeBg} ${etapa.colorClases.iconColor} transition-transform duration-200 group-hover:scale-105`}
+          >
+            <Icon className="size-4.5 sm:size-5" />
+          </div>
+          {porcentaje !== null ? (
+            <span className="inline-flex items-center rounded-full bg-accent-50 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-accent-700 dark:bg-accent-950/50 dark:text-accent-400">
+              {porcentaje}%
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+              Historial
+            </span>
+          )}
+        </div>
+
+        <div className="mt-3">
+          <p className="text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 truncate">
+            {etapa.nombre}
+          </p>
+          <p className="mt-0.5 text-xl sm:text-2xl font-bold tracking-tight text-ink-title dark:text-white">
+            {cantidad.toLocaleString()}
+          </p>
+          <p className="mt-0.5 text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 truncate">
+            {etapa.id === "nuevos" && "Por gestionar"}
+            {etapa.id === "confirmados" && "Verificados"}
+            {etapa.id === "preparacion" && "En cocina / armado"}
+            {etapa.id === "listos" && "Por entregar"}
+            {etapa.id === "camino" && "En ruta"}
+            {etapa.id === "cancelados" && "Cerrados"}
+          </p>
+        </div>
+      </div>
+    );
+  },
+);
+
+/**
  * EstadosOverview — Distribución del flujo operativo de pedidos en 6 tarjetas
  * individuales en una sola línea horizontal.
+ *
+ * Los números de las tarjetas **cuentan** hasta su valor en vez de aparecer ya
+ * puestos: al aterrizar en Inicio, ver subir seis cifras dice de un vistazo que
+ * la pantalla está viva y cuánto pesa cada etapa, cosa que un número fijo no
+ * dice. Es la única animación de esta pantalla —las tarjetas no escalonan su
+ * entrada— para no encadenar dos movimientos sobre lo mismo.
  */
 export const EstadosOverview = observer(() => {
   const navigate = useNavigate();
@@ -161,52 +236,18 @@ export const EstadosOverview = observer(() => {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mb-6">
       {etapasConteo.map((etapa) => {
-        const Icon = etapa.icon;
         const porcentaje =
           totalActivos > 0 && etapa.enBarra !== false
             ? Math.round((etapa.cantidad / totalActivos) * 100)
             : null;
 
         return (
-          <div
+          <EtapaCard
             key={etapa.id}
-            onClick={() => navigate(destinoDe(etapa))}
-            className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-3.5 sm:p-4 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900 flex flex-col justify-between"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div
-                className={`flex size-9 sm:size-10 items-center justify-center rounded-xl ${etapa.colorClases.badgeBg} ${etapa.colorClases.iconColor} transition-transform duration-200 group-hover:scale-105`}
-              >
-                <Icon className="size-4.5 sm:size-5" />
-              </div>
-              {porcentaje !== null ? (
-                <span className="inline-flex items-center rounded-full bg-accent-50 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-accent-700 dark:bg-accent-950/50 dark:text-accent-400">
-                  {porcentaje}%
-                </span>
-              ) : (
-                <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                  Historial
-                </span>
-              )}
-            </div>
-
-            <div className="mt-3">
-              <p className="text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 truncate">
-                {etapa.nombre}
-              </p>
-              <p className="mt-0.5 text-xl sm:text-2xl font-bold tracking-tight text-ink-title dark:text-white">
-                {etapa.cantidad.toLocaleString()}
-              </p>
-              <p className="mt-0.5 text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 truncate">
-                {etapa.id === "nuevos" && "Por gestionar"}
-                {etapa.id === "confirmados" && "Verificados"}
-                {etapa.id === "preparacion" && "En cocina / armado"}
-                {etapa.id === "listos" && "Por entregar"}
-                {etapa.id === "camino" && "En ruta"}
-                {etapa.id === "cancelados" && "Cerrados"}
-              </p>
-            </div>
-          </div>
+            etapa={etapa}
+            porcentaje={porcentaje}
+            onAbrir={() => navigate(destinoDe(etapa))}
+          />
         );
       })}
     </div>

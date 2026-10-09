@@ -1,9 +1,11 @@
-import { useState, type KeyboardEvent } from "react";
+import { useState, useEffect, type KeyboardEvent } from "react";
+import { Link } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PaperPlaneIcon } from "@/icons";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import {
   puedeResponderConversacion,
+  hayCanalesMensajeriaActivos,
   motivoSinPermiso,
 } from "@/stores/acceso.utils";
 
@@ -11,6 +13,11 @@ const LIMITE_TEXTO = 4096;
 
 export const Composer = observer(({ convId }: { convId: string }) => {
   const [texto, setTexto] = useState("");
+
+  // Limpiar cualquier error previo de WhatsApp al cambiar de chat o al montar
+  useEffect(() => {
+    conversacionesStore.ultimoErrorEnvio = null;
+  }, [convId]);
 
   const conv = conversacionesStore.getConversacion(convId);
 
@@ -27,6 +34,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
    */
   const esModoBot = conv?.atencion === "bot";
 
+  const canalesActivos = hayCanalesMensajeriaActivos();
   const puedeResponder = puedeResponderConversacion();
   const excedido = texto.length > LIMITE_TEXTO;
   const vacio = texto.trim() === "";
@@ -34,7 +42,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
   // esto, dos Enters seguidos mandan el mensaje dos veces y le cuestan al
   // cliente dos notificaciones por un solo texto.
   const enviando = conversacionesStore.enviandoMensaje;
-  const puedeEnviar = puedeResponder && !esModoBot && !vacio && !excedido && !enviando;
+  const puedeEnviar = puedeResponder && canalesActivos && !esModoBot && !vacio && !excedido && !enviando;
 
   const enviar = () => {
     if (!puedeEnviar) return;
@@ -65,8 +73,9 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           {/* Botón Emoji */}
           <button
             type="button"
+            disabled={!canalesActivos}
             title="Insertar emoji"
-            className="mr-3 text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 shrink-0"
+            className="mr-3 text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
               <path
@@ -80,16 +89,18 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           {/* Campo de texto plano sin bordes invasivos */}
           <input
             type="text"
-            disabled={!puedeResponder || esModoBot}
+            disabled={!puedeResponder || esModoBot || !canalesActivos}
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder={
-              !puedeResponder
-                ? "No puedes responder en esta conversación"
-                : esModoBot
-                  ? "El bot está atendiendo esta conversación"
-                  : "Escribe un mensaje..."
+              !canalesActivos
+                ? "Canales desconectados — No es posible enviar mensajes"
+                : !puedeResponder
+                  ? "No puedes responder en esta conversación"
+                  : esModoBot
+                    ? "El bot está atendiendo esta conversación"
+                    : "Escribe un mensaje..."
             }
             className="w-full bg-transparent border-0 outline-hidden h-10 text-sm sm:text-base font-normal text-gray-800 placeholder:text-gray-400 focus:border-0 focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-60 dark:text-white/90 dark:placeholder:text-gray-500"
           />
@@ -99,8 +110,9 @@ export const Composer = observer(({ convId }: { convId: string }) => {
         <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
           <button
             type="button"
+            disabled={!canalesActivos}
             title="Adjuntar archivo"
-            className="text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300"
+            className="text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
               <path
@@ -113,8 +125,9 @@ export const Composer = observer(({ convId }: { convId: string }) => {
 
           <button
             type="button"
+            disabled={!canalesActivos}
             title="Nota de voz"
-            className="text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300"
+            className="text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <svg className="h-5 w-5 stroke-current" viewBox="0 0 24 24" fill="none">
               <rect x="7" y="2.75" width="10" height="12.5" rx="5" strokeWidth="1.5" />
@@ -135,17 +148,28 @@ export const Composer = observer(({ convId }: { convId: string }) => {
         </div>
       </form>
 
-      {!puedeResponder && (
+      {!canalesActivos ? (
+        <div className="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-amber-200/90 bg-amber-50/80 px-3 py-2 text-xs text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+            <span>WhatsApp y los canales de mensajería están inactivos.</span>
+          </div>
+          <Link
+            to="/pedidos/config?seccion=integraciones"
+            className="font-bold text-[#190088] underline underline-offset-2 hover:text-[#FF3F1A] dark:text-amber-300 shrink-0"
+          >
+            Conectar en Integraciones →
+          </Link>
+        </div>
+      ) : !puedeResponder ? (
         <p className="mt-1 text-xs font-normal text-error-500">
           {motivoSinPermiso("channels.respond")}
         </p>
-      )}
-
-      {puedeResponder && esModoBot && (
+      ) : esModoBot ? (
         <p className="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
           La atención la lleva el bot. Pulsa «Tomar chat» para responder tú.
         </p>
-      )}
+      ) : null}
 
       {conversacionesStore.ultimoErrorEnvio && (
         <div

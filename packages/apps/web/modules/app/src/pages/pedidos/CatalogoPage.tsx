@@ -79,7 +79,7 @@ const FOTOS_TEMATICAS: { palabrasClave: string[]; url: string }[] = [
 const FOTO_POR_DEFECTO = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80';
 
 // Asigna una foto profesional automáticamente analizando el texto del producto
-const asignarFotoInteligente = (nombre: string, categoria: string): string => {
+export const asignarFotoInteligente = (nombre: string, categoria: string = ''): string => {
   const texto = `${nombre} ${categoria}`.toLowerCase();
   for (const tema of FOTOS_TEMATICAS) {
     if (tema.palabrasClave.some((kw) => texto.includes(kw))) {

@@ -15,7 +15,6 @@ import {
 import { PerfilOperadorPage, EquipoPage } from "@/pages/equipo";
 
 import { ConfiguracionPage } from "@/pages/configuracion";
-import { SeleccionarPage } from "@/pages/seleccionar";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
 import { ConversacionesPage, HistorialAtencionPage, AnaliticaConversacionesPage, ConversacionesConfigPage } from "@/pages/conversaciones";
 import {
@@ -267,9 +266,8 @@ export default function App() {
 
       {/* Pantalla Display de Sala / Mostrador (Fullscreen TV) */}
       <Route path="/pedidos/display" element={<DisplayPedidosScreen />} />
-      <Route path="/display" element={<DisplayPedidosScreen />} />
-
-      <Route path="/seleccionar" element={<SeleccionarPage />} />
+      <Route path="/seleccionar" element={<Navigate to="/onboarding/organizacion" replace />} />
+      <Route path="/onboarding/operador" element={<OperadorRegistroPage />} />
       <Route path="/operador/registro" element={<OperadorRegistroPage />} />
       <Route path="/operador/login" element={<OperadorLoginPage />} />
       <Route path="/wa" element={<SimuladorWhatsApp />} />

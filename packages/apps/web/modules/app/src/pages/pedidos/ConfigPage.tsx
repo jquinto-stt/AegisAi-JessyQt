@@ -140,13 +140,7 @@ function FacebookIcon({ className = "h-5 w-5" }: { className?: string }) {
   );
 }
 
-function TelegramIcon({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.196 1.006.128.832.942z" />
-    </svg>
-  );
-}
+
 
 type ClaveSeccion = "flujo" | "pagos" | "perfil" | "tiempos" | "catalogo" | "integraciones";
 
@@ -201,7 +195,7 @@ const META_SECCION: Record<
   },
   integraciones: {
     label: "Integraciones",
-    hint: "Canales de venta y mensajería (WhatsApp, Instagram, Facebook y Telegram).",
+    hint: "Canales de venta y mensajería (WhatsApp, Instagram y Facebook).",
     icono: PlugInIcon,
   },
 };
@@ -1714,73 +1708,6 @@ export const ConfigPage = observer(() => {
                       </span>
                       <Button size="sm" variant="outline" disabled={!canalesActivos.facebook}>
                         Conectar página
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Telegram */}
-                  <div
-                    className={cn(
-                      "relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-sm transition-all dark:bg-gray-900/60",
-                      canalesActivos.telegram
-                        ? "border-gray-200/80 hover:border-sky-500/40 hover:shadow-md dark:border-gray-800"
-                        : "border-gray-200/50 opacity-80 dark:border-gray-800/60",
-                    )}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "flex h-11 w-11 items-center justify-center rounded-xl",
-                              canalesActivos.telegram
-                                ? "bg-sky-500/10 text-sky-600 dark:bg-sky-500/20 dark:text-sky-400"
-                                : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500",
-                            )}
-                          >
-                            <TelegramIcon className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-                              Telegram
-                            </h4>
-                            <span className="text-[11px] font-medium text-sky-600 dark:text-sky-400">
-                              Bot & Mini App
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <Badge color={canalesActivos.telegram ? "success" : "light"}>
-                            {canalesActivos.telegram ? "Activo" : "Inactivo"}
-                          </Badge>
-                          <Switch
-                            checked={canalesActivos.telegram}
-                            onChange={(val) => toggleCanal("telegram", val)}
-                            label=""
-                          />
-                        </div>
-                      </div>
-
-                      <p className="mt-3.5 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
-                        Bot de atención automatizada, alertas de nuevos pedidos y mini app de catálogo para clientes.
-                      </p>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800/80">
-                      <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                        {canalesActivos.telegram ? "Telegram Bot API" : "Canal desactivado"}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={!canalesActivos.telegram}
-                        onClick={() =>
-                          navigate(
-                            "/conversaciones/config?canal=telegram&from=/pedidos/config?seccion=integraciones",
-                          )
-                        }
-                      >
-                        Configurar bot
                       </Button>
                     </div>
                   </div>

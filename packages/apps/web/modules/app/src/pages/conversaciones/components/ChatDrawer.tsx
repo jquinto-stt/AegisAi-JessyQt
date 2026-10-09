@@ -14,6 +14,7 @@ import type { Pedido } from "@/stores/pedidos.store";
 import { ChatView } from "@/pages/conversaciones/components/ChatView";
 import { Composer } from "@/pages/conversaciones/components/Composer";
 import { inicialesDe, statusDe } from "@/pages/conversaciones/conversaciones.utils";
+import { hayCanalesMensajeriaActivos } from "@/stores/acceso.utils";
 import { CanalAvatar } from "./CanalAvatar";
 
 /** Ancho del panel en escritorio; en móvil ocupa el ancho completo. */
@@ -355,6 +356,26 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
             </button>
           </div>
         </header>
+
+        {/* ── Aviso si los canales de mensajería están desconectados ── */}
+        {!hayCanalesMensajeriaActivos() && (
+          <div className="shrink-0 flex items-center justify-between gap-2 border-b border-amber-200/80 bg-amber-50/90 px-4 py-2 text-xs text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+              <span>Canales desconectados · Modo solo lectura</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate("/pedidos/config?seccion=integraciones");
+              }}
+              className="font-bold underline cursor-pointer text-[#190088] hover:text-[#FF3F1A] dark:text-amber-300 shrink-0"
+            >
+              Configurar
+            </button>
+          </div>
+        )}
 
         {/* ── Cuerpo: hilo existente o estado vacío explícito ── */}
         {conv ? (

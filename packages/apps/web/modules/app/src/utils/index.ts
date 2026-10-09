@@ -180,6 +180,69 @@ export function retardoEscalonado(indice: number, pasoMs = 40, tope = 6): string
 }
 
 /**
+ * Curva de un **conteo**: recibe progreso de tiempo (`0`–`1`) y devuelve
+ * progreso de valor (`0`–`1`). Es una ease-out cuadrática, `1 − (1 − x)²`.
+ *
+ * ## Por qué NO reusa la curva del tema, y esto es una decisión medida
+ *
+ * Los `--animate-*` de `css/theme.css` usan `cubic-bezier(0.22, 1, 0.36, 1)`.
+ * Evaluada, deja el valor así:
+ *
+ * | tiempo | valor |
+ * |--------|-------|
+ * | 10 %   | 40 %  |
+ * | 25 %   | 76 %  |
+ * | 50 %   | **96 %** |
+ * | 75 %   | 99,7 % |
+ *
+ * Esa curva está diseñada para **capas que se asientan** (un panel, un menú):
+ * entrar de golpe y frenar largo es exactamente lo que se lee como «esto
+ * aterriza». Aplicada a un contador es un error de género: los seis números de
+ * `EstadosOverview` valen entre 0 y 3, así que con esa curva pasarían de 0 a su
+ * valor **en 200 ms de los 700** y se quedarían quietos el resto —el conteo
+ * dejaría de percibirse y la duración sería decorativa.
+ *
+ * Esta curva reparte el recorrido: al 25 % del tiempo va por el 44 %, y al 50 %
+ * por el 75 %. Los pasos de un número pequeño quedan separados y legibles, y el
+ * último dígito se asienta en vez de aparecer de golpe.
+ *
+ * ## Consecuencia: el conteo NO comparte la curva del tema
+ *
+ * Es la única excepción al «una sola curva» del proyecto, y está aquí escrita
+ * para que nadie la «corrija» hacia la del tema. Lo que sí comparte el conteo
+ * con el resto del movimiento es el **contrato de accesibilidad**: con
+ * `prefers-reduced-motion` no se anima nada (ver `useConteoAnimado`).
+ */
+export function curvaConteo(x: number): number {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  return 1 - (1 - x) * (1 - x);
+}
+
+/**
+ * La curva del tema, en forma de cadena para quien anima desde JS.
+ *
+ * Es **el mismo** `cubic-bezier(0.22, 1, 0.36, 1)` que declaran los seis tokens
+ * `--animate-*` de `css/theme.css`. Existe aquí porque la Web Animations API
+ * recibe la curva como valor de `easing`, no como variable CSS, y **no hay forma
+ * de leerla del tema sin duplicarla**.
+ *
+ * Es un espejo declarado, no una segunda fuente: si la curva del tema cambia,
+ * esta cadena cambia con ella. `curvaConteo` es la excepción deliberada y está
+ * documentada arriba; todo lo demás que anime desde JS —hoy, el FLIP del
+ * tablero— usa esta.
+ *
+ * ## Por qué esta curva SÍ sirve para un FLIP
+ *
+ * Por lo mismo que no sirve para un contador. Un contador interpola un **valor**
+ * y el ojo necesita leer los pasos intermedios. Un FLIP interpola una
+ * **posición**: la tarjeta sale de donde estaba y se asienta donde va. Entrar de
+ * golpe y frenar largo es exactamente lo que se lee como «esto se está
+ * colocando», y es el mismo gesto que ya hace `aterrizaje-tarjeta`.
+ */
+export const CURVA_ASENTAR = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+/**
  * ¿El sistema pidió menos movimiento?
  *
  * El CSS ya neutraliza por su cuenta las animaciones declaradas en

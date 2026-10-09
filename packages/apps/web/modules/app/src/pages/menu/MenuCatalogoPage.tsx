@@ -1,98 +1,150 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router';
 import {
-  ArrowPathIcon,
-  ArrowRightIcon,
-  BuildingStorefrontIcon,
-  CheckCircleIcon,
   MagnifyingGlassIcon,
-  MapPinIcon,
-  MinusIcon,
+  FunnelIcon,
   PlusIcon,
-  ShieldCheckIcon,
+  MinusIcon,
+  TrashIcon,
+  HeartIcon,
+  CheckIcon,
+  TicketIcon,
+  TruckIcon,
+  BuildingStorefrontIcon,
   ShoppingBagIcon,
-} from "@heroicons/react/24/outline";
+  ArrowRightIcon,
+  ArrowPathIcon,
+  QrCodeIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
+import QRCode from 'qrcode';
 import { getSupabase, ESQUEMA } from '../../lib/supabase';
 import { PageMeta } from '../../shell/meta';
-import { NectoLogo } from '../../compositions/shared/NectoLogo';
+import { asignarFotoInteligente } from '../pedidos/CatalogoPage';
 
 interface ProductoItem {
   id: string;
   nombre: string;
   categoria: string;
   descripcion: string;
+  subtexto?: string;
   precio: number;
   imagen: string;
-  popular?: boolean;
+  badge?: string;
 }
 
-// Categorías base para filtrado
-//
-// Genéricas a propósito: el catálogo sirve a cualquier negocio, no solo a uno
-// de comida. Las categorías reales salen del catálogo guardado; estas son solo
-// las de la vista de ejemplo.
-const CATEGORIAS_BASE = [
+const CATEGORIAS_MOCK = [
   'Todos',
-  'Categoría A',
-  'Categoría B',
-  'Categoría C',
-  'Ofertas',
+  'Pizzas',
+  'Hamburguesas',
+  'Pastas',
+  'Arroces',
+  'Ensaladas',
+  'Bebidas',
+  'Postres',
 ] as const;
 
-// Catálogo de ejemplo para Necto
-//
-// Los productos son genéricos, no gastronómicos: lo que el ejemplo enseña es la
-// FORMA del dato (nombre, categoría, descripción, precio, imagen), no un rubro
-// concreto. Un catálogo de hamburguesas le dice a una ferretería que esto no es
-// para ella.
+const FOTO_RESPALDO = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';
+
 const PRODUCTOS_DEFAULT: ProductoItem[] = [
   {
-    id: 'cat-f1',
-    nombre: 'Producto de ejemplo A1',
-    categoria: 'Categoría A',
-    descripcion: 'Descripción breve del producto. Aquí va lo que el cliente necesita saber para decidirse.',
+    id: 'prod-pizza-bbq',
+    nombre: 'Pizza BBQ Artesanal',
+    categoria: 'Pizzas',
+    descripcion: 'Masa artesanal con salsa BBQ, queso mozzarella y pollo desmechado.',
+    subtexto: 'Porción 7-8 pulgadas',
+    precio: 28000,
+    imagen: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80',
+    badge: 'Más Vendido',
+  },
+  {
+    id: 'prod-biryani',
+    nombre: 'Arroz Especial de la Casa',
+    categoria: 'Arroces',
+    descripcion: 'Arroz especiado con pollo tierno aromatizado con finas hierbas.',
+    subtexto: 'Porción 380-500g',
     precio: 25000,
-    imagen: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
+    imagen: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&q=80',
+    badge: 'Destacado',
   },
   {
-    id: 'cat-f2',
-    nombre: 'Producto de ejemplo A2',
-    categoria: 'Categoría A',
-    descripcion: 'Un segundo artículo de la misma categoría, para que se vea cómo se agrupa el catálogo.',
+    id: 'prod-pasta-pesto',
+    nombre: 'Pasta Penne al Pesto',
+    categoria: 'Pastas',
+    descripcion: 'Pasta penne al dente con salsa pesto genovés y queso parmesano.',
+    subtexto: 'Porción 80-100g',
+    precio: 20000,
+    imagen: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=500&q=80',
+    badge: '9% Descuento',
+  },
+  {
+    id: 'prod-noodles',
+    nombre: 'Fideos Salteados al Wok',
+    categoria: 'Pastas',
+    descripcion: 'Fideos orientales salteados con vegetales frescos y salsa de la casa.',
+    subtexto: 'Porción 100-150g',
+    precio: 22000,
+    imagen: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=500&q=80',
+    badge: 'Más Vendido',
+  },
+  {
+    id: 'prod-pasta-bolognesa',
+    nombre: 'Pasta Bolognesa Tradicional',
+    categoria: 'Pastas',
+    descripcion: 'Pasta con salsa boloñesa tradicional y carne de res seleccionada.',
+    subtexto: 'Porción 250-320g',
+    precio: 24000,
+    imagen: 'https://images.unsplash.com/photo-1546549032-9571cd6b27df?w=500&q=80',
+    badge: 'Destacado',
+  },
+  {
+    id: 'prod-pizza-pepperoni',
+    nombre: 'Pizza Pepperoni Clásica',
+    categoria: 'Pizzas',
+    descripcion: 'Crocante con generosa capa de queso mozzarella y pepperoni.',
+    subtexto: 'Porción 6-7 pulgadas',
+    precio: 26000,
+    imagen: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500&q=80',
+    badge: 'Nuevo',
+  },
+  {
+    id: 'prod-burger',
+    nombre: 'Hamburguesa Clásica Angus',
+    categoria: 'Hamburguesas',
+    descripcion: 'Carne Angus 150g con queso cheddar fundido y vegetales frescos.',
+    subtexto: 'Porción 200-250g',
+    precio: 25000,
+    imagen: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
+    badge: 'Más Vendido',
+  },
+  {
+    id: 'prod-papas',
+    nombre: 'Papas Rústicas con Queso',
+    categoria: 'Ensaladas',
+    descripcion: 'Papas doradas al romero acompañadas de queso fundido artesanal.',
+    subtexto: 'Porción 180-220g',
     precio: 12000,
-    imagen: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80',
+    imagen: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500&q=80',
+    badge: '9% Descuento',
   },
   {
-    id: 'cat-f3',
-    nombre: 'Producto de ejemplo B1',
-    categoria: 'Categoría B',
-    descripcion: 'Artículo de otra categoría. Las categorías son texto libre: escribe las que use tu negocio.',
-    precio: 4000,
-    imagen: 'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=500&q=80',
+    id: 'prod-bebida',
+    nombre: 'Bebida Refrescante Natural',
+    categoria: 'Bebidas',
+    descripcion: 'Jugo natural de fruta fresca o soda aromatizada.',
+    subtexto: 'Vaso 350ml',
+    precio: 5000,
+    imagen: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&q=80',
   },
   {
-    id: 'cat-f4',
-    nombre: 'Producto de ejemplo B2',
-    categoria: 'Categoría B',
-    descripcion: 'El precio, la imagen y la descripción se ajustan a lo que vendas. No hay un formato obligatorio.',
-    precio: 9000,
-    imagen: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80',
-  },
-  {
-    id: 'cat-f5',
-    nombre: 'Producto de ejemplo C1',
-    categoria: 'Categoría C',
-    descripcion: 'Este bloque muestra cómo se ve un producto con todos sus datos completos.',
-    precio: 27500,
-    imagen: 'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=500&q=80',
-  },
-  {
-    id: 'cat-f6',
-    nombre: 'Producto de ejemplo C2',
-    categoria: 'Categoría C',
-    descripcion: 'Puedes tener tantos productos y categorías como necesites.',
-    precio: 7500,
-    imagen: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&q=80',
+    id: 'prod-postre',
+    nombre: 'Cheesecake de Frutos Rojos',
+    categoria: 'Postres',
+    descripcion: 'Suave pastel de queso bañado en salsa de frutos silvestres.',
+    subtexto: 'Porción 120g',
+    precio: 11000,
+    imagen: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=500&q=80',
+    badge: 'Nuevo',
   },
 ];
 
@@ -104,18 +156,28 @@ export const MenuCatalogoPage: React.FC = () => {
   const sede = searchParams.get('sede') || 'Sede Principal';
   const direccion = searchParams.get('direccion') || 'Medellín, Colombia';
   const chatId = searchParams.get('chatId') || '';
-  const modalidad = searchParams.get('modalidad') || (direccion ? 'domicilio' : 'retiro');
+  const paramModalidad = searchParams.get('modalidad');
 
+  const [modalidad, setModalidad] = useState<string>(
+    paramModalidad || (direccion ? 'domicilio' : 'retiro')
+  );
   const [productos, setProductos] = useState<ProductoItem[]>(PRODUCTOS_DEFAULT);
   const [categoriaActiva, setCategoriaActiva] = useState<string>('Todos');
   const [busqueda, setBusqueda] = useState<string>('');
-  const [carrito, setCarrito] = useState<{ [productoId: string]: number }>({});
-  const [modalCarritoAbierto, setModalCarritoAbierto] = useState(false);
-  const [seleccionEnviada, setSeleccionEnviada] = useState<{
-    total: number;
-    cantidad: number;
-  } | null>(null);
-  const [guardandoPedido, setGuardandoPedido] = useState(false);
+  const [carrito, setCarrito] = useState<{ [productoId: string]: number }>({
+    'prod-pizza-bbq': 2,
+    'prod-biryani': 1,
+    'prod-pasta-pesto': 2,
+  });
+  const [favoritos, setFavoritos] = useState<{ [productoId: string]: boolean }>({
+    'prod-pizza-bbq': true,
+    'prod-biryani': true,
+  });
+  const [promoActiva, setPromoActiva] = useState<boolean>(true);
+  const [modalPagoAbierto, setModalPagoAbierto] = useState<boolean>(false);
+  const [codigoQrDataUrl, setCodigoQrDataUrl] = useState<string>('');
+  const [guardandoPedido, setGuardandoPedido] = useState<boolean>(false);
+  const [notificacionBotEnviada, setNotificacionBotEnviada] = useState<boolean>(false);
 
   // Cargar catálogo desde Supabase si existe configuración personalizada
   useEffect(() => {
@@ -127,7 +189,7 @@ export const MenuCatalogoPage: React.FC = () => {
         const { data, error } = await sb
           .schema(ESQUEMA)
           .from('config_pedidos')
-          .select('catalogo, perfil_comercial')
+          .select('catalogo')
           .limit(1)
           .maybeSingle();
 
@@ -135,48 +197,35 @@ export const MenuCatalogoPage: React.FC = () => {
           const cargados: ProductoItem[] = data.catalogo
             .filter((i: any) => i && i.disponible !== false)
             .map((i: any, idx: number) => {
-              // Asignar imagen coherente por defecto si no viene
-              // Imágenes e textos de reserva, genéricos: se usan solo cuando el
-              // producto guardado no trae los suyos, y no deben sugerir un rubro.
-              const defaultImgs = [
-                'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
-                'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80',
-                'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=500&q=80',
-                'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80',
-              ];
+              const foto = i.imagen || asignarFotoInteligente(i.nombre, i.categoria);
               return {
                 id: String(i.id || `prod-${idx}`),
                 nombre: String(i.nombre),
-                categoria: i.categoria || (idx % 2 === 0 ? 'Categoría A' : 'Categoría B'),
-                descripcion: i.descripcion || 'Descripción pendiente de completar.',
+                categoria: i.categoria || 'Pizzas',
+                descripcion: i.descripcion || 'Producto elaborado con ingredientes selectos.',
+                subtexto: i.descripcion ? i.descripcion.slice(0, 20) : 'Porción estándar',
                 precio: Number(i.precio) || 0,
-                imagen: i.imagen || defaultImgs[idx % defaultImgs.length],
-                // El sello «Destacado» sale del dato, no de la posición en la lista:
-                // marcar idx===0 convertía «el primero» en «el que el negocio destaca»,
-                // y el sello aparecía sobre un producto que nadie destacó.
-                popular: i.popular === true,
+                imagen: foto,
+                badge: i.popular ? 'Destacado' : idx % 3 === 0 ? 'Más Vendido' : undefined,
               };
             });
 
-          // Mezclar con los adicionales para tener un catálogo rico
           const idsExistentes = new Set(cargados.map((c) => c.id));
           const complementos = PRODUCTOS_DEFAULT.filter((p) => !idsExistentes.has(p.id));
           setProductos([...cargados, ...complementos]);
         }
       } catch (e) {
-        console.warn('[MenuCatalogoPage] Usando catálogo base local', e);
+        console.warn('[MenuCatalogoPage] Usando catálogo base:', e);
       }
     };
 
     cargarCatalogoBD();
   }, []);
 
-  // Formatear COP
   const formatearCOP = (valor: number) => {
     return `$ ${valor.toLocaleString('es-CO')}`;
   };
 
-  // Manejo de cantidades
   const agregarItem = (id: string) => {
     setCarrito((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
   };
@@ -193,43 +242,71 @@ export const MenuCatalogoPage: React.FC = () => {
     });
   };
 
-  /**
-   * Categorías que se pintan en la barra: las del catálogo real, en el orden en
-   * que aparecen los productos. Se cae a `CATEGORIAS_BASE` solo si el catálogo
-   * todavía no ha cargado — nunca para ofrecer una categoría que no existe.
-   */
+  const eliminarItemTotal = (id: string) => {
+    setCarrito((prev) => {
+      const nuevo = { ...prev };
+      delete nuevo[id];
+      return nuevo;
+    });
+  };
+
+  const toggleFavorito = (id: string) => {
+    setFavoritos((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const categoriasDisponibles = useMemo(() => {
     const vistas: string[] = [];
     for (const p of productos) {
       const c = (p.categoria || '').trim();
       if (c && !vistas.includes(c)) vistas.push(c);
     }
-    return vistas.length > 0 ? ['Todos', ...vistas] : [...CATEGORIAS_BASE];
+    const unicas = Array.from(new Set([...CATEGORIAS_MOCK.filter((c) => c !== 'Todos'), ...vistas]));
+    return ['Todos', ...unicas];
   }, [productos]);
 
-  // Filtrado
   const productosFiltrados = useMemo(() => {
     return productos.filter((prod) => {
-      const coincideCat = categoriaActiva === 'Todos' || prod.categoria === categoriaActiva;
+      const coincideCat =
+        categoriaActiva === 'Todos' ||
+        prod.categoria.toLowerCase() === categoriaActiva.toLowerCase();
       const coincideBusqueda =
         busqueda.trim() === '' ||
         prod.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        prod.descripcion.toLowerCase().includes(busqueda.toLowerCase());
+        prod.descripcion.toLowerCase().includes(busqueda.toLowerCase()) ||
+        prod.categoria.toLowerCase().includes(busqueda.toLowerCase());
       return coincideCat && coincideBusqueda;
     });
   }, [productos, categoriaActiva, busqueda]);
 
-  // Totales
   const cantidadTotal = Object.values(carrito).reduce((acc, curr) => acc + curr, 0);
   const subtotal = Object.entries(carrito).reduce((acc, [id, qty]) => {
     const prod = productos.find((p) => p.id === id);
     return acc + (prod ? prod.precio * qty : 0);
   }, 0);
-  const costoEnvio = cantidadTotal > 0 && modalidad === 'domicilio' ? 5000 : 0;
-  const total = subtotal + costoEnvio;
 
-  // Enviar selección de productos a Telegram para revisión y confirmación en el bot
-  const enviarSeleccionATelegram = async () => {
+  const descuento = promoActiva && cantidadTotal > 0 ? Math.round(subtotal * 0.1) : 0;
+  const costoEnvio = cantidadTotal > 0 && modalidad === 'domicilio' ? 5000 : 0;
+  const total = Math.max(0, subtotal - descuento + costoEnvio);
+
+  const referenciaOrden = useMemo(() => {
+    return `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+  }, []);
+
+  // Generar QR para pago en sitio
+  useEffect(() => {
+    if (modalPagoAbierto) {
+      const urlPago = `${window.location.origin}/checkout?ref=${referenciaOrden}&total=${total}&cliente=${encodeURIComponent(cliente)}`;
+      QRCode.toDataURL(urlPago, {
+        width: 220,
+        margin: 1,
+        color: { dark: '#190088', light: '#FFFFFF' },
+      })
+        .then((url) => setCodigoQrDataUrl(url))
+        .catch((err) => console.warn('[MenuCatalogoPage] Error generando QR:', err));
+    }
+  }, [modalPagoAbierto, referenciaOrden, total, cliente]);
+
+  const enviarSeleccionAlBot = async () => {
     if (cantidadTotal === 0) return;
     setGuardandoPedido(true);
 
@@ -246,7 +323,6 @@ export const MenuCatalogoPage: React.FC = () => {
 
       const sb = getSupabase();
       if (sb && chatId) {
-        // Actualizar el borrador y estado de la conversación en Supabase
         const { data: contacto } = await sb
           .schema(ESQUEMA)
           .from('contacto')
@@ -266,10 +342,15 @@ export const MenuCatalogoPage: React.FC = () => {
           if (conv?.id) {
             const previo = (conv.estado_respuesta as Record<string, any>) || {};
             const draftObj = {
+              referencia: referenciaOrden,
               lineas,
-              modalidad: modalidad || 'retiro',
+              modalidad,
               direccion: modalidad === 'domicilio' ? direccion : null,
               destinatario: previo?.draft?.destinatario || { tipo: 'propio', nombre: cliente },
+              subtotal,
+              descuento,
+              costoEnvio,
+              total,
               updatedAt: new Date().toISOString(),
             };
 
@@ -290,30 +371,30 @@ export const MenuCatalogoPage: React.FC = () => {
         }
       }
 
-      // Notificar al bot de Telegram directamente con el resumen y botones
       const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
       if (chatId && botToken) {
         const resumenProds = lineas
-          .map((l) => `• ${l.cantidad} × <b>${l.nombre}</b> — <code>$${(l.precioUnitario * l.cantidad).toLocaleString('es-CO')} COP</code>`)
+          .map(
+            (l) =>
+              `• ${l.cantidad} × <b>${l.nombre}</b> — <code>$${(l.precioUnitario * l.cantidad).toLocaleString('es-CO')} COP</code>`
+          )
           .join('\n');
 
-        const entregaDesc = modalidad === 'domicilio'
-          ? `🛵 <b>Domicilio en:</b> <i>${direccion}</i>`
-          : `🛍️ <b>Retiro en:</b> <i>${sede}</i>`;
+        const entregaDesc =
+          modalidad === 'domicilio'
+            ? `🛵 <b>Domicilio en:</b> <i>${direccion}</i>`
+            : `🛍️ <b>Retiro en:</b> <i>${sede}</i>`;
 
-        const mensajeTelegram = `📋 <b>RESUMEN DE TU PEDIDO SELECCIONADO</b>\n<blockquote>` +
+        const mensajeTelegram =
+          `📋 <b>RESUMEN DE TU PEDIDO NECTO</b>\n<blockquote>` +
           `${resumenProds}\n` +
           `──────────────────────────\n` +
           `<b>Subtotal:</b> <code>$${subtotal.toLocaleString('es-CO')} COP</code>\n` +
+          `<b>Descuento:</b> <code>-$${descuento.toLocaleString('es-CO')} COP</code>\n` +
           `<b>Envío:</b> <code>$${costoEnvio.toLocaleString('es-CO')} COP</code>\n` +
           `<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n` +
           `${entregaDesc}</blockquote>\n\n` +
-          `¿Estás a gusto con tu orden o deseas cambiar algo?`;
-
-        const keyboardRows = [
-          [{ text: 'Confirmar y Pagar 💳' }],
-          [{ text: '✏️ Modificar pedido' }, { text: '❌ Cancelar orden' }],
-        ];
+          `¡Tu orden ${referenciaOrden} está lista para procesar el pago!`;
 
         fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: 'POST',
@@ -322,510 +403,501 @@ export const MenuCatalogoPage: React.FC = () => {
             chat_id: chatId,
             text: mensajeTelegram,
             parse_mode: 'HTML',
-            reply_markup: {
-              keyboard: keyboardRows,
-              resize_keyboard: true,
-              one_time_keyboard: false,
-            },
           }),
-        }).catch((err) => console.warn('[MenuCatalogoPage] Error notificando Telegram:', err));
+        }).catch((err) => console.warn('[MenuCatalogoPage] Error Telegram:', err));
       }
 
-      setSeleccionEnviada({
-        total,
-        cantidad: cantidadTotal,
-      });
+      setNotificacionBotEnviada(true);
     } catch (e) {
-      console.error('[MenuCatalogoPage] Error al enviar selección al bot:', e);
-      setSeleccionEnviada({
-        total,
-        cantidad: cantidadTotal,
-      });
+      console.error('[MenuCatalogoPage] Error registrando comanda:', e);
     } finally {
       setGuardandoPedido(false);
     }
   };
 
+  const handleProcederAlPago = () => {
+    if (cantidadTotal === 0) return;
+    setModalPagoAbierto(true);
+    enviarSeleccionAlBot();
+  };
+
+  const irAlCheckoutEnLinea = () => {
+    const params = new URLSearchParams({
+      ref: referenciaOrden,
+      total: String(total),
+      cliente,
+      chatId,
+      modalidad,
+    });
+    navigate(`/checkout?${params.toString()}`);
+  };
+
+  const obtenerEstiloBadge = (badge: string) => {
+    if (badge.includes('Vendido') || badge.includes('Destacado')) {
+      return 'bg-[#190088] text-white';
+    }
+    if (badge.includes('Descuento') || badge.includes('Nuevo')) {
+      return 'bg-[#FF3F1A] text-white';
+    }
+    return 'bg-[#97D6DF] text-[#190088]';
+  };
+
   return (
     <>
       <PageMeta
-        title="Catálogo"
-        description="Catálogo de productos del negocio"
+        title="Productos"
+        description="Selecciona tus platos y productos favoritos"
       />
-      <div className="min-h-screen bg-gray-50/60 dark:bg-gray-950 flex flex-col font-sans text-gray-800 dark:text-gray-200 antialiased selection:bg-[#190088] selection:text-white pb-24">
-        {/* ── CABECERA CORPORATIVA NECTO ── */}
-        <header className="sticky top-0 z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800 shadow-2xs">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
-            {/* Logo Necto & Sede */}
+
+      <div
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
+        className="min-h-screen bg-[#ECECEC]/30 text-[#212121] p-4 sm:p-6 lg:p-8 antialiased selection:bg-[#190088] selection:text-white"
+      >
+        <div className="max-w-[1500px] mx-auto space-y-6">
+          {/* ── ENCABEZADO SUPERIOR: TÍTULO PRODUCTOS Y BUSCADOR CON FILTRO ── */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h1 className="text-[24px] font-bold text-[#190088] tracking-tight">
+              Productos
+            </h1>
+
             <div className="flex items-center gap-3">
-              <NectoLogo size="xs" />
-
-              <div className="h-5 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
-
-              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                <MapPinIcon className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                <span className="truncate max-w-[140px] md:max-w-[200px]">{sede}</span>
-              </div>
-            </div>
-
-            {/* Buscador & Carrito */}
-            <div className="flex items-center gap-2.5">
-              <div className="relative hidden md:block w-64 lg:w-80">
-                <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+              <div className="relative w-full sm:w-72">
+                <MagnifyingGlassIcon className="w-4 h-4 text-[#212121]/50 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar producto o categoría..."
-                  className="w-full h-9 pl-9 pr-8 bg-gray-50 dark:bg-gray-950 text-xs text-gray-900 dark:text-white placeholder-gray-400 rounded-xl border border-gray-200 dark:border-gray-800 focus:border-[#190088] dark:focus:border-[#97D6DF] outline-none transition-all"
+                  placeholder="Buscar producto..."
+                  className="w-full h-11 pl-11 pr-8 bg-white text-[#212121] text-[14px] font-normal placeholder-[#212121]/40 rounded-full border border-[#ECECEC] focus:border-[#97D6DF] focus:outline-none shadow-2xs transition-colors"
                 />
                 {busqueda && (
                   <button
                     type="button"
                     onClick={() => setBusqueda('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#212121]/50 hover:text-[#FF3F1A]"
                   >
                     ✕
                   </button>
                 )}
               </div>
 
-              <span className="hidden lg:inline text-xs text-gray-500 dark:text-gray-400">
-                Hola, <strong className="text-[#190088] dark:text-white">{cliente}</strong>
-              </span>
-
               <button
                 type="button"
-                onClick={() => setModalCarritoAbierto(true)}
-                className="relative flex items-center gap-2 bg-[#190088] hover:bg-[#190088]/90 active:scale-95 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer"
+                className="h-11 px-4 bg-white border border-[#ECECEC] text-[#212121] rounded-full text-[14px] font-normal flex items-center gap-2 hover:bg-[#EFE6D3]/40 shadow-2xs transition-colors shrink-0"
               >
-                <ShoppingBagIcon className="w-4 h-4" />
-                <span className="hidden sm:inline font-mono">{formatearCOP(subtotal)}</span>
-                {cantidadTotal > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-[#FF3F1A] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-xs">
-                    {cantidadTotal}
-                  </span>
-                )}
+                <FunnelIcon className="w-4 h-4 text-[#212121]/70" />
+                <span>Filtrar</span>
               </button>
             </div>
           </div>
 
-          {/* Buscador en móviles */}
-          <div className="md:hidden px-4 pb-2.5">
-            <div className="relative w-full">
-              <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar en el catálogo..."
-                className="w-full h-9 pl-9 pr-3 bg-gray-50 dark:bg-gray-950 text-xs text-gray-900 dark:text-white placeholder-gray-400 rounded-xl border border-gray-200 dark:border-gray-800 focus:border-[#190088] outline-none"
-              />
-            </div>
+          {/* ── BARRA DE CATEGORÍAS HORIZONTAL ── */}
+          <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+            {categoriasDisponibles.map((cat) => {
+              const activa = categoriaActiva === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategoriaActiva(cat)}
+                  className={`px-5 py-2.5 rounded-full text-[14px] transition-all shrink-0 cursor-pointer shadow-2xs ${
+                    activa
+                      ? 'bg-[#FF3F1A] text-white font-bold'
+                      : 'bg-white text-[#212121] font-normal border border-[#ECECEC] hover:bg-[#EFE6D3]/50'
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
           </div>
 
-          {/* ── BARRA DE CATEGORÍAS ── */}
-          <div className="border-t border-gray-100 dark:border-gray-800/80 px-4 sm:px-6 lg:px-8 py-2 overflow-x-auto scrollbar-none bg-gray-50/50 dark:bg-gray-900/50">
-            <div className="max-w-7xl mx-auto flex items-center gap-1.5">
-              {categoriasDisponibles.map((cat) => {
-                const activa = categoriaActiva === cat;
-                return (
+          {/* ── CUERPO PRINCIPAL CON 2 COLUMNAS PERFECTAMENTE SIMÉTRICAS ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            {/* ── COLUMNA IZQUIERDA: GRID DE PRODUCTOS ── */}
+            <div className="lg:col-span-7 xl:col-span-8">
+              {productosFiltrados.length === 0 ? (
+                <div className="bg-white rounded-3xl p-12 text-center border border-[#ECECEC] shadow-2xs space-y-3">
+                  <p className="text-[16px] font-normal text-[#212121]/70">
+                    No hay productos disponibles en esta categoría.
+                  </p>
                   <button
-                    key={cat}
                     type="button"
-                    onClick={() => setCategoriaActiva(cat)}
-                    className={`px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all cursor-pointer ${
-                      activa
-                        ? 'bg-[#190088] text-white font-semibold shadow-2xs dark:bg-white dark:text-gray-900'
-                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium border border-gray-200/60 dark:border-gray-700/60'
-                    }`}
+                    onClick={() => {
+                      setBusqueda('');
+                      setCategoriaActiva('Todos');
+                    }}
+                    className="text-[14px] font-bold text-[#FF3F1A] hover:underline cursor-pointer"
                   >
-                    {cat}
+                    Ver todos los productos
                   </button>
-                );
-              })}
-            </div>
-          </div>
-        </header>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {productosFiltrados.map((prod) => {
+                    const esFav = favoritos[prod.id] || false;
+                    return (
+                      <div
+                        key={prod.id}
+                        className="bg-white rounded-3xl p-5 border border-[#ECECEC] shadow-2xs hover:shadow-md transition-all flex flex-col justify-between relative group"
+                      >
+                        {/* Cabecera de la tarjeta: Badge promocional y botón de favorito */}
+                        <div className="flex items-center justify-between gap-2 h-7">
+                          {prod.badge ? (
+                            <span
+                              className={`px-3 py-1 rounded-full text-[12px] font-bold tracking-wider shadow-2xs ${obtenerEstiloBadge(
+                                prod.badge
+                              )}`}
+                            >
+                              {prod.badge}
+                            </span>
+                          ) : (
+                            <span />
+                          )}
 
-        {/* ── BANNER SENCILLO INFORMATIVO ── */}
-        <div className="bg-[#97D6DF]/15 dark:bg-[#97D6DF]/10 border-b border-[#97D6DF]/30 py-2 px-4 text-center text-xs text-gray-700 dark:text-gray-300">
-          <span>Bienvenido <b>{cliente}</b> • Entrega estimada en: <i>{direccion}</i></span>
-        </div>
+                          <button
+                            type="button"
+                            onClick={() => toggleFavorito(prod.id)}
+                            className="w-8 h-8 rounded-full bg-white border border-[#ECECEC] flex items-center justify-center text-[#212121] hover:text-[#FF3F1A] transition-colors shadow-2xs cursor-pointer"
+                            title="Favorito"
+                          >
+                            <HeartIcon
+                              className={`w-4 h-4 ${
+                                esFav ? 'fill-[#FF3F1A] text-[#FF3F1A]' : 'text-[#212121]/60'
+                              }`}
+                            />
+                          </button>
+                        </div>
 
-        {/* ── LISTADO / GRID DE PRODUCTOS DE ALTA DENSIDAD ── */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 w-full space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-[#190088] dark:text-white tracking-tight">
-                Catálogo
-              </h1>
-              {categoriaActiva !== 'Todos' && (
-                <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-                  · {categoriaActiva}
-                </span>
-              )}
-              <span className="bg-[#97D6DF]/25 dark:bg-[#97D6DF]/15 text-[#190088] dark:text-[#97D6DF] text-xs font-bold px-2 py-0.5 rounded-full">
-                {productosFiltrados.length}
-              </span>
-            </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 font-medium">
-              <ShieldCheckIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Precios con IVA incluido</span>
-            </span>
-          </div>
+                        {/* Foto del plato circular */}
+                        <div className="my-3 flex items-center justify-center">
+                          <div className="w-36 h-36 rounded-full overflow-hidden p-1 bg-[#EFE6D3]/40 shadow-inner flex items-center justify-center">
+                            <img
+                              src={prod.imagen}
+                              alt={prod.nombre}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = FOTO_RESPALDO;
+                              }}
+                              className="w-full h-full object-cover rounded-full group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                            />
+                          </div>
+                        </div>
 
-          {productosFiltrados.length === 0 ? (
-            <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 shadow-2xs space-y-2">
-              <p className="text-gray-500 text-sm">No encontramos productos en esta categoría.</p>
-              <button
-                type="button"
-                onClick={() => { setBusqueda(''); setCategoriaActiva('Todos'); }}
-                className="text-xs text-[#FF3F1A] font-bold hover:underline"
-              >
-                Ver todos los productos
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4">
-              {productosFiltrados.map((prod) => {
-                const qty = carrito[prod.id] || 0;
-                return (
-                  <div
-                    key={prod.id}
-                    className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between overflow-hidden group"
-                  >
-                    {/* Imagen */}
-                    <div className="relative aspect-4/3 w-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                      <img
-                        src={prod.imagen}
-                        alt={prod.nombre}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
+                        {/* Datos del producto */}
+                        <div className="space-y-1">
+                          <h3 className="text-[16px] font-bold text-[#190088] line-clamp-1">
+                            {prod.nombre}
+                          </h3>
+                          <p className="text-[12px] font-light text-[#212121]/70 line-clamp-1">
+                            {prod.subtexto || prod.categoria}
+                          </p>
+                        </div>
 
-                      {/* Tag de Categoría */}
-                      <span className="absolute top-2 left-2 bg-white/95 dark:bg-gray-900/95 text-gray-800 dark:text-gray-200 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs backdrop-blur-xs truncate max-w-[65%]">
-                        {prod.categoria}
-                      </span>
+                        {/* Pie de tarjeta: Precio y botón + */}
+                        <div className="flex items-center justify-between pt-3 mt-2 border-t border-[#ECECEC]">
+                          <span className="text-[16px] font-bold text-[#212121]">
+                            {formatearCOP(prod.precio)}
+                          </span>
 
-                      {prod.popular && (
-                        <span className="absolute top-2 right-2 bg-[#FF3F1A] text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs uppercase tracking-wider">
-                          Destacado
-                        </span>
-                      )}
-
-                      {/* Precio superpuesto en la foto */}
-                      <div className="absolute bottom-1.5 left-2">
-                        <span className="text-xs sm:text-sm font-bold text-white drop-shadow-md tabular-nums">
-                          {formatearCOP(prod.precio)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Datos del producto */}
-                    <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
-                      <div>
-                        <h3 className="text-xs sm:text-[13px] font-bold text-[#190088] dark:text-white line-clamp-1 group-hover:text-[#FF3F1A] transition-colors leading-tight">
-                          {prod.nombre}
-                        </h3>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5 leading-tight">
-                          {prod.descripcion}
-                        </p>
-                      </div>
-
-                      {/* Selector de cantidad / Botón de agregar */}
-                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80">
-                        {qty === 0 ? (
                           <button
                             type="button"
                             onClick={() => agregarItem(prod.id)}
-                            className="w-full py-1.5 px-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-[#190088] hover:text-white dark:hover:bg-[#190088] text-gray-800 dark:text-gray-200 text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-2xs active:scale-95 cursor-pointer"
+                            className="w-10 h-10 rounded-full bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 active:scale-95 text-white flex items-center justify-center shadow-md transition-all cursor-pointer"
                             title="Agregar al pedido"
                           >
-                            <PlusIcon className="w-3.5 h-3.5" />
-                            <span>Agregar</span>
+                            <PlusIcon className="w-5 h-5 stroke-[2.5]" />
                           </button>
-                        ) : (
-                          <div className="w-full py-1 px-2 rounded-xl bg-[#97D6DF]/15 border border-[#97D6DF]/60 dark:border-[#97D6DF]/30 flex items-center justify-between">
-                            <button
-                              type="button"
-                              onClick={() => quitarItem(prod.id)}
-                              className="w-6 h-6 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 flex items-center justify-center text-xs font-bold transition-all shadow-2xs"
-                              title="Disminuir"
-                            >
-                              <MinusIcon className="w-3 h-3" />
-                            </button>
-                            <span className="text-xs font-bold text-[#190088] dark:text-white tabular-nums font-mono px-2">
-                              {qty}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => agregarItem(prod.id)}
-                              className="w-6 h-6 rounded-lg bg-[#190088] text-white hover:bg-[#190088]/90 flex items-center justify-center text-xs font-bold transition-all shadow-2xs"
-                              title="Aumentar"
-                            >
-                              <PlusIcon className="w-3 h-3" />
-                            </button>
-                          </div>
-                        )}
+                        </div>
                       </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* ── COLUMNA DERECHA: TARJETA DE TU PEDIDO ALINEADA SIMÉTRICAMENTE ── */}
+            <div className="lg:col-span-5 xl:col-span-4">
+              <div className="bg-white rounded-3xl p-6 border border-[#ECECEC] shadow-sm flex flex-col space-y-5 lg:sticky lg:top-8">
+                {/* Cabecera del carrito */}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[24px] font-bold text-[#190088] tracking-tight">
+                    Tu Pedido
+                  </h2>
+
+                  {cantidadTotal > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setCarrito({})}
+                      className="text-[12px] font-bold text-[#FF3F1A] hover:underline cursor-pointer"
+                    >
+                      Vaciar todo
+                    </button>
+                  )}
+                </div>
+
+                {/* Lista de productos en la comanda */}
+                {cantidadTotal === 0 ? (
+                  <div className="py-12 text-center space-y-3 bg-[#EFE6D3]/20 rounded-2xl border border-dashed border-[#ECECEC]">
+                    <ShoppingBagIcon className="w-10 h-10 text-[#212121]/30 mx-auto" />
+                    <p className="text-[14px] font-normal text-[#212121]/70">
+                      Tu carrito está vacío. Agrega tus platos favoritos.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+                    {Object.entries(carrito).map(([id, qty]) => {
+                      const prod = productos.find((p) => p.id === id);
+                      if (!prod) return null;
+                      return (
+                        <div
+                          key={id}
+                          className="bg-[#EFE6D3]/30 border border-[#ECECEC] rounded-2xl p-3 flex items-center justify-between gap-3 shadow-2xs"
+                        >
+                          {/* Izquierda: Checkbox, foto circular y datos */}
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-5 h-5 rounded-md bg-[#212121] text-white flex items-center justify-center shrink-0">
+                              <CheckIcon className="w-3.5 h-3.5 stroke-[3]" />
+                            </div>
+
+                            <img
+                              src={prod.imagen}
+                              alt={prod.nombre}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = FOTO_RESPALDO;
+                              }}
+                              className="w-14 h-14 rounded-full object-cover shrink-0 shadow-2xs"
+                            />
+
+                            <div className="min-w-0">
+                              <h4 className="text-[14px] font-bold text-[#190088] truncate">
+                                {prod.nombre}
+                              </h4>
+                              <p className="text-[12px] font-light text-[#212121]/70 truncate">
+                                {prod.subtexto || prod.categoria}
+                              </p>
+                              <p className="text-[14px] font-bold text-[#212121] mt-0.5">
+                                Total {formatearCOP(prod.precio * qty)}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Derecha: Eliminar y cápsula selectora de cantidad */}
+                          <div className="flex flex-col items-end justify-between gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => eliminarItemTotal(id)}
+                              className="text-[#212121]/40 hover:text-[#FF3F1A] transition-colors cursor-pointer"
+                              title="Eliminar producto"
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
+
+                            <div className="flex items-center bg-white border border-[#ECECEC] rounded-full px-2 py-0.5 shadow-2xs gap-2">
+                              <button
+                                type="button"
+                                onClick={() => quitarItem(id)}
+                                className="text-[14px] font-bold text-[#212121] hover:text-[#FF3F1A] px-1 cursor-pointer"
+                                title="Disminuir"
+                              >
+                                −
+                              </button>
+                              <span className="text-[14px] font-bold text-[#212121] min-w-[16px] text-center">
+                                {qty}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => agregarItem(id)}
+                                className="w-5 h-5 rounded-full bg-[#212121] hover:bg-[#FF3F1A] text-white flex items-center justify-center text-[12px] font-bold cursor-pointer transition-colors"
+                                title="Aumentar"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Banner de cupón / promoción en español */}
+                <div className="bg-[#EFE6D3] rounded-2xl p-3 border border-[#ECECEC] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TicketIcon className="w-4 h-4 text-[#190088]" />
+                    <span className="text-[12px] font-bold text-[#190088]">
+                      Descuento Especial (10%)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPromoActiva(!promoActiva)}
+                    className="px-3 py-1 bg-white text-[#FF3F1A] rounded-full text-[12px] font-bold border border-[#ECECEC] hover:bg-[#FF3F1A] hover:text-white transition-colors cursor-pointer"
+                  >
+                    {promoActiva ? 'Quitar' : 'Aplicar'}
+                  </button>
+                </div>
+
+                {/* Selector de modalidad (Domicilio / Retiro en local) */}
+                <div className="bg-white rounded-2xl p-3 border border-[#ECECEC] flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <TruckIcon className="w-4 h-4 text-[#FF3F1A] shrink-0" />
+                    <div className="min-w-0">
+                      <span className="text-[12px] font-bold text-[#190088] block truncate">
+                        {modalidad === 'domicilio' ? 'Entrega a Domicilio' : 'Retiro en Local'}
+                      </span>
+                      <span className="text-[12px] font-light text-[#212121]/70 block truncate">
+                        {modalidad === 'domicilio' ? direccion : sede}
+                      </span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </main>
-
-        {/* ── BARRA FLOTANTE DE RESUMEN ── */}
-        {cantidadTotal > 0 && (
-          <div className="fixed bottom-4 inset-x-0 z-40 max-w-lg mx-auto px-4 animate-fadeIn">
-            <div className="bg-[#190088] text-white rounded-2xl p-3.5 shadow-2xl flex items-center justify-between gap-4 border border-white/10 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#FF3F1A] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                  {cantidadTotal}
+                  <button
+                    type="button"
+                    onClick={() => setModalidad(modalidad === 'domicilio' ? 'retiro' : 'domicilio')}
+                    className="text-[12px] font-bold text-[#FF3F1A] hover:underline cursor-pointer shrink-0"
+                  >
+                    Cambiar
+                  </button>
                 </div>
-                <div>
-                  <div className="text-[11px] text-gray-200 font-medium">Subtotal orden:</div>
-                  <div className="text-sm sm:text-base font-black text-white tabular-nums">
-                    {formatearCOP(subtotal)} <span className="text-xs font-normal text-gray-300">COP</span>
+
+                {/* Desglose financiero */}
+                <div className="space-y-2 border-t border-[#ECECEC] pt-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[14px] font-normal text-[#212121]">
+                      Subtotal productos
+                    </span>
+                    <span className="text-[14px] font-bold text-[#212121]">
+                      {formatearCOP(subtotal)}
+                    </span>
+                  </div>
+
+                  {descuento > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[14px] font-normal text-[#212121]">Descuento</span>
+                      <span className="text-[14px] font-bold text-[#FF3F1A]">
+                        -{formatearCOP(descuento)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-[14px] font-normal text-[#212121]">Costo de envío</span>
+                    <span className="text-[14px] font-bold text-[#212121]">
+                      {costoEnvio === 0 ? 'Gratis' : formatearCOP(costoEnvio)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-baseline justify-between pt-2 border-t border-[#ECECEC]">
+                    <span className="text-[16px] font-bold text-[#212121]">Total a pagar</span>
+                    <span className="text-[36px] font-bold text-[#190088] leading-none">
+                      {formatearCOP(total)}
+                    </span>
                   </div>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={() => setModalCarritoAbierto(true)}
-                className="py-2.5 px-5 bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
-              >
-                <span>Ver pedido</span>
-                <ArrowRightIcon className="w-3.5 h-3.5" />
-              </button>
+                {/* Botón principal CTA: Proceder al Pago */}
+                <button
+                  type="button"
+                  onClick={handleProcederAlPago}
+                  disabled={cantidadTotal === 0}
+                  className="w-full py-4 rounded-full bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[16px] font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Proceder al Pago</span>
+                  <ArrowRightIcon className="w-4 h-4 stroke-[2.5]" />
+                </button>
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* ── MODAL DEL CARRITO / CONFIRMAR PEDIDO (2 PASOS) ── */}
-        {modalCarritoAbierto && (
+        {/* ── MODAL DE PROCEDER AL PAGO (EN LÍNEA / QR / BOT) ── */}
+        {modalPagoAbierto && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-            <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-[#ECECEC] overflow-hidden flex flex-col max-h-[90vh]">
               {/* Cabecera del modal */}
-              <div className="bg-[#190088] text-white px-5 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-2 font-bold text-sm">
-                  <ShoppingBagIcon className="w-4 h-4 text-[#97D6DF]" />
-                  <span>
-                    {seleccionEnviada
-                      ? 'Selección enviada a Telegram'
-                      : `Tu Pedido (${cantidadTotal} ${cantidadTotal === 1 ? 'producto' : 'productos'})`}
+              <div className="bg-[#190088] text-white px-6 py-5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShoppingBagIcon className="w-5 h-5 text-[#97D6DF]" />
+                  <span className="text-[16px] font-bold text-white">
+                    Confirmar Pedido {referenciaOrden}
                   </span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setModalCarritoAbierto(false);
-                    if (seleccionEnviada) {
-                      setCarrito({});
-                      setSeleccionEnviada(null);
-                    }
-                  }}
-                  className="text-gray-300 hover:text-white text-xl leading-none cursor-pointer"
+                  onClick={() => setModalPagoAbierto(false)}
+                  className="text-white/80 hover:text-white text-[16px] font-bold cursor-pointer"
                 >
-                  ✕
+                  <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* ── PASO 2: SELECCIÓN ENVIADA A TELEGRAM (SIN PASARELA EN WEB) ── */}
-              {seleccionEnviada ? (
-                <div className="p-6 text-center space-y-5 animate-fadeIn overflow-y-auto">
-                  <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                    <CheckCircleIcon className="w-10 h-10" />
-                  </div>
-                  <div>
-                    <span className="inline-block bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF] text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
-                      ¡Selección enviada a Telegram!
+              {/* Contenido del modal */}
+              <div className="p-6 overflow-y-auto space-y-5">
+                <div className="text-center space-y-1">
+                  <h3 className="text-[24px] font-bold text-[#190088]">
+                    {formatearCOP(total)} COP
+                  </h3>
+                  <p className="text-[14px] font-normal text-[#212121]/70">
+                    Cliente: <b>{cliente}</b> • {modalidad === 'domicilio' ? 'Entrega a Domicilio' : 'Retiro en Sede'}
+                  </p>
+                </div>
+
+                {/* Tarjeta de detalles de entrega */}
+                <div className="bg-[#EFE6D3]/40 rounded-2xl p-4 border border-[#ECECEC] space-y-2 text-[14px]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[14px] font-normal text-[#212121]">Destino:</span>
+                    <span className="text-[14px] font-bold text-[#212121]">
+                      {modalidad === 'domicilio' ? direccion : sede}
                     </span>
-                    <h2 className="text-xl font-bold text-[#190088] dark:text-white">
-                      Tu pedido ya está en el bot
-                    </h2>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 max-w-sm mx-auto">
-                      Hemos transferido los {seleccionEnviada.cantidad} productos seleccionados a tu conversación.
-                    </p>
                   </div>
-
-                  {/* Resumen de la selección enviada */}
-                  <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 text-left text-xs space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Cliente:</span>
-                      <span className="font-semibold text-gray-800 dark:text-gray-200">{cliente}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Modalidad:</span>
-                      <span className="font-semibold text-gray-800 dark:text-gray-200">
-                        {modalidad === 'domicilio' ? `🛵 Domicilio (${direccion})` : `🛍️ Retiro en ${sede}`}
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-2 font-bold text-sm">
-                      <span className="text-gray-900 dark:text-white">Total a liquidar:</span>
-                      <span className="text-[#FF3F1A] font-mono">{formatearCOP(seleccionEnviada.total)} COP</span>
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[14px] font-normal text-[#212121]">Total artículos:</span>
+                    <span className="text-[14px] font-bold text-[#212121]">{cantidadTotal} unidades</span>
                   </div>
-
-                  <div className="p-3.5 bg-brand-50 dark:bg-brand-500/10 rounded-2xl border border-brand-200 dark:border-brand-500/30 text-brand-800 dark:text-brand-300 text-xs text-left leading-relaxed">
-                    💬 <b>Siguiente paso en Telegram:</b> Abre tu chat con el bot para revisar tu orden. Allí podrás <b>confirmar tu pedido para recibir el link de pago seguro</b>, o <b>editar / cancelar</b> si deseas cambiar algo.
-                  </div>
-
-                  <div className="pt-2 flex flex-col gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => window.open('https://t.me/NectoPedidosBot', '_blank')}
-                      className="w-full py-3.5 bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <span>Volver al Bot de Telegram 🤖</span>
-                      <ArrowRightIcon className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setModalCarritoAbierto(false);
-                        setSeleccionEnviada(null);
-                      }}
-                      className="w-full py-2.5 text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white font-medium text-center"
-                    >
-                      Seguir explorando el catálogo
-                    </button>
+                  <div className="flex items-center justify-between border-t border-[#ECECEC] pt-2">
+                    <span className="text-[14px] font-normal text-[#212121]">Estado sincronización:</span>
+                    <span className="text-[12px] font-bold text-[#190088]">
+                      {guardandoPedido ? 'Sincronizando...' : notificacionBotEnviada ? 'Enviado al chat' : 'Listo'}
+                    </span>
                   </div>
                 </div>
-              ) : (
-                /* ── PASO 1: REVISIÓN DE PRODUCTOS Y CONFIRMAR PEDIDO ── */
-                <>
-                  {/* Lista de productos */}
-                  <div className="p-5 overflow-y-auto space-y-3 flex-1">
-                    {cantidadTotal === 0 ? (
-                      <div className="text-center py-8 text-gray-500 text-sm">
-                        El carrito está vacío. Agrega productos del catálogo.
-                      </div>
-                    ) : (
-                      Object.entries(carrito).map(([id, qty]) => {
-                        const prod = productos.find((p) => p.id === id);
-                        if (!prod) return null;
-                        return (
-                          <div
-                            key={id}
-                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 gap-3"
-                          >
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={prod.imagen}
-                                alt={prod.nombre}
-                                className="w-12 h-12 rounded-xl object-cover shrink-0"
-                              />
-                              <div>
-                                <div className="text-xs font-bold text-gray-800 dark:text-gray-200">{prod.nombre}</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                                  {formatearCOP(prod.precio)} c/u
-                                </div>
-                              </div>
-                            </div>
 
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1.5 bg-white dark:bg-gray-700 px-2 py-1 rounded-xl border border-gray-200 dark:border-gray-600 shadow-2xs">
-                                <button
-                                  type="button"
-                                  onClick={() => quitarItem(id)}
-                                  className="text-xs text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white font-bold px-1"
-                                >
-                                  <MinusIcon className="w-3 h-3" />
-                                </button>
-                                <span className="text-xs font-bold font-mono px-1 text-gray-900 dark:text-white">{qty}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => agregarItem(id)}
-                                  className="text-xs text-[#190088] dark:text-[#97D6DF] hover:opacity-80 font-bold px-1"
-                                >
-                                  <PlusIcon className="w-3 h-3" />
-                                </button>
-                              </div>
-                              <span className="text-xs font-bold text-gray-900 dark:text-white w-16 text-right font-mono">
-                                {formatearCOP(prod.precio * qty)}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-
-                    {/* Datos de entrega */}
-                    {cantidadTotal > 0 && (
-                      <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-3.5 border border-gray-200 dark:border-gray-700 text-xs space-y-1.5 mt-4">
-                        <div className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1 mb-1">
-                          <BuildingStorefrontIcon className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
-                          <span>Información de Entrega</span>
-                        </div>
-                        <div className="text-gray-600 dark:text-gray-400"><b>Cliente:</b> {cliente}</div>
-                        <div className="text-gray-600 dark:text-gray-400"><b>Modalidad:</b> {modalidad === 'domicilio' ? 'Envío a domicilio 🛵' : 'Retiro en local 🛍️'}</div>
-                        {modalidad === 'domicilio' && (
-                          <div className="text-gray-600 dark:text-gray-400"><b>Dirección:</b> {direccion}</div>
-                        )}
-                        <div className="text-gray-600 dark:text-gray-400"><b>Sede:</b> {sede}</div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Totales y Botón de Confirmación */}
-                  {cantidadTotal > 0 && (
-                    <div className="p-5 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 space-y-3">
-                      <div className="space-y-1.5 text-xs">
-                        <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                          <span>Subtotal productos:</span>
-                          <span className="font-mono font-medium">{formatearCOP(subtotal)}</span>
-                        </div>
-                        <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                          <span>Costo de envío:</span>
-                          <span className="font-mono font-medium">
-                            {costoEnvio === 0 ? 'Gratis (Retiro en local)' : formatearCOP(costoEnvio)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-base font-black text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-gray-700">
-                          <span>Total pedido:</span>
-                          <span className="text-[#FF3F1A] font-mono">{formatearCOP(total)} COP</span>
-                        </div>
-                      </div>
-
-                      <div className="pt-2 flex flex-col gap-2">
-                        <button
-                          type="button"
-                          onClick={enviarSeleccionATelegram}
-                          disabled={guardandoPedido}
-                          className="w-full py-3 bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                        >
-                          {guardandoPedido ? (
-                            <>
-                              <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                              <span>Enviando al bot de Telegram...</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircleIcon className="w-4 h-4" />
-                              <span>Confirmar selección y enviar al Bot 📲</span>
-                            </>
-                          )}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setModalCarritoAbierto(false)}
-                          className="w-full py-2 text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white font-medium text-center"
-                        >
-                          Seguir explorando el catálogo
-                        </button>
-                      </div>
+                {/* Código QR si es para pago presencial o escaneo */}
+                {codigoQrDataUrl && (
+                  <div className="text-center space-y-2 py-2">
+                    <div className="inline-block p-3 bg-white border border-[#ECECEC] rounded-2xl shadow-2xs">
+                      <img
+                        src={codigoQrDataUrl}
+                        alt="Código QR de Pago"
+                        className="w-40 h-40 mx-auto"
+                      />
                     </div>
-                  )}
-                </>
-              )}
+                    <p className="text-[12px] font-light text-[#212121]/70">
+                      Escanea para pagar en caja o abrir el checkout directo
+                    </p>
+                  </div>
+                )}
+
+                {/* Botones de acción */}
+                <div className="space-y-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={irAlCheckoutEnLinea}
+                    className="w-full py-4 rounded-full bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white text-[16px] font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>Pagar con Tarjeta / PSE en Línea</span>
+                    <ArrowRightIcon className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setModalPagoAbierto(false)}
+                    className="w-full py-3 text-[14px] font-normal text-[#212121]/70 hover:text-[#212121] text-center cursor-pointer"
+                  >
+                    Continuar comprando
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

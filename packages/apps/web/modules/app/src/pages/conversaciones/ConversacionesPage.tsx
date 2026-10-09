@@ -1,20 +1,60 @@
 import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import { organizacionStore } from "@/stores/organizacion.store";
 import { tiempoRealActivo } from "@/lib/tiempo-real";
 import { BandejaLista } from "@/pages/conversaciones/components/BandejaLista";
 import { ChatView, type VistaChat } from "@/pages/conversaciones/components/ChatView";
 import { Composer } from "@/pages/conversaciones/components/Composer";
 import { PanelContexto } from "@/pages/conversaciones/components/PanelContexto";
-import { WhatsAppIcon, TelegramIcon } from "@/pages/conversaciones/components/CanalAvatar";
+import { WhatsAppIcon } from "@/pages/conversaciones/components/CanalAvatar";
+
+const obtenerEstadoCanales = () => {
+  const waStore = organizacionStore.esConectorActivo("pedidos", "whatsapp");
+  try {
+    const guardado = localStorage.getItem("pedidos_canales_integraciones");
+    if (guardado) {
+      const parsed = JSON.parse(guardado);
+      const whatsapp = parsed.whatsapp !== undefined ? Boolean(parsed.whatsapp) : waStore;
+      const instagram = Boolean(parsed.instagram);
+      const facebook = Boolean(parsed.facebook);
+      return {
+        whatsapp,
+        instagram,
+        facebook,
+        hayActivos: whatsapp || instagram || facebook,
+      };
+    }
+  } catch {}
+  return {
+    whatsapp: waStore,
+    instagram: false,
+    facebook: false,
+    hayActivos: waStore,
+  };
+};
 
 export const ConversacionesPage = observer(() => {
   const [bandejaExpandida, setBandejaExpandida] = useState(true);
   const [panelExpandido, setPanelExpandido] = useState(false);
   const [vistaChat, setVistaChat] = useState<VistaChat>("conversacion");
+  const [estadoCanales, setEstadoCanales] = useState(obtenerEstadoCanales);
   const seleccionadaId = conversacionesStore.seleccionadaId;
   const bandeja = conversacionesStore.bandeja;
+
+  // Sincronizar estado de canales si cambia en localStorage o al enfocar la pestaña
+  useEffect(() => {
+    const actualizar = () => setEstadoCanales(obtenerEstadoCanales());
+    window.addEventListener("storage", actualizar);
+    window.addEventListener("focus", actualizar);
+    actualizar();
+    return () => {
+      window.removeEventListener("storage", actualizar);
+      window.removeEventListener("focus", actualizar);
+    };
+  }, []);
 
   // Al cambiar de contacto seleccionado, volver a la vista principal de conversación
   useEffect(() => {
@@ -44,17 +84,27 @@ export const ConversacionesPage = observer(() => {
     }
   };
 
-
   const handleToggleBandeja = () => {
     setBandejaExpandida(!bandejaExpandida);
   };
 
+  const [searchParams] = useSearchParams();
+
+  // Si viene un id o chatId en la URL, seleccionar esa conversación
+  useEffect(() => {
+    const focusId = searchParams.get("id") || searchParams.get("chatId");
+    if (focusId && conversacionesStore.getConversacion(focusId)) {
+      conversacionesStore.seleccionar(focusId);
+    }
+  }, [searchParams]);
+
   // Si no hay conversación seleccionada pero hay disponibles en la bandeja, auto-seleccionar la primera
   useEffect(() => {
-    if (seleccionadaId === null && bandeja.length > 0) {
+    const focusId = searchParams.get("id") || searchParams.get("chatId");
+    if (!focusId && seleccionadaId === null && bandeja.length > 0) {
       conversacionesStore.seleccionar(bandeja[0].id);
     }
-  }, [seleccionadaId, bandeja]);
+  }, [seleccionadaId, bandeja, searchParams]);
 
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden font-sans text-[#212121] dark:text-white/90">
@@ -66,7 +116,7 @@ export const ConversacionesPage = observer(() => {
       {/* ── Cabecera de la página ────────────────────────────────────────── */}
       <div className="shrink-0 mb-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90 tracking-tight">Chats</h1>
+          <h1 className="text-2xl font-bold text-[#190088] dark:text-white/90 tracking-tight">Chats</h1>
           {/* Indicador de tiempo real */}
           {conversacionesStore.origenDatos === "real" && enVivo && (
             <span
@@ -81,55 +131,47 @@ export const ConversacionesPage = observer(() => {
             </span>
           )}
 
-          {/* Botones de acceso directo a los chats en sus respectivas apps */}
+          {/* Botón o indicador según estado del canal WhatsApp */}
           <div className="flex items-center gap-2 pl-2">
-            <a
-              href="https://wa.me/573145793333"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group inline-flex items-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-1.5 text-[12px] font-bold text-white shadow-theme-xs transition-all hover:bg-[#20ba5a] hover:shadow-md hover:shadow-[#25D366]/20 active:scale-95"
-              title="Abrir chat del bot en WhatsApp (+57 314 5793333)"
-            >
-              <WhatsAppIcon className="h-4 w-4 shrink-0" />
-              <span>WhatsApp</span>
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="opacity-80 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            {estadoCanales.whatsapp ? (
+              <a
+                href="https://wa.me/573145793333"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-1.5 text-[12px] font-bold text-white shadow-theme-xs transition-all hover:bg-[#20ba5a] hover:shadow-md hover:shadow-[#25D366]/20 active:scale-95"
+                title="Abrir chat del bot en WhatsApp (+57 314 5793333)"
               >
-                <path d="M7 17L17 7M7 7h10v10" />
-              </svg>
-            </a>
-
-            <a
-              href="https://t.me/NectoPedidosBot"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group inline-flex items-center gap-1.5 rounded-xl bg-[#229ED9] px-3 py-1.5 text-[12px] font-bold text-white shadow-theme-xs transition-all hover:bg-[#1d8bc0] hover:shadow-md hover:shadow-[#229ED9]/20 active:scale-95"
-              title="Abrir chat del bot en Telegram (@NectoPedidosBot)"
-            >
-              <TelegramIcon className="h-4 w-4 shrink-0" />
-              <span>Telegram</span>
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="opacity-80 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                <WhatsAppIcon className="h-4 w-4 shrink-0" />
+                <span>WhatsApp</span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="opacity-80 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                >
+                  <path d="M7 17L17 7M7 7h10v10" />
+                </svg>
+              </a>
+            ) : (
+              <Link
+                to="/pedidos/config?seccion=integraciones"
+                className="group inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-2.5 py-1 text-[12px] font-medium text-amber-900 transition-all hover:bg-amber-100 hover:border-amber-400 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+                title="Canales de mensajería desconectados. Configurar en Integraciones"
               >
-                <path d="M7 17L17 7M7 7h10v10" />
-              </svg>
-            </a>
+                <span className="relative flex h-2 w-2">
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                </span>
+                <span>Canales inactivos</span>
+                <span className="text-[11px] font-bold text-[#190088] underline underline-offset-2 dark:text-amber-300">
+                  Configurar
+                </span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -210,8 +252,145 @@ export const ConversacionesPage = observer(() => {
         </div>
       )}
 
-      {/* Contenedor principal de 2 columnas + panel lateral opcional */}
-      <div className="flex flex-1 min-h-0 items-stretch gap-4 sm:gap-5 overflow-hidden">
+      {/* ── Aviso de Canales de Mensajería Desconectados ─────────────────── */}
+      {!estadoCanales.hayActivos && (
+        <div
+          role="alert"
+          className="shrink-0 mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200/90 bg-gradient-to-r from-amber-50/90 via-amber-50/60 to-orange-50/50 p-3.5 sm:px-4 text-xs text-amber-950 shadow-theme-xs dark:border-amber-500/30 dark:from-amber-500/10 dark:via-amber-500/5 dark:to-transparent dark:text-amber-200"
+        >
+          <div className="flex items-start sm:items-center gap-2.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-bold text-[#190088] dark:text-amber-200">
+                Canales de mensajería desconectados
+              </p>
+              <p className="text-[#212121]/80 dark:text-amber-300/80">
+                WhatsApp y canales sociales están inactivos. La recepción y envío de mensajes están pausados hasta reactivar la conexión.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/pedidos/config?seccion=integraciones"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 self-start sm:self-auto rounded-xl bg-[#190088] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#150070] active:scale-95"
+          >
+            <span>Conectar en Integraciones</span>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </Link>
+        </div>
+      )}
+
+      {/* Si los canales están desconectados Y no hay mensajes en la bandeja, mostrar estado vacío enfocado */}
+      {!estadoCanales.hayActivos && bandeja.length === 0 ? (
+        <div className="flex flex-1 min-h-0 flex-col items-center justify-center rounded-2xl border border-[#ECECEC] bg-white p-8 text-center shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="relative mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-[#EFE6D3]/60 text-[#190088] shadow-inner dark:bg-white/5 dark:text-amber-300">
+            <svg
+              width="38"
+              height="38"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              <line x1="2" y1="2" x2="22" y2="22" />
+            </svg>
+            <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#FF3F1A] text-white ring-2 ring-white text-[11px] font-bold">
+              !
+            </span>
+          </div>
+
+          <span className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            Canales sin sincronizar
+          </span>
+
+          <h2 className="text-2xl font-bold text-[#190088] dark:text-white/90 tracking-tight max-w-md">
+            No hay canales de chat activos
+          </h2>
+
+          <p className="mt-2 text-sm text-[#212121]/70 dark:text-gray-400 max-w-lg leading-relaxed">
+            Para recibir mensajes de tus clientes, gestionar conversaciones y automatizar la toma de pedidos, activa tu canal de WhatsApp o redes sociales en Ajustes.
+          </p>
+
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              to="/pedidos/config?seccion=integraciones"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#190088] px-5 py-2.5 text-sm font-bold text-white shadow-theme-xs transition-all hover:bg-[#150070] active:scale-95"
+            >
+              <span>Configurar canales en Integraciones</span>
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </Link>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl text-left">
+            <div className="rounded-xl border border-[#ECECEC] p-3.5 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]">
+              <div className="flex items-center justify-between text-xs font-semibold text-gray-700 dark:text-gray-300">
+                <span>WhatsApp</span>
+                <span className="text-[11px] text-amber-700 bg-amber-100/70 dark:bg-amber-500/20 px-2 py-0.5 rounded-md font-bold">Inactivo</span>
+              </div>
+              <p className="mt-1 text-[11px] text-gray-500">Cloud API o número comercial</p>
+            </div>
+
+            <div className="rounded-xl border border-[#ECECEC] p-3.5 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]">
+              <div className="flex items-center justify-between text-xs font-semibold text-gray-700 dark:text-gray-300">
+                <span>Instagram</span>
+                <span className="text-[11px] text-gray-500 bg-gray-200/70 dark:bg-gray-800 px-2 py-0.5 rounded-md font-medium">Inactivo</span>
+              </div>
+              <p className="mt-1 text-[11px] text-gray-500">Mensajes directos de perfil</p>
+            </div>
+
+            <div className="rounded-xl border border-[#ECECEC] p-3.5 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]">
+              <div className="flex items-center justify-between text-xs font-semibold text-gray-700 dark:text-gray-300">
+                <span>Facebook</span>
+                <span className="text-[11px] text-gray-500 bg-gray-200/70 dark:bg-gray-800 px-2 py-0.5 rounded-md font-medium">Inactivo</span>
+              </div>
+              <p className="mt-1 text-[11px] text-gray-500">Messenger de página</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Contenedor principal de 2 columnas + panel lateral opcional */
+        <div className="flex flex-1 min-h-0 items-stretch gap-4 sm:gap-5 overflow-hidden">
         {/* ── Columna izquierda: ChatSidebar (Bandeja colapsable y retráctil) ── */}
         <aside
           aria-label="Bandeja de chats"
@@ -286,6 +465,7 @@ export const ConversacionesPage = observer(() => {
           )}
         </aside>
       </div>
+    )}
     </div>
   );
 });

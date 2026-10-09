@@ -3,12 +3,11 @@ import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
 import { Button } from "@/elements/ui/button";
-import { Card } from "@/elements/ui/card";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import { Textarea } from "@/elements/form/textarea";
-import { ThemeToggleButton } from "@/shell";
+import { OnboardingLayout } from "@/pages/onboarding";
 import {
   CATALOGO_MODULOS,
   operadoresStore,
@@ -17,6 +16,24 @@ import {
   type IdModuloNegocio,
   type Modulo,
 } from "@/stores";
+
+const BRAND_MESSAGES_OPERADOR = [
+  {
+    badge: "Solicitud de Operador",
+    title: "Conéctate al ritmo de la operación.",
+    subtitle: "Pide acceso al módulo asignado para empezar a atender pedidos y gestionar tareas.",
+  },
+  {
+    badge: "Seguridad y Control",
+    title: "Validación ágil por el administrador.",
+    subtitle: "Tu responsable revisará tus datos y habilitará tus permisos en pocos clics.",
+  },
+  {
+    badge: "Acceso Focalizado",
+    title: "Solo lo que necesitas para tu labor.",
+    subtitle: "Interfaz simplificada y ágil sin distracciones de configuración global.",
+  },
+];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ICONS
@@ -105,25 +122,24 @@ const MODULOS_DE_PLATAFORMA: { value: IdModuloNegocio; label: string }[] = (
  * con función, no declaraciones izadas, y llamarla antes de su inicialización
  * sería un error de zona muerta temporal en tiempo de carga del módulo.
  */
-const esModuloRegistrable = (id: IdModuloNegocio): id is Modulo => id === "pedidos";
+const esModuloRegistrable = (id: IdModuloNegocio): id is Modulo =>
+  id === "pedidos" || id === "inventarios";
 
 /**
- * Módulos que la organización tiene activos (instalados Y encendidos) **y que
- * además aceptan solicitudes de operador**.
- *
- * El segundo filtro no es cosmético: `operadoresStore.solicitar()` guarda un
- * `Modulo` de sesión (hoy solo `"pedidos"`), así que ofrecer `inventario` —que sí
- * existe en el catálogo y el admin puede encender— llevaría a un formulario que
- * se rellena entero y no se puede enviar, sin decir por qué. Se ofrece lo que de
- * verdad se puede pedir.
- *
- * Cuando `inventario` tenga su propia lista de operadores, basta con ampliar
- * `esModuloRegistrable` y el desplegable lo recoge solo.
+ * Módulos que la organización o sesión tienen activos.
  */
-const modulosDisponibles = (): { value: IdModuloNegocio; label: string }[] =>
-  MODULOS_DE_PLATAFORMA.filter(
+const modulosDisponibles = (): { value: IdModuloNegocio; label: string }[] => {
+  const modulosSesion = sessionStore.modulos;
+  if (modulosSesion.length > 0) {
+    return MODULOS_DE_PLATAFORMA.filter(
+      (m) => modulosSesion.includes(m.value as Modulo) && esModuloRegistrable(m.value)
+    );
+  }
+  const activos = MODULOS_DE_PLATAFORMA.filter(
     (m) => organizacionStore.estaActivo(m.value) && esModuloRegistrable(m.value)
   );
+  return activos.length > 0 ? activos : MODULOS_DE_PLATAFORMA;
+};
 
 /**
  * Type guard: ¿el valor es uno de los módulos **disponibles** ahora mismo?
@@ -317,36 +333,20 @@ const Field = ({
 
 /**
  * OperadorRegistroPage — solicitud de acceso del operador (mock).
- *
- * Un operador "sale de" un administrador: en vez de entrar directo al módulo,
- * deja sus datos, que (mock, sin backend) se envían como notificación al
- * administrador para darlo de alta.
- *
- * **El envío es real dentro del mock:** llama a `operadoresStore.solicitar()`,
- * que crea un operador en estado `pendiente`. Antes esto solo cambiaba a un
- * estado de éxito visual y no creaba nada, así que los `pendiente` de la tabla
- * venían únicamente del SEED. Ahora el admin lo ve en Equipo → Pendientes y lo
- * aprueba, y desde el perfil le asigna un rol.
- *
- * Vista construida con el flujo Elements: Card + Label + Input + Select +
- * Textarea + Button del catálogo. Al enviar, el formulario se reemplaza por una
- * tarjeta de éxito.
- *
- * @remarks
- * Sin backend no hay envío de correo. El campo "Correo del administrador a
- * notificar" se conserva porque forma parte del relato de la solicitud (y lo
- * consumirá el backend real), pero hoy **no dispara nada**: la notificación es
- * que la solicitud aparece como `pendiente` en Equipo.
  */
 export const OperadorRegistroPage = observer(() => {
   const navigate = useNavigate();
-  // El módulo se pre-selecciona si el usuario eligió uno solo en /seleccionar.
-  // La inicialización es perezosa para que se recalcule en cada montaje y no
-  // quede congelada con el valor de la primera visita a la página.
-  const [form, setForm] = useState<OperadorForm>(() => ({
-    ...EMPTY_FORM,
-    modulo: sessionStore.modulos.length === 1 ? sessionStore.modulos[0] : "",
-  }));
+  const [form, setForm] = useState<OperadorForm>(() => {
+    const lista = modulosDisponibles();
+    const defaultModulo = sessionStore.modulos.length > 0
+      ? sessionStore.modulos[0]
+      : (lista[0]?.value ?? "pedidos");
+    return {
+      ...EMPTY_FORM,
+      adminEmail: organizacionStore.usuario?.email || "",
+      modulo: defaultModulo,
+    };
+  });
   const [enviado, setEnviado] = useState(false);
   /**
    * Campos que el usuario ya intentó enviar.
@@ -388,17 +388,11 @@ export const OperadorRegistroPage = observer(() => {
     if (!sinErrores(validar(form))) return null;
     if (colision) return null;
     if (!esModuloValido(form.modulo)) return null;
-    // Segundo guardia, no redundante: `esModuloValido` deja pasar cualquier
-    // módulo ACTIVO del catálogo (hoy `pedidos` e `inventario`), pero
-    // `solicitar()` solo entiende un `Modulo` de sesión (`"pedidos"`). Sin este
-    // filtro habría que castear `inventario` a `"pedidos"`, y el operador
-    // acabaría dado de alta en un módulo que no pidió.
     if (!esModuloRegistrable(form.modulo)) return null;
 
     const nombre = form.nombre.trim();
     const email = form.email.trim();
     const telefono = form.telefono.trim();
-    // El correo del administrador también es obligatorio (ver @remarks).
     const adminEmail = form.adminEmail.trim();
     if (!adminEmail) return null;
 
@@ -425,30 +419,44 @@ export const OperadorRegistroPage = observer(() => {
 
   return (
     <>
-      <PageMeta title="Solicitar acceso como operador" description="Envía tus datos al administrador para obtener acceso" />
+      <PageMeta
+        title="Solicitar acceso como operador · Necto"
+        description="Envía tus datos al administrador para obtener acceso"
+      />
 
-      <div className="relative min-h-screen bg-gray-50 px-6 py-12 dark:bg-gray-950">
-        <div className="fixed right-6 top-6 z-50">
-          <ThemeToggleButton variant="floating" />
-        </div>
-
-        <div className="mx-auto flex w-full max-w-xl flex-col">
+      <OnboardingLayout
+        pasoActual={2}
+        totalPasos={2}
+        pasoLabel="Solicitud de Operador"
+        onBack={() => navigate("/onboarding/organizacion")}
+        brandMessages={BRAND_MESSAGES_OPERADOR}
+        brandSummary={{
+          eyebrow: "Paso final — Operador",
+          title: form.nombre.trim() || "Solicitud de Acceso",
+          lines: [
+            form.email.trim() || "Datos del operador",
+            form.modulo ? `Módulo: ${labelDeModulo(form.modulo)}` : "Módulo a solicitar",
+            "Aprobación por el administrador",
+          ],
+        }}
+      >
+        <div className="w-full">
           {!enviado ? (
             <>
-              {/* Encabezado centrado */}
-              <div className="mb-8 flex flex-col items-center text-center">
-                <img src="/images/logo/necto-icon.svg" alt="NECTO" className="mb-4 h-10 w-10" />
-                <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">
+              <div className="mb-6">
+                <span className="text-xs font-bold uppercase tracking-wider text-secondary-600 dark:text-brand-400">
+                  Paso final — Solicitud de acceso
+                </span>
+                <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
                   Solicita tu acceso como operador
                 </h1>
-                <p className="mt-2 max-w-md text-sm text-gray-500 dark:text-gray-400">
+                <p className="mt-2 text-sm text-ink-body dark:text-gray-400">
                   Completa tus datos y se enviarán al administrador para que revise y apruebe tu acceso.
                 </p>
               </div>
 
-              {/* Tarjeta con el formulario */}
-              <Card>
-                <div className="space-y-5">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field
                     id="op-nombre"
                     label="Nombre completo"
@@ -459,36 +467,6 @@ export const OperadorRegistroPage = observer(() => {
                     onChange={set("nombre")}
                   />
                   <Field
-                    id="op-email"
-                    label="Correo electrónico"
-                    type="email"
-                    value={form.email}
-                    required
-                    placeholder="tu@correo.com"
-                    /* La colisión manda sobre el formato: si el correo ya está
-                       registrado, eso es lo accionable, aunque además esté mal
-                       escrito. (Si está mal escrito no habrá colisión, porque la
-                       comparación normaliza, así que el orden no oculta nada.) */
-                    error={colisionVisible ? "" : errores.email}
-                    onChange={set("email")}
-                  />
-                  {/* El aviso de duplicado va aparte del Input porque reclama una
-                      acción distinta (entrar, o esperar) y tiene que verse sin
-                      depender de que el campo esté enfocado o en rojo. */}
-                  {colisionVisible && (
-                    <div
-                      role="alert"
-                      className={
-                        colisionVisible.tipo === "activo"
-                          ? "flex gap-2.5 rounded-lg border border-error-200 bg-error-50 px-3 py-2.5 text-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
-                          : "flex gap-2.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2.5 text-xs text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-400"
-                      }
-                    >
-                      <InfoIcon />
-                      <span>{colisionVisible.mensaje}</span>
-                    </div>
-                  )}
-                  <Field
                     id="op-telefono"
                     label="Teléfono"
                     type="tel"
@@ -498,19 +476,38 @@ export const OperadorRegistroPage = observer(() => {
                     error={errores.telefono}
                     onChange={set("telefono")}
                   />
-                  {/* Módulo: la solicitud es PARA un módulo concreto, así que el
-                      admin sabe qué equipo revisar. `Select` no acepta `id`
-                      (limitación del componente), de ahí el `aria-label`.
+                </div>
 
-                      `key` con los IDS (no la longitud) fuerza el remontaje si la
-                      lista de módulos activos cambia de composición —apagar
-                      `pedidos` y encender `inventario` deja la misma longitud—.
-                      Hace falta porque el `Select` es uncontrolled: solo lee
-                      `defaultValue` al montar, así que sin `key` seguiría
-                      mostrando una opción que ya no está en `options`. */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Field
+                      id="op-email"
+                      label="Correo electrónico"
+                      type="email"
+                      value={form.email}
+                      required
+                      placeholder="tu@correo.com"
+                      error={colisionVisible ? "" : errores.email}
+                      onChange={set("email")}
+                    />
+                    {colisionVisible && (
+                      <div
+                        role="alert"
+                        className={
+                          colisionVisible.tipo === "activo"
+                            ? "mt-2 flex gap-2.5 rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
+                            : "mt-2 flex gap-2.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-400"
+                        }
+                      >
+                        <InfoIcon />
+                        <span>{colisionVisible.mensaje}</span>
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <Label htmlFor="op-modulo">
-                      Módulo al que solicitas acceso <span className="text-error-500">*</span>
+                      Módulo solicitado <span className="text-error-500">*</span>
                     </Label>
                     {modulos.length > 0 ? (
                       <Select
@@ -524,112 +521,134 @@ export const OperadorRegistroPage = observer(() => {
                         onChange={set("modulo")}
                       />
                     ) : (
-                      /* Sin módulos activos el desplegable no tendría ninguna
-                         opción legítima: se dice el motivo en vez de pintar un
-                         Select vacío que parezca roto. */
                       <p className="mt-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-400">
-                        Tu organización no tiene ningún módulo activo, así que no hay acceso que
-                        solicitar. Contacta a tu administrador.
+                        Tu organización no tiene ningún módulo activo. Contacta a tu administrador.
                       </p>
                     )}
                   </div>
-                  <Field
-                    id="op-admin-email"
-                    label="Correo del administrador a notificar"
-                    type="email"
-                    value={form.adminEmail}
-                    required
-                    placeholder="admin@negocio.com"
-                    error={errores.adminEmail}
-                    onChange={set("adminEmail")}
+                </div>
+
+                <Field
+                  id="op-admin-email"
+                  label="Correo del administrador a notificar"
+                  type="email"
+                  value={form.adminEmail}
+                  required
+                  placeholder="admin@negocio.com"
+                  error={errores.adminEmail}
+                  onChange={set("adminEmail")}
+                />
+
+                <div>
+                  <Label htmlFor="op-nota">Nota / mensaje para el administrador</Label>
+                  <Textarea
+                    value={form.nota}
+                    rows={3}
+                    placeholder="Cuéntale al administrador quién eres o por qué necesitas acceso (opcional)."
+                    onChange={set("nota")}
                   />
-                  <div>
-                    <Label htmlFor="op-nota">Nota / mensaje para el administrador</Label>
-                    <Textarea
-                      value={form.nota}
-                      rows={4}
-                      placeholder="Cuéntale al administrador quién eres o por qué necesitas acceso (opcional)."
-                      onChange={set("nota")}
-                    />
-                  </div>
                 </div>
+              </div>
 
-                {/* Acciones */}
-                <div className="mt-6 flex items-center justify-between gap-3">
-                  <Button size="sm" variant="outline" onClick={() => navigate("/seleccionar")}>
-                    Atrás
-                  </Button>
-                  {/*
-                    El botón NO se deshabilita por formulario incompleto.
-                    Antes era `disabled={!requeridosCompletos}`: si faltaba algo,
-                    quedaba apagado y mudo, el usuario no podía pulsarlo y por
-                    tanto `intentado` nunca se activaba — los mensajes de error
-                    existían pero eran inalcanzables. Se habilita siempre que haya
-                    lista de módulos y el clic sea el que explique qué falta.
-                    Se deshabilita solo cuando no hay nada que enviar (sin módulos).
-                  */}
-                  <Button size="sm" disabled={modulos.length === 0} onClick={enviar}>
-                    Enviar solicitud
-                  </Button>
-                </div>
-                {intentado && !requeridosCompletos && (
-                  <p className="mt-3 text-right text-xs text-error-600 dark:text-error-400">
-                    Revisa los campos marcados para poder enviar la solicitud.
-                  </p>
-                )}
-              </Card>
-            </>
-          ) : (
-            /* Estado de éxito: reemplaza por completo al formulario */
-            <Card>
-              <div className="flex flex-col items-center py-6 text-center">
-                <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-accent-50 text-accent-500 dark:bg-accent-500/10">
-                  <CheckCircleIcon />
-                </span>
-                <h2 className="text-xl font-bold text-ink-title dark:text-white/90">
-                  Tu solicitud fue enviada
-                </h2>
-                <p className="mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
-                  Tu solicitud de acceso a{" "}
-                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                    {labelDeModulo(form.modulo)}
-                  </span>{" "}
-                  ya está registrada y <span className="font-medium text-gray-700 dark:text-gray-300">en revisión por el administrador</span>.
-                  Él la aprobará y te asignará un rol. Te avisaremos cuando tu cuenta esté lista.
-                </p>
+              <div className="pt-6 mt-6 flex items-center justify-between border-t border-gray-100 dark:border-gray-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/onboarding/organizacion")}
+                  className="rounded-full px-6 text-xs font-semibold cursor-pointer"
+                >
+                  ← Volver a Roles
+                </Button>
 
-                {/* Resumen de lo enviado: el usuario ve con qué datos quedó la
-                    solicitud, para detectar un correo mal escrito a tiempo (sin
-                    backend no hay correo de confirmación que lo delate). */}
-                <dl className="mt-6 w-full max-w-sm space-y-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-left text-xs dark:border-gray-800 dark:bg-gray-900">
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-gray-500 dark:text-gray-400">Módulo solicitado</dt>
-                    <dd className="font-medium text-gray-800 dark:text-gray-200">
-                      {labelDeModulo(form.modulo)}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-gray-500 dark:text-gray-400">Correo</dt>
-                    <dd className="truncate font-medium text-gray-800 dark:text-gray-200">
-                      {form.email.trim()}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-gray-500 dark:text-gray-400">Estado</dt>
-                    <dd className="font-medium text-brand-600 dark:text-brand-400">
-                      Pendiente de aprobación
-                    </dd>
-                  </div>
-                </dl>
-
-                <Button size="sm" className="mt-6" onClick={volverAlInicio}>
-                  Volver al inicio / Iniciar sesión
+                <Button
+                  type="button"
+                  disabled={modulos.length === 0}
+                  onClick={enviar}
+                  className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Enviar solicitud
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 ml-1.5 inline"
+                  >
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
                 </Button>
               </div>
-            </Card>
+
+              {intentado && !requeridosCompletos && (
+                <p className="mt-3 text-right text-xs text-error-600 dark:text-error-400">
+                  Revisa los campos marcados para poder enviar la solicitud.
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="flex flex-col items-center py-4 text-center">
+              <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                <CheckCircleIcon />
+              </span>
+              <span className="text-xs font-bold uppercase tracking-wider text-secondary-600 dark:text-brand-400">
+                Solicitud registrada
+              </span>
+              <h2 className="mt-2 text-2xl font-bold text-ink-title dark:text-white">
+                ¡Tu solicitud fue enviada con éxito!
+              </h2>
+              <p className="mt-2 max-w-md text-sm text-ink-body dark:text-gray-400">
+                Tu solicitud de acceso a{" "}
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {labelDeModulo(form.modulo)}
+                </span>{" "}
+                ya está registrada y en revisión por el administrador. Te avisaremos en cuanto tu cuenta esté activa.
+              </p>
+
+              <dl className="mt-6 w-full max-w-md space-y-2.5 rounded-xl border border-gray-100 bg-gray-50/70 p-4 text-left text-xs dark:border-gray-800 dark:bg-gray-800/40">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-gray-500 dark:text-gray-400">Módulo solicitado</dt>
+                  <dd className="font-semibold text-gray-800 dark:text-gray-200">
+                    {labelDeModulo(form.modulo)}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-gray-500 dark:text-gray-400">Correo</dt>
+                  <dd className="truncate font-semibold text-gray-800 dark:text-gray-200">
+                    {form.email.trim()}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-gray-500 dark:text-gray-400">Estado</dt>
+                  <dd className="font-semibold text-brand-600 dark:text-brand-400">
+                    Pendiente de aprobación
+                  </dd>
+                </div>
+              </dl>
+
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full px-6 text-xs font-semibold cursor-pointer"
+                  onClick={() => navigate("/operador/login")}
+                >
+                  Probar simulación
+                </Button>
+                <Button
+                  type="button"
+                  className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer"
+                  onClick={volverAlInicio}
+                >
+                  Ir a inicio de sesión
+                </Button>
+              </div>
+            </div>
           )}
         </div>
-      </div>
+      </OnboardingLayout>
     </>
   );
 });

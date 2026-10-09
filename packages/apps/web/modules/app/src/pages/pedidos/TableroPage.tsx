@@ -17,6 +17,7 @@ import {
 } from "@/stores";
 import type { Pedido, PedidoEstado, Modalidad } from "@/stores/pedidos.store";
 import { retardoEscalonado } from "@/utils";
+import { useFlipLista } from "@/hooks/useFlipLista";
 import { ProgramarModal } from "./ProgramarModal";
 import { DetallePedidoModal } from "./DetallePedidoModal";
 import {
@@ -27,6 +28,7 @@ import { BUSINESS_PROFILES } from "@/domain/pedidos/pedidos.profiles";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
 import {
   AdjustmentsHorizontalIcon,
+  ArrowDownTrayIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   CalendarDaysIcon,
@@ -106,27 +108,96 @@ const WhatsAppIcon = () => (
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
+// ENVOLTURA DE TARJETA DEL KANBAN
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Cuánto tiempo conserva una tarjeta su animación de entrada.
+ *
+ * 500 ms = el retardo máximo del escalonado (`retardoEscalonado`, tope 240 ms)
+ * más los 240 ms que dura `entrada-lista`, con margen.
+ */
+const VENTANA_ENTRADA_MS = 500;
+
+/**
+ * `TarjetaKanban` — la envoltura que lleva `data-flip` y la animación de entrada.
+ *
+ * Existe por una razón concreta, y es la única forma de resolverla: **una
+ * animación de CSS se reinicia cuando su nodo se mueve dentro del DOM.** React
+ * reordena una lista moviendo nodos con `insertBefore`, así que al reordenar el
+ * tablero —ordenar, filtrar— las tarjetas que React recoloca **volvían a
+ * desvanecerse** como si acabaran de aparecer.
+ *
+ * ## El diagnóstico costó dos intentos, y el primero fue la hipótesis equivocada
+ *
+ * Se creyó que el culpable era el `animation-delay`, que sale del índice y por
+ * tanto cambia al reordenar. Se congeló el retardo por tarjeta y **el problema
+ * siguió**: medido, la tarjeta que se re-disparaba tenía un retardo idéntico
+ * antes y después (`0s` → `0s`). El retardo no era la causa; el movimiento del
+ * nodo sí. Congelarlo, además, traía su propio defecto: la primera vez que se ve
+ * una tarjeta puede caer en mitad de la carga desde Supabase, así que se
+ * congelaba un índice transitorio y el escalonado salía arbitrario.
+ *
+ * ## La solución: una ventana acotada
+ *
+ * Pasado `VENTANA_ENTRADA_MS` se retiran la clase y el retardo, y **un elemento
+ * sin `animation-name` no puede reiniciar nada**. La entrada se conserva entera
+ * —el escalonado del montaje sigue igual— y deja de ser un suceso repetible.
+ *
+ * De paso arregla un segundo re-disparo del mismo origen: al mover un pedido, la
+ * clase es `animate-aterrizaje` mientras `recienMovidoId` sigue puesto; al
+ * limpiarse, la clase volvía a `animate-entrada-lista` y la tarjeta se
+ * desvanecía **1,2 s después de haber llegado**. Con la ventana ya no hay clase
+ * que cambiar a esa altura. El aro de resalte no depende de esto: lo pinta
+ * `PedidoCard` con `esRecienMovido`.
+ */
+const TarjetaKanban = ({
+  pedidoId,
+  animacion,
+  retardo,
+  children,
+}: {
+  pedidoId: string;
+  animacion: string;
+  retardo: string;
+  children: React.ReactNode;
+}) => {
+  const [animando, setAnimando] = useState(true);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setAnimando(false), VENTANA_ENTRADA_MS);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  return (
+    <div
+      data-flip={pedidoId}
+      className={animando ? animacion : undefined}
+      style={animando ? { animationDelay: retardo } : undefined}
+    >
+      {children}
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
 // TARJETA DE PEDIDO
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Helper para iniciales de avatar de cliente
-const getIniciales = (nombre?: string | null): string => {
-  if (!nombre || typeof nombre !== "string") return "C";
-  const partes = nombre.trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return "C";
-  if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
-  return ((partes[0][0] || "") + (partes[1]?.[0] || "")).toUpperCase() || "C";
-};
 
 const PedidoCard = observer(
   ({
     pedido,
+    esRecienMovido = false,
+    onDragChange,
     onDetalle,
     onCancelar,
     onConfirmarEntrega,
     onChat,
   }: {
     pedido: Pedido;
+    esRecienMovido?: boolean;
+    onDragChange?: (id: string, isDragging: boolean) => void;
     onDetalle: () => void;
     /** Solicita confirmación de cancelación (modal en el padre). */
     onCancelar: () => void;
@@ -151,18 +222,6 @@ const PedidoCard = observer(
 
     const stop = (e: React.MouseEvent) => e.stopPropagation();
 
-    // Determinar tag visual suave según modalidad u origen
-    const tagModalidad = () => {
-      if (pedido.modalidad === "domicilio") {
-        return { label: "Delivery", bg: "bg-accent-50 text-accent-600 dark:bg-accent-900/30 dark:text-accent-300" };
-      }
-      if (pedido.modalidad === "en_sitio") {
-        return { label: "En Mesa", bg: "bg-secondary-50 text-secondary-600 dark:bg-accent-900/30 dark:text-accent-300" };
-      }
-      return { label: "Pickup", bg: "bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-300" };
-    };
-    const tag = tagModalidad();
-
     // Simular fecha amigable similar a la maqueta (ej. "Today", "Tomorrow" o fecha formateada)
     const fechaAmigable = () => {
       if (pedido.programadoPara) {
@@ -178,18 +237,46 @@ const PedidoCard = observer(
     const primerItemNombre = pedido.items?.[0]?.nombre;
     const [isDragging, setIsDragging] = useState(false);
 
+    // Ranura visual en el lugar de origen mientras se arrastra
+    if (isDragging) {
+      return (
+        <div
+          onDragEnd={() => {
+            setIsDragging(false);
+            onDragChange?.(pedido.id, false);
+          }}
+          className="relative select-none rounded-2xl border-2 border-dashed border-brand-400 bg-brand-50/60 dark:bg-brand-950/30 p-5 text-center min-h-[140px] flex flex-col items-center justify-center gap-2 animate-pulse transition-all shadow-inner"
+        >
+          <div className="flex size-7 items-center justify-center rounded-full bg-brand-500/15 text-brand-600 dark:text-brand-300 font-bold text-xs font-mono">
+            {pedido.numero || "P-000"}
+          </div>
+          <p className="text-xs font-bold text-brand-700 dark:text-brand-300">
+            Moviendo {pedido.numero}...
+          </p>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+            Suelta en cualquier columna de destino
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div
         role="button"
         tabIndex={0}
         draggable
         onDragStart={(e) => {
-          setIsDragging(true);
           e.dataTransfer.setData("text/plain", pedido.id);
           e.dataTransfer.effectAllowed = "move";
+          // Esperar al siguiente ciclo para que el navegador capture la tarjeta completa y nítida
+          setTimeout(() => {
+            setIsDragging(true);
+            onDragChange?.(pedido.id, true);
+          }, 0);
         }}
         onDragEnd={() => {
           setIsDragging(false);
+          onDragChange?.(pedido.id, false);
         }}
         onClick={onDetalle}
         onKeyDown={(e) => {
@@ -198,38 +285,50 @@ const PedidoCard = observer(
             onDetalle();
           }
         }}
-        className={`group relative cursor-grab active:cursor-grabbing select-none rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-200 ease-out hover:shadow-theme-md hover:border-secondary-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
-          isDragging
-            ? "opacity-40 scale-[0.98] ring-2 ring-brand-400/50 shadow-theme-xl rotate-1 cursor-grabbing"
-            : ""
-        } ${
-          urgente
+        className={`group relative cursor-grab active:cursor-grabbing select-none rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-300 ease-out hover:shadow-theme-md hover:-translate-y-0.5 hover:border-secondary-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
+          esRecienMovido
+            ? "animate-aterrizaje ring-2 ring-brand-500 shadow-theme-xl border-brand-400 bg-brand-50/20 dark:bg-brand-950/30"
+            : urgente
             ? "border-error-300 dark:border-error-800"
             : "border-gray-100 dark:border-gray-800"
         }`}
       >
-        {/* Cabecera de la tarjeta: Título + Avatar del responsable / cliente */}
-        <div className="flex items-start justify-between gap-3">
+        {/* Cabecera de la tarjeta: Cliente + Número de pedido y Grip handle de manipulación */}
+        <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm sm:text-base font-semibold text-ink-title dark:text-white line-clamp-2 leading-snug">
-              {primerItemNombre ? primerItemNombre : `Pedido ${pedido.numero || ""}`}
+            <h3 className="text-sm sm:text-base font-bold text-ink-title dark:text-white truncate leading-snug">
+              {pedido.cliente || `Pedido ${pedido.numero || ""}`}
             </h3>
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 font-medium truncate">
-              {pedido.numero || "P-000"} · {pedido.cliente || "Cliente"}
+            <p className="mt-0.5 text-xs font-mono font-semibold text-gray-500 dark:text-gray-400">
+              {pedido.numero || "P-000"}
             </p>
           </div>
 
-          <div className="relative shrink-0">
-            <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-full bg-secondary-100 text-ink-title font-bold text-xs ring-2 ring-white dark:bg-brand-900/40 dark:text-brand-300 dark:ring-gray-800 shadow-theme-xs">
-              {getIniciales(pedido.cliente)}
-            </div>
+          {/* Símbolo de puntos 2x3 para indicar que la tarjeta se manipula/arrastra */}
+          <div
+            className="flex size-7 items-center justify-center rounded-lg text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60 transition-colors shrink-0 cursor-grab active:cursor-grabbing"
+            title="Arrastrar para mover de columna"
+            aria-label="Arrastrar pedido"
+          >
+            <svg
+              className="size-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300 transition-colors"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <circle cx="9" cy="6" r="1.75" />
+              <circle cx="15" cy="6" r="1.75" />
+              <circle cx="9" cy="12" r="1.75" />
+              <circle cx="15" cy="12" r="1.75" />
+              <circle cx="9" cy="18" r="1.75" />
+              <circle cx="15" cy="18" r="1.75" />
+            </svg>
           </div>
         </div>
 
-        {/* Descripción secundaria / notas */}
-        {descripcionItems && (
-          <p className="mt-2.5 text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
-            {descripcionItems}
+        {/* Descripción de ítems (menciona los productos exactamente una vez) */}
+        {(descripcionItems || primerItemNombre) && (
+          <p className="mt-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium line-clamp-2">
+            {descripcionItems || primerItemNombre}
           </p>
         )}
 
@@ -260,36 +359,34 @@ const PedidoCard = observer(
               <span>{pedido.pagado ? "Pagado" : "Por cobrar"}</span>
             </button>
 
-            <span
-              className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold tracking-wide ${tag.bg}`}
-            >
-              {tag.label}
-            </span>
+            {puedeEscribir && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChat();
+                }}
+                className="flex items-center gap-1 rounded-lg border border-accent-200 bg-accent-50/70 hover:bg-accent-100 px-2 py-1 text-[11px] font-medium text-accent-700 dark:border-accent-800 dark:bg-accent-950/40 dark:text-accent-300 transition-colors cursor-pointer"
+                title="Abrir chat con el cliente"
+              >
+                <WhatsAppIcon />
+                <span>Chat</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Barra de acciones operativas (Avanzar estado / WhatsApp / Cancelar) */}
+        {/* Barra de acciones operativas (Avanzar estado a la izquierda / Cancelar a la derecha) */}
         {!sinAcciones && (
-          <div className="mt-3 flex items-center justify-between gap-2 pt-2" onClick={stop}>
-            <div className="flex items-center gap-2">
+          <div className="mt-3 flex items-center justify-between gap-3 pt-1" onClick={stop}>
+            <div>
               {siguiente && puedeAvanzar && (
                 <button
                   type="button"
                   onClick={handleAvanzar}
-                  className="rounded-lg bg-brand-500 hover:bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-colors cursor-pointer"
+                  className="rounded-lg bg-brand-500 hover:bg-brand-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-colors cursor-pointer"
                 >
                   {pedidosStore.estadoLabel(siguiente)} →
-                </button>
-              )}
-
-              {puedeEscribir && (
-                <button
-                  type="button"
-                  onClick={onChat}
-                  className="flex items-center gap-1 rounded-lg border border-accent-200 bg-accent-50/70 hover:bg-accent-100/80 px-2.5 py-1.5 text-xs font-medium text-accent-700 dark:border-accent-800 dark:bg-accent-950/40 dark:text-accent-300 transition-colors cursor-pointer"
-                >
-                  <WhatsAppIcon />
-                  <span>Chat</span>
                 </button>
               )}
             </div>
@@ -298,7 +395,7 @@ const PedidoCard = observer(
               <button
                 type="button"
                 onClick={onCancelar}
-                className="text-[11px] font-medium text-error-500 hover:text-error-600 transition-colors cursor-pointer"
+                className="text-xs font-medium text-error-500 hover:text-error-600 hover:underline transition-colors cursor-pointer px-1 py-1"
               >
                 Cancelar
               </button>
@@ -941,6 +1038,9 @@ interface ColumnaKanbanProps {
   colIndex: number;
   columnas: PedidoEstado[];
   items: Pedido[];
+  recienMovidoId?: string | null;
+  onMoverPedido?: (id: string, destino: PedidoEstado) => void;
+  onDragChange?: (id: string, isDragging: boolean) => void;
   menuColumnaId: string | null;
   setMenuColumnaId: (id: string | null) => void;
   setNuevoLabelEdit: (label: string) => void;
@@ -956,6 +1056,9 @@ const ColumnaKanban = observer(({
   colIndex,
   columnas,
   items,
+  recienMovidoId,
+  onMoverPedido,
+  onDragChange,
   menuColumnaId,
   setMenuColumnaId,
   setNuevoLabelEdit,
@@ -972,6 +1075,7 @@ const ColumnaKanban = observer(({
       onDragOver={(e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
+        if (!isDragOver) setIsDragOver(true);
       }}
       onDragEnter={(e) => {
         e.preventDefault();
@@ -988,12 +1092,16 @@ const ColumnaKanban = observer(({
         setIsDragOver(false);
         const id = e.dataTransfer.getData("text/plain");
         if (id) {
-          pedidosStore.moverAColumna(id, estado);
+          if (onMoverPedido) {
+            onMoverPedido(id, estado);
+          } else {
+            pedidosStore.moverAColumna(id, estado);
+          }
         }
       }}
       className={`flex flex-col h-full max-h-full min-h-0 rounded-3xl transition-all duration-200 ease-out overflow-hidden p-3 sm:p-4 ${
         isDragOver
-          ? "bg-brand-50/50 ring-2 ring-brand-400/60 border-brand-300 dark:bg-brand-950/30 dark:border-brand-500/50 dark:ring-brand-500/30 scale-[1.01]"
+          ? "bg-brand-50/70 ring-2 ring-brand-400/80 border-brand-300 dark:bg-brand-950/40 dark:border-brand-500/60 dark:ring-brand-500/40 scale-[1.01]"
           : "bg-gray-50/90 dark:bg-white/[0.02] border border-gray-100/80 dark:border-gray-800/60"
       }`}
     >
@@ -1094,23 +1202,44 @@ const ColumnaKanban = observer(({
       </div>
 
       {/* Lista de tarjetas Kanban con scroll interno independiente */}
-      <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-3.5 [scrollbar-width:thin]">
-        {items.map((p, i) => (
-          <div
-            key={p.id}
-            className="animate-entrada-lista"
-            style={{ animationDelay: retardoEscalonado(i) }}
-          >
-            <PedidoCard
-              pedido={p}
-              onDetalle={() => onDetalle(p.id)}
-              onCancelar={() => onCancelar(p.id)}
-              onConfirmarEntrega={() => onConfirmarEntrega(p.id)}
-              onChat={() => onChat(p.id)}
-            />
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-3.5 [scrollbar-width:thin] transition-all">
+        {/* Ranura animada de destino cuando se arrastra sobre esta columna */}
+        {isDragOver && (
+          <div className="rounded-2xl border-2 border-dashed border-brand-500 bg-brand-50/70 dark:bg-brand-950/40 p-4 flex items-center justify-center gap-2.5 text-center animate-pulse transition-all shadow-theme-xs select-none">
+            <ArrowDownTrayIcon className="size-4.5 text-brand-500 animate-bounce" />
+            <div className="text-left">
+              <span className="text-xs font-bold text-brand-700 dark:text-brand-300 block">
+                Soltar pedido aquí
+              </span>
+              <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                Se moverá a {pedidosStore.estadoLabel(estado)}
+              </span>
+            </div>
           </div>
-        ))}
-        {items.length === 0 && (
+        )}
+
+        {items.map((p, i) => {
+          const esRecienMovido = p.id === recienMovidoId;
+          return (
+            <TarjetaKanban
+              key={p.id}
+              pedidoId={p.id}
+              animacion={esRecienMovido ? "animate-aterrizaje" : "animate-entrada-lista"}
+              retardo={esRecienMovido ? "0ms" : retardoEscalonado(i)}
+            >
+              <PedidoCard
+                pedido={p}
+                esRecienMovido={esRecienMovido}
+                onDragChange={onDragChange}
+                onDetalle={() => onDetalle(p.id)}
+                onCancelar={() => onCancelar(p.id)}
+                onConfirmarEntrega={() => onConfirmarEntrega(p.id)}
+                onChat={() => onChat(p.id)}
+              />
+            </TarjetaKanban>
+          );
+        })}
+        {items.length === 0 && !isDragOver && (
           <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200/80 py-12 text-center text-xs font-medium text-gray-400 dark:border-gray-800/80">
             Sin pedidos
           </div>
@@ -1169,6 +1298,18 @@ export const TableroPage = observer(() => {
 
   const [focusId, setFocusId] = useState<string | null>(null);
   const [vista, setVista] = useState<VistaTablero>(loadVista);
+  // Rastreo de arrastre activo y última tarjeta reubicada para animación de aterrizaje
+  const [, setArrastrandoId] = useState<string | null>(null);
+  const [recienMovidoId, setRecienMovidoId] = useState<string | null>(null);
+
+  const handleMoverPedido = (id: string, destino: PedidoEstado) => {
+    setRecienMovidoId(id);
+    pedidosStore.moverAColumna(id, destino);
+    setTimeout(() => {
+      setRecienMovidoId(null);
+    }, 1200);
+  };
+
   // Chat rápido (slide-over). Guarda el ID del pedido, no el teléfono: así el
   // drawer resuelve el hilo con el resolutor canónico del store y no se duplica
   // la regla de normalización de teléfono en el call site.
@@ -1319,6 +1460,16 @@ export const TableroPage = observer(() => {
     }
     return estado === columnaFiltroActiva;
   });
+
+  // FLIP del tablero. La firma describe el orden actual —cada columna visible y
+  // los pedidos que tiene, en orden—, así que el efecto solo se dispara cuando
+  // algo cambió de sitio de verdad. Sin ella habría que medir en cada render, y
+  // el store tiene un `tick` por segundo: sería forzar un cálculo de layout cada
+  // segundo para descubrir que nada se movió.
+  const firmaTablero = columnasVisibles
+    .map((estado) => `${estado}:${pedidosDeColumna(estado).map((p) => p.id).join(",")}`)
+    .join("|");
+  const tableroRef = useFlipLista<HTMLDivElement>(firmaTablero);
 
   return (
     <>
@@ -1624,6 +1775,7 @@ export const TableroPage = observer(() => {
       {/* Tablero — vista Kanban o Lista */}
       {vista === "kanban" ? (
         <div
+          ref={tableroRef}
           className={`animate-aparecer flex-1 min-h-0 h-full overflow-x-auto grid grid-cols-1 gap-6 ${
             columnasVisibles.length === 1
               ? "max-w-md w-full mr-auto"
@@ -1645,6 +1797,9 @@ export const TableroPage = observer(() => {
                 colIndex={colIndex}
                 columnas={columnas}
                 items={items}
+                recienMovidoId={recienMovidoId}
+                onMoverPedido={handleMoverPedido}
+                onDragChange={(id, dragging) => setArrastrandoId(dragging ? id : null)}
                 menuColumnaId={menuColumnaId}
                 setMenuColumnaId={setMenuColumnaId}
                 setNuevoLabelEdit={setNuevoLabelEdit}

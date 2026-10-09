@@ -21,6 +21,7 @@ import {
   etiquetaEstado,
   ATENCION_LABEL,
   puedeEscribirCliente,
+  hayCanalesMensajeriaActivos,
   puedeCrearPedido,
   motivoSinPermiso,
   puedeGuardarConfig,
@@ -403,7 +404,7 @@ const ClientesModal = observer(
                 key={f.conv.id}
                 fila={f}
                 onClick={() => onChat(f.conv.id)}
-                showWhatsApp={puedeEscribirCliente()}
+                showWhatsApp={puedeEscribirCliente() && hayCanalesMensajeriaActivos()}
               />
             ))
           )}
@@ -427,6 +428,7 @@ const ClientesCardWidget = observer(
     className?: string;
   }) => {
     const navigate = useNavigate();
+    const canalesActivos = hayCanalesMensajeriaActivos();
     const filas = filasDeClientes();
     const urgentes = filas
       .filter((f) => estadoAtencionDe(f.conv) === "pide_asesor")
@@ -440,16 +442,38 @@ const ClientesCardWidget = observer(
       <div
         className={`rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 flex flex-col justify-between ${className}`}
       >
-      <div className="flex items-center justify-between gap-2 mb-5">
+      <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <h2 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">Chat & Conversaciones</h2>
-          <CampanitaAtencion onClick={onAbrir} />
+          {!canalesActivos ? (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+              Desconectado
+            </span>
+          ) : (
+            <CampanitaAtencion onClick={onAbrir} />
+          )}
         </div>
         {/* El acceso a Conversaciones es el botón del pie («Ver todas las
             conversaciones»): un segundo botón arriba para el mismo destino era
             el mismo atajo dos veces. */}
         <BotonSilenciar />
       </div>
+
+      {!canalesActivos && (
+        <div className="mb-3 flex items-center justify-between gap-2 rounded-2xl border border-amber-200/90 bg-amber-50/70 p-3 text-xs text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+            <span className="truncate">Canales de chat inactivos · No es posible enviar mensajes</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/pedidos/config?seccion=integraciones")}
+            className="font-bold underline text-[#190088] hover:text-[#FF3F1A] dark:text-amber-300 shrink-0 cursor-pointer"
+          >
+            Configurar
+          </button>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <ListaVacia>Sin conversaciones activas.</ListaVacia>
@@ -501,7 +525,9 @@ const ClientesCardWidget = observer(
                       <ExclamationCircleIcon className="size-3" />
                       Solicitó atención humana
                     </span>
-                    <span className="text-secondary-600 dark:text-brand-400 hover:underline">Responder →</span>
+                    <span className={canalesActivos ? "text-secondary-600 dark:text-brand-400 hover:underline" : "text-amber-700 dark:text-amber-400"}>
+                      {canalesActivos ? "Responder →" : "Solo lectura"}
+                    </span>
                   </div>
                 )}
               </div>
@@ -674,13 +700,6 @@ export const InicioPage = observer(() => {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
               {saludoText}
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-50 px-2.5 py-1 text-xs font-medium text-accent-600 dark:bg-accent-500/15 dark:text-accent-400">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-500" />
-              </span>
-              en vivo
-            </span>
           </div>
           <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">
             Resumen claro y en tiempo real del rendimiento operativo, pedidos y atención multicanal.
@@ -727,8 +746,33 @@ export const InicioPage = observer(() => {
         <EstadosOverview />
       </div>
 
-      {/* ── FILA 2: PEDIDOS RECIENTES & ACTIVIDAD (ANCHO ~60%) + CALENDARIO SEMANAL (~40%) ── */}
+      {/* ── FILA 2: PEDIDO PRIORITARIO DESTACADO (~60%) + CHAT & CONVERSACIONES (~40%) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mb-6">
+        <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
+          <PedidoDestacadoCard onVerDetalle={setDetalleId} />
+        </div>
+
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
+          <ClientesCardWidget
+            onAbrir={() => setClientesOpen(true)}
+            onChat={abrirChat}
+            className="h-full"
+          />
+        </div>
+      </div>
+
+      {/* ── FILA 3: CALENDARIO SEMANAL (~40%) + PEDIDOS RECIENTES & ACTIVIDAD (~60%) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
+          <CalendarioSemanalWidget
+            seleccion={dia}
+            onSeleccion={setDia}
+            onAbrirModalCompleto={() => setCalendarioOpen(true)}
+            onVerPedido={verPedido}
+            className="h-full"
+          />
+        </div>
+
         <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
           <div className="rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 h-full flex flex-col justify-between">
             <div className="flex items-center justify-between gap-3 mb-3">
@@ -750,31 +794,6 @@ export const InicioPage = observer(() => {
 
             <PedidosEnCursoCard onVerPedido={verPedido} />
           </div>
-        </div>
-
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
-          <CalendarioSemanalWidget
-            seleccion={dia}
-            onSeleccion={setDia}
-            onAbrirModalCompleto={() => setCalendarioOpen(true)}
-            onVerPedido={verPedido}
-            className="h-full"
-          />
-        </div>
-      </div>
-
-      {/* ── FILA 3: CHAT & CONVERSACIONES (~40%) + ATENCIÓN INMEDIATA REQUERIDA (ANCHO ~60%) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
-          <ClientesCardWidget
-            onAbrir={() => setClientesOpen(true)}
-            onChat={abrirChat}
-            className="h-full"
-          />
-        </div>
-
-        <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
-          <PedidoDestacadoCard onVerDetalle={setDetalleId} />
         </div>
       </div>
 

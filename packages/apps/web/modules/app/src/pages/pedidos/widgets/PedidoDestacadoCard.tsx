@@ -68,7 +68,7 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
     "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=300&q=80";
 
   return (
-    <div className="relative overflow-hidden flex flex-col justify-between h-full rounded-3xl bg-[#190088] p-6 sm:p-8 lg:p-9 text-white shadow-xl min-h-[360px] font-sans border border-white/10">
+    <div className="relative overflow-hidden flex flex-col justify-between h-full rounded-3xl bg-[#190088] dark:bg-[#FF3F1A] p-6 sm:p-8 lg:p-9 text-white shadow-xl min-h-[360px] font-sans border border-white/10 transition-colors duration-300">
       {/* Contenido en capa superior */}
       <div className="relative z-10 flex flex-col justify-between h-full gap-6">
         {pedidoActivo ? (
@@ -82,25 +82,25 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
                   {pedidoActivo.numero}
                 </h2>
 
-                {/* Badge de prioridad y estado con punto naranja */}
+                {/* Badge de prioridad y estado con punto que alterna entre naranja (claro) e índigo (oscuro) */}
                 <div className="inline-flex items-center gap-2.5 self-start rounded-full bg-white/10 border border-white/20 px-3.5 py-1.5 text-xs sm:text-sm font-bold text-white/95 backdrop-blur-xs">
                   <span>
                     Pedido Prioritario ({pedidosStore.estadoLabel(pedidoActivo.estado)})
                   </span>
                   <span className="relative flex h-2.5 w-2.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF3F1A] opacity-75" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#FF3F1A]" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF3F1A] dark:bg-[#190088] opacity-75" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#FF3F1A] dark:bg-[#190088]" />
                   </span>
                 </div>
 
                 {/* Cliente con icono de modalidad grande */}
                 <div className="flex items-center gap-3 text-xl sm:text-2xl md:text-3xl font-bold text-white">
                   {pedidoActivo.modalidad === "domicilio" ? (
-                    <Bike className="size-6 sm:size-7 md:size-8 text-[#97D6DF] shrink-0" />
+                    <Bike className="size-6 sm:size-7 md:size-8 text-[#97D6DF] dark:text-white shrink-0" />
                   ) : pedidoActivo.modalidad === "retiro" ? (
-                    <BuildingStorefrontIcon className="size-6 sm:size-7 md:size-8 text-[#97D6DF] shrink-0" />
+                    <BuildingStorefrontIcon className="size-6 sm:size-7 md:size-8 text-[#97D6DF] dark:text-white shrink-0" />
                   ) : (
-                    <UtensilsCrossed className="size-6 sm:size-7 md:size-8 text-[#97D6DF] shrink-0" />
+                    <UtensilsCrossed className="size-6 sm:size-7 md:size-8 text-[#97D6DF] dark:text-white shrink-0" />
                   )}
                   <span className="truncate">{pedidoActivo.cliente}</span>
                 </div>
@@ -134,7 +134,7 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
                   {/* Detalle y texto amplio para ocupar el largo de la tarjeta */}
                   <div className="min-w-0 flex-1 flex flex-col justify-between py-1 text-left w-full gap-2">
                     <div className="flex items-start gap-2.5">
-                      <span className="text-base text-[#97D6DF] mt-0.5 shrink-0 font-bold">•</span>
+                      <span className="text-base text-[#97D6DF] dark:text-white mt-0.5 shrink-0 font-bold">•</span>
                       <p className="text-base sm:text-lg md:text-xl font-black text-white leading-snug line-clamp-3">
                         {itemPrincipal
                           ? `${itemPrincipal.cantidad}× ${itemPrincipal.nombre}`
@@ -149,7 +149,7 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
                     ) : null}
 
                     {pedidoActivo.items.length > 1 && (
-                      <p className="text-xs sm:text-sm text-[#97D6DF] pl-4 font-bold">
+                      <p className="text-xs sm:text-sm text-[#97D6DF] dark:text-white/90 pl-4 font-bold">
                         +{pedidoActivo.items.length - 1} producto(s) adicional(es) en esta orden
                       </p>
                     )}
@@ -174,7 +174,7 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
               <button
                 type="button"
                 onClick={handleAvanzar}
-                className="w-full sm:flex-[1.6] flex items-center justify-center gap-2.5 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03514] px-6 py-4 text-base sm:text-lg font-bold text-white shadow-md transition-all active:scale-98 cursor-pointer border border-white/10"
+                className="w-full sm:flex-[1.6] flex items-center justify-center gap-2.5 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03514] dark:bg-[#190088] dark:hover:bg-[#13006d] px-6 py-4 text-base sm:text-lg font-bold text-white shadow-md transition-all active:scale-98 cursor-pointer border border-white/10"
               >
                 <CheckCircleIcon className="size-5 shrink-0" />
                 <span>Avanzar a: {labelLimpio}</span>

@@ -111,6 +111,7 @@
   .animate-entrada-menu,
   .animate-salida-menu,
   .animate-entrada-lista,
+  .animate-aterrizaje,
   .necto-escalonado > * {
     animation: none;
   }

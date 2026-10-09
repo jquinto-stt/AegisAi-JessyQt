@@ -2,11 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
-import { Card } from "@/elements/ui/card";
 import { Button } from "@/elements/ui/button";
 import { Select } from "@/elements/form/select";
 import { Label } from "@/elements/form/label";
-import { ThemeToggleButton } from "@/shell";
+import { OnboardingLayout } from "@/pages/onboarding";
 import {
   operadoresStore,
   sessionStore,
@@ -56,23 +55,46 @@ export const OperadorLoginPage = observer(() => {
     <>
       <PageMeta title="Simular operador · Necto" description="Entra como un operador para ver la app con sus permisos" />
 
-      <div className="relative min-h-screen bg-gray-50 px-6 py-12 dark:bg-gray-950">
-        <div className="fixed right-6 top-6 z-50">
-          <ThemeToggleButton variant="floating" />
-        </div>
-
-        <div className="mx-auto flex w-full max-w-md flex-col">
-          {/* Encabezado centrado */}
-          <div className="mb-8 flex flex-col items-center text-center">
-            <img src="/images/logo/necto-icon.svg" alt="NECTO" className="mb-4 h-10 w-10" />
-            <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">Simular acceso</h1>
-            <p className="mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+      <OnboardingLayout
+        pasoActual={2}
+        totalPasos={2}
+        pasoLabel="Simular Operador"
+        onBack={() => navigate(-1)}
+        brandBadge="Modo Simulación"
+        brandHeadline="Prueba la experiencia de tu equipo"
+        brandDescription="Selecciona un operador existente para ver el panel exactamente como lo ve él, con sus accesos y permisos específicos."
+        brandBullets={[
+          "Previsualización de pedidos en tiempo real",
+          "Permisos acotados según el rol asignado",
+          "Cambia de operador en cualquier momento",
+        ]}
+        brandSummary={{
+          eyebrow: "Simulación de sesión",
+          title: elegido ? elegido.nombre : "Sin operador elegido",
+          lines: [
+            elegido
+              ? rolNombre
+                ? `Rol: ${rolNombre}`
+                : `Cargo: ${elegido.cargo}`
+              : "Selecciona un operador",
+            elegido ? `Módulo: ${MODULO_LABEL[elegido.modulo] || elegido.modulo}` : "Vista previa con permisos",
+          ],
+        }}
+      >
+        <div className="w-full">
+          <div className="mb-6">
+            <span className="text-xs font-bold uppercase tracking-wider text-secondary-600 dark:text-brand-400">
+              Herramienta de prueba
+            </span>
+            <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
+              Simular acceso de operador
+            </h1>
+            <p className="mt-2 text-sm text-ink-body dark:text-gray-400">
               Elige el operador cuya vista quieres probar. Verás la plataforma con sus permisos exactos.
             </p>
           </div>
 
-          {/* Tarjeta con el selector */}
-          <Card className="p-6">
+          <div className="space-y-5">
             <div>
               <Label htmlFor="op-select" className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Operador a simular
@@ -87,7 +109,7 @@ export const OperadorLoginPage = observer(() => {
 
             {/* Resumen del operador elegido */}
             {elegido && (
-              <div className="mt-5 rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+              <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
                 <div className="flex items-center gap-3">
                   {elegido.avatarUrl && (
                     <img
@@ -113,26 +135,26 @@ export const OperadorLoginPage = observer(() => {
             )}
 
             {/* Acciones */}
-            <div className="mt-6 flex items-center justify-between gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between gap-3 pt-6 border-t border-gray-100 dark:border-gray-800">
               <Button
-                size="sm"
+                type="button"
                 variant="outline"
                 onClick={() => navigate(-1)}
-                className="rounded-full px-5 cursor-pointer"
+                className="rounded-full px-6 text-xs font-semibold cursor-pointer"
               >
-                Volver
+                ← Volver
               </Button>
               <Button
-                size="sm"
+                type="button"
                 disabled={!elegido}
                 onClick={entrar}
-                className="rounded-full px-6 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-sm shadow-brand-500/20 cursor-pointer disabled:opacity-50"
+                className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer disabled:opacity-50"
               >
                 Simular acceso
               </Button>
             </div>
 
-            <div className="mt-5 pt-4 border-t border-dashed border-gray-200 dark:border-gray-800 text-center">
+            <div className="pt-4 border-t border-dashed border-gray-200 dark:border-gray-800 text-center">
               <Button
                 size="sm"
                 variant="outline"
@@ -149,9 +171,9 @@ export const OperadorLoginPage = observer(() => {
                 Simular inicio desde 0 (Sin datos · Onboarding)
               </Button>
             </div>
-          </Card>
+          </div>
         </div>
-      </div>
+      </OnboardingLayout>
     </>
   );
 });

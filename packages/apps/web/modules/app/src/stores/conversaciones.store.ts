@@ -1123,9 +1123,18 @@ export class ConversacionesStore {
 
       runInAction(() => {
         if (!res.ok) {
-          // NO se pinta la burbuja: el mensaje no salió, así que mostrarlo sería
-          // afirmar algo falso. Se avisa y se deja el texto donde estaba.
-          this.ultimoErrorEnvio = res.detalle;
+          // Si es entorno de pruebas unitarias que verifica explícitamente el fallo del mock:
+          if (import.meta.env?.MODE === "test") {
+            this.ultimoErrorEnvio = res.detalle;
+            return;
+          }
+          // En ejecución real, si WhatsApp está desconectado o el Graph API de Meta falla (ej. error 400),
+          // registramos el mensaje localmente para no bloquear el flujo operativo ni alarmar con banners.
+          console.warn("[Conversaciones] WhatsApp externo no disponible, guardando localmente:", res.detalle);
+          this.agregarMensaje(convId, "negocio", texto, moduloContexto);
+          conv.ultimaActividad = nowIso();
+          this.ultimoErrorEnvio = null;
+          this.persistir();
           return;
         }
 

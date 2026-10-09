@@ -163,6 +163,8 @@ export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelC
     const params = new URLSearchParams();
     if (nombre) params.set("cliente", nombre);
     if (telefono) params.set("telefono", telefono);
+    params.set("modalidad", "domicilio");
+    if (convId) params.set("chatId", convId);
     const dirs = pedidosStore.direccionesDe(telefono);
     const principal = dirs[0];
     if (principal?.calle) params.set("calle", principal.calle);

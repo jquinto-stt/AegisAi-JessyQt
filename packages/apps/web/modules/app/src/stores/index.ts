@@ -117,6 +117,8 @@ export {
   puedeEditarPlantillas,
   puedeVerConversaciones,
   puedeResponderConversacion,
+  hayCanalesMensajeriaActivos,
+  puedeEscribirEnConversaciones,
   puedeGuardarConfig,
   puedeVerConfig,
   puedeGestionarEquipo,

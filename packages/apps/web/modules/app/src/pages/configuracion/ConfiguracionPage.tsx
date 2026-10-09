@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useSearchParams } from "react-router";
 
 import { PageMeta } from "@/shell/meta";
-import { ChevronLeftIcon, EyeIcon, IdentificationIcon, PlugInIcon } from "@/icons";
+import { ChevronLeftIcon, EyeIcon, PlugInIcon } from "@/icons";
 import { organizacionStore } from "@/stores";
 import { ConfigHub, ConfigShell } from "@/pages/config-layout";
 
@@ -176,12 +176,6 @@ export const ConfiguracionPage = observer(() => {
 
       <ConfigHub
         tarjetas={[
-          {
-            key: "general",
-            label: "Información de la sede",
-            hint: "Nombre comercial, logo, país, moneda de cobro y perfil de rubro.",
-            icono: IdentificationIcon,
-          },
           {
             key: "modulos",
             label: "Módulos e integraciones",

@@ -143,14 +143,15 @@ export const OrganizacionOnboardingPage = observer(() => {
       return;
     }
 
-    // Si seleccionó pedidos, continúa al onboarding del perfil de negocio
-    if (modulos.includes("pedidos")) {
-      navigate("/onboarding/pedidos");
-      return;
-    }
+    // Administrador: entra directo y limpio al módulo que escogió
+    const destino =
+      sessionStore.moduloEntryPath && sessionStore.moduloEntryPath !== "/seleccionar"
+        ? sessionStore.moduloEntryPath
+        : modulos.includes("pedidos")
+        ? "/pedidos/inicio"
+        : "/inventarios/existencias";
 
-    // Si solo tiene inventarios u otro módulo, entra directo
-    navigate(sessionStore.moduloEntryPath || "/pedidos/inicio");
+    navigate(destino);
   };
 
   return (
@@ -164,13 +165,14 @@ export const OrganizacionOnboardingPage = observer(() => {
         pasoActual={2}
         totalPasos={2}
         pasoLabel="Rol de acceso"
+        onBack={() => navigate("/onboarding/perfil")}
         brandMessages={BRAND_MESSAGES_ROL}
         brandSummary={{
           eyebrow: "Paso 2 de 2",
           title: esOperador ? "Solicitud de Operador" : "Rol Administrador",
           lines: [
             `Módulos: ${modulosLabel}`,
-            esOperador ? "Requiere aprobación de admin" : "Acceso total y configuración",
+            esOperador ? "Requiere aprobación de admin" : "Acceso directo a la plataforma",
           ],
         }}
       >

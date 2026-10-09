@@ -3,3 +3,4 @@ export { OrganizacionOnboardingPage } from "./OrganizacionOnboardingPage";
 export { OnboardingModulosPage } from "./OnboardingModulosPage";
 export { PedidosOnboardingPage } from "./PedidosOnboardingPage";
 export { EncuestaOnboardingPage } from "./EncuestaOnboardingPage";
+export { OnboardingLayout } from "./OnboardingLayout";

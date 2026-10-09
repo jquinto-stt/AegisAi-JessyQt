@@ -1,6 +1,7 @@
 import { sessionStore } from "@/stores/session.store";
 import { rolesStore, CAPACIDAD_LABEL, type Capacidad } from "@/stores/roles.store";
 import type { PedidoEstado } from "@/stores/pedidos.store";
+import { organizacionStore } from "@/stores/organizacion.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPERS DE CAPACIDAD — módulo Pedidos
@@ -142,9 +143,35 @@ export function puedeVerConversaciones(): boolean {
   return puede("channels.read");
 }
 
+/** Comprueba si hay al menos un canal de mensajería (WhatsApp, IG, FB) conectado y activo. */
+export function hayCanalesMensajeriaActivos(): boolean {
+  try {
+    const guardado =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem("pedidos_canales_integraciones")
+        : null;
+    if (guardado) {
+      const parsed = JSON.parse(guardado);
+      const whatsapp =
+        parsed.whatsapp !== undefined
+          ? Boolean(parsed.whatsapp)
+          : organizacionStore.esConectorActivo("pedidos", "whatsapp");
+      const instagram = Boolean(parsed.instagram);
+      const facebook = Boolean(parsed.facebook);
+      return whatsapp || instagram || facebook;
+    }
+  } catch {}
+  return organizacionStore.esConectorActivo("pedidos", "whatsapp");
+}
+
 /** Responder en una conversación (tomar/devolver y enviar como negocio). */
 export function puedeResponderConversacion(): boolean {
   return puede("channels.respond");
+}
+
+/** Comprueba si el operador tiene permiso Y hay canales activos para poder enviar mensajes. */
+export function puedeEscribirEnConversaciones(): boolean {
+  return puedeResponderConversacion() && hayCanalesMensajeriaActivos();
 }
 
 /** Editar las plantillas de mensaje del canal. */

@@ -7,7 +7,7 @@ import { Button } from "@/elements/ui/button";
 import { Avatar } from "@/elements/ui/avatar";
 import { Modal } from "@/elements/ui/modal";
 import { pedidosStore, conversacionesStore, sessionStore } from "@/stores";
-import { puede, puedeResponderConversacion, motivoSinPermiso } from "@/stores/acceso.utils";
+import { puede, puedeResponderConversacion, hayCanalesMensajeriaActivos, motivoSinPermiso } from "@/stores/acceso.utils";
 import { ATENCION_LABEL, etiquetaEstado, presenciaDe } from "@/stores";
 import type { ConversacionCanal } from "@/stores";
 import { CanalAvatar } from "@/pages/conversaciones";
@@ -62,7 +62,8 @@ const FilaUrgente = observer(
     onAbrir: () => void;
     onTomar: () => void;
   }) => {
-    const puedeTomar = puedeResponderConversacion();
+    const canalesActivos = hayCanalesMensajeriaActivos();
+    const puedeTomar = puedeResponderConversacion() && canalesActivos;
     const pedido = pedidosStore.pedidoActivoDe(conv.contacto.telefono);
 
     return (
@@ -93,7 +94,7 @@ const FilaUrgente = observer(
           </span>
           {/* `title` con el motivo: un botón gris sin explicación obliga a
               adivinar si falta un permiso o si la acción está rota. */}
-          <span title={puedeTomar ? undefined : motivoSinPermiso("channels.respond")}>
+          <span title={!canalesActivos ? "Canales desconectados. Configura WhatsApp en Integraciones" : !puedeTomar ? motivoSinPermiso("channels.respond") : undefined}>
             <Button size="sm" variant="outline" disabled={!puedeTomar} onClick={onTomar}>
               Tomar
             </Button>
@@ -110,7 +111,7 @@ export const UrgentChatsWidget = observer(({ max = 5 }: { max?: number }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const lista = urgentes();
   const visibles = lista.slice(0, max);
-  const puedeTomar = puedeResponderConversacion();
+  const puedeTomar = puedeResponderConversacion() && hayCanalesMensajeriaActivos();
 
   /**
    * Toma el hilo para el operador de la sesión.

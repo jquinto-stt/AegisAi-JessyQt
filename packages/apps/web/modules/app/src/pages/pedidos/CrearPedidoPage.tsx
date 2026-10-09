@@ -1,14 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
-import { Alert } from "@/elements/ui/alert";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
-import { Select } from "@/elements/form/select";
 import { Switch } from "@/elements/form/switch";
 import { Button } from "@/elements/ui/button";
-import { Badge } from "@/elements/ui/badge";
 import { pedidosStore, puedeCrearPedido, puedeGestionarProgramados, motivoSinPermiso } from "@/stores";
 import type { ModalidadPedido, PedidoItem, MetodoPago, DireccionEntrega } from "@/stores";
 import { BUSINESS_PROFILES } from "@/domain/pedidos/pedidos.profiles";
@@ -17,49 +14,45 @@ import {
   datosParaTransferir,
   mediosDeCobroHabilitados,
   mensajeDeCobro,
+  enlaceDePago,
 } from "./cobros";
+import { conversacionesStore } from "@/stores/conversaciones.store";
+import { sessionStore } from "@/stores/session.store";
+import QRCode from "qrcode";
+import { QrCodeIcon } from "@heroicons/react/24/outline";
+import { asignarFotoInteligente } from "./CatalogoPage";
+import { getSupabase, ESQUEMA } from "@/lib/supabase";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// HELPERS
+// TIPOS Y UTILIDADES
 // ═══════════════════════════════════════════════════════════════════════════
 
-const RequiredMark = () => <span className="text-error-500">*</span>;
-
-const inputBase =
-  "h-11 w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:text-white/90 dark:placeholder:text-white/30";
-const inputOk = "border-gray-300 focus:border-secondary-300 focus:ring-secondary-500/20 dark:border-gray-700";
-
-/** Fila editable de item en el formulario (antes de mapear a PedidoItem). */
 interface ItemFila {
   nombre: string;
   cantidad: number;
   precio?: number;
   variante?: string;
+  imagen?: string;
 }
 
 interface CreatedInfo {
   numero: string;
   cliente: string;
+  telefono: string;
+  modalidad: ModalidadPedido;
   modalidadLabel: string;
-  /**
-   * Cómo se cobró el pedido.
-   *
-   * Se guarda AQUÍ y no se lee del estado del formulario porque `resetForm()`
-   * corre justo después de crear el pedido: cuando la confirmación se pinta, el
-   * formulario ya volvió a «efectivo» y la pantalla diría que se cobró en
-   * efectivo un pedido que se cobró por transferencia.
-   */
   metodoPago?: MetodoPago;
-  /** ISO programado, si el pedido se creó como programado. */
   programadoPara?: string;
   direccion?: string;
   mesa?: string;
   total?: number;
+  itemsCount: number;
+  items?: PedidoItem[];
+  chatId?: string;
 }
 
 const money = (n: number) => `$${n.toLocaleString("es-CO")}`;
 
-/** Formatea una fecha ISO como "12 sep, 14:30" (es-CO). */
 const formatFechaHora = (iso: string) => {
   try {
     return new Date(iso).toLocaleString("es-CO", {
@@ -73,91 +66,63 @@ const formatFechaHora = (iso: string) => {
   }
 };
 
-/** Icono decorativo de sección (círculo con número de paso). */
-const StepBadge = ({ n }: { n: number }) => (
-  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white">
-    {n}
-  </span>
+// ═══════════════════════════════════════════════════════════════════════════
+// ICONOGRAFÍA VECTORIAL
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DomicilioIcon = ({ className = "size-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className} aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H3m10 4h4l3 4v3h-2M5 17H3v-4" />
+  </svg>
 );
 
-const ModalidadIcon = ({ m }: { m: ModalidadPedido }) => {
-  const cls = "h-5 w-5";
-  if (m === "domicilio")
-    return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={cls}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H3m10 4h4l3 4v3h-2M5 17H3v-4" />
-      </svg>
-    );
-  if (m === "en_sitio")
-    return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={cls}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 21v-7m0 0V5a2 2 0 012-2h6m-8 11h8m0 0V5m0 9v7m4-18l4 4m0 0l-4 4m4-4h-8" />
-      </svg>
-    );
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={cls}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-    </svg>
-  );
-};
+const RetiroIcon = ({ className = "size-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className} aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+  </svg>
+);
 
-const MapPinIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
+const EnSitioIcon = ({ className = "size-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className} aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 21v-7m0 0V5a2 2 0 012-2h6m-8 11h8m0 0V5m0 9v7m4-18l4 4m0 0l-4 4m4-4h-8" />
+  </svg>
+);
+
+const SearchIcon = ({ className = "size-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className={className} aria-hidden="true">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+
+const PlusIcon = ({ className = "size-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className={className} aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+  </svg>
+);
+
+const MinusIcon = ({ className = "size-3" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className={className} aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
+  </svg>
+);
+
+const TrashIcon = ({ className = "size-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className} aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+);
+
+const MapPinIcon = ({ className = "size-3.5" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
     <circle cx="12" cy="10" r="3" />
   </svg>
 );
 
-const CashIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="2" y="6" width="20" height="12" rx="2" />
-    <circle cx="12" cy="12" r="2" />
-    <path d="M6 12h.01M18 12h.01" />
-  </svg>
-);
-
-const TransferIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-    <line x1="12" y1="18" x2="12.01" y2="18" />
-  </svg>
-);
-
-const CardIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="2" y="5" width="20" height="14" rx="2" />
-    <line x1="2" y1="10" x2="22" y2="10" />
-  </svg>
-);
-
-const DeliveryHandIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M16 11V7a4 4 0 0 0-8 0v4" />
-    <rect x="5" y="11" width="14" height="10" rx="2" />
-    <path d="M10 15h4" />
-  </svg>
-);
-
-/**
- * Glifo de cada medio de cobro, por su `MetodoPago`.
- *
- * Es `Record<MetodoPago, …>`: añadir un medio al vocabulario del dominio sin
- * darle icono es un error de compilación, no un botón sin dibujo en el selector.
- *
- * Va DESPUÉS de las cuatro definiciones de icono —y no junto a las tres
- * primeras— porque un `const` no se eleva: referenciar `DeliveryHandIcon` antes
- * de su línea es un error de compilación, no un `undefined` silencioso.
- */
-const ICONO_METODO_PAGO: Record<MetodoPago, React.FC<{ className?: string }>> = {
-  efectivo: CashIcon,
-  transferencia: TransferIcon,
-  tarjeta: CardIcon,
-  contra_entrega: DeliveryHandIcon,
-};
-
 // ═══════════════════════════════════════════════════════════════════════════
-// PAGE
+// COMPONENTE PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const CrearPedidoPage = observer(() => {
@@ -167,52 +132,103 @@ export const CrearPedidoPage = observer(() => {
   const modalidadesDisponibles = pedidosStore.config.modalidades;
   const catalogo = pedidosStore.config.catalogo;
   const tieneCatalogo = catalogo.length > 0;
+  const perfilActivo = pedidosStore.config.perfilComercial ?? "food";
+  const perfilPreset = BUSINESS_PROFILES[perfilActivo] ?? BUSINESS_PROFILES.food;
 
-  // Capacidades de esta página.
   const puedeCrear = puedeCrearPedido();
   const puedeProgramar = puedeGestionarProgramados();
 
+  // Precarga desde URL y vinculación con Chat
   const initialCliente = searchParams.get("cliente") ?? "";
   const initialTelefono = searchParams.get("telefono") ?? "";
+  const chatId = searchParams.get("chatId") ?? searchParams.get("convId") ?? "";
+  const paramModalidad = searchParams.get("modalidad") as ModalidadPedido | null;
   const initialDirs = initialTelefono ? pedidosStore.direccionesDe(initialTelefono) : [];
   const initialCalle = searchParams.get("calle") ?? initialDirs[0]?.calle ?? "";
   const initialBarrio = searchParams.get("barrio") ?? initialDirs[0]?.barrio ?? "";
   const initialReferencia = searchParams.get("referencia") ?? initialDirs[0]?.referencia ?? "";
   const initialIndicaciones = searchParams.get("indicaciones") ?? initialDirs[0]?.indicaciones ?? "";
 
+  // Estado del formulario (por defecto a domicilio cuando viene de chat o si está disponible)
   const [cliente, setCliente] = useState(() => initialCliente);
   const [telefono, setTelefono] = useState(() => initialTelefono);
   const [modalidad, setModalidad] = useState<ModalidadPedido>(() => {
-    if (initialCalle && modalidadesDisponibles.includes("domicilio")) {
-      return "domicilio";
-    }
-    return modalidadesDisponibles[0] ?? "retiro";
+    if (paramModalidad && modalidadesDisponibles.includes(paramModalidad)) return paramModalidad;
+    if (chatId && modalidadesDisponibles.includes("domicilio")) return "domicilio";
+    if (initialCalle && modalidadesDisponibles.includes("domicilio")) return "domicilio";
+    return modalidadesDisponibles.includes("domicilio") ? "domicilio" : (modalidadesDisponibles[0] ?? "retiro");
   });
   const [notas, setNotas] = useState("");
-  const [items, setItems] = useState<ItemFila[]>([{ nombre: "", cantidad: 1 }]);
-  const [programar, setProgramar] = useState(false);
-  /** Fecha/hora programada en ISO (la elige el ProgramarModal). null = sin elegir. */
-  const [programadoISO, setProgramadoISO] = useState<string | null>(null);
-  const [showProgramar, setShowProgramar] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [created, setCreated] = useState<CreatedInfo | null>(null);
+  const [items, setItems] = useState<ItemFila[]>([]);
+  const [busquedaCatalogo, setBusquedaCatalogo] = useState("");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>("All");
 
-  /** Acuse de «copiado» del mensaje de cobro. Se apaga solo a los 2 s. */
-  const [copiadoCobro, setCopiadoCobro] = useState(false);
-
-  // ── Logística, dirección y pago ──
+  // Logística y dirección
   const [calle, setCalle] = useState(() => initialCalle);
   const [barrio, setBarrio] = useState(() => initialBarrio);
   const [referencia, setReferencia] = useState(() => initialReferencia);
   const [indicaciones, setIndicaciones] = useState(() => initialIndicaciones);
   const [costoEnvio, setCostoEnvio] = useState<number>(5000);
-  const [metodoPago, setMetodoPago] = useState<MetodoPago>(
-    () => mediosDeCobroHabilitados(pedidosStore.config.datosBancarios)[0]?.id ?? "efectivo",
-  );
+  const [repartidor, setRepartidor] = useState<string>("");
+  const [mesa, setMesa] = useState<string>("");
 
+  // Pagos y cobros
+  const mediosDeCobro = mediosDeCobroHabilitados(pedidosStore.config.datosBancarios);
+  const [metodoPago, setMetodoPago] = useState<MetodoPago>(
+    () => mediosDeCobro[0]?.id ?? "efectivo"
+  );
+  const [pagaCon, setPagaCon] = useState<string>("");
+  const transferencia = datosParaTransferir(pedidosStore.config.datosBancarios);
+
+  // Programación
+  const [programar, setProgramar] = useState(false);
+  const [programadoISO, setProgramadoISO] = useState<string | null>(null);
+  const [showProgramar, setShowProgramar] = useState(false);
+
+  // Feedback y confirmación
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [created, setCreated] = useState<CreatedInfo | null>(null);
+  const [copiadoCobro, setCopiadoCobro] = useState(false);
+  const [copiadoLink, setCopiadoLink] = useState(false);
+  const [enviadoAlChat, setEnviadoAlChat] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
+
+  // Generación reactiva de QR solo para cobro en el negocio (en sitio)
+  useEffect(() => {
+    if (created && created.modalidad === "en_sitio") {
+      const urlPago = enlaceDePago(
+        pedidosStore.config.datosBancarios,
+        created.numero,
+        window.location.origin
+      );
+      QRCode.toDataURL(urlPago, {
+        width: 260,
+        margin: 2,
+        color: {
+          dark: "#190088",
+          light: "#ffffff",
+        },
+      })
+        .then((url) => setQrDataUrl(url))
+        .catch((err) => console.error("Error generando QR:", err));
+    } else {
+      setQrDataUrl("");
+    }
+  }, [created]);
+
+  // Sincronización de URL params y Catálogo de Supabase
   useEffect(() => {
     const qCliente = searchParams.get("cliente");
     const qTelefono = searchParams.get("telefono");
+    const qModalidad = searchParams.get("modalidad") as ModalidadPedido | null;
+    const qChatId = searchParams.get("chatId") ?? searchParams.get("convId");
+
+    if (qCliente !== null) setCliente(qCliente);
+    if (qModalidad && modalidadesDisponibles.includes(qModalidad)) {
+      setModalidad(qModalidad);
+    } else if (qChatId && modalidadesDisponibles.includes("domicilio")) {
+      setModalidad("domicilio");
+    }
     if (qCliente !== null) setCliente(qCliente);
     if (qTelefono !== null) {
       setTelefono(qTelefono);
@@ -223,174 +239,168 @@ export const CrearPedidoPage = observer(() => {
       const qInd = searchParams.get("indicaciones") ?? dirs[0]?.indicaciones;
       if (qCalle) {
         setCalle(qCalle);
-        if (modalidadesDisponibles.includes("domicilio")) {
-          setModalidad("domicilio");
-        }
+        if (modalidadesDisponibles.includes("domicilio")) setModalidad("domicilio");
       }
       if (qBarrio) setBarrio(qBarrio);
       if (qRef) setReferencia(qRef);
       if (qInd) setIndicaciones(qInd);
     }
+
+    const sb = getSupabase();
+    if (sb) {
+      void (async () => {
+        try {
+          const { data, error } = await sb
+            .schema(ESQUEMA)
+            .from("config_pedidos")
+            .select("catalogo")
+            .limit(1)
+            .maybeSingle();
+
+          if (!error && data?.catalogo && Array.isArray(data.catalogo) && data.catalogo.length > 0) {
+            (pedidosStore.config as any).catalogo = data.catalogo;
+          }
+        } catch (err: unknown) {
+          console.warn("[CrearPedidoPage] Error cargando catálogo de Supabase:", err);
+        }
+      })();
+    }
   }, [searchParams, modalidadesDisponibles]);
 
-  /**
-   * Los medios que el negocio acepta HOY, derivados de la configuración.
-   *
-   * Se lee de `pedidosStore.config.datosBancarios` en cada render (es
-   * observable) y no de una copia: si el negocio apaga un medio desde
-   * configuración, el selector de esta pantalla lo refleja.
-   */
-  const mediosDeCobro = mediosDeCobroHabilitados(pedidosStore.config.datosBancarios);
-
-  /** Datos que hay que darle al cliente que va a transferir. `null` = no hay ninguno. */
-  const transferencia = datosParaTransferir(pedidosStore.config.datosBancarios);
-  const [pagaCon, setPagaCon] = useState<string>("");
-  const [repartidor, setRepartidor] = useState<string>("");
-  const [mesa, setMesa] = useState<string>("");
-
-  // ── Item handlers ──
-  const setItem = (idx: number, patch: Partial<ItemFila>) =>
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
-
-  /**
-   * Cambio de modalidad, con limpieza de los datos que solo aplican a domicilio o en_sitio.
-   */
   const cambiarModalidad = (m: ModalidadPedido) => {
     setModalidad(m);
     if (m !== "domicilio") {
       setRepartidor("");
-      // El error de calle ya no aplica si la sección dejó de existir.
       setErrors((prev) => (prev.calle ? { ...prev, calle: "" } : prev));
     }
-    if (m !== "en_sitio") {
-      setMesa("");
-    }
+    if (m !== "en_sitio") setMesa("");
   };
 
-  const addItem = () => setItems((prev) => [...prev, { nombre: "", cantidad: 1 }]);
-  const removeItem = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx));
+  // ── Categorías y Filtrado ──
+  const categorias = useMemo(() => {
+    const cats = new Set<string>();
+    catalogo.forEach((c) => {
+      const catName = (c as any).categoria?.trim();
+      if (catName) cats.add(catName);
+    });
+    return ["All", ...Array.from(cats)];
+  }, [catalogo]);
 
-  /** Al elegir un item del catálogo, autocompleta nombre, precio y primera variante si aplica. */
-  const pickCatalogo = (idx: number, itemId: string) => {
-    const cat = catalogo.find((c) => c.id === itemId);
-    if (cat) {
-      setItem(idx, {
-        nombre: cat.nombre,
-        precio: cat.precio,
-        variante: cat.variantesDisponibles?.[0],
-      });
-    }
+  const catalogoFiltrado = useMemo(() => {
+    return catalogo.filter((c) => {
+      const matchCat =
+        categoriaSeleccionada === "All" || (c as any).categoria === categoriaSeleccionada;
+      const q = busquedaCatalogo.toLowerCase().trim();
+      const matchBusq =
+        !q ||
+        c.nombre.toLowerCase().includes(q) ||
+        ((c as any).categoria && (c as any).categoria.toLowerCase().includes(q));
+      return matchCat && matchBusq;
+    });
+  }, [catalogo, busquedaCatalogo, categoriaSeleccionada]);
+
+  // ── Handlers de Items ──
+  const agregarItemDesdeCatalogo = (catItem: typeof catalogo[0], varianteElegida?: string) => {
+    const varFinal = varianteElegida ?? catItem.variantesDisponibles?.[0];
+    const foto = (catItem as any).imagen || asignarFotoInteligente(catItem.nombre, (catItem as any).categoria);
+
+    setItems((prev) => {
+      const idxExistente = prev.findIndex(
+        (it) => it.nombre === catItem.nombre && it.variante === varFinal
+      );
+      if (idxExistente >= 0) {
+        return prev.map((it, i) =>
+          i === idxExistente ? { ...it, cantidad: it.cantidad + 1 } : it
+        );
+      }
+      return [
+        ...prev,
+        {
+          nombre: catItem.nombre,
+          precio: catItem.precio,
+          cantidad: 1,
+          variante: varFinal,
+          imagen: foto,
+        },
+      ];
+    });
   };
 
-  const resetForm = () => {
-    setCliente("");
-    setTelefono("");
-    setModalidad(modalidadesDisponibles[0] ?? "retiro");
-    setNotas("");
-    setItems([{ nombre: "", cantidad: 1 }]);
-    setProgramar(false);
-    setProgramadoISO(null);
-    setCalle("");
-    setBarrio("");
-    setReferencia("");
-    setIndicaciones("");
-    setCostoEnvio(5000);
-    setMetodoPago(mediosDeCobroHabilitados(pedidosStore.config.datosBancarios)[0]?.id ?? "efectivo");
-    setPagaCon("");
-    setRepartidor("");
-    setMesa("");
-    setErrors({});
+  const modificarCantidad = (index: number, delta: number) => {
+    setItems((prev) =>
+      prev
+        .map((it, i) => {
+          if (i !== index) return it;
+          const nuevaCantidad = it.cantidad + delta;
+          return { ...it, cantidad: nuevaCantidad };
+        })
+        .filter((it) => it.cantidad > 0)
+    );
   };
 
-  // ── Derivados para el resumen en vivo ──
-  //
-  // Se calculan ANTES de `validate()` porque la validación del pago en efectivo
-  // necesita `totalPedido`: sin moverlos, `validate` referenciaría una constante
-  // declarada más abajo (zona muerta temporal en cada render).
-  const itemsValidos = items.filter((it) => it.nombre.trim() !== "");
-  const subtotalItems = itemsValidos.reduce(
-    (s, it) => s + Math.max(0, it.precio ?? 0) * Math.max(1, it.cantidad),
-    0,
+  const eliminarItem = (index: number) => {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const vaciarTicket = () => {
+    setItems([]);
+  };
+
+  // ── Derivados del Pedido ──
+  const subtotalItems = items.reduce(
+    (acc, it) => acc + Math.max(0, it.precio ?? 0) * Math.max(1, it.cantidad),
+    0
   );
   const costoEnvioEfectivo = modalidad === "domicilio" ? Math.max(0, Number(costoEnvio) || 0) : 0;
   const totalPedido = subtotalItems + costoEnvioEfectivo;
+  const esPagoEnEntrega = metodoPago === "efectivo" || metodoPago === "contra_entrega";
   const direccionesGuardadas = pedidosStore.direccionesDe(telefono);
 
-  /** ¿El método de pago elegido cobra en el momento de la entrega? */
-  const esPagoEnEntrega = metodoPago === "efectivo" || metodoPago === "contra_entrega";
-
+  // ── Validación y Guardado ──
   const validate = (): boolean => {
     const e: Record<string, string> = {};
-    if (!cliente.trim()) e.cliente = "El nombre es obligatorio";
+    if (!cliente.trim()) e.cliente = "El nombre del cliente es obligatorio";
     const phone = telefono.replace(/[^\d+]/g, "");
-    if (!telefono.trim()) e.telefono = "El teléfono es obligatorio";
-    else if (phone.length < 7) e.telefono = "Teléfono no válido";
+    if (!telefono.trim()) e.telefono = "El teléfono de WhatsApp es obligatorio";
+    else if (phone.length < 7) e.telefono = "Número de teléfono no válido";
+
     if (modalidad === "domicilio" && !calle.trim()) {
-      e.calle = "La dirección de entrega es obligatoria para domicilios";
+      e.calle = "Ingresa la dirección de entrega";
     }
 
-    /*
-      Pago en efectivo / contra entrega: si el operador escribió con cuánto
-      abona el cliente, el monto tiene que cubrir el total.
+    if (items.length === 0) {
+      e.items = "Añade al menos un producto al pedido";
+    }
 
-      Solo se valida cuando HAY un monto escrito (`pagaCon` no vacío y > 0). El
-      campo es opcional a propósito —a veces el cliente paga justo y el operador
-      no escribe nada—, así que exigirlo sería inventar una obligación que la
-      pantalla no pide. Lo que no se puede permitir es un monto declarado que no
-      alcanza: el repartidor saldría a cobrar sabiendo que falta dinero.
-
-      `Number("")` es 0, así que el `> 0` es lo que distingue "no escribió nada"
-      de "escribió 0". Escribir un 0 explícito sí se rechaza (0 < total) salvo
-      que el pedido valga 0, que es el caso de un pedido sin ítems ni envío.
-    */
     if (esPagoEnEntrega && pagaCon.trim() !== "" && Number(pagaCon) > 0) {
       if (Number(pagaCon) < totalPedido) {
-        e.pagaCon = `El monto recibido no puede ser menor al total a pagar (${money(totalPedido)}).`;
+        e.pagaCon = `El pago recibido (${money(Number(pagaCon))}) es menor al total (${money(totalPedido)}).`;
       }
     }
 
     if (programar) {
-      if (!programadoISO) e.programado = "Elige una fecha y hora";
-      else if (new Date(programadoISO).getTime() <= Date.now())
-        e.programado = "La fecha debe ser futura";
+      if (!programadoISO) e.programado = "Selecciona la fecha y hora programada";
+      else if (new Date(programadoISO).getTime() <= Date.now()) {
+        e.programado = "La fecha y hora deben ser futuras";
+      }
     }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleCreate = () => {
-    // Defensa en profundidad (C5): la ruta exige `orders.create`, pero la
-    // acción lo re-comprueba. Fail-closed.
-    if (!puedeCrear) return;
-    if (!validate()) return;
+    if (!puedeCrear || !validate()) return;
 
-    /*
-      Normalización de ítems en el borde de salida, además de la que ya se hace
-      en el `onChange`. No es redundante: el estado de React es una fuente entre
-      varias (el catálogo escribe `precio` directamente vía `pickCatalogo`, y un
-      pegado o un valor raro del navegador puede colar un número fuera de rango),
-      así que el mapeo final es el único punto por el que pasan TODOS los ítems.
-      Un precio negativo aquí restaría del total y produciría un pedido con total
-      negativo, que es justo lo que el requisito quiere evitar.
-    */
-    const itemsLimpios: PedidoItem[] = items
-      .filter((it) => it.nombre.trim() !== "")
-      .map((it) => {
-        const nombreFinal = it.variante ? `${it.nombre.trim()} (${it.variante})` : it.nombre.trim();
-        return {
-          nombre: nombreFinal,
-          cantidad: Math.max(1, Number(it.cantidad) || 1),
-          // `precio` es opcional: `undefined` significa "sin precio definido" y se
-          // conserva como tal. Solo se sanea si viene un número, y entonces nunca
-          // por debajo de 0.
-          precio: it.precio === undefined ? undefined : Math.max(0, Number(it.precio) || 0),
-        };
-      });
+    const itemsLimpios: PedidoItem[] = items.map((it) => {
+      const nombreFinal = it.variante ? `${it.nombre.trim()} (${it.variante})` : it.nombre.trim();
+      return {
+        nombre: nombreFinal,
+        cantidad: Math.max(1, Number(it.cantidad) || 1),
+        precio: it.precio === undefined ? undefined : Math.max(0, Number(it.precio) || 0),
+      };
+    });
 
-    // Programar exige `scheduled.manage`: si no se tiene, el pedido se crea
-    // activo aunque el estado local hubiera quedado en `true`.
     const programadoPara = programar && puedeProgramar && programadoISO ? programadoISO : undefined;
-
     const direccionEntrega: DireccionEntrega | undefined =
       modalidad === "domicilio" && calle.trim()
         ? {
@@ -402,9 +412,7 @@ export const CrearPedidoPage = observer(() => {
         : undefined;
 
     const pagaConNum =
-      (metodoPago === "efectivo" || metodoPago === "contra_entrega") && Number(pagaCon) > 0
-        ? Number(pagaCon)
-        : undefined;
+      esPagoEnEntrega && Number(pagaCon) > 0 ? Number(pagaCon) : undefined;
 
     const notasLimpias = [
       modalidad === "en_sitio" && mesa.trim() ? `Mesa: ${mesa.trim()}` : "",
@@ -423,20 +431,16 @@ export const CrearPedidoPage = observer(() => {
       costoEnvio: modalidad === "domicilio" ? costoEnvioEfectivo : undefined,
       metodoPago,
       pagaCon: pagaConNum,
-      /*
-        El repartidor solo existe en domicilio. `cambiarModalidad` ya limpia el
-        estado al salir, pero se vuelve a comprobar aquí: el estado es la defensa
-        de la UI y esto es la garantía del dato. Si por cualquier vía llegara un
-        repartidor con modalidad de retiro, no se guardaría — un pedido para
-        recoger en tienda no tiene mensajero, y guardarlo dejaría un dato falso
-        en la ficha del pedido.
-      */
       repartidor: modalidad === "domicilio" ? repartidor.trim() || undefined : undefined,
     });
+
+    const targetChatId = chatId || conversacionesStore.porTelefono(pedido.telefono)?.id;
 
     setCreated({
       numero: pedido.numero,
       cliente: pedido.cliente,
+      telefono: pedido.telefono,
+      modalidad: pedido.modalidad,
       modalidadLabel: pedidosStore.modalidadLabel(pedido.modalidad),
       metodoPago,
       programadoPara: pedido.programadoPara,
@@ -445,881 +449,1074 @@ export const CrearPedidoPage = observer(() => {
         : undefined,
       mesa: modalidad === "en_sitio" && mesa.trim() ? mesa.trim() : undefined,
       total: pedidosStore.totalPedido(pedido),
+      itemsCount: itemsLimpios.length,
+      items: pedido.items,
+      chatId: targetChatId,
     });
-    resetForm();
+
+    setCliente("");
+    setTelefono("");
+    setModalidad(modalidadesDisponibles[0] ?? "retiro");
+    setNotas("");
+    setItems([]);
+    setProgramar(false);
+    setProgramadoISO(null);
+    setCalle("");
+    setBarrio("");
+    setReferencia("");
+    setIndicaciones("");
+    setCostoEnvio(5000);
+    setMetodoPago(mediosDeCobro[0]?.id ?? "efectivo");
+    setPagaCon("");
+    setRepartidor("");
+    setMesa("");
+    setErrors({});
   };
 
-  // ── Confirmación (reemplaza el formulario) ──
+  // ═════════════════════════════════════════════════════════════════════════
+  // PANTALLA DE ÉXITO (RECIBO ELEGANTE NECTO)
+  // ═════════════════════════════════════════════════════════════════════════
   if (created) {
-    /**
-     * El mensaje de cobro del pedido recién creado.
-     *
-     * Se compone AQUÍ y no en el formulario porque necesita la referencia REAL
-     * del pedido: el enlace de pago lleva el número, y hasta que el pedido no
-     * existe no hay número. Compuesto solo con lo que el negocio configuró —
-     * titular, cuentas, enlace e indicaciones—, así que si no configuró nada
-     * sale vacío y el bloque no se pinta.
-     */
+    const urlPago = enlaceDePago(
+      pedidosStore.config.datosBancarios,
+      created.numero,
+      window.location.origin
+    );
     const mensajeCobro = mensajeDeCobro(
       pedidosStore.config.datosBancarios,
       created.numero,
-      window.location.origin,
+      window.location.origin
     );
+    const convDestinoId = created.chatId || conversacionesStore.porTelefono(created.telefono)?.id;
+
+    const enviarAlChat = async () => {
+      if (!convDestinoId) return;
+      const conv = conversacionesStore.getConversacion(convDestinoId);
+      if (conv && conv.atencion !== "humano") {
+        const opId =
+          sessionStore.accessContext.operadorId ??
+          sessionStore.accessContext.rolId ??
+          "operador";
+        conversacionesStore.tomar(convDestinoId, opId);
+      }
+      const mensajeAEnviar =
+        mensajeCobro !== ""
+          ? mensajeCobro
+          : `¡Hola ${created.cliente}! Tu pedido #${created.numero} fue registrado. Puedes realizar el pago en línea aquí:\n${urlPago}`;
+      await conversacionesStore.enviarComoNegocio(convDestinoId, mensajeAEnviar);
+      setEnviadoAlChat(true);
+    };
 
     return (
-      <>
-        <PageMeta title="Pedido creado" description="Pedido creado con éxito" />
-        <div className="mx-auto max-w-lg">
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="flex flex-col items-center gap-3 bg-accent-50 px-8 py-8 text-center dark:bg-accent-500/10">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-500 text-white">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-7 w-7">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-              </div>
-              <p className="text-sm font-medium text-accent-700 dark:text-accent-300">Pedido creado con éxito</p>
+      <div className="w-full max-w-xl mx-auto py-8 px-4 font-['DM_Sans',sans-serif]">
+        <PageMeta title={`Factura Digital - ${created.numero}`} description="Comprobante digital de pedido registrado" />
+
+        {/* ── CONTENEDOR ESTILO FACTURA DIGITAL ── */}
+        <div className="relative rounded-3xl border border-[#ECECEC] bg-white shadow-2xl overflow-hidden">
+          {/* Cabecera superior de la factura */}
+          <div className="bg-[#190088] text-white p-6 sm:p-8 text-center relative">
+            <div className="flex items-center justify-between text-[12px] font-bold text-[#97D6DF] pb-3 border-b border-white/10">
+              <span>COMPROBANTE DIGITAL</span>
+              <span>NECTO PEDIDOS</span>
             </div>
 
-            <div className="px-8 py-8 text-center">
-              <p className="text-xs uppercase tracking-wide text-gray-400">Número de pedido</p>
-              <p className="mt-1 text-5xl font-bold text-gray-800 dark:text-white/90">{created.numero}</p>
+            <div className="mx-auto size-14 rounded-2xl bg-[#FF3F1A] text-white font-bold flex items-center justify-center shadow-md my-4 text-[24px]">
+              ✓
+            </div>
 
-              <div className="mx-auto mt-6 max-w-xs space-y-2 text-sm">
-                <div className="flex justify-between border-b border-dashed border-gray-200 pb-2 dark:border-gray-700">
-                  <span className="text-gray-500">Cliente</span>
-                  <span className="font-medium text-gray-800 dark:text-white/90">{created.cliente}</span>
-                </div>
-                <div className="flex justify-between border-b border-dashed border-gray-200 pb-2 dark:border-gray-700">
-                  <span className="text-gray-500">Modalidad</span>
-                  <span className="font-medium text-gray-800 dark:text-white/90">{created.modalidadLabel}</span>
-                </div>
-                {created.direccion && (
-                  <div className="flex justify-between border-b border-dashed border-gray-200 pb-2 dark:border-gray-700">
-                    <span className="text-gray-500">Dirección</span>
-                    <span className="max-w-[170px] truncate text-right font-medium text-gray-800 dark:text-white/90">
-                      {created.direccion}
-                    </span>
-                  </div>
-                )}
-                {created.mesa && (
-                  <div className="flex justify-between border-b border-dashed border-gray-200 pb-2 dark:border-gray-700">
-                    <span className="text-gray-500">Mesa / Salón</span>
-                    <span className="max-w-[170px] truncate text-right font-medium text-gray-800 dark:text-white/90">
-                      {created.mesa}
-                    </span>
-                  </div>
-                )}
-                {created.total !== undefined && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Total a cobrar</span>
-                    <span className="font-bold text-secondary-600 dark:text-brand-400">{money(created.total)}</span>
-                  </div>
-                )}
+            <span className="inline-block text-[12px] font-bold uppercase tracking-wider text-[#190088] bg-[#97D6DF] px-3.5 py-1 rounded-full mb-1">
+              Pedido Registrado
+            </span>
+
+            <h1 className="text-[36px] font-bold text-white mt-1">
+              {created.numero}
+            </h1>
+
+            <p className="text-[14px] font-normal text-white/80 mt-1">
+              Registrado con éxito y sincronizado con el tablero en vivo
+            </p>
+          </div>
+
+          {/* Línea perforada de ticket con muescas laterales */}
+          <div className="relative flex items-center justify-between -my-3 z-10">
+            <div className="size-6 rounded-full bg-[#ECECEC] -ml-3" />
+            <div className="flex-1 border-b-2 border-dashed border-[#ECECEC] mx-2" />
+            <div className="size-6 rounded-full bg-[#ECECEC] -mr-3" />
+          </div>
+
+          {/* Cuerpo del comprobante */}
+          <div className="p-6 sm:p-8 space-y-5 bg-white">
+            {/* Metadatos del cliente y pedido */}
+            <div className="rounded-2xl bg-[#EFE6D3]/30 p-4 space-y-2.5 text-[14px] border border-[#ECECEC]">
+              <div className="flex justify-between items-center">
+                <span className="font-normal text-[#212121]/70">Cliente:</span>
+                <span className="font-bold text-[#190088]">{created.cliente}</span>
               </div>
-
-              {/*
-                Lo que hay que decirle al cliente para que pague.
-
-                Es el cierre del circuito de «Cuentas y cobros»: titular, cuentas,
-                enlace de pago e indicaciones compuestos en un mensaje listo para
-                pegar en el chat. Antes la configuración prometía exactamente esto
-                («las indicaciones que el bot y la tienda envían al cliente») y
-                nada lo hacía: los once controles no tenían lector.
-
-                Se omite entero cuando el negocio no configuró nada —`mensajeDeCobro`
-                devuelve cadena vacía—, en vez de pintar un bloque en blanco.
-              */}
-              {mensajeCobro !== "" && (
-                <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 text-left dark:border-gray-700 dark:bg-gray-800">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                      Mensaje de cobro para el cliente
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void navigator.clipboard?.writeText(mensajeCobro);
-                        setCopiadoCobro(true);
-                        setTimeout(() => setCopiadoCobro(false), 2000);
-                      }}
-                      className="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1 text-[11px] font-semibold text-gray-600 transition-colors hover:bg-white dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-                    >
-                      {copiadoCobro ? "Copiado ✓" : "Copiar"}
-                    </button>
-                  </div>
-                  <pre className="mt-2 whitespace-pre-wrap font-sans text-xs leading-relaxed text-gray-600 dark:text-gray-300">
-                    {mensajeCobro}
-                  </pre>
+              <div className="flex justify-between items-center">
+                <span className="font-normal text-[#212121]/70">Modalidad:</span>
+                <span className="font-bold text-[#212121]">{created.modalidadLabel}</span>
+              </div>
+              {created.telefono && (
+                <div className="flex justify-between items-center">
+                  <span className="font-normal text-[#212121]/70">Teléfono:</span>
+                  <span className="font-normal text-[#212121]">{created.telefono}</span>
+                </div>
+              )}
+              {created.direccion && (
+                <div className="flex justify-between items-start">
+                  <span className="font-normal text-[#212121]/70">Entrega:</span>
+                  <span className="font-bold text-right text-[#212121] max-w-[240px]">
+                    {created.direccion}
+                  </span>
+                </div>
+              )}
+              {created.mesa && (
+                <div className="flex justify-between items-center">
+                  <span className="font-normal text-[#212121]/70">Mesa / Salón:</span>
+                  <span className="font-bold text-[#212121]">{created.mesa}</span>
                 </div>
               )}
 
-              <div className="mt-6 flex items-start gap-2 rounded-xl bg-secondary-50 p-3 text-left dark:bg-brand-500/10">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="mt-0.5 h-5 w-5 shrink-0 text-secondary-600 dark:text-accent-300">
-                  <path d="M12 2a10 10 0 00-8.66 15l-1.3 3.9a.75.75 0 00.95.95l3.9-1.3A10 10 0 1012 2z" />
-                </svg>
-                {created.programadoPara ? (
-                  <p className="text-xs text-ink-title dark:text-brand-300">
-                    El pedido quedó <strong>Programado</strong> para el{" "}
-                    <strong>{formatFechaHora(created.programadoPara)}</strong>. Aparece en la sección
-                    de programados del tablero y se activará solo al llegar la hora.
-                  </p>
-                ) : (
-                  <p className="text-xs text-ink-title dark:text-brand-300">
-                    El pedido entró como <strong>Nuevo</strong> y ya aparece en el tablero con su logística de entrega.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-3 border-t border-gray-200 px-8 py-5 dark:border-gray-800">
-              <Button className="flex-1" onClick={() => setCreated(null)}>Crear otro pedido</Button>
-              <Button variant="outline" className="flex-1" onClick={() => navigate("/pedidos")}>
-                Ver el tablero
-              </Button>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  // ── Formulario (layout de dos columnas) ──
-  return (
-    <>
-      <PageMeta title="Crear pedido" description="Registra un pedido para un cliente" />
-
-      {/* Encabezado */}
-      <div className="mx-auto mb-6 flex max-w-5xl items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500/10 text-secondary-600 dark:text-accent-300">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-        </span>
-        <div>
-          <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">Crear pedido</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Registra un pedido manualmente. El bot de WhatsApp usa este mismo contrato.
-          </p>
-        </div>
-      </div>
-
-      {/*
-        Aviso de horario comercial.
-
-        La comprobación la hace `pedidosStore.estaAbierto()`, que es la fuente de
-        verdad del horario: mira `config.horario.activo`, si el día de hoy está en
-        `dias` y si la hora cae en la franja `apertura`–`cierre`. Si el horario no
-        está activo, devuelve `true` y aquí no se pinta nada.
-
-        Es informativo y NO bloquea: el operador puede registrar el pedido fuera
-        de horario —pasa de verdad, un cliente llama a deshora— y lo único que
-        necesita es saber que la fecha del pedido será la de hoy y no la de la
-        próxima apertura.
-      */}
-      {!pedidosStore.estaAbierto() && (
-        <div className="mx-auto mb-4 flex max-w-5xl items-start gap-2 rounded-xl border border-brand-300 bg-brand-50 p-3 dark:border-brand-500/40 dark:bg-brand-500/10">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-500">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-xs text-brand-700 dark:text-brand-300">
-            Atención: El negocio se encuentra fuera de su horario comercial habitual. Este pedido se
-            registrará con la fecha actual.
-          </p>
-        </div>
-      )}
-
-      <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        {/* ══ Columna izquierda: formulario por pasos ══ */}
-        <div className="space-y-6">
-          {/* Paso 1 · Cliente */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="mb-4 flex items-center gap-2">
-              <StepBadge n={1} />
-              <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Datos del cliente</h2>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="cliente">Nombre <RequiredMark /></Label>
-                <Input
-                  id="cliente"
-                  placeholder="Ej: Juan Carlos"
-                  value={cliente}
-                  onChange={(e) => setCliente(e.target.value)}
-                  error={!!errors.cliente}
-                  hint={errors.cliente}
-                />
-              </div>
-              <div>
-                <Label htmlFor="telefono">Teléfono (WhatsApp) <RequiredMark /></Label>
-                <Input
-                  id="telefono"
-                  placeholder="Ej: +57 300 123 4567"
-                  value={telefono}
-                  onChange={(e) => setTelefono(e.target.value)}
-                  error={!!errors.telefono}
-                  hint={errors.telefono}
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Paso 2 · Modalidad (tarjetas seleccionables) */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="mb-4 flex items-center gap-2">
-              <StepBadge n={2} />
-              <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Modalidad de entrega</h2>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {modalidadesDisponibles.map((m) => {
-                const activo = modalidad === m;
-                return (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => cambiarModalidad(m)}
-                    className={
-                      "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors " +
-                      (activo
-                        ? "border-secondary-500 dark:border-accent-400 bg-secondary-50 text-ink-title dark:bg-brand-500/10 dark:text-brand-300"
-                        : "border-gray-200 text-gray-600 hover:border-secondary-300 dark:border-gray-700 dark:text-gray-300")
-                    }
-                  >
-                    <span className={activo ? "text-secondary-600 dark:text-accent-300" : "text-gray-400"}>
-                      <ModalidadIcon m={m} />
-                    </span>
-                    <span className="text-sm font-medium">{pedidosStore.modalidadLabel(m)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Paso 3 (Condicional) · Dirección de entrega (si es domicilio) */}
-          {modalidad === "domicilio" && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-              <div className="mb-4 flex items-center gap-2">
-                <StepBadge n={3} />
-                <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Dirección y despacho</h2>
-              </div>
-
-              {direccionesGuardadas.length > 0 && (
-                <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800/50">
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Direcciones frecuentes:
-                  </span>
-                  {direccionesGuardadas.map((dir, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setCalle(dir.calle);
-                        if (dir.barrio) setBarrio(dir.barrio);
-                        if (dir.referencia) setReferencia(dir.referencia);
-                        if (dir.indicaciones) setIndicaciones(dir.indicaciones);
-                      }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-secondary-200 bg-white px-2.5 py-1 text-xs font-medium text-ink-title hover:bg-secondary-50 dark:border-accent-500/30 dark:bg-gray-800 dark:text-brand-300"
-                    >
-                      <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-secondary-600 dark:text-accent-300" />
-                      <span>{dir.calle} {dir.barrio ? `(${dir.barrio})` : ""}</span>
-                    </button>
+              {/* Ítems registrados si existen */}
+              {created.items && created.items.length > 0 && (
+                <div className="border-t border-[#ECECEC] pt-2 space-y-1">
+                  {created.items.map((it, idx) => (
+                    <div key={idx} className="flex justify-between text-[12px]">
+                      <span className="font-normal text-[#212121]">
+                        {it.cantidad}× {it.nombre}
+                      </span>
+                      <span className="font-bold text-[#212121]">
+                        {money((it.precio ?? 0) * it.cantidad)}
+                      </span>
+                    </div>
                   ))}
                 </div>
               )}
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <Label htmlFor="calle">Dirección / Calle y número <RequiredMark /></Label>
-                  <Input
-                    id="calle"
-                    placeholder="Ej: Cra 45 # 12-34"
-                    value={calle}
-                    onChange={(e) => setCalle(e.target.value)}
-                    error={!!errors.calle}
-                    hint={errors.calle}
-                  />
+              {/* Total a cobrar */}
+              {created.total !== undefined && (
+                <div className="flex justify-between items-center pt-2.5 border-t border-[#ECECEC]">
+                  <span className="font-bold text-[#190088]">Total a cobrar:</span>
+                  <span className="text-[24px] font-bold text-[#FF3F1A]">
+                    {money(created.total)}
+                  </span>
                 </div>
-                <div>
-                  <Label htmlFor="barrio">Barrio o sector</Label>
-                  <Input
-                    id="barrio"
-                    placeholder="Ej: El Poblado / Laureles"
-                    value={barrio}
-                    onChange={(e) => setBarrio(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="referencia">Apto, casa o referencia</Label>
-                  <Input
-                    id="referencia"
-                    placeholder="Ej: Torre 2, Apto 501"
-                    value={referencia}
-                    onChange={(e) => setReferencia(e.target.value)}
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <Label htmlFor="indicaciones">Indicaciones para el repartidor</Label>
-                  <Input
-                    id="indicaciones"
-                    placeholder="Ej: Timbre dañado, llamar al llegar"
-                    value={indicaciones}
-                    onChange={(e) => setIndicaciones(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="costoEnvio">
-                    {pedidosStore.tieneCapacidad("carrier_shipment")
-                      ? "Flete / Costo de envío ($)"
-                      : "Costo de entrega / domicilio ($)"}
-                  </Label>
-                  <Input
-                    id="costoEnvio"
-                    type="number"
-                    min="0"
-                    step={500}
-                    placeholder="5000"
-                    value={costoEnvio}
-                    onChange={(e) => setCostoEnvio(Math.max(0, Number(e.target.value) || 0))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="repartidor">
-                    {pedidosStore.tieneCapacidad("carrier_shipment")
-                      ? "Transportadora / Courier / Guía"
-                      : "Repartidor / Mensajero (opcional)"}
-                  </Label>
-                  <Input
-                    id="repartidor"
-                    placeholder={
-                      pedidosStore.tieneCapacidad("carrier_shipment")
-                        ? "Ej: Servientrega, Envia o Guía #12345"
-                        : "Ej: Javier Moto 04"
-                    }
-                    value={repartidor}
-                    onChange={(e) => setRepartidor(e.target.value)}
-                  />
-                </div>
-              </div>
-            </section>
-          )}
+              )}
+            </div>
 
-          {/* Paso 3 (Condicional) · Consumo en salón / Mesa (si es en_sitio y tiene table_service) */}
-          {modalidad === "en_sitio" && pedidosStore.tieneCapacidad("table_service") && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-              <div className="mb-4 flex items-center gap-2">
-                <StepBadge n={3} />
-                <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">
-                  Ubicación en salón / Mesa
-                </h2>
-              </div>
-              <div>
-                <Label htmlFor="mesa">Mesa / Ubicación del cliente</Label>
-                <Input
-                  id="mesa"
-                  placeholder="Ej: Mesa 4, Barra principal, Terraza exterior"
-                  value={mesa}
-                  onChange={(e) => setMesa(e.target.value)}
-                />
-                <p className="mt-1.5 text-xs text-gray-400">
-                  Identifica en qué mesa o punto del local se atenderá la comanda.
+            {/* ── BLOQUE 1: CÓDIGO QR DE PAGO (Exclusivo para consumo / cobro en el negocio en sitio) ── */}
+            {created.modalidad === "en_sitio" && (
+              <div className="rounded-2xl border border-[#ECECEC] bg-white p-5 text-center shadow-2xs space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-[#ECECEC]">
+                  <div className="flex items-center gap-2">
+                    <QrCodeIcon className="w-5 h-5 text-[#190088]" />
+                    <span className="text-[14px] font-bold text-[#190088]">
+                      Código QR de Pago en Sitio
+                    </span>
+                  </div>
+                  <span className="text-[12px] font-bold text-[#FF3F1A] bg-[#EFE6D3] px-2.5 py-0.5 rounded-full">
+                    Cobro en Caja
+                  </span>
+                </div>
+
+                <p className="text-[12px] font-light text-[#212121]/70">
+                  Muestra o escanea desde la cámara del celular o datáfono para cobrar este pedido en el negocio.
                 </p>
-              </div>
-            </section>
-          )}
 
-          {/* Paso · Items */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-            {(() => {
-              const perfilActivo = pedidosStore.config.perfilComercial ?? "food";
-              const perfilPreset = BUSINESS_PROFILES[perfilActivo] ?? BUSINESS_PROFILES.food;
-              const stepItems =
-                modalidad === "domicilio" ||
-                (modalidad === "en_sitio" && pedidosStore.tieneCapacidad("table_service"))
-                  ? 4
-                  : 3;
-              return (
-                <>
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <StepBadge n={stepItems} />
-                      <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">
-                        {perfilPreset.labels.itemPlural}
-                      </h2>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={addItem}
-                      className="text-xs font-medium text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
+                {qrDataUrl ? (
+                  <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white border border-[#ECECEC] max-w-[240px] mx-auto shadow-2xs">
+                    <img
+                      src={qrDataUrl}
+                      alt={`QR Pedido ${created.numero}`}
+                      className="size-44 rounded-xl object-contain"
+                    />
+                    <span className="mt-2 text-[12px] font-bold text-[#190088]">
+                      {created.modalidadLabel} · {created.numero}
+                    </span>
+                    <span className="text-[16px] font-bold text-[#FF3F1A]">
+                      {money(created.total ?? 0)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="size-44 mx-auto rounded-2xl bg-[#ECECEC]/30 flex items-center justify-center text-[12px] font-normal text-[#212121]/60">
+                    Generando código QR...
+                  </div>
+                )}
+
+                <div className="flex items-center justify-center gap-2 pt-1">
+                  {qrDataUrl && (
+                    <a
+                      href={qrDataUrl}
+                      download={`QR-Factura-${created.numero}.png`}
+                      className="px-4 py-2 rounded-xl text-[12px] font-bold bg-[#190088] hover:bg-[#190088]/90 text-white transition-all cursor-pointer"
                     >
-                      + Añadir {perfilPreset.labels.itemSingular.toLowerCase()}
-                    </button>
+                      Descargar QR
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(urlPago);
+                      setCopiadoLink(true);
+                      setTimeout(() => setCopiadoLink(false), 2000);
+                    }}
+                    className="px-4 py-2 rounded-xl text-[12px] font-bold bg-white text-[#190088] border border-[#ECECEC] hover:border-[#97D6DF] transition-all cursor-pointer"
+                  >
+                    {copiadoLink ? "✓ Enlace copiado" : "Copiar enlace del QR"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── BLOQUE 2: ENLACE DE PAGO DIRECTO ── */}
+            <div className="rounded-2xl border border-[#97D6DF] bg-[#97D6DF]/15 p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[12px] font-bold text-[#190088] block">
+                    Enlace de Pago para {created.modalidadLabel}
+                  </span>
+                  <p className="text-[12px] font-light text-[#212121]/70">
+                    Comparte este link para que el cliente pague su pedido en línea
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigator.clipboard?.writeText(urlPago);
+                    setCopiadoLink(true);
+                    setTimeout(() => setCopiadoLink(false), 2000);
+                  }}
+                  className="shrink-0 px-3 py-1.5 rounded-xl text-[12px] font-bold bg-white text-[#190088] shadow-2xs border border-[#97D6DF] hover:bg-[#97D6DF]/20 transition-all cursor-pointer"
+                >
+                  {copiadoLink ? "✓ Enlace copiado" : "Copiar enlace"}
+                </button>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white text-[12px] font-normal text-[#212121] border border-[#ECECEC] break-all select-all leading-relaxed">
+                {urlPago}
+              </div>
+            </div>
+
+            {/* ── BLOQUE 3: ACCIONES CON EL CHAT / WHATSAPP ── */}
+            {convDestinoId && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await enviarAlChat();
+                    navigate(`/pedidos/chats?id=${convDestinoId}`);
+                  }}
+                  className="flex-1 py-3.5 rounded-2xl bg-[#190088] hover:bg-[#190088]/90 text-white font-bold text-[14px] shadow-md transition-all cursor-pointer text-center"
+                >
+                  {enviadoAlChat ? "✓ Enlace enviado · Volver al chat" : "Enviar enlace y volver al chat"}
+                </button>
+                <button
+                  type="button"
+                  onClick={enviarAlChat}
+                  disabled={enviadoAlChat}
+                  className="px-5 py-3.5 rounded-2xl bg-[#97D6DF]/30 hover:bg-[#97D6DF]/50 text-[#190088] font-bold text-[14px] border border-[#97D6DF] transition-all cursor-pointer text-center"
+                >
+                  {enviadoAlChat ? "✓ Enviado" : "Enviar al chat"}
+                </button>
+              </div>
+            )}
+
+            {/* ── BLOQUE 4: MENSAJE DE COBRO COMPLETO (DATOS BANCARIOS) ── */}
+            {mensajeCobro !== "" && (
+              <div className="rounded-2xl border border-[#ECECEC] bg-white p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-bold text-[#190088]">
+                    Mensaje de cobro completo
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(mensajeCobro);
+                      setCopiadoCobro(true);
+                      setTimeout(() => setCopiadoCobro(false), 2000);
+                    }}
+                    className="px-3 py-1 rounded-xl text-[12px] font-bold bg-white text-[#190088] shadow-2xs border border-[#ECECEC] hover:border-[#97D6DF] transition-colors cursor-pointer"
+                  >
+                    {copiadoCobro ? "✓ Copiado" : "Copiar mensaje"}
+                  </button>
+                </div>
+                <pre className="whitespace-pre-wrap font-['DM_Sans',sans-serif] text-[12px] text-[#212121] leading-relaxed bg-[#ECECEC]/30 p-3 rounded-xl border border-[#ECECEC]">
+                  {mensajeCobro}
+                </pre>
+              </div>
+            )}
+
+            {/* ── PIE DE FACTURA: ACCIONES DE NAVEGACIÓN ── */}
+            <div className="pt-2 flex flex-col sm:flex-row gap-3 border-t border-[#ECECEC]">
+              <button
+                type="button"
+                onClick={() => {
+                  setCreated(null);
+                  setEnviadoAlChat(false);
+                }}
+                className="flex-1 py-3.5 rounded-2xl bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white font-bold text-[14px] shadow-md transition-all cursor-pointer text-center"
+              >
+                + Crear otro pedido
+              </button>
+              {convDestinoId ? (
+                <button
+                  type="button"
+                  className="flex-1 py-3.5 text-[14px] font-bold rounded-2xl border border-[#ECECEC] bg-white text-[#212121] hover:bg-[#EFE6D3]/40 transition-colors cursor-pointer text-center"
+                  onClick={() => navigate(`/pedidos/chats?id=${convDestinoId}`)}
+                >
+                  Volver al chat
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="flex-1 py-3.5 text-[14px] font-bold rounded-2xl border border-[#ECECEC] bg-white text-[#212121] hover:bg-[#EFE6D3]/40 transition-colors cursor-pointer text-center"
+                  onClick={() => navigate("/pedidos")}
+                >
+                  Volver al chat
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // VISTA PRINCIPAL (DISEÑO MOCKUP + TIPOGRAFÍA Y COLORES NECTO)
+  // ═════════════════════════════════════════════════════════════════════════
+  const negocioAbierto = pedidosStore.estaAbierto();
+
+  return (
+    <div className="w-full max-w-[1700px] mx-auto pb-16 font-['DM_Sans',sans-serif] text-[#212121] dark:text-gray-100">
+      <PageMeta title="Terminal de Pedidos" description="Crea y gestiona pedidos rápidamente" />
+
+      {/* ── BARRA SUPERIOR ELEGANTE CON MODALIDADES ── */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 rounded-3xl p-5 shadow-xs">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-[36px] font-bold tracking-tight text-[#190088] dark:text-white">
+              Terminal de Pedidos
+            </h1>
+            {negocioAbierto ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-[#97D6DF]/20 text-[#190088] dark:bg-[#97D6DF]/15 dark:text-[#97D6DF]">
+                <span className="size-1.5 rounded-full bg-[#190088] dark:bg-[#97D6DF] animate-pulse" />
+                Abierto
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-[#FF3F1A]/10 text-[#FF3F1A]">
+                <span className="size-1.5 rounded-full bg-[#FF3F1A]" />
+                Fuera de horario
+              </span>
+            )}
+          </div>
+          <p className="text-[12px] font-light text-gray-500 dark:text-gray-400 mt-0.5">
+            Registro inmediato de mostrador, domicilios y salón en tiempo real.
+          </p>
+        </div>
+
+        {/* Selector de Modalidades Segmentado */}
+        <div className="flex items-center gap-1.5 bg-[#ECECEC]/60 dark:bg-gray-800 p-1.5 rounded-2xl">
+          {modalidadesDisponibles.map((m) => {
+            const activo = modalidad === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => cambiarModalidad(m)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-bold transition-all cursor-pointer ${
+                  activo
+                    ? "bg-[#FF3F1A] text-white shadow-xs scale-102"
+                    : "text-[#212121] hover:text-[#190088] dark:text-gray-400 dark:hover:text-white"
+                }`}
+              >
+                {m === "domicilio" && <DomicilioIcon className="size-3.5" />}
+                {m === "retiro" && <RetiroIcon className="size-3.5" />}
+                {m === "en_sitio" && <EnSitioIcon className="size-3.5" />}
+                <span>{pedidosStore.modalidadLabel(m)}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── GRID PRINCIPAL: 7 COLS (DATOS + CATALOGO MOCKUP + PAGO/PROGRAMAR) Y 5 COLS (RESUMEN MOCKUP) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* ══════════════════════════════════════════════════════════════════
+            COLUMNA IZQUIERDA: CLIENTE + CATALOGO MOCKUP + PAGO Y PROGRAMAR (7 COLS)
+           ══════════════════════════════════════════════════════════════════ */}
+        <div className="lg:col-span-7 xl:col-span-7 space-y-6">
+
+          {/* 1. DATOS DEL CLIENTE Y LOGÍSTICA DE ENTREGA */}
+          <div className="bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 rounded-3xl p-5 sm:p-6 shadow-xs">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[16px] font-bold text-[#190088] dark:text-white">
+                Datos del Cliente & Despacho
+              </h2>
+              {direccionesGuardadas.length > 0 && modalidad === "domicilio" && (
+                <span className="text-[12px] font-normal text-gray-400">
+                  {direccionesGuardadas.length} direcciones guardadas
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="cliente" className="text-[12px] font-bold text-[#212121] dark:text-gray-200">
+                  Nombre del Cliente <span className="text-[#FF3F1A]">*</span>
+                </Label>
+                <div className="mt-1">
+                  <Input
+                    id="cliente"
+                    placeholder="Ej: Jhon Mendoza"
+                    value={cliente}
+                    onChange={(e) => {
+                      setCliente(e.target.value);
+                      if (errors.cliente) setErrors((prev) => ({ ...prev, cliente: "" }));
+                    }}
+                    error={!!errors.cliente}
+                    hint={errors.cliente}
+                    className="text-[14px] font-normal"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="telefono" className="text-[12px] font-bold text-[#212121] dark:text-gray-200">
+                  WhatsApp / Teléfono <span className="text-[#FF3F1A]">*</span>
+                </Label>
+                <div className="mt-1">
+                  <Input
+                    id="telefono"
+                    placeholder="Ej: +57 300 123 4567"
+                    value={telefono}
+                    onChange={(e) => {
+                      setTelefono(e.target.value);
+                      if (errors.telefono) setErrors((prev) => ({ ...prev, telefono: "" }));
+                    }}
+                    error={!!errors.telefono}
+                    hint={errors.telefono}
+                    className="text-[14px] font-normal"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Dirección si es Domicilio */}
+            {modalidad === "domicilio" && (
+              <div className="mt-4 pt-4 border-t border-[#ECECEC] dark:border-gray-800 space-y-3.5">
+                {direccionesGuardadas.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[12px] font-bold text-[#190088]">Frecuentes:</span>
+                    {direccionesGuardadas.map((dir, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setCalle(dir.calle);
+                          if (dir.barrio) setBarrio(dir.barrio);
+                          if (dir.referencia) setReferencia(dir.referencia);
+                          if (dir.indicaciones) setIndicaciones(dir.indicaciones);
+                          if (errors.calle) setErrors((prev) => ({ ...prev, calle: "" }));
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[12px] font-normal bg-[#EFE6D3]/50 hover:bg-[#97D6DF]/30 border border-[#ECECEC] dark:bg-gray-800 dark:border-gray-700 transition-colors cursor-pointer text-[#212121] dark:text-gray-200"
+                      >
+                        <MapPinIcon className="size-3 text-[#FF3F1A]" />
+                        <span>{dir.calle}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
+                  <div className="sm:col-span-8">
+                    <Label htmlFor="calle" className="text-[12px] font-bold text-[#212121] dark:text-gray-200">
+                      Dirección de Entrega <span className="text-[#FF3F1A]">*</span>
+                    </Label>
+                    <div className="mt-1">
+                      <Input
+                        id="calle"
+                        placeholder="Ej: Cra 43A # 1-50"
+                        value={calle}
+                        onChange={(e) => {
+                          setCalle(e.target.value);
+                          if (errors.calle) setErrors((prev) => ({ ...prev, calle: "" }));
+                        }}
+                        error={!!errors.calle}
+                        hint={errors.calle}
+                        className="text-[14px] font-normal"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-3">
-                    {items.map((it, idx) => {
-                      const catItem = catalogo.find((c) => c.nombre === it.nombre);
-                      return (
-                        <div key={idx} className="space-y-1.5">
-                          <div className="flex items-end gap-2">
-                            <div className="flex-1">
-                              {tieneCatalogo ? (
-                                <Select
-                                  key={`cat-${idx}-${it.nombre}`}
-                                  options={catalogo.map((c) => ({
-                                    value: c.id,
-                                    label: `${c.nombre} (${money(c.precio)})`,
-                                  }))}
-                                  defaultValue={catalogo.find((c) => c.nombre === it.nombre)?.id ?? ""}
-                                  placeholder={`Elige ${perfilPreset.labels.itemSingular.toLowerCase()}`}
-                                  onChange={(v) => pickCatalogo(idx, v)}
-                                />
-                              ) : (
-                                <Input
-                                  placeholder={
-                                    pedidosStore.tieneCapacidad("variants")
-                                      ? "Ej: Camiseta Oversize (Talla M / Blanco)"
-                                      : pedidosStore.tieneCapacidad("appointment_scheduling")
-                                      ? "Ej: Corte y Perfilado de Barba (15:00)"
-                                      : "Nombre del producto"
-                                  }
-                                  value={it.nombre}
-                                  onChange={(e) => setItem(idx, { nombre: e.target.value })}
-                                />
-                              )}
-                            </div>
-                            <div className="w-20">
-                              <input
-                                type="number"
-                                min="1"
-                                value={it.cantidad}
-                                onChange={(e) =>
-                                  setItem(idx, { cantidad: Math.max(1, Number(e.target.value) || 1) })
-                                }
-                                className={`${inputBase} ${inputOk}`}
-                                aria-label="Cantidad"
-                              />
-                            </div>
-                            {items.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeItem(idx)}
-                                className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-error-50 hover:text-error-500 dark:hover:bg-error-500/10"
-                                aria-label="Quitar item"
-                              >
-                                <svg
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                  className="h-4 w-4"
-                                >
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            )}
-                          </div>
+                  <div className="sm:col-span-4">
+                    <Label htmlFor="barrio" className="text-[12px] font-bold text-[#212121] dark:text-gray-200">
+                      Barrio / Sector
+                    </Label>
+                    <div className="mt-1">
+                      <Input id="barrio" placeholder="Ej: Laureles" value={barrio} onChange={(e) => setBarrio(e.target.value)} className="text-[14px] font-normal" />
+                    </div>
+                  </div>
 
-                          {catItem?.variantesDisponibles && catItem.variantesDisponibles.length > 0 && (
-                            <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50/70 p-2 dark:border-gray-800 dark:bg-white/[0.02]">
-                              <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-                                Talla / Variante:
-                              </span>
-                              {catItem.variantesDisponibles.map((v) => {
-                                const selected = (it.variante ?? catItem.variantesDisponibles![0]) === v;
-                                return (
-                                  <button
-                                    key={v}
-                                    type="button"
-                                    onClick={() => setItem(idx, { variante: v })}
-                                    className={`rounded-md px-2 py-0.5 text-xs font-semibold transition-all ${
-                                      selected
-                                        ? "bg-brand-500 text-white shadow-theme-xs"
-                                        : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                                    }`}
-                                  >
-                                    {v}
-                                  </button>
-                                );
-                              })}
-                            </div>
+                  <div className="sm:col-span-4">
+                    <Label htmlFor="referencia" className="text-[12px] font-bold text-[#212121] dark:text-gray-200">
+                      Apto / Casa / Torre
+                    </Label>
+                    <div className="mt-1">
+                      <Input id="referencia" placeholder="Ej: Torre 2, Apto 502" value={referencia} onChange={(e) => setReferencia(e.target.value)} className="text-[14px] font-normal" />
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-4">
+                    <Label htmlFor="costoEnvio" className="text-[12px] font-bold text-[#212121] dark:text-gray-200">
+                      Costo de Envío ($COP)
+                    </Label>
+                    <div className="mt-1">
+                      <Input
+                        id="costoEnvio"
+                        type="number"
+                        min="0"
+                        step={500}
+                        placeholder="5000"
+                        value={costoEnvio}
+                        onChange={(e) => setCostoEnvio(Math.max(0, Number(e.target.value) || 0))}
+                        className="text-[14px] font-normal"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-4">
+                    <Label htmlFor="repartidor" className="text-[12px] font-bold text-[#212121] dark:text-gray-200">
+                      Mensajero / Repartidor
+                    </Label>
+                    <div className="mt-1">
+                      <Input id="repartidor" placeholder="Ej: Moto 04" value={repartidor} onChange={(e) => setRepartidor(e.target.value)} className="text-[14px] font-normal" />
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-12">
+                    <Label htmlFor="indicaciones" className="text-[12px] font-bold text-[#212121] dark:text-gray-200">
+                      Indicaciones para el repartidor
+                    </Label>
+                    <div className="mt-1">
+                      <Input id="indicaciones" placeholder="Ej: Timbre dañado, dejar con el portero" value={indicaciones} onChange={(e) => setIndicaciones(e.target.value)} className="text-[14px] font-normal" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mesa si es En Sitio */}
+            {modalidad === "en_sitio" && pedidosStore.tieneCapacidad("table_service") && (
+              <div className="mt-4 pt-4 border-t border-[#ECECEC] dark:border-gray-800">
+                <Label htmlFor="mesa" className="text-[12px] font-bold text-[#212121] dark:text-gray-200">
+                  Ubicación en Salón / Mesa
+                </Label>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Barra", "Terraza"].map((mOpt) => (
+                    <button
+                      key={mOpt}
+                      type="button"
+                      onClick={() => setMesa(mOpt)}
+                      className={`px-3 py-1.5 rounded-xl text-[12px] font-bold border transition-all cursor-pointer ${
+                        mesa === mOpt
+                          ? "bg-[#FF3F1A] border-[#FF3F1A] text-white"
+                          : "bg-white border-[#ECECEC] text-[#212121] dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      {mOpt}
+                    </button>
+                  ))}
+                  <div className="w-44">
+                    <Input id="mesa" placeholder="Otra ubicación..." value={mesa} onChange={(e) => setMesa(e.target.value)} className="text-[14px] font-normal" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. CATÁLOGO VISUAL DE PLATILLOS (DISEÑO DEL MOCKUP: CART PRODUCTS) */}
+          <div className="bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 rounded-3xl p-5 sm:p-6 shadow-xs">
+            {/* Header del Catálogo con Buscador */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <h2 className="text-[24px] font-bold text-[#190088] dark:text-white tracking-tight">
+                Cart Products
+              </h2>
+
+              <div className="relative w-full sm:w-64">
+                <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={busquedaCatalogo}
+                  onChange={(e) => setBusquedaCatalogo(e.target.value)}
+                  placeholder="Search..."
+                  className="w-full pl-10 pr-4 py-2 text-[14px] font-normal rounded-2xl border border-[#ECECEC] bg-gray-50/70 text-[#212121] placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-[#97D6DF] dark:border-gray-700 dark:bg-gray-800/80 dark:text-white"
+                />
+              </div>
+            </div>
+
+            {/* Píldoras de Categorías con la Activa en Naranja NECTO */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 scrollbar-none">
+              {categorias.map((cat) => {
+                const activo = categoriaSeleccionada === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategoriaSeleccionada(cat)}
+                    className={`px-4 py-2 rounded-2xl text-[12px] font-bold whitespace-nowrap transition-all cursor-pointer ${
+                      activo
+                        ? "bg-[#FF3F1A] text-white shadow-xs scale-102"
+                        : "bg-white dark:bg-gray-800 text-[#212121] dark:text-gray-300 border border-[#ECECEC] dark:border-gray-700 hover:border-[#97D6DF]"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Grid de Productos con Contenedor de Scroll y Platos Redondos con Botón '+' Naranja NECTO */}
+            {tieneCatalogo && (
+              <div className="max-h-[560px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {catalogoFiltrado.map((cat, idx) => {
+                    const itemsEnTicket = items.filter((it) => it.nombre === cat.nombre);
+                    const cantidadEnTicket = itemsEnTicket.reduce((s, it) => s + it.cantidad, 0);
+                    const fotoUrl = (cat as any).imagen || asignarFotoInteligente(cat.nombre, (cat as any).categoria);
+
+                    // Etiquetas superiores decorativas del mockup con colores de marca
+                    const badgeLabel = idx === 0 ? "BEST SALE" : idx === 1 ? "9% Offer" : idx === 3 ? "TOP SALE" : idx === 5 ? "NEW ITEM" : null;
+                    const badgeColor = idx === 0 ? "bg-[#190088] text-white" : idx === 1 ? "bg-[#FF3F1A] text-white" : idx === 3 ? "bg-[#190088] text-white" : "bg-[#97D6DF] text-[#190088]";
+
+                    return (
+                      <div
+                        key={cat.id}
+                        onClick={() => {
+                          if (!cat.variantesDisponibles || cat.variantesDisponibles.length === 0) {
+                            agregarItemDesdeCatalogo(cat);
+                          }
+                        }}
+                        className={`group relative flex flex-col justify-between p-4 rounded-3xl border transition-all duration-200 cursor-pointer bg-white dark:bg-gray-900 ${
+                          cantidadEnTicket > 0
+                            ? "border-[#FF3F1A] shadow-md ring-1 ring-[#FF3F1A]"
+                            : "border-[#ECECEC] hover:border-[#97D6DF] hover:shadow-md dark:border-gray-800 dark:hover:border-gray-700"
+                        }`}
+                      >
+                        {badgeLabel && (
+                          <span className={`absolute top-3 left-3 px-2 py-0.5 rounded-lg text-[12px] font-bold uppercase shadow-xs z-10 ${badgeColor}`}>
+                            {badgeLabel}
+                          </span>
+                        )}
+
+                        {/* Plato Redondo Estilo Mockup */}
+                        <div className="relative w-full aspect-square max-h-36 mx-auto my-2 flex items-center justify-center">
+                          <div className="size-28 sm:size-32 rounded-full overflow-hidden shadow-md group-hover:scale-105 transition-transform duration-200 bg-gray-50 dark:bg-gray-800">
+                            <img
+                              src={fotoUrl}
+                              alt={cat.nombre}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                          {cantidadEnTicket > 0 && (
+                            <span className="absolute bottom-0 right-2 size-6 rounded-full bg-[#190088] text-white font-bold text-[12px] flex items-center justify-center shadow-lg border-2 border-white dark:border-gray-900">
+                              {cantidadEnTicket}
+                            </span>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                </>
-              );
-            })()}
-            <p className="mt-2 text-xs text-gray-400">
-              {tieneCatalogo
-                ? "Elige items del catálogo. Puedes dejar el pedido sin items si aún no se define."
-                : "Escribe los items del pedido. Puedes dejarlo sin items si aún no se define."}
-            </p>
-          </section>
 
-          {/* Paso · Método de pago */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="mb-4 flex items-center gap-2">
-              <StepBadge
-                n={
-                  modalidad === "domicilio" ||
-                  (modalidad === "en_sitio" && pedidosStore.tieneCapacidad("table_service"))
-                    ? 5
-                    : 4
-                }
-              />
-              <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Método de pago</h2>
-            </div>
-            {/* Los medios salen de la CONFIGURACIÓN (`datosBancarios`), no de una
-                lista escrita aquí. Antes los cuatro estaban a mano y los
-                interruptores de «Cuentas y cobros» no quitaban ninguno: se podía
-                apagar «Contra entrega» y el selector seguía ofreciéndolo. */}
-            {mediosDeCobro.length === 0 ? (
-              <Alert
-                variant="warning"
-                title="El negocio no acepta ningún medio de cobro"
-                message="Los cuatro están apagados en Configuración → Cuentas y cobros, así que este pedido no se puede cobrar desde aquí. Enciende al menos uno para poder registrarlo."
-              />
-            ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {/* Nombre y Categoría */}
+                        <div className="mt-2">
+                          <h3 className="text-[14px] font-bold text-[#190088] dark:text-white line-clamp-1" title={cat.nombre}>
+                            {cat.nombre}
+                          </h3>
+                          <p className="text-[12px] font-light text-gray-500">
+                            {(cat as any).categoria || "Especialidad"}
+                          </p>
+                        </div>
+
+                        {/* Fila de Precio y Botón Circular '+' Naranja NECTO */}
+                        <div className="mt-3 flex items-center justify-between pt-2 border-t border-[#ECECEC] dark:border-gray-800">
+                          <span className="text-[16px] font-bold text-[#212121] dark:text-white">
+                            {money(cat.precio)}
+                          </span>
+
+                          {cat.variantesDisponibles && cat.variantesDisponibles.length > 0 ? (
+                            <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              {cat.variantesDisponibles.map((v) => (
+                                <button
+                                  key={v}
+                                  type="button"
+                                  onClick={() => agregarItemDesdeCatalogo(cat, v)}
+                                  className="px-2 py-0.5 rounded-lg text-[12px] font-bold bg-[#FF3F1A] text-white hover:scale-105 transition-transform cursor-pointer"
+                                >
+                                  + {v}
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                agregarItemDesdeCatalogo(cat);
+                              }}
+                              className="size-8 sm:size-9 rounded-full bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white font-bold flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+                              title="Añadir al pedido"
+                            >
+                              <PlusIcon className="size-4 stroke-[3]" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {catalogoFiltrado.length === 0 && (
+                  <div className="py-16 text-center text-[14px] font-light text-gray-400">
+                    No se encontraron productos con "{busquedaCatalogo}".
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 3. MÉTODOS DE PAGO, NOTAS Y PROGRAMACIÓN */}
+          <div className="bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 rounded-3xl p-5 sm:p-6 shadow-xs">
+            <h2 className="text-[16px] font-bold text-[#190088] dark:text-white mb-4">
+              Cobro, Observaciones & Programación
+            </h2>
+
+            {/* Medios de Pago */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               {mediosDeCobro.map((mp) => {
                 const activo = metodoPago === mp.id;
-                const IconComponent = ICONO_METODO_PAGO[mp.id];
                 return (
                   <button
                     key={mp.id}
                     type="button"
                     onClick={() => setMetodoPago(mp.id)}
-                    title={mp.descripcion}
-                    className={
-                      "flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-colors " +
-                      (activo
-                        ? "border-secondary-500 dark:border-accent-400 bg-secondary-50 text-ink-title dark:bg-brand-500/10 dark:text-brand-300"
-                        : "border-gray-200 text-gray-600 hover:border-secondary-300 dark:border-gray-700 dark:text-gray-300")
-                    }
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all cursor-pointer ${
+                      activo
+                        ? "bg-[#190088] border-[#190088] text-white font-bold text-[12px] shadow-xs scale-102"
+                        : "bg-white border-[#ECECEC] text-[#212121] dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 font-normal text-[12px]"
+                    }`}
                   >
-                    <IconComponent className="h-5 w-5" />
-                    <span className="text-xs font-semibold">{mp.label}</span>
+                    <span>{mp.label}</span>
                   </button>
                 );
               })}
             </div>
-            )}
 
-            {(metodoPago === "efectivo" || metodoPago === "contra_entrega") && (
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="pagaCon">¿Con cuánto abona el cliente?</Label>
-                  <Input
-                    id="pagaCon"
-                    type="number"
-                    min="0"
-                    step={1000}
-                    placeholder={`Ej: ${totalPedido > 0 ? Math.ceil(totalPedido / 10000) * 10000 : 50000}`}
-                    value={pagaCon}
-                    onChange={(e) => {
-                      setPagaCon(e.target.value);
-                      // El error se limpia al reescribir: si se dejara, el mensaje
-                      // "es menor al total" seguiría visible con un monto ya
-                      // corregido hasta el siguiente intento de envío.
-                      setErrors((prev) => (prev.pagaCon ? { ...prev, pagaCon: "" } : prev));
-                    }}
-                    error={!!errors.pagaCon}
-                    hint={errors.pagaCon}
-                  />
-                </div>
-                {Number(pagaCon) > 0 && (
-                  <div className="flex flex-col justify-end">
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-xs dark:border-gray-700 dark:bg-gray-800">
-                      <p className="text-gray-500 dark:text-gray-400">Cambio a entregar por el repartidor:</p>
-                      <p className="text-base font-bold text-accent-600 dark:text-accent-400">
+            {/* Si es efectivo: cálculo de cambio con billetes COP */}
+            {esPagoEnEntrega && (
+              <div className="rounded-2xl bg-[#EFE6D3]/40 dark:bg-gray-800/50 p-4 border border-[#ECECEC] dark:border-gray-700 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                  <div>
+                    <Label htmlFor="pagaCon" className="text-[12px] font-bold text-[#212121] dark:text-gray-200">
+                      ¿Con cuánto abona el cliente?
+                    </Label>
+                    <div className="mt-1">
+                      <Input
+                        id="pagaCon"
+                        type="number"
+                        min="0"
+                        step={1000}
+                        placeholder={`Ej: ${totalPedido > 0 ? Math.ceil(totalPedido / 10000) * 10000 : 50000}`}
+                        value={pagaCon}
+                        onChange={(e) => {
+                          setPagaCon(e.target.value);
+                          if (errors.pagaCon) setErrors((prev) => ({ ...prev, pagaCon: "" }));
+                        }}
+                        error={!!errors.pagaCon}
+                        hint={errors.pagaCon}
+                        className="text-[14px] font-normal"
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setPagaCon(String(totalPedido))}
+                        className="px-2 py-0.5 rounded-md text-[12px] font-bold bg-white border border-[#ECECEC] text-[#212121] hover:bg-[#97D6DF]/20 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 cursor-pointer"
+                      >
+                        Exacto
+                      </button>
+                      {[20000, 50000, 100000].map((monto) => (
+                        <button
+                          key={monto}
+                          type="button"
+                          onClick={() => setPagaCon(String(monto))}
+                          className="px-2 py-0.5 rounded-md text-[12px] font-bold bg-white border border-[#ECECEC] text-[#212121] hover:bg-[#97D6DF]/20 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 cursor-pointer"
+                        >
+                          ${monto / 1000}k
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {Number(pagaCon) > 0 && (
+                    <div className="p-3 rounded-xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-700">
+                      <span className="text-[12px] font-light text-[#212121]/70 dark:text-gray-400">Vuelto / Cambio a entregar:</span>
+                      <p className={`text-[16px] font-bold mt-0.5 ${
+                        Number(pagaCon) >= totalPedido
+                          ? "text-[#190088] dark:text-[#97D6DF]"
+                          : "text-[#FF3F1A]"
+                      }`}>
                         {Number(pagaCon) >= totalPedido
                           ? money(Number(pagaCon) - totalPedido)
                           : `Faltan ${money(totalPedido - Number(pagaCon))}`}
                       </p>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/*
-              Datos de la transferencia: lo que el operador le dicta al cliente.
-
-              Antes esto no se enseñaba en NINGUNA parte. La configuración de
-              «Cuentas y cobros» prometía por escrito que «el bot y la tienda
-              comunican al cliente» estas cuentas, y no las leía nadie: el
-              operador tenía que sabérselas de memoria o salir de la pantalla.
-
-              No se ofrece copiar aquí porque el mensaje completo incluye el
-              enlace de pago, y el enlace lleva la referencia del pedido — que
-              todavía no existe. Eso se copia en la confirmación, cuando ya hay
-              número.
-            */}
-            {metodoPago === "transferencia" && transferencia && (
-              <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                  Cuentas para la transferencia
-                </p>
-
-                {transferencia.titular && (
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    Titular:{" "}
-                    <span className="font-medium text-gray-800 dark:text-white/90">
-                      {transferencia.titular}
-                    </span>
-                  </p>
-                )}
-
-                <ul className="mt-2 space-y-1">
-                  {transferencia.cuentas.map((cuenta) => (
-                    <li key={cuenta.etiqueta} className="flex items-baseline justify-between gap-3 text-xs">
-                      <span className="text-gray-500 dark:text-gray-400">{cuenta.etiqueta}</span>
-                      <span className="select-all font-mono font-medium text-gray-800 dark:text-white/90">
-                        {cuenta.valor}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                {transferencia.instrucciones && (
-                  <p className="mt-3 border-t border-dashed border-gray-200 pt-2 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                    {transferencia.instrucciones}
-                  </p>
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* Paso · Notas + programación */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="mb-4 flex items-center gap-2">
-              <StepBadge n={modalidad === "domicilio" ? 6 : 5} />
-              <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Detalles finales</h2>
-            </div>
-
-            <div>
-              <Label htmlFor="notas">Notas (opcional)</Label>
-              <textarea
-                id="notas"
-                rows={3}
-                value={notas}
-                onChange={(e) => setNotas(e.target.value)}
-                placeholder="Ej: sin cebolla, entregar en portería..."
-                className={`${inputBase} h-auto ${inputOk}`}
-              />
-            </div>
-
-            {/* Programar para más tarde (conserva el ProgramarModal).
-                Solo se ofrece si la sesión puede gestionar programados. */}
-            {puedeProgramar && (
-              <div className="mt-5 rounded-xl bg-gray-50 p-4 dark:bg-white/[0.03]">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">¿Programar para más tarde?</p>
-                    <p className="mt-0.5 text-xs text-gray-400">
-                      El pedido esperará hasta la hora indicada y se activará solo (o puedes activarlo antes).
-                    </p>
-                  </div>
-                  <Switch
-                    checked={programar}
-                    onChange={(v) => {
-                      setProgramar(v);
-                      if (v && !programadoISO) setShowProgramar(true);
-                      if (!v) setErrors((prev) => ({ ...prev, programado: "" }));
-                    }}
-                  />
+                  )}
                 </div>
-
-                {programar && (
-                  <div className="mt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowProgramar(true)}
-                      className={`flex w-full items-center justify-between gap-3 rounded-lg border bg-white px-4 py-3 text-left transition-colors hover:border-secondary-300 dark:bg-gray-900 dark:hover:border-brand-500 ${
-                        errors.programado ? "border-error-500" : "border-gray-300 dark:border-gray-700"
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-secondary-600 dark:text-accent-300">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        {programadoISO ? (
-                          <span className="text-sm font-medium capitalize text-gray-800 dark:text-white/90">
-                            {formatFechaHora(programadoISO)}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-400">Elegir fecha y hora…</span>
-                        )}
-                      </span>
-                      <span className="text-xs font-medium text-secondary-600 dark:text-accent-300">Cambiar</span>
-                    </button>
-                    {errors.programado && <p className="mt-1.5 text-xs text-error-500">{errors.programado}</p>}
-                  </div>
-                )}
               </div>
             )}
-          </section>
+
+            {/* Si es transferencia: cuentas registradas */}
+            {metodoPago === "transferencia" && transferencia && (
+              <div className="rounded-2xl bg-[#EFE6D3]/40 dark:bg-gray-800/50 p-3.5 border border-[#ECECEC] dark:border-gray-700 mb-4 text-[12px]">
+                <span className="font-bold text-[#190088] dark:text-gray-300">Cuentas para transferencia:</span>
+                <div className="mt-1.5 space-y-1">
+                  {transferencia.cuentas.map((c) => (
+                    <div key={c.etiqueta} className="flex justify-between items-center text-[#212121] dark:text-gray-300">
+                      <span className="font-normal">{c.etiqueta}:</span>
+                      <span className="font-bold text-[#190088] dark:text-white select-all">{c.valor}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Notas y Programación */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="notas" className="text-[12px] font-bold text-[#212121] dark:text-gray-300">
+                  Notas / Observaciones de cocina
+                </Label>
+                <textarea
+                  id="notas"
+                  rows={2}
+                  value={notas}
+                  onChange={(e) => setNotas(e.target.value)}
+                  placeholder="Ej: Sin cebolla, salsas aparte..."
+                  className="mt-1 w-full rounded-xl border border-[#ECECEC] bg-transparent px-3 py-2 text-[14px] font-normal text-[#212121] placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-[#97D6DF] dark:border-gray-700 dark:text-white"
+                />
+              </div>
+
+              {/* ¿Programar para más tarde? */}
+              {puedeProgramar && (
+                <div className="flex flex-col justify-between p-3.5 rounded-2xl bg-[#ECECEC]/40 dark:bg-gray-800/40 border border-[#ECECEC] dark:border-gray-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[12px] font-bold text-[#190088] dark:text-white">
+                        ¿Programar para más tarde?
+                      </span>
+                      <p className="text-[12px] font-light text-gray-500">
+                        Se activará automáticamente al llegar la hora
+                      </p>
+                    </div>
+                    <Switch
+                      checked={programar}
+                      onChange={(v) => {
+                        setProgramar(v);
+                        if (v && !programadoISO) setShowProgramar(true);
+                        if (!v) setErrors((prev) => ({ ...prev, programado: "" }));
+                      }}
+                    />
+                  </div>
+
+                  {programar && (
+                    <div className="mt-2.5 flex items-center justify-between bg-white dark:bg-gray-900 px-3 py-1.5 rounded-xl border border-[#ECECEC] dark:border-gray-700">
+                      <span className="text-[12px] font-bold text-[#190088] dark:text-white">
+                        ⏰ {programadoISO ? formatFechaHora(programadoISO) : "Sin definir"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowProgramar(true)}
+                        className="text-[12px] font-bold text-[#190088] bg-[#97D6DF]/30 px-2 py-0.5 rounded-lg hover:scale-105 transition-transform cursor-pointer"
+                      >
+                        Cambiar hora
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* ══ Columna derecha: resumen en vivo (sticky) ══ */}
-        <aside className="lg:sticky lg:top-6 lg:self-start">
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-              <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Resumen del pedido</h2>
+        {/* ══════════════════════════════════════════════════════════════════
+            COLUMNA DERECHA: RESUMEN DE PRODUCTOS (DISEÑO DEL MOCKUP: PRODUCTS) (5 COLS)
+           ══════════════════════════════════════════════════════════════════ */}
+        <aside className="lg:col-span-5 xl:col-span-5 lg:sticky lg:top-6 bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+          
+          <div>
+            {/* Header del Carrito: "Products" + "Delete All" */}
+            <div className="flex items-center justify-between pb-4 border-b border-[#ECECEC] dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[24px] font-bold text-[#190088] dark:text-white tracking-tight">
+                  Products
+                </h2>
+                <span className={`px-2.5 py-0.5 rounded-full text-[12px] font-bold ${
+                  programar
+                    ? "bg-[#EFE6D3] text-[#190088] dark:bg-gray-800 dark:text-[#97D6DF]"
+                    : "bg-[#97D6DF]/30 text-[#190088] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]"
+                }`}>
+                  {programar ? "Programado" : "Nuevo"}
+                </span>
+              </div>
+              {items.length > 0 && (
+                <button
+                  type="button"
+                  onClick={vaciarTicket}
+                  className="text-[12px] font-bold text-[#FF3F1A] hover:underline transition-colors cursor-pointer"
+                >
+                  Delete All
+                </button>
+              )}
             </div>
 
-            <div className="space-y-4 px-5 py-5">
-              {/* Estado que tendrá */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs uppercase tracking-wide text-gray-400">Entrará como</span>
-                {programar && programadoISO ? (
-                  <Badge color="light" size="sm">Programado</Badge>
-                ) : (
-                  <Badge color="info" size="sm">Nuevo</Badge>
-                )}
-              </div>
-
-              {/* Cliente */}
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-gray-500">Cliente</span>
-                <span className="truncate font-medium text-gray-800 dark:text-white/90">
-                  {cliente.trim() || <span className="text-gray-400">—</span>}
+            {/* Datos del Cliente Activo en la Comanda */}
+            <div className="my-3 p-3 rounded-2xl bg-[#EFE6D3]/50 dark:bg-gray-800/40 border border-[#ECECEC] dark:border-gray-700/60 flex items-center justify-between text-[12px]">
+              <div>
+                <span className="font-bold text-[#190088] dark:text-white">
+                  {cliente.trim() || "Cliente no asignado"}
+                </span>
+                <span className="block text-[12px] font-light text-gray-500">
+                  {telefono.trim() || "Sin WhatsApp"}
                 </span>
               </div>
+              <span className="font-bold text-[#212121] dark:text-white capitalize">
+                {pedidosStore.modalidadLabel(modalidad)}
+              </span>
+            </div>
 
-              {/* Modalidad */}
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-gray-500">Modalidad</span>
-                <span className="inline-flex items-center gap-1.5 font-medium text-gray-800 dark:text-white/90">
-                  <span className="text-secondary-600 dark:text-accent-300"><ModalidadIcon m={modalidad} /></span>
-                  {pedidosStore.modalidadLabel(modalidad)}
-                </span>
-              </div>
-
-              {/* Dirección si es domicilio */}
-              {modalidad === "domicilio" && calle.trim() && (
-                <div className="flex items-start justify-between gap-3 text-sm">
-                  <span className="text-gray-500">Entrega</span>
-                  <span className="max-w-[170px] text-right font-medium text-gray-800 dark:text-white/90 truncate">
-                    {calle}{referencia ? `, ${referencia}` : ""}
-                  </span>
+            {/* Lista de Productos Agregados Estilo Mockup */}
+            <div className="py-2 space-y-3 max-h-[360px] overflow-y-auto pr-1">
+              {items.length === 0 ? (
+                <div className="py-12 text-center text-gray-400">
+                  <p className="text-[14px] font-bold text-gray-600 dark:text-gray-300">Tu carrito está vacío</p>
+                  <p className="text-[12px] font-light text-gray-400 mt-1">
+                    Toca productos del catálogo para armar la comanda
+                  </p>
                 </div>
-              )}
+              ) : (
+                items.map((it, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-gray-800/50 border border-[#ECECEC] dark:border-gray-700/60 shadow-2xs"
+                  >
+                    {/* Checkbox y Foto Redonda */}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="size-5 rounded-md bg-[#190088] text-white font-bold text-[12px] flex items-center justify-center shrink-0">
+                        ✓
+                      </span>
+                      <img
+                        src={it.imagen || asignarFotoInteligente(it.nombre)}
+                        alt={it.nombre}
+                        className="size-12 rounded-xl object-cover shrink-0 shadow-xs"
+                      />
+                      <div className="min-w-0">
+                        <h4 className="text-[14px] font-bold text-[#190088] dark:text-white truncate">
+                          {it.nombre}
+                        </h4>
+                        <p className="text-[12px] font-light text-gray-500">
+                          Total {money((it.precio ?? 0) * it.cantidad)}
+                        </p>
+                      </div>
+                    </div>
 
-              {/* Método de pago */}
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-gray-500">Pago</span>
-                <span className="font-medium capitalize text-gray-800 dark:text-white/90">
-                  {metodoPago.replace("_", " ")}
-                </span>
-              </div>
+                    {/* Controles de Cantidad y Basura */}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => eliminarItem(idx)}
+                        className="text-gray-400 hover:text-[#FF3F1A] transition-colors cursor-pointer p-0.5"
+                        title="Quitar ítem"
+                      >
+                        <TrashIcon className="size-3.5" />
+                      </button>
 
-              {/* Programación */}
-              {programar && programadoISO && (
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-gray-500">Programado</span>
-                  <span className="font-medium capitalize text-gray-800 dark:text-white/90">{formatFechaHora(programadoISO)}</span>
-                </div>
-              )}
-
-              {/* Items */}
-              <div className="border-t border-dashed border-gray-200 pt-4 dark:border-gray-700">
-                <p className="mb-2 text-xs uppercase tracking-wide text-gray-400">
-                  Items {itemsValidos.length > 0 && `(${itemsValidos.length})`}
-                </p>
-                {itemsValidos.length === 0 ? (
-                  <p className="text-sm text-gray-400">Sin items aún.</p>
-                ) : (
-                  <ul className="space-y-1.5">
-                    {itemsValidos.map((it, i) => (
-                      <li key={i} className="flex items-center justify-between text-sm">
-                        <span className="truncate text-gray-700 dark:text-gray-300">
-                          {Math.max(1, it.cantidad)}× {it.nombre.trim()}
+                      {/* Stepper Estilo Mockup */}
+                      <div className="flex items-center gap-1.5 bg-[#212121] text-white rounded-full px-2 py-0.5 text-[12px] font-bold">
+                        <button
+                          type="button"
+                          onClick={() => modificarCantidad(idx, -1)}
+                          className="hover:text-[#97D6DF] transition-colors cursor-pointer"
+                        >
+                          <MinusIcon className="size-3" />
+                        </button>
+                        <span className="w-3 text-center">
+                          {it.cantidad}
                         </span>
-                        {it.precio !== undefined && (
-                          <span className="shrink-0 text-gray-500 dark:text-gray-400">
-                            {money(Math.max(0, it.precio) * Math.max(1, it.cantidad))}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              {/* Desglose Subtotal + Envío */}
-              <div className="border-t border-dashed border-gray-200 pt-3 text-xs space-y-1 dark:border-gray-700">
-                <div className="flex justify-between text-gray-500 dark:text-gray-400">
-                  <span>Subtotal productos</span>
-                  <span>{money(subtotalItems)}</span>
-                </div>
-                {modalidad === "domicilio" && (
-                  <div className="flex justify-between text-gray-500 dark:text-gray-400">
-                    <span>Costo de envío</span>
-                    <span>{costoEnvioEfectivo > 0 ? money(costoEnvioEfectivo) : "Gratis"}</span>
+                        <button
+                          type="button"
+                          onClick={() => modificarCantidad(idx, 1)}
+                          className="hover:text-[#97D6DF] transition-colors cursor-pointer"
+                        >
+                          <PlusIcon className="size-3" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-
-              {/* Total */}
-              {totalPedido > 0 && (
-                <div className="flex items-center justify-between border-t border-gray-200 pt-3 text-base font-semibold dark:border-gray-800">
-                  <span className="text-gray-800 dark:text-white/90">Total</span>
-                  <span className="text-gray-800 dark:text-white/90">{money(totalPedido)}</span>
-                </div>
-              )}
-
-              {/* Vuelto / Cambio */}
-              {(metodoPago === "efectivo" || metodoPago === "contra_entrega") && Number(pagaCon) > 0 && (
-                <div className="rounded-xl bg-accent-50 p-2.5 text-xs dark:bg-accent-500/10">
-                  <div className="flex justify-between text-accent-700 dark:text-accent-300">
-                    <span>Abona con:</span>
-                    <span>{money(Number(pagaCon))}</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-accent-800 dark:text-accent-200 mt-0.5">
-                    <span>Cambio:</span>
-                    <span>
-                      {Number(pagaCon) >= totalPedido
-                        ? money(Number(pagaCon) - totalPedido)
-                        : `Faltan ${money(totalPedido - Number(pagaCon))}`}
-                    </span>
-                  </div>
-                </div>
+                ))
               )}
             </div>
+          </div>
 
-            {/* Acción */}
-            <div className="border-t border-gray-100 px-5 py-4 dark:border-gray-800">
-              {/*
-                El botón NO se deshabilita por pago insuficiente a propósito: si
-                se apagara, el operador no podría pulsarlo y no llegaría a ver el
-                motivo —el error solo aparece tras intentar enviar—, quedando un
-                control mudo. Se bloquea la creación (`validate()` devuelve false)
-                pero se deja pulsar, y el clic es lo que explica qué falta.
-              */}
-              <Button className="w-full" size="md" onClick={handleCreate} disabled={!puedeCrear}>
-                {programar && puedeProgramar ? "Programar pedido" : "Crear pedido"}
-              </Button>
+          {/* Desglose Financiero Estilo Mockup */}
+          <div className="pt-4 border-t border-[#ECECEC] dark:border-gray-800 space-y-2 text-[14px]">
+            <div className="flex justify-between text-gray-600 dark:text-gray-400 font-normal">
+              <span>Total Product Price</span>
+              <span className="font-bold text-[#212121] dark:text-white">{money(subtotalItems)}</span>
+            </div>
+            {modalidad === "domicilio" && (
+              <div className="flex justify-between text-gray-600 dark:text-gray-400 font-normal">
+                <span>Delivery Fee</span>
+                <span className="font-bold text-[#212121] dark:text-white">
+                  {costoEnvioEfectivo > 0 ? money(costoEnvioEfectivo) : "Free"}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between items-baseline pt-2 border-t border-[#ECECEC] dark:border-gray-800">
+              <span className="text-[16px] font-bold text-[#190088] dark:text-white">Total Payment</span>
+              <span className="text-[36px] font-bold text-[#190088] dark:text-white">
+                {money(totalPedido)}
+              </span>
+            </div>
+
+            {/* Botón Naranja NECTO: Proceed to Payment */}
+            <div className="pt-3">
+              <button
+                type="button"
+                onClick={handleCreate}
+                disabled={!puedeCrear}
+                className="w-full py-4 rounded-2xl bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white font-bold text-[16px] shadow-md shadow-[#FF3F1A]/20 transition-all active:scale-98 cursor-pointer text-center"
+              >
+                {programar ? "Programar Pedido" : "Proceed to Payment"} ({money(totalPedido)})
+              </button>
+
               {!puedeCrear && (
-                <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-2 text-center text-[12px] font-normal text-[#FF3F1A]">
                   {motivoSinPermiso("orders.create")}
                 </p>
               )}
-              {errors.pagaCon && (
-                <p className="mt-2 text-center text-xs text-error-500">{errors.pagaCon}</p>
+
+              {Object.keys(errors).length > 0 && (
+                <p className="mt-2 text-center text-[12px] font-bold text-[#FF3F1A]">
+                  {errors.cliente || errors.telefono || errors.calle || errors.items || errors.programado || "Completa los campos obligatorios"}
+                </p>
               )}
-              <button
-                type="button"
-                onClick={() => navigate("/pedidos")}
-                className="mt-2 w-full text-center text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400"
-              >
-                Cancelar
-              </button>
             </div>
           </div>
         </aside>
+
       </div>
 
+      {/* Modal de Programación */}
       {showProgramar && (
         <ProgramarModal
           valorInicial={programadoISO ? new Date(programadoISO) : null}
@@ -1336,7 +1533,7 @@ export const CrearPedidoPage = observer(() => {
           }}
         />
       )}
-    </>
+    </div>
   );
 });
 
