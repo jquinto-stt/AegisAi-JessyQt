@@ -9,6 +9,7 @@ import { ThemeToggleButton } from "@/shell";
 import ModuleSwitcher from "@/shell/header/ModuleSwitcher";
 import NotificationDropdown from "@/shell/header/NotificationDropdown";
 import UserDropdown from "@/shell/header/UserDropdown";
+import { OperadorSelector } from "@/shell/header/OperadorSelector";
 import { AppSidebar } from "@/app/AppSidebar";
 import { sessionStore } from "@/stores";
 import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils";
@@ -107,7 +108,7 @@ const AppHeader = observer(() => (
             `ModulosPage`, la pantalla que ES el lanzador, donde "cambiar de
             módulo" no significaría nada. */}
         <ModuleSwitcher />
-        <OperadorChip />
+        <OperadorSelector />
       </div>
     }
   >

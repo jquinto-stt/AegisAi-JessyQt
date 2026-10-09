@@ -111,6 +111,7 @@ export {
   puedePrepararPedido,
   puedeCancelarPedido,
   puedeCrearPedido,
+  puedeEditarPedido,
   puedeVerProgramados,
   puedeGestionarProgramados,
   puedeEscribirCliente,

@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { Modal } from "@/elements/ui/modal";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
-import { pedidosStore, ETIQUETA_PAGO, puedeEscribirCliente } from "@/stores";
+import { pedidosStore, ETIQUETA_PAGO, puedeEscribirCliente, puedeConfirmarPedido, puedeEditarPedido } from "@/stores";
 import type { Pedido } from "@/stores/pedidos.store";
 import { BUSINESS_PROFILES } from "@/domain/pedidos/pedidos.profiles";
 
@@ -158,27 +158,39 @@ export const DetallePedidoModal = observer(
               </p>
             )}
 
-            {/* Asignación de Repartidor / Courier */}
+            {/* Asignación de Repartidor / Courier.
+                El input es una ESCRITURA sobre la logística del pedido, así que
+                exige `orders.edit`. Un rol que solo puede ABRIR el detalle
+                (Preparación tiene `orders.read` y nada más de órdenes) veía el
+                campo y podía reasignar el reparto: un control que mentía sobre
+                lo que el perfil puede hacer. Sin la capacidad se muestra el
+                valor como texto, que es información, no una promesa. */}
             <div className="mt-3 flex items-center justify-between border-t border-gray-200/60 pt-2.5 dark:border-gray-800">
               <span className="text-xs text-gray-600 dark:text-gray-400">
                 {pedidosStore.tieneCapacidad("carrier_shipment")
                   ? "Courier / Guía de envío:"
                   : "Repartidor asignado:"}
               </span>
-              <input
-                type="text"
-                placeholder={
-                  pedidosStore.tieneCapacidad("carrier_shipment")
-                    ? "Ej: Servientrega Guía #1234"
-                    : "Nombre o empresa de mensajería"
-                }
-                value={repartidorInput}
-                onChange={(e) => {
-                  setRepartidorInput(e.target.value);
-                  pedidosStore.asignarRepartidor(pedido.id, e.target.value);
-                }}
-                className="h-7.5 w-52 rounded-lg border border-gray-200 bg-white px-2.5 text-right text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-              />
+              {puedeEditarPedido() ? (
+                <input
+                  type="text"
+                  placeholder={
+                    pedidosStore.tieneCapacidad("carrier_shipment")
+                      ? "Ej: Servientrega Guía #1234"
+                      : "Nombre o empresa de mensajería"
+                  }
+                  value={repartidorInput}
+                  onChange={(e) => {
+                    setRepartidorInput(e.target.value);
+                    pedidosStore.asignarRepartidor(pedido.id, e.target.value);
+                  }}
+                  className="h-7.5 w-52 rounded-lg border border-gray-200 bg-white px-2.5 text-right text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+              ) : (
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  {pedido.repartidor?.trim() ? pedido.repartidor : "Sin asignar"}
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -237,15 +249,17 @@ export const DetallePedidoModal = observer(
             <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
               Información de Pago
             </span>
-            <button
-              type="button"
-              onClick={() => {
-                pedidosStore.togglePagado(pedido.id);
-              }}
-              className="text-xs font-semibold text-secondary-600 hover:underline dark:text-brand-400"
-            >
-              {pedido.pagado ? `Marcar como ${ETIQUETA_PAGO.sinPagar.toLowerCase()}` : `Marcar como ${ETIQUETA_PAGO.pagado.toLowerCase()}`}
-            </button>
+            {puedeConfirmarPedido() && (
+              <button
+                type="button"
+                onClick={() => {
+                  pedidosStore.togglePagado(pedido.id);
+                }}
+                className="text-xs font-semibold text-secondary-600 hover:underline dark:text-brand-400"
+              >
+                {pedido.pagado ? `Marcar como ${ETIQUETA_PAGO.sinPagar.toLowerCase()}` : `Marcar como ${ETIQUETA_PAGO.pagado.toLowerCase()}`}
+              </button>
+            )}
           </div>
 
           <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
@@ -285,6 +299,47 @@ export const DetallePedidoModal = observer(
           <div className="mb-4">
             <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Notas</p>
             <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{pedido.notas}</p>
+          </div>
+        )}
+
+        {/* Registro de Auditoría y Trazabilidad por Operador */}
+        {pedido.auditoria && pedido.auditoria.length > 0 && (
+          <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-800 dark:text-white/90">
+                🛡️ Trazabilidad por Operador
+              </span>
+              <span className="text-[11px] text-gray-400 font-medium">
+                {pedido.auditoria.length} evento{pedido.auditoria.length > 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+              {pedido.auditoria.map((aud) => (
+                <div
+                  key={aud.id}
+                  className="flex items-start justify-between gap-2 text-xs border-l-2 border-brand-500 pl-2.5 py-0.5"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-800 dark:text-white truncate">
+                      {aud.accion}
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                      Por:{" "}
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                        {aud.operadorNombre}
+                      </span>
+                      {aud.operadorCargo && ` (${aud.operadorCargo})`}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[10px] text-gray-400">
+                    {new Date(aud.fecha).toLocaleTimeString("es-CO", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

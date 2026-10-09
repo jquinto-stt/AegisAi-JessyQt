@@ -22,9 +22,9 @@ import {
   ATENCION_LABEL,
   puedeEscribirCliente,
   hayCanalesMensajeriaActivos,
+  puedeEscribirEnConversaciones,
   puedeCrearPedido,
-  motivoSinPermiso,
-  puedeGuardarConfig,
+  puedeVerConfig,
 } from "@/stores";
 import type { Pedido } from "@/stores/pedidos.store";
 import type { ConversacionCanal } from "@/stores";
@@ -404,7 +404,7 @@ const ClientesModal = observer(
                 key={f.conv.id}
                 fila={f}
                 onClick={() => onChat(f.conv.id)}
-                showWhatsApp={puedeEscribirCliente() && hayCanalesMensajeriaActivos()}
+                showWhatsApp={puedeEscribirEnConversaciones()}
               />
             ))
           )}
@@ -429,6 +429,12 @@ const ClientesCardWidget = observer(
   }) => {
     const navigate = useNavigate();
     const canalesActivos = hayCanalesMensajeriaActivos();
+    // Ver la bandeja y RESPONDER son capacidades distintas. El widget se monta
+    // con `channels.read` (ver InicioPage), así que sin esta separación un rol
+    // de solo lectura veía «Responder →» sobre cada chat urgente: una promesa
+    // que su perfil no puede cumplir.
+    const puedeResponder = puedeEscribirCliente();
+    const puedeConfigurar = puedeVerConfig();
     const filas = filasDeClientes();
     const urgentes = filas
       .filter((f) => estadoAtencionDe(f.conv) === "pide_asesor")
@@ -465,13 +471,19 @@ const ClientesCardWidget = observer(
             <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
             <span className="truncate">Canales de chat inactivos · No es posible enviar mensajes</span>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate("/pedidos/config?seccion=integraciones")}
-            className="font-bold underline text-[#190088] hover:text-[#FF3F1A] dark:text-amber-300 shrink-0 cursor-pointer"
-          >
-            Configurar
-          </button>
+          {/* El enlace va a `/pedidos/config`, que exige `settings.read`. Un rol
+              con `channels.read` pero sin `settings.read` (Vendedor) veía el
+              botón y al pulsarlo caía en «No tienes acceso»: un enlace que su
+              perfil no puede seguir. Sin la capacidad queda solo el aviso. */}
+          {puedeConfigurar && (
+            <button
+              type="button"
+              onClick={() => navigate("/pedidos/config?seccion=integraciones")}
+              className="font-bold underline text-[#190088] hover:text-[#FF3F1A] dark:text-amber-300 shrink-0 cursor-pointer"
+            >
+              Configurar
+            </button>
+          )}
         </div>
       )}
 
@@ -525,8 +537,8 @@ const ClientesCardWidget = observer(
                       <ExclamationCircleIcon className="size-3" />
                       Solicitó atención humana
                     </span>
-                    <span className={canalesActivos ? "text-secondary-600 dark:text-brand-400 hover:underline" : "text-amber-700 dark:text-amber-400"}>
-                      {canalesActivos ? "Responder →" : "Solo lectura"}
+                    <span className={canalesActivos && puedeResponder ? "text-secondary-600 dark:text-brand-400 hover:underline" : "text-amber-700 dark:text-amber-400"}>
+                      {canalesActivos && puedeResponder ? "Responder →" : "Solo lectura"}
                     </span>
                   </div>
                 )}
@@ -564,6 +576,8 @@ const PedidosEnCursoCard = observer(({ onVerPedido }: { onVerPedido: (id: string
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 3);
 
+  const puedeVerMontos = sessionStore.hasPermission("team.read");
+
   return (
     <div>
       {tabla.length === 0 ? (
@@ -578,7 +592,7 @@ const PedidosEnCursoCard = observer(({ onVerPedido }: { onVerPedido: (id: string
                 <TableCell header>Pedido</TableCell>
                 <TableCell header>Cliente</TableCell>
                 <TableCell header>Modalidad</TableCell>
-                <TableCell header>Total</TableCell>
+                <TableCell header>{puedeVerMontos ? "Total" : "Artículos"}</TableCell>
                 <TableCell header>Estado</TableCell>
                 <TableCell header>Tiempo</TableCell>
               </TableRow>
@@ -596,7 +610,9 @@ const PedidosEnCursoCard = observer(({ onVerPedido }: { onVerPedido: (id: string
                     {pedidosStore.modalidadLabel(p.modalidad)}
                   </TableCell>
                   <TableCell className="text-gray-700 dark:text-gray-300 font-semibold">
-                    {pedidosStore.totalPedido(p) > 0 ? money(pedidosStore.totalPedido(p)) : "—"}
+                    {puedeVerMontos
+                      ? (pedidosStore.totalPedido(p) > 0 ? money(pedidosStore.totalPedido(p)) : "—")
+                      : `${p.items.reduce((acc, it) => acc + it.cantidad, 0)} items`}
                   </TableCell>
                   <TableCell>
                     <Badge color={pedidosStore.estadoBadgeColor(p.estado)} size="sm">
@@ -718,17 +734,16 @@ export const InicioPage = observer(() => {
             <span>Modo Enfoque</span>
           </button>
 
-          <div title={puedeCrear ? undefined : motivoSinPermiso("orders.create")}>
+          {puedeCrear && (
             <button
               type="button"
-              disabled={!puedeCrear}
               onClick={() => navigate("/pedidos/crear")}
-              className="flex h-10 items-center gap-1.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-50 px-4 text-xs sm:text-sm font-semibold text-white shadow-theme-xs transition-colors cursor-pointer"
+              className="flex h-10 items-center gap-1.5 rounded-xl bg-brand-500 hover:bg-brand-600 px-4 text-xs sm:text-sm font-semibold text-white shadow-theme-xs transition-colors cursor-pointer"
             >
               <PlusIcon className="size-4 stroke-[2.5]" />
               <span>Crear pedido</span>
             </button>
-          </div>
+          )}
 
           <button
             type="button"
@@ -748,17 +763,19 @@ export const InicioPage = observer(() => {
 
       {/* ── FILA 2: PEDIDO PRIORITARIO DESTACADO (~60%) + CHAT & CONVERSACIONES (~40%) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mb-6">
-        <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
+        <div className={sessionStore.hasPermission("channels.read") ? "lg:col-span-7 xl:col-span-8 flex flex-col" : "lg:col-span-12 flex flex-col"}>
           <PedidoDestacadoCard onVerDetalle={setDetalleId} />
         </div>
 
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
-          <ClientesCardWidget
-            onAbrir={() => setClientesOpen(true)}
-            onChat={abrirChat}
-            className="h-full"
-          />
-        </div>
+        {sessionStore.hasPermission("channels.read") && (
+          <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
+            <ClientesCardWidget
+              onAbrir={() => setClientesOpen(true)}
+              onChat={abrirChat}
+              className="h-full"
+            />
+          </div>
+        )}
       </div>
 
       {/* ── FILA 3: CALENDARIO SEMANAL (~40%) + PEDIDOS RECIENTES & ACTIVIDAD (~60%) ── */}

@@ -119,6 +119,25 @@ export function puedeCrearPedido(): boolean {
   return puede("orders.create");
 }
 
+/**
+ * Editar los datos de un pedido ya creado (repartidor asignado, correcciones).
+ *
+ * ── Por qué existe (08/10) ────────────────────────────────────────────────
+ *
+ * `orders.edit` estaba declarada desde el principio pero **no tenía ningún
+ * lector**: el input de «Repartidor asignado» del `DetallePedidoModal` escribía
+ * en el store sin comprobar nada. Cualquier rol que pudiera ABRIR el detalle
+ * —Preparación, con solo `orders.read`— podía reasignar el reparto, que es una
+ * mutación de la logística del pedido.
+ *
+ * El ayudante se escribe una sola vez para que la capacidad no se teclee a mano
+ * en la condición: una cadena mal escrita en un `puede(...)` no da error de
+ * compilación y deniega en silencio.
+ */
+export function puedeEditarPedido(): boolean {
+  return puede("orders.edit");
+}
+
 // ── Programados ────────────────────────────────────────────────────────────
 
 /** Ver la sección de pedidos programados. */
@@ -133,9 +152,25 @@ export function puedeGestionarProgramados(): boolean {
 
 // ── Canales (WhatsApp) ─────────────────────────────────────────────────────
 
-/** Abrir WhatsApp / escribir al cliente desde un pedido. */
+/**
+ * Abrir WhatsApp / escribir al cliente desde un pedido.
+ *
+ * ── Por qué exige `channels.respond` y NO `channels.read` (corregido 08/10) ─
+ *
+ * Pedía `channels.read`, y eso convertía el botón «WhatsApp» del detalle del
+ * pedido, del tablero y del historial en un **control que miente**: un rol con
+ * acceso de solo lectura al canal (leer la bandeja) veía el botón y podía
+ * abrir el hilo para escribir. Leer un canal y escribir en él son dos acciones
+ * distintas — es exactamente el corte que `channels.read` / `channels.respond`
+ * declara en el catálogo de capacidades.
+ *
+ * Coincide a propósito con `puedeResponderConversacion()`: las dos responden
+ * «¿puede esta sesión mandar un mensaje al cliente?». Se conserva el nombre
+ * porque el punto de vista es distinto (desde un PEDIDO, no desde la bandeja),
+ * pero la capacidad que lo gobierna es una sola.
+ */
 export function puedeEscribirCliente(): boolean {
-  return puede("channels.read");
+  return puede("channels.respond");
 }
 
 /** Ver la consola de conversaciones (bandeja y lectura de canales). */

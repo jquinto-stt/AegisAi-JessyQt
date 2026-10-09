@@ -131,6 +131,18 @@ export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelC
     setNotasContacto(convId ? localStorage.getItem(`crm_notas_${convId}`) ?? "" : "");
   }, [convId]);
 
+  // `plantillaEnviada` vive AQUÍ, con los demás hooks, y no junto a
+  // `enviarPlantilla`, que es donde estaba. Un hook no puede declararse DESPUÉS
+  // de un `return` temprano: los dos `return` de abajo salían antes de llegar a
+  // él, así que el componente llamaba 5 hooks con conversación y 4 sin ella, y
+  // React abortaba con «Rendered fewer hooks than expected» en cuanto `conv`
+  // dejaba de resolverse —al cambiar de chat mientras la bandeja se recarga
+  // desde Supabase, o al seleccionar un id que aún no está—. El efecto era peor
+  // que un aviso de consola: el árbol entero se desmontaba y la consola de chats
+  // quedaba en blanco. Medido antes de moverlo: 3 excepciones y el panel de
+  // conversación desaparecido.
+  const [plantillaEnviada, setPlantillaEnviada] = useState<string | null>(null);
+
   if (!convId) {
     return (
       <div className="flex h-full items-center justify-center p-6 text-center text-xs text-gray-400">
@@ -184,8 +196,6 @@ export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelC
     setNotasContacto(texto);
     localStorage.setItem(`crm_notas_${convId}`, texto);
   };
-
-  const [plantillaEnviada, setPlantillaEnviada] = useState<string | null>(null);
 
   const enviarPlantilla = (tipo: "menu" | "ubicacion" | "pago") => {
     if (!convId) return;

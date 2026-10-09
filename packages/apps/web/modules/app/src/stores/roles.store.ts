@@ -71,32 +71,6 @@ export type Capacidad =
 
 /**
  * Catálogo completo de capacidades (pedidos + inventarios + asistente IA).
- *
- * `orders.edit` y `orders.delete` están **reservadas**: no tienen UI hoy y no se
- * construye ninguna (contrato §9). Existen para que el catálogo sea completo
- * cuando aparezcan.
- *
- * ── Por qué Inventarios lleva CINCO, y qué separa cada una ────────────────
- *
- * El mínimo habría sido dos (`read` + `manage`). Se sube a cinco porque cada
- * corte separa dos cosas que en la operación real **las hace gente distinta**:
- *
- *   · `count` / `finalize` — **quien cuenta no firma.** Es una separación de
- *     responsabilidades, no un matiz: el operador que recorrió el almacén es
- *     también el que tiene interés en que su conteo cuadre. Si pudiera firmar,
- *     la firma no verificaría nada; sería una rúbrica al pie de su propio
- *     trabajo. Por eso `finalize` es una capacidad aparte y no un valor de
- *     `count`.
- *   · `manage` — crear y dar de baja elementos y ubicaciones es **cambiar el
- *     catálogo**, que afecta a todos los conteos futuros. Contar afecta a un
- *     conteo. Son de otra categoría.
- *   · `configure` — tocar la configuración cambia el comportamiento del módulo
- *     para todos, y se hace una vez al mes o nunca. Va separada de `manage`
- *     porque un supervisor de almacén necesita lo segundo (dar de alta una
- *     herramienta) y no lo primero.
- *
- * El repo ya usa esa granularidad donde importa: `orders.confirm` está separado
- * de `orders.create`.
  */
 export const CAPACIDADES: Capacidad[] = [
   "orders.read",
@@ -154,10 +128,6 @@ export const CAPACIDAD_LABEL: Record<Capacidad, string> = {
 /**
  * Agrupación de capacidades para la UI. Sirve para que el editor de roles y el
  * perfil muestren los switches agrupados por área en vez de una lista plana.
- *
- * **Todo grupo nuevo tiene que entrar aquí**: un test exige que
- * `CAPACIDAD_GRUPOS` cubra el catálogo entero, porque una capacidad sin grupo es
- * un permiso que el admin no puede revisar desde ninguna pantalla.
  */
 export interface CapacidadGrupo {
   id: string;
@@ -182,9 +152,6 @@ export const CAPACIDAD_GRUPOS: CapacidadGrupo[] = [
 
 /**
  * Rol — paquete **nombrado y reutilizable** de capacidades (contrato §1.3).
- *
- * Un rol no es una persona ni un tipo de sesión, y no otorga acceso por sí
- * mismo: hay que asignarlo a alguien vía `Operador.rolId`.
  */
 export interface Rol {
   id: string;
@@ -195,17 +162,9 @@ export interface Rol {
   sistema?: boolean;
 }
 
-/**
- * Id del rol de administrador.
- *
- * IMPORTANTE (contrato §6 / invariante C9): el administrador es un **rol
- * normal**, no una excepción del dominio. No existe `esAdmin` ni ninguna rama
- * `if (esAdmin) return true`. La sesión directa de administrador se resuelve
- * asignando este `rolId`, y a partir de ahí todo pasa por `hasPermission()`.
- */
 export const ROL_ADMIN = "admin_tienda";
 
-/** Catálogo inicial de roles (mock en memoria, sin backend). */
+/** Catálogo inicial de roles (los 5 roles de Pedidos + analista de inventarios para Inventarios). */
 export const ROLES_SEED: Rol[] = [
   {
     id: ROL_ADMIN,
@@ -217,14 +176,12 @@ export const ROLES_SEED: Rol[] = [
   {
     id: "supervisor_pedidos",
     nombre: "Supervisor de operaciones",
-    descripcion: "Gestiona el ciclo operativo completo de órdenes y conteos.",
+    descripcion: "Gestiona el ciclo operativo completo de órdenes, canales y métricas de equipo.",
     capacidades: [
       "orders.read", "orders.create", "orders.confirm", "orders.cancel", "orders.edit", "orders.delete",
       "preparation.read", "preparation.manage",
       "scheduled.read", "scheduled.manage",
       "channels.read", "channels.respond", "channels.manage",
-      // Cuenta y administra el catálogo, pero NO firma: quien recorre el
-      // almacén no puede cerrar su propio conteo sin revisión.
       "inventory.read", "inventory.count", "inventory.manage",
       "settings.read",
       "team.read",
@@ -234,14 +191,11 @@ export const ROLES_SEED: Rol[] = [
   {
     id: "vendedor",
     nombre: "Operador",
-    descripcion: "Crea y atiende órdenes, y ejecuta los conteos asignados.",
+    descripcion: "Crea y atiende órdenes, chats con clientes y pedidos programados.",
     capacidades: [
       "orders.read", "orders.create", "orders.confirm", "orders.cancel", "orders.edit",
       "scheduled.read", "scheduled.manage",
       "channels.read", "channels.respond",
-      // Cuenta, pero no crea elementos ni firma. Es el rol que demuestra que
-      // «quien cuenta no firma»: no es una recomendación, es que el botón no
-      // existe para él.
       "inventory.read", "inventory.count",
     ],
     sistema: true,
@@ -249,15 +203,14 @@ export const ROLES_SEED: Rol[] = [
   {
     id: "preparacion",
     nombre: "Preparación",
-    descripcion: "Prepara los pedidos confirmados.",
+    descripcion: "Prepara y despacha los pedidos confirmados en cocina o bodega.",
     capacidades: ["orders.read", "preparation.read", "preparation.manage", "scheduled.read"],
     sistema: true,
-
   },
   {
     id: "analista_inventarios",
     nombre: "Analista de inventarios",
-    descripcion: "Consulta el módulo y exporta reportes, sin modificar nada.",
+    descripcion: "Consulta el módulo de inventarios y exporta reportes, sin modificar nada.",
     capacidades: [
       "inventory.read",
       "settings.read",
@@ -267,7 +220,7 @@ export const ROLES_SEED: Rol[] = [
   {
     id: "personalizado",
     nombre: "Personalizado",
-    descripcion: "Empieza sin capacidades; se ajustan a mano.",
+    descripcion: "Empieza sin capacidades; se ajustan a medida según las necesidades.",
     capacidades: [],
     sistema: true,
   },

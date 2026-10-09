@@ -305,6 +305,91 @@ describe("excepciones por operador (invariante C7)", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// LEER UN CANAL ≠ ESCRIBIR EN ÉL (corregido 08/10)
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("canales: leer no es responder", () => {
+  it("puedeEscribirCliente exige `channels.respond`, NO `channels.read`", async () => {
+    const { sessionStore, operadoresStore, rolesStore, acceso } = await freshAcceso();
+
+    // Control negativo: un rol que SOLO puede leer canales. Es el caso que el
+    // defecto dejaba pasar — con `channels.read` gobernando el botón «WhatsApp»,
+    // un perfil de solo lectura podía abrir el hilo para escribir.
+    const rol = rolesStore.crear({ nombre: "Lectura de canales", capacidades: ["orders.read", "channels.read"] });
+    operadoresStore.setRol(OP_VENDEDOR, rol.id);
+    sessionStore.simular(OP_VENDEDOR);
+
+    expect(sessionStore.hasPermission("channels.read")).toBe(true);
+    expect(sessionStore.hasPermission("channels.respond")).toBe(false);
+    expect(acceso.puedeEscribirCliente()).toBe(false);
+
+    // Y con la capacidad de responder, sí.
+    operadoresStore.setCapacidadesExtra(OP_VENDEDOR, ["channels.respond"]);
+    expect(acceso.puedeEscribirCliente()).toBe(true);
+  });
+
+  it("los cinco perfiles canónicos conservan su respuesta esperada", async () => {
+    const { sessionStore, operadoresStore, acceso } = await freshAcceso();
+
+    // Preparación: no lee ni responde canales → sin botón de WhatsApp.
+    operadoresStore.setRol(OP_VENDEDOR, "preparacion");
+    sessionStore.simular(OP_VENDEDOR);
+    expect(acceso.puedeEscribirCliente()).toBe(false);
+
+    // Vendedor: tiene `channels.respond` → sí.
+    operadoresStore.setRol(OP_VENDEDOR, "vendedor");
+    expect(acceso.puedeEscribirCliente()).toBe(true);
+
+    // Supervisor: canales completos → sí.
+    operadoresStore.setRol(OP_VENDEDOR, "supervisor_pedidos");
+    expect(acceso.puedeEscribirCliente()).toBe(true);
+
+    // Personalizado sin capacidades → no.
+    operadoresStore.setRol(OP_VENDEDOR, "personalizado");
+    expect(acceso.puedeEscribirCliente()).toBe(false);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// orders.edit — la capacidad que no tenía lector (08/10)
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("puedeEditarPedido (`orders.edit`)", () => {
+  it("sin sesión está denegado (fail-closed)", async () => {
+    const { acceso } = await freshAcceso();
+    expect(acceso.puedeEditarPedido()).toBe(false);
+  });
+
+  it("la sesión directa de administrador lo tiene", async () => {
+    const { sessionStore, acceso } = await freshAcceso();
+    sessionStore.configurar(["pedidos"], "administrador");
+    expect(acceso.puedeEditarPedido()).toBe(true);
+  });
+
+  it("Preparación NO edita el pedido: solo lo prepara", async () => {
+    const { sessionStore, operadoresStore, acceso } = await freshAcceso();
+    operadoresStore.setRol(OP_VENDEDOR, "preparacion");
+    sessionStore.simular(OP_VENDEDOR);
+
+    // Puede mover el pedido por preparación…
+    expect(acceso.puedeMoverA("en_preparacion")).toBe(true);
+    // …pero no reasignar el reparto, que es una escritura sobre el pedido.
+    expect(acceso.puedeEditarPedido()).toBe(false);
+  });
+
+  it("Vendedor y Supervisor sí lo editan", async () => {
+    const { sessionStore, operadoresStore, acceso } = await freshAcceso();
+
+    operadoresStore.setRol(OP_VENDEDOR, "vendedor");
+    sessionStore.simular(OP_VENDEDOR);
+    expect(acceso.puedeEditarPedido()).toBe(true);
+
+    operadoresStore.setRol(OP_VENDEDOR, "supervisor_pedidos");
+    expect(acceso.puedeEditarPedido()).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MENSAJES DE BLOQUEO
 // ═══════════════════════════════════════════════════════════════════════════
 

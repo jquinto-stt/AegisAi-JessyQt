@@ -378,6 +378,13 @@ describe("homePathActual", () => {
     expect(sessionStore.homePathActual).toBe("/pedidos/inicio");
   });
 
+  it("lleva a cocina directamente a su tablero KDS", async () => {
+    const { sessionStore } = await freshStores();
+    // d4 (Jefe de Cocina) no tiene orders.create, por lo que aterriza directo en el Tablero.
+    sessionStore.simular("d4");
+    expect(sessionStore.homePathActual).toBe("/pedidos");
+  });
+
   it("el admin va al inicio de su módulo principal", async () => {
     const { sessionStore } = await freshStores();
     sessionStore.configurar(["pedidos"], "administrador");

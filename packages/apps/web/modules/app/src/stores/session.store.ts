@@ -358,8 +358,8 @@ export class SessionStore {
    * | Estado                        | autenticado | rolId         | capacidades |
    * |-------------------------------|-------------|---------------|-------------|
    * | Sin configurar                | false       | null          | []          |
-   * | Sesión directa de admin       | true        | admin_tienda  | las 22      |
-   * | Admin sin módulos instalados  | true        | admin_tienda  | las 22      |
+   * | Sesión directa de admin       | true        | admin_tienda  | las 23      |
+   * | Admin sin módulos instalados  | true        | admin_tienda  | las 23      |
    * | Simulando operador X          | true        | X.rolId       | efectivas X |
    * | Sesión directa de operador    | false       | null          | []          |
    *

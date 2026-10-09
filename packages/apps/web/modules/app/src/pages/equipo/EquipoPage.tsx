@@ -240,7 +240,7 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
       )}
 
       {vista === "roles" ? (
-        <RolesTab />
+        <RolesTab modulo={moduloActivo} />
       ) : (
         <EquipoTabla operadores={listaFiltrada} />
       )}

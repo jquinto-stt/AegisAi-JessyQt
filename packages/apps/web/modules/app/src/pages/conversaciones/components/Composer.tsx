@@ -137,13 +137,45 @@ export const Composer = observer(({ convId }: { convId: string }) => {
             </svg>
           </button>
 
+          {/* El botón dice que está enviando. Sin esto, pulsar «Enviar» solo
+              apagaba el botón (`disabled:opacity-50`): durante la ida y vuelta a
+              WhatsApp —que es asíncrona de verdad— la interfaz no distinguía
+              «se está enviando» de «no se puede enviar» (canal caído, modo bot,
+              sin permiso), y las dos cosas se ven igual. El `animate-spin` NO se
+              neutraliza con `prefers-reduced-motion`: comunica estado, no
+              decora (ver la guarda de `css/base.css`). */}
           <button
             type="submit"
             disabled={!puedeEnviar}
-            title="Enviar mensaje"
+            title={enviando ? "Enviando…" : "Enviar mensaje"}
+            aria-busy={enviando}
             className="flex h-9 w-9 xl:h-10 xl:w-10 items-center justify-center rounded-lg xl:rounded-xl bg-brand-500 text-white shadow-theme-xs transition-colors hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <PaperPlaneIcon className="h-4 w-4 xl:h-4.5 xl:w-4.5 fill-current" />
+            {enviando ? (
+              <svg
+                className="h-4 w-4 animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            ) : (
+              <PaperPlaneIcon className="h-4 w-4 xl:h-4.5 xl:w-4.5 fill-current" />
+            )}
           </button>
         </div>
       </form>
@@ -174,7 +206,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
       {conversacionesStore.ultimoErrorEnvio && (
         <div
           role="alert"
-          className="mt-1.5 flex items-start gap-2 rounded-lg border border-error-300/60 bg-error-50 px-2.5 py-1.5 text-[12px] font-normal text-error-900 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-200/90"
+          className="animate-aparecer mt-1.5 flex items-start gap-2 rounded-lg border border-error-300/60 bg-error-50 px-2.5 py-1.5 text-[12px] font-normal text-error-900 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-200/90"
         >
           <span className="mt-px shrink-0" aria-hidden="true">
             ⚠

@@ -8,12 +8,16 @@ import { Modal } from "@/elements/ui/modal";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
 import {
   pedidosStore,
+  sessionStore,
   ETIQUETA_PAGO,
   puedeMoverA,
   puedeCancelarPedido,
+  puedeConfirmarPedido,
   puedeEscribirCliente,
   puedeVerProgramados,
   puedeGestionarProgramados,
+  puedeCrearPedido,
+  puedeGuardarConfig,
 } from "@/stores";
 import type { Pedido, PedidoEstado, Modalidad } from "@/stores/pedidos.store";
 import { retardoEscalonado } from "@/utils";
@@ -189,6 +193,7 @@ const PedidoCard = observer(
   ({
     pedido,
     esRecienMovido = false,
+    puedeArrastrar = false,
     onDragChange,
     onDetalle,
     onCancelar,
@@ -197,6 +202,15 @@ const PedidoCard = observer(
   }: {
     pedido: Pedido;
     esRecienMovido?: boolean;
+    /**
+     * ¿La sesión puede mover este pedido a ALGUNA otra columna?
+     *
+     * Se calcula en `ColumnaKanban`, que es quien conoce la lista de columnas.
+     * Sin esto la tarjeta era `draggable` siempre: se dejaba agarrar, se veía la
+     * ranura de destino y al soltar **no pasaba nada** — el peor tipo de control,
+     * porque promete una acción que la sesión no puede ejecutar.
+     */
+    puedeArrastrar?: boolean;
     onDragChange?: (id: string, isDragging: boolean) => void;
     onDetalle: () => void;
     /** Solicita confirmación de cancelación (modal en el padre). */
@@ -264,8 +278,9 @@ const PedidoCard = observer(
       <div
         role="button"
         tabIndex={0}
-        draggable
+        draggable={puedeArrastrar}
         onDragStart={(e) => {
+          if (!puedeArrastrar) return;
           e.dataTransfer.setData("text/plain", pedido.id);
           e.dataTransfer.effectAllowed = "move";
           // Esperar al siguiente ciclo para que el navegador capture la tarjeta completa y nítida
@@ -285,7 +300,9 @@ const PedidoCard = observer(
             onDetalle();
           }
         }}
-        className={`group relative cursor-grab active:cursor-grabbing select-none rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-300 ease-out hover:shadow-theme-md hover:-translate-y-0.5 hover:border-secondary-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
+        className={`group relative select-none rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-300 ease-out hover:shadow-theme-md hover:-translate-y-0.5 hover:border-secondary-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
+          puedeArrastrar ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+        } ${
           esRecienMovido
             ? "animate-aterrizaje ring-2 ring-brand-500 shadow-theme-xl border-brand-400 bg-brand-50/20 dark:bg-brand-950/30"
             : urgente
@@ -791,7 +808,7 @@ const AccionesMenu = observer(
     const siguiente = pedidosStore.siguienteEstado(pedido);
 
     // Mismas reglas que el kanban: avance por capacidad del destino, WhatsApp
-    // por `channels.read`, cancelar por `orders.cancel`.
+    // por `channels.respond`, cancelar por `orders.cancel`.
     const puedeAvanzar = puedeMoverA(siguiente);
     const puedeEscribir = puedeEscribirCliente();
     const puedeCancelar = puedeCancelarPedido();
@@ -944,22 +961,35 @@ const ListaView = observer(
                     </TableCell>
 
                     <TableCell>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          pedidosStore.togglePagado(p.id);
-                        }}
-                        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer select-none ${
-                          p.pagado
-                            ? "bg-accent-50 text-accent-700 hover:bg-accent-100 dark:bg-accent-950/40 dark:text-accent-300"
-                            : "bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-950/40 dark:text-brand-300 ring-1 ring-inset ring-brand-300/60 dark:ring-brand-800"
-                        }`}
-                        title={p.pagado ? "Pagado (clic para marcar como pendiente)" : "Pendiente de pago (clic para registrar pago)"}
-                      >
-                        <span className={`size-1.5 rounded-full ${p.pagado ? "bg-accent-500" : "bg-brand-500"}`} />
-                        {p.pagado ? "Pagado" : "Por cobrar"}
-                      </button>
+                      {/* Registrar/deshacer un pago es la MISMA acción que el
+                          «Marcar como pagado» del detalle, así que la gobierna
+                          la misma capacidad (`orders.confirm`). Estaba sin
+                          guarda: la vista Lista era una segunda superficie que
+                          cobraba sin permiso mientras la del detalle sí lo
+                          comprobaba. Sin la capacidad queda como indicador de
+                          solo lectura, que informa sin prometer. */}
+                      {puedeConfirmarPedido() ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            pedidosStore.togglePagado(p.id);
+                          }}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer select-none ${
+                            p.pagado
+                              ? "bg-accent-50 text-accent-700 hover:bg-accent-100 dark:bg-accent-950/40 dark:text-accent-300"
+                              : "bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-950/40 dark:text-brand-300 ring-1 ring-inset ring-brand-300/60 dark:ring-brand-800"
+                          }`}
+                          title={p.pagado ? "Pagado (clic para marcar como pendiente)" : "Pendiente de pago (clic para registrar pago)"}
+                        >
+                          <span className={`size-1.5 rounded-full ${p.pagado ? "bg-accent-500" : "bg-brand-500"}`} />
+                          {p.pagado ? "Pagado" : "Por cobrar"}
+                        </button>
+                      ) : (
+                        <Badge color={p.pagado ? "success" : "warning"} size="sm">
+                          {p.pagado ? "Pagado" : "Por cobrar"}
+                        </Badge>
+                      )}
                     </TableCell>
 
                     <TableCell>
@@ -1039,7 +1069,13 @@ interface ColumnaKanbanProps {
   columnas: PedidoEstado[];
   items: Pedido[];
   recienMovidoId?: string | null;
-  onMoverPedido?: (id: string, destino: PedidoEstado) => void;
+  /**
+   * Mueve un pedido a otra columna. **Obligatorio**: es el embudo único por el
+   * que pasa la autorización del arrastre. Antes era opcional y el `else`
+   * llamaba `pedidosStore.moverAColumna` directo — un SEGUNDO camino de
+   * escritura que se saltaba `puedeMoverA`. Un dueño por acción.
+   */
+  onMoverPedido: (id: string, destino: PedidoEstado) => void;
   onDragChange?: (id: string, isDragging: boolean) => void;
   menuColumnaId: string | null;
   setMenuColumnaId: (id: string | null) => void;
@@ -1070,6 +1106,12 @@ const ColumnaKanban = observer(({
 }: ColumnaKanbanProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
+  // ¿Puede la sesión soltar un pedido en ALGUNA columna distinta de esta? Se
+  // resuelve una vez por columna, no por tarjeta: depende de la sesión y de la
+  // lista de columnas, no del pedido. Si es `false`, las tarjetas no se dejan
+  // agarrar — ver `puedeArrastrar` en `PedidoCard`.
+  const puedeSoltarEnAlguna = columnas.some((destino) => destino !== estado && puedeMoverA(destino));
+
   return (
     <div
       onDragOver={(e) => {
@@ -1091,13 +1133,7 @@ const ColumnaKanban = observer(({
         e.preventDefault();
         setIsDragOver(false);
         const id = e.dataTransfer.getData("text/plain");
-        if (id) {
-          if (onMoverPedido) {
-            onMoverPedido(id, estado);
-          } else {
-            pedidosStore.moverAColumna(id, estado);
-          }
-        }
+        if (id) onMoverPedido(id, estado);
       }}
       className={`flex flex-col h-full max-h-full min-h-0 rounded-3xl transition-all duration-200 ease-out overflow-hidden p-3 sm:p-4 ${
         isDragOver
@@ -1116,24 +1152,25 @@ const ColumnaKanban = observer(({
           </span>
         </div>
 
-        <div className="relative">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuColumnaId(menuColumnaId === estado ? null : estado);
-            }}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-            aria-label={`Opciones de columna ${pedidosStore.estadoLabel(estado)}`}
-          >
-            <EllipsisHorizontalIcon className="size-4" />
-          </button>
-
-          {menuColumnaId === estado && (
-            <div
-              className="absolute right-0 top-full mt-1 z-40 w-48 overflow-hidden rounded-2xl border border-gray-100 bg-white py-1.5 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900"
-              onClick={(e) => e.stopPropagation()}
+        {puedeGuardarConfig() && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuColumnaId(menuColumnaId === estado ? null : estado);
+              }}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+              aria-label={`Opciones de columna ${pedidosStore.estadoLabel(estado)}`}
             >
+              <EllipsisHorizontalIcon className="size-4" />
+            </button>
+
+            {menuColumnaId === estado && (
+              <div
+                className="absolute right-0 top-full mt-1 z-40 w-48 overflow-hidden rounded-2xl border border-gray-100 bg-white py-1.5 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900"
+                onClick={(e) => e.stopPropagation()}
+              >
               <button
                 type="button"
                 onClick={() => {
@@ -1199,6 +1236,7 @@ const ColumnaKanban = observer(({
             </div>
           )}
         </div>
+      )}
       </div>
 
       {/* Lista de tarjetas Kanban con scroll interno independiente */}
@@ -1230,6 +1268,7 @@ const ColumnaKanban = observer(({
               <PedidoCard
                 pedido={p}
                 esRecienMovido={esRecienMovido}
+                puedeArrastrar={puedeSoltarEnAlguna}
                 onDragChange={onDragChange}
                 onDetalle={() => onDetalle(p.id)}
                 onCancelar={() => onCancelar(p.id)}
@@ -1267,7 +1306,7 @@ const ColumnaKanban = observer(({
  *   | Avanzar a `confirmado`          | `orders.confirm`     |
  *   | Avanzar a preparación/entrega   | `preparation.manage` |
  *   | Cancelar un pedido              | `orders.cancel`      |
- *   | Abrir WhatsApp del cliente      | `channels.read`      |
+ *   | Abrir WhatsApp del cliente      | `channels.respond`   |
  *   | Ver la sección de programados   | `scheduled.read`     |
  *   | Activar / reprogramar           | `scheduled.manage`   |
  *
@@ -1302,7 +1341,16 @@ export const TableroPage = observer(() => {
   const [, setArrastrandoId] = useState<string | null>(null);
   const [recienMovidoId, setRecienMovidoId] = useState<string | null>(null);
 
+  // Embudo ÚNICO de todo movimiento por arrastre. `puedeMoverA(destino)` es la
+  // misma compuerta que usan los botones de avance: sin ella, arrastrar era el
+  // único camino del tablero que NO pasaba por autorización — un Vendedor podía
+  // soltar un pedido en `en_preparacion` (no tiene `preparation.manage`) y
+  // Preparación podía soltarlo en `confirmado` (no tiene `orders.confirm`).
+  // El movimiento se ignora en silencio a propósito: la tarjeta ya no es
+  // arrastrable hacia un destino sin capacidad (ver `puedeArrastrar`), así que
+  // llegar aquí significa que el destino cambió mientras se arrastraba.
   const handleMoverPedido = (id: string, destino: PedidoEstado) => {
+    if (!puedeMoverA(destino)) return;
     setRecienMovidoId(id);
     pedidosStore.moverAColumna(id, destino);
     setTimeout(() => {
@@ -1450,10 +1498,29 @@ export const TableroPage = observer(() => {
   // Estados filtrados según la pestaña activa superior ("All Tasks", o columna específica)
   const [columnaFiltroActiva, setColumnaFiltroActiva] = useState<string>("all");
 
+  // Modo Cocina / KDS: exclusivo para operadores con permiso de preparación en cocina.
+  //
+  // `esPerfilCocina` se resuelve SOLO con capacidades, nunca con el id del rol.
+  // Comparaba además `rolId === "preparacion"`, y esa cláusula era **redundante**:
+  // el rol `preparacion` no tiene `orders.create`, así que la segunda condición ya
+  // lo cubre. Peor: era una segunda fuente de verdad que congelaba el
+  // comportamiento — un admin que le concediera `orders.create` a un cocinero
+  // seguiría viéndolo encerrado en el KDS, porque el string del rol ganaba.
+  const tienePermisoCocina = sessionStore.hasPermission("preparation.manage");
+  const esPerfilCocina = !sessionStore.hasPermission("orders.create") && tienePermisoCocina;
+  const [modoCocinaManual, setModoCocinaManual] = useState<boolean>(false);
+
+  // KDS activo solo si tiene capacidad de cocina y es perfil de cocina o lo activó supervisor/admin
+  const modoCocinaKDS = tienePermisoCocina && (esPerfilCocina || modoCocinaManual);
+
   const totalTareasGlobal = pedidosStore.totalEnCurso;
 
+  const columnasBase = modoCocinaKDS
+    ? columnas.filter((c) => c === "en_preparacion" || c === "listo")
+    : columnas;
+
   // Filtrado de columnas visibles según la pestaña seleccionada
-  const columnasVisibles = columnas.filter((estado) => {
+  const columnasVisibles = columnasBase.filter((estado) => {
     if (columnaFiltroActiva === "all") return true;
     if (columnaFiltroActiva.includes(",")) {
       return columnaFiltroActiva.split(",").map((s) => s.trim()).includes(estado);
@@ -1574,6 +1641,27 @@ export const TableroPage = observer(() => {
 
           {/* Selector de vista: Kanban / Lista */}
           <VistaToggle vista={vista} onChange={cambiarVista} />
+
+          {/* Botón Modo Cocina / KDS: SOLO visible para roles con permiso de cocina */}
+          {tienePermisoCocina && (
+            <button
+              type="button"
+              onClick={() => setModoCocinaManual((v) => !v)}
+              className={`flex h-10 items-center gap-1.5 rounded-xl border px-3 sm:px-3.5 text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                modoCocinaKDS
+                  ? "border-amber-400 bg-amber-50 text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-300 shadow-theme-xs ring-2 ring-amber-400/20"
+                  : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+              }`}
+              title={
+                modoCocinaKDS
+                  ? "KDS Cocina activado: mostrando solo preparación y listos"
+                  : "Activar vista enfocada en cocina (KDS)"
+              }
+            >
+              <span>🍳</span>
+              <span>{modoCocinaKDS ? "KDS Cocina" : "Modo Cocina"}</span>
+            </button>
+          )}
 
           {/* Botón y menú Filtrar y ordenar con Buscador y Filtro de Pago */}
           <div className="relative">
@@ -1750,16 +1838,46 @@ export const TableroPage = observer(() => {
           </div>
 
           {/* Botón "+ Añadir tarea" (Navega a /pedidos/crear) */}
-          <button
-            type="button"
-            onClick={() => navigate("/pedidos/crear")}
-            className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-theme-xs transition-colors cursor-pointer shrink-0"
-          >
-            <PlusIcon className="size-4 stroke-2" />
-            <span>Añadir tarea</span>
-          </button>
+          {puedeCrearPedido() && (
+            <button
+              type="button"
+              onClick={() => navigate("/pedidos/crear")}
+              className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-theme-xs transition-colors cursor-pointer shrink-0"
+            >
+              <PlusIcon className="size-4 stroke-2" />
+              <span>Añadir tarea</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Banner de Modo Cocina / KDS cuando está activo */}
+      {modoCocinaKDS && (
+        <div className="mb-5 flex items-center justify-between rounded-2xl border border-amber-300 bg-amber-50/80 px-4 py-3 text-xs text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-amber-500 text-sm font-bold text-white shadow-sm">
+              🍳
+            </span>
+            <div>
+              <p className="font-bold text-amber-950 dark:text-amber-100">
+                Modo Cocina / KDS Activo
+              </p>
+              <p className="text-[11px] text-amber-800 dark:text-amber-300">
+                Visualizando únicamente comandas en preparación y listas para despacho.
+              </p>
+            </div>
+          </div>
+          {!esPerfilCocina && (
+            <button
+              type="button"
+              onClick={() => setModoCocinaManual(false)}
+              className="rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-50 dark:border-amber-500/40 dark:bg-gray-900 dark:text-amber-200 cursor-pointer"
+            >
+              Ver todas las etapas
+            </button>
+          )}
+        </div>
+      )}
 
       {/* PEDIDOS PROGRAMADOS PARA FECHAS FUTURAS */}
       {verProgramados && (

@@ -97,8 +97,10 @@ export const SECCIONES: MetaSeccion[] = [
   {
     id: "atencion",
     titulo: "Atención al cliente",
-    // Existe para responder. `channels.read` es el umbral: sin él no se debería
-    // ver ni el contacto, y ese umbral ya lo aplica el módulo de Conversaciones.
+    // `channels.read` es el umbral para VER la tarjeta: sin él no se debería ver
+    // ni el contacto, y ese umbral ya lo aplica el módulo de Conversaciones.
+    // RESPONDER exige `channels.respond`, y eso lo comprueba cada fila — la
+    // tarjeta informa, el botón de escribir es lo que se apaga.
     exige: ["channels.read"],
   },
   {

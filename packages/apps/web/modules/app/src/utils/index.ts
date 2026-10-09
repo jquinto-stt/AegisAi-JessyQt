@@ -269,3 +269,29 @@ export function prefiereMenosMovimiento(): boolean {
   }
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
+
+/**
+ * El `behavior` que corresponde a un desplazamiento pedido desde código.
+ *
+ * ## Por qué no basta con `behavior: "smooth"`
+ *
+ * Un `scrollIntoView({ behavior: "smooth" })` es movimiento, pero **el navegador
+ * NO lo neutraliza** con `prefers-reduced-motion`. La guarda de `css/base.css`
+ * solo alcanza a las animaciones declaradas en el tema; un desplazamiento suave
+ * es una animación que arranca el propio motor de scroll, y sigue arrancando
+ * aunque el usuario haya pedido menos movimiento. Es la única familia de
+ * movimiento del proyecto que se escapa de aquella guarda, y por eso tiene su
+ * propio punto de decisión aquí, junto a `prefiereMenosMovimiento`.
+ *
+ * Devuelve `"smooth"` en el caso normal y `"auto"` —salto instantáneo— cuando el
+ * sistema pidió menos movimiento. El destino no cambia nunca: quien pidió menos
+ * movimiento llega al mismo sitio, solo que sin recorrerlo.
+ *
+ * @example
+ * ```tsx
+ * messagesEndRef.current?.scrollIntoView({ behavior: comportamientoScroll() });
+ * ```
+ */
+export function comportamientoScroll(): ScrollBehavior {
+  return prefiereMenosMovimiento() ? "auto" : "smooth";
+}

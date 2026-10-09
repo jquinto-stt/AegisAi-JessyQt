@@ -86,12 +86,12 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
   // Cada sección declara la capacidad mínima para ENTRAR. Las acciones de dentro
   // se gobiernan aparte con `hasPermission()`.
   pedidos: [
-    { id: "inicio", label: "Inicio", path: "/pedidos/inicio", capacidad: "orders.read" },
+    { id: "inicio", label: "Inicio", path: "/pedidos/inicio", capacidad: "orders.create" },
     { id: "tablero", label: "Tablero", path: "/pedidos", capacidad: "orders.read" },
-    { id: "catalogo", label: "Catálogo", path: "/pedidos/catalogo", capacidad: "orders.read" },
+    { id: "catalogo", label: "Catálogo", path: "/pedidos/catalogo", capacidad: "orders.create" },
     { id: "crear", label: "Crear pedido", path: "/pedidos/crear", capacidad: "orders.create" },
     { id: "chats", label: "Chats", path: "/pedidos/chats", capacidad: "channels.read" },
-    { id: "analitica", label: "Analítica", path: "/pedidos/analitica", capacidad: "orders.read" },
+    { id: "analitica", label: "Analítica", path: "/pedidos/analitica", capacidad: "team.read" },
     { id: "configuracion", label: "Configuración", path: "/pedidos/config", capacidad: "settings.read" },
     { id: "operadores", label: "Operadores", path: "/pedidos/operadores", capacidad: "team.read" },
     { id: "asistente", label: "Asistente", path: "/asistente", capacidad: "assistant.use" },
@@ -131,36 +131,8 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Equipo de ejemplo del módulo Pedidos.
- *
- * ── Criterio del seed (revisado el 22/09) ─────────────────────────────────
- *
- * El seed tiene que **cubrir el catálogo**: cada uno de los 6 roles aparece al
- * menos una vez asignado a alguien, para que la pantalla de Equipo enseñe de un
- * vistazo qué combinaciones existen y no una lista donde la mitad de los roles
- * nunca se ven. Un `bodega` o un `preparacion` definidos y sin nadie los hace
- * parecer código muerto cuando en realidad son roles vivos que el admin todavía
- * no ha usado. `personalizado` cuenta igual: es una plantilla, y una plantilla
- * sin nadie usándola parece un rol roto.
- *
- * Los tres estados también están representados: `activo` (la mayoría),
- * `pendiente` (una solicitud recién llegada, para poder aprobarla en la demo) e
- * `inactivo` (una baja con historial conservado). Un estado sin ningún caso de
- * ejemplo es una rama de la UI que nadie puede comprobar.
- *
- * Y las **excepciones** tienen sus dos casos: `capacidadesExtra` (Diana confirma
- * inventarios, que su rol no le da) y `capacidadesRemovidas` (Óscar no puede
- * cancelar pedidos, que es lo que su rol sí permitiría). Son las dos formas de
- * que la autorización real no sea solo «el rol y nada más».
- *
- * OJO al elegir un `capacidadesExtra`: **tiene que ser algo que el rol NO dé**.
- * El modelo tiene una regla explícita —una excepción solo existe si cambia
- * algo— y `procedenciaDe` la aplica: si el rol ya concede la capacidad, el
- * extra se ignora y la fila se lee «Viene de su rol». Diana llevaba
- * `channels.read`, que `vendedor` ya incluye, así que durante un tiempo el
- * único caso de «se le dio de más» del catálogo no existía: la pantalla no
- * pintaba ningún pie y el seed juraba que sí. Ahora es `inventory.manage`, que
- * `vendedor` no tiene a propósito («quien cuenta no firma»).
+ * Equipo de ejemplo del módulo Pedidos: exactamente los 5 roles canónicos del sistema,
+ * cada uno representado por un operador activo bien configurado.
  */
 const SEED: Operador[] = [
   {
@@ -168,7 +140,7 @@ const SEED: Operador[] = [
     nombre: "Tailor Davis (Tú)",
     email: "tailor.davis@negocio.com",
     telefono: "+57 300 123 4567",
-    cargo: "Head of Operations",
+    cargo: "Administrador de Tienda",
     avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
     estado: "activo",
     modulo: "pedidos",
@@ -179,7 +151,7 @@ const SEED: Operador[] = [
     nombre: "Camila Ortiz",
     email: "camila.ortiz@negocio.com",
     telefono: "+57 320 111 2233",
-    cargo: "Supervisora de Despacho",
+    cargo: "Supervisora de Operaciones",
     avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
     estado: "activo",
     modulo: "pedidos",
@@ -190,30 +162,18 @@ const SEED: Operador[] = [
     nombre: "Mateo Vargas",
     email: "mateo.vargas@negocio.com",
     telefono: "+57 321 222 3344",
-    cargo: "Operador de Mostrador",
+    cargo: "Operador de Mostrador / Ventas",
     avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
     estado: "activo",
     modulo: "pedidos",
     rolId: "vendedor",
   },
   {
-    id: "d3",
-    nombre: "Daniela Suárez",
-    email: "daniela.suarez@negocio.com",
-    telefono: "+57 322 333 4455",
-    cargo: "Atención y Pedidos",
-    avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop&q=80",
-    estado: "pendiente",
-    modulo: "pedidos",
-    rolId: "vendedor",
-  },
-  // ── Cobertura del catálogo de roles ──────────────────────────────────────
-  {
     id: "d4",
     nombre: "Andrés Molina",
     email: "andres.molina@negocio.com",
     telefono: "+57 310 444 5566",
-    cargo: "Jefe de Cocina",
+    cargo: "Jefe de Cocina / Preparación",
     avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
     estado: "activo",
     modulo: "pedidos",
@@ -221,89 +181,14 @@ const SEED: Operador[] = [
   },
   {
     id: "d5",
-    nombre: "Lucía Herrera",
-    email: "lucia.herrera@negocio.com",
-    telefono: "+57 312 555 6677",
-    cargo: "Despacho y Empaque",
-    avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
-    estado: "activo",
-    modulo: "pedidos",
-    rolId: "preparacion",
-  },
-  {
-    // `personalizado` es una PLANTILLA que empieza vacía, no un rol vacío por
-    // olvido. Sin nadie asignado parecía un rol roto; con una persona se ve lo
-    // que de verdad es: un punto de partida que se ajusta con excepciones.
-    //
-    // Se configura con `capacidadesExtra` en vez de inventar un rol nuevo
-    // porque ese es el caso real: quien necesita «ver pedidos y responder
-    // mensajes» no crea un rol para eso, usa la plantilla y suma lo que le
-    // hace falta. Así que esta fila demuestra las DOS cosas a la vez —que la
-    // plantilla sirve y que los extras son el mecanismo para usarla—.
-    //
-    // Los extras son los que la plantilla `personalizado` NO trae (no trae
-    // ninguno: nace vacía). Antes llevaba `orders.read`, `channels.read` y
-    // `channels.respond`, pero la plantilla ya no es lo que importa aquí: con
-    // `orders.read` de más, Sofía quedaba idéntica a un `vendedor` cualquiera.
-    id: "d9",
     nombre: "Sofía Cárdenas",
     email: "sofia.cardenas@negocio.com",
     telefono: "+57 316 999 0011",
-    cargo: "Community Manager",
+    cargo: "Operador Personalizado",
     avatarUrl: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=150&auto=format&fit=crop&q=80",
     estado: "activo",
     modulo: "pedidos",
     rolId: "personalizado",
-    capacidadesExtra: ["orders.read", "channels.read", "channels.respond", "scheduled.read"],
-  },
-  // ── Excepciones: la autorización real no es solo el rol ──────────────────
-  {
-    // SUMA. Su rol (`vendedor`) solo le deja CONTAR inventario; Diana además lo
-    // gestiona, porque es quien responde por el stock del local. El extra se
-    // concede aquí, no cambiando el rol: si se editara `vendedor`, se lo
-    // estaría dando a Mateo y a Daniela sin querer.
-    //
-    // `inventory.manage` y no `channels.read`: `vendedor` YA trae
-    // `channels.read`, y un extra que el rol ya concede no es una excepción —
-    // `procedenciaDe` lo descarta y la fila se lee «Viene de su rol».
-    id: "d6",
-    nombre: "Diana Ríos",
-    email: "diana.rios@negocio.com",
-    telefono: "+57 313 666 7788",
-    cargo: "Atención al Cliente",
-    avatarUrl: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&auto=format&fit=crop&q=80",
-    estado: "activo",
-    modulo: "pedidos",
-    rolId: "vendedor",
-    capacidadesExtra: ["inventory.manage"],
-  },
-  {
-    // RESTA. Su rol (`supervisor_pedidos`) permite cancelar pedidos, pero por
-    // política del negocio las cancelaciones las autoriza Camila. Es el caso que
-    // demuestra que la denegación se aplica SOBRE el rol, no en su lugar.
-    id: "d7",
-    nombre: "Óscar Peña",
-    email: "oscar.pena@negocio.com",
-    telefono: "+57 314 777 8899",
-    cargo: "Coordinador de Turnos",
-    avatarUrl: "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&auto=format&fit=crop&q=80",
-    estado: "activo",
-    modulo: "pedidos",
-    rolId: "supervisor_pedidos",
-    capacidadesRemovidas: ["orders.cancel"],
-  },
-  {
-    // BAJA. `inactivo` conserva la fila y su historial: no se borra a nadie,
-    // porque los pedidos que atendió siguen apuntándole.
-    id: "d8",
-    nombre: "Rafael Guzmán",
-    email: "rafael.guzman@negocio.com",
-    telefono: "+57 315 888 9900",
-    cargo: "Operador de Mostrador",
-    avatarUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80",
-    estado: "inactivo",
-    modulo: "pedidos",
-    rolId: "vendedor",
   },
   // ── Operadores de Inventarios ───────────────────────────────────────────
   {

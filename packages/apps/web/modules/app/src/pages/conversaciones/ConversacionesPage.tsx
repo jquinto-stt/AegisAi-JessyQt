@@ -234,7 +234,7 @@ export const ConversacionesPage = observer(() => {
       {conversacionesStore.ultimoErrorModo && (
         <div
           role="alert"
-          className="shrink-0 mb-3 flex items-start gap-2.5 rounded-xl border border-error-300/60 bg-error-50 px-3.5 py-2.5 text-xs text-error-900 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-200/90"
+          className="animate-aparecer shrink-0 mb-3 flex items-start gap-2.5 rounded-xl border border-error-300/60 bg-error-50 px-3.5 py-2.5 text-xs text-error-900 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-200/90"
         >
           <span className="mt-px shrink-0" aria-hidden="true">
             ⚠

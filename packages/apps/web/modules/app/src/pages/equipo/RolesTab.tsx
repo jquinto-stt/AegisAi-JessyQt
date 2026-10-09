@@ -63,8 +63,16 @@ const miembrosConRol = (rolId: string) =>
 // PESTAÑA "ROLES"
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const RolesTab = observer(() => {
-  const [seleccionadoId, setSeleccionadoId] = useState<string | null>(rolesStore.roles[0]?.id ?? null);
+export interface RolesTabProps {
+  modulo?: "pedidos" | "inventarios";
+}
+
+export const RolesTab = observer(({ modulo = "pedidos" }: RolesTabProps) => {
+  const rolesDisponibles = modulo === "pedidos"
+    ? rolesStore.roles.filter((r) => r.id !== "analista_inventarios")
+    : rolesStore.roles;
+
+  const [seleccionadoId, setSeleccionadoId] = useState<string | null>(rolesDisponibles[0]?.id ?? null);
   const seleccionado = rolesStore.porId(seleccionadoId);
 
   /**
@@ -161,7 +169,7 @@ export const RolesTab = observer(() => {
             anunciar un lector de pantalla, y aquí la selección ES el estado
             principal de la pantalla. */}
         <div role="listbox" aria-label="Roles de la organización" className="flex flex-col gap-2">
-          {rolesStore.roles.map((r) => {
+          {rolesDisponibles.map((r) => {
             const esSeleccionado = r.id === seleccionadoId;
             // Los de sistema se cuentan igual, para poder decir cuánta gente
             // depende del rol aunque no se pueda borrar.

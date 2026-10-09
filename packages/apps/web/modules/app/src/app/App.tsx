@@ -149,13 +149,13 @@ export default function App() {
       {/* Rutas con Shell */}
       <Route element={<RequireSession><AppShell /></RequireSession>}>
         {/* Módulo Pedidos (condicionado a que esté activo en plataforma) */}
-        <Route path="/pedidos/inicio" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosInicioPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/inicio" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><PedidosInicioPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><TableroPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/pedidos/catalogo" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><CatalogoPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/catalogo" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><CatalogoPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/crear" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><CrearPedidoPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/historial" element={<Navigate to="/pedidos/analitica?vista=historial" replace />} />
         <Route path="/pedidos/chats" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="team.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/config" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/operadores" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="team.read"><EquipoPage modulo="pedidos" /></CapabilityGuard></ModuloGuard>} />
 

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { curvaConteo, retardoEscalonado } from "@/utils";
+import { afterEach, describe, expect, it } from "vitest";
+import { comportamientoScroll, curvaConteo, prefiereMenosMovimiento, retardoEscalonado } from "@/utils";
 
 describe("curvaConteo", () => {
   it("empieza en 0 y termina exactamente en 1", () => {
@@ -52,5 +52,49 @@ describe("retardoEscalonado", () => {
 
   it("nunca devuelve un retardo negativo", () => {
     expect(retardoEscalonado(-4)).toBe("0ms");
+  });
+});
+
+describe("comportamientoScroll", () => {
+  // El entorno de vitest es `node`, así que `window` no existe: se instala uno
+  // mínimo por prueba y se restaura después. `matchMedia` es lo único que
+  // `prefiereMenosMovimiento` consulta.
+  const originalWindow = (globalThis as { window?: unknown }).window;
+
+  const conPreferencia = (reduce: boolean) => {
+    (globalThis as { window?: unknown }).window = {
+      matchMedia: () => ({ matches: reduce }),
+    };
+  };
+
+  afterEach(() => {
+    if (originalWindow === undefined) {
+      delete (globalThis as { window?: unknown }).window;
+    } else {
+      (globalThis as { window?: unknown }).window = originalWindow;
+    }
+  });
+
+  it("se desplaza suave cuando el sistema no pide menos movimiento", () => {
+    conPreferencia(false);
+    expect(prefiereMenosMovimiento()).toBe(false);
+    expect(comportamientoScroll()).toBe("smooth");
+  });
+
+  it("salta al destino cuando el sistema pide menos movimiento", () => {
+    // Esta es la aserción que importa, y por eso vive aquí y no en el consumidor:
+    // `scrollIntoView({ behavior: "smooth" })` es movimiento que el navegador NO
+    // neutraliza con `prefers-reduced-motion` —a diferencia de las animaciones
+    // CSS, que sí cubre la guarda de `css/base.css`—. Si esta función devolviera
+    // "smooth" siempre, la preferencia no llegaría nunca al auto-scroll del chat
+    // y el contrato de accesibilidad quedaría a medias sin que nada avisara.
+    conPreferencia(true);
+    expect(prefiereMenosMovimiento()).toBe(true);
+    expect(comportamientoScroll()).toBe("auto");
+  });
+
+  it("sin `window` cae al caso normal en vez de lanzar", () => {
+    delete (globalThis as { window?: unknown }).window;
+    expect(comportamientoScroll()).toBe("smooth");
   });
 });

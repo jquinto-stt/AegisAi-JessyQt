@@ -8,6 +8,7 @@ import {
 } from "../domain/pedidos/pedidos.profiles.js";
 import { toOrderCore, toLegacyPedido } from "../domain/pedidos/pedidos.adapters.js";
 import type { OrderCore } from "../domain/pedidos/pedidos.domain.js";
+import { sessionStore } from "./session.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -203,6 +204,16 @@ export interface Pedido {
   metodoPago?: MetodoPago;
   pagaCon?: number;          // Monto con el que abona para calcular el vuelto/cambio
   repartidor?: string;       // Nombre o alias del mensajero/repartidor asignado
+  /** Registro de trazabilidad y eventos de auditoría por operador */
+  auditoria?: EventoAuditoria[];
+}
+
+export interface EventoAuditoria {
+  id: string;
+  fecha: string;            // ISO
+  accion: string;           // ej. "Pedido registrado", "Marcado como pagado", etc.
+  operadorNombre: string;   // ej. "Mateo Vargas", "Camila Ortiz"
+  operadorCargo?: string;   // ej. "Operador de ventas", "Supervisor de operaciones"
 }
 
 /**
@@ -932,6 +943,15 @@ const seed = (): Pedido[] => [
     costoEnvio: 5000,
     metodoPago: "efectivo",
     pagaCon: 70000,
+    auditoria: [
+      {
+        id: "aud-pd1-1",
+        fecha: minutesAgoIso(39),
+        accion: "Pedido registrado por WhatsApp",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd2", numero: "P-002", cliente: "María Fernanda", telefono: "+573002223344", modalidad: "retiro",
@@ -939,6 +959,22 @@ const seed = (): Pedido[] => [
     estado: "listo", origen: "whatsapp", pagado: true,
     metodoPago: "transferencia",
     createdAt: minutesAgoIso(12), estadoDesde: minutesAgoIso(6),
+    auditoria: [
+      {
+        id: "aud-pd2-2",
+        fecha: minutesAgoIso(6),
+        accion: "Avanzado a: Listo para entrega",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+      {
+        id: "aud-pd2-1",
+        fecha: minutesAgoIso(12),
+        accion: "Pago confirmado y verificado",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd3", numero: "P-003", cliente: "Pedro Ramírez", telefono: "+573003334455", modalidad: "en_sitio",
@@ -946,6 +982,22 @@ const seed = (): Pedido[] => [
     notas: "Mesa 5.", estado: "en_preparacion", origen: "operador", pagado: false,
     metodoPago: "tarjeta",
     createdAt: minutesAgoIso(20), estadoDesde: minutesAgoIso(18),
+    auditoria: [
+      {
+        id: "aud-pd3-2",
+        fecha: minutesAgoIso(18),
+        accion: "Comanda enviada a preparación",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+      {
+        id: "aud-pd3-1",
+        fecha: minutesAgoIso(20),
+        accion: "Pedido registrado en salón (Mesa 5)",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd4", numero: "P-004", cliente: "Lucía Torres", telefono: "+573004445566", modalidad: "domicilio",
@@ -961,6 +1013,22 @@ const seed = (): Pedido[] => [
     costoEnvio: 4500,
     metodoPago: "transferencia",
     repartidor: "Carlos Mensajería",
+    auditoria: [
+      {
+        id: "aud-pd4-2",
+        fecha: minutesAgoIso(12),
+        accion: "Marcado como Listo y asignado mensajero",
+        operadorNombre: "Camila Ortiz",
+        operadorCargo: "Supervisor de operaciones",
+      },
+      {
+        id: "aud-pd4-1",
+        fecha: minutesAgoIso(140),
+        accion: "Pedido recibido por WhatsApp",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd5", numero: "P-005", cliente: "Andrés Gil", telefono: "+573005556677", modalidad: "domicilio",
@@ -1191,8 +1259,45 @@ export class PedidosStore {
       if (p.pagado && !p.metodoPago) {
         p.metodoPago = "transferencia";
       }
+      this.registrarAuditoria(
+        p.id,
+        p.pagado ? "Marcado como pagado" : "Marcado como pendiente de pago"
+      );
     });
     void this.sincronizarPedidoBase(p);
+  }
+
+  /**
+   * Registra un evento de trazabilidad y auditoría ejecutado por el operador actual.
+   */
+  registrarAuditoria(
+    pedidoId: string,
+    accion: string,
+    operadorOverride?: { nombre: string; cargo?: string }
+  ): void {
+    const p = this.getPedido(pedidoId);
+    if (!p) return;
+    if (!p.auditoria) {
+      p.auditoria = [];
+    }
+    const op =
+      operadorOverride ??
+      (sessionStore.operadorSimulado
+        ? {
+            nombre: sessionStore.operadorSimulado.nombre,
+            cargo: sessionStore.operadorSimulado.cargo,
+          }
+        : {
+            nombre: "Administrador de tienda",
+            cargo: "Administrador",
+          });
+    p.auditoria.unshift({
+      id: crypto.randomUUID(),
+      fecha: nowIso(),
+      accion,
+      operadorNombre: op.nombre,
+      operadorCargo: op.cargo,
+    });
   }
 
   // ── Config ────────────────────────────────────────────────────────────────
@@ -1505,11 +1610,16 @@ export class PedidosStore {
   moverAColumna(id: string, destinoColumna: string): boolean {
     const p = this.getPedido(id);
     if (!p) return false;
+    const previo = p.estado;
     p.estado = destinoColumna as PedidoEstado;
     p.estadoDesde = nowIso();
     if (this.esTerminal(destinoColumna as PedidoEstado)) {
       p.finishedAt = nowIso();
     }
+    this.registrarAuditoria(
+      p.id,
+      `Estado cambiado: ${this.estadoLabel(previo)} → ${this.estadoLabel(destinoColumna as PedidoEstado)}`
+    );
     void this.sincronizarPedidoBase(p);
     return true;
   }
@@ -2269,6 +2379,7 @@ export class PedidosStore {
       repartidor: data.repartidor,
     };
     this.pedidos.push(pedido);
+    this.registrarAuditoria(pedido.id, "Pedido registrado en el sistema");
 
     // Auto-registrar en memoria CRM si se especificó dirección
     if (data.direccionEntrega && data.direccionEntrega.calle.trim()) {

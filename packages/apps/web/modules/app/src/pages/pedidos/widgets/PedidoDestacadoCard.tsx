@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
-import { pedidosStore, type Modalidad, type Pedido } from "@/stores";
+import { pedidosStore, puedeMoverA, type Modalidad, type Pedido } from "@/stores";
 import { avanzarPedido } from "../pedidos.notificaciones";
 import { money } from "./widgets.comunes";
 import {
@@ -56,6 +56,15 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
   const siguienteEstado = pedidoActivo ? pedidosStore.siguienteEstado(pedidoActivo) : null;
   const labelSiguiente = siguienteEstado ? pedidosStore.estadoLabel(siguienteEstado) : "Completar";
   const labelLimpio = labelSiguiente.replace(/\s*\([^)]*\)/g, "").trim();
+
+  // Misma compuerta que el tablero y la cola de preparación: el avance se
+  // gobierna por la capacidad del DESTINO (`orders.confirm` para confirmar,
+  // `preparation.manage` para preparar/entregar). Estaba sin guarda, y esta
+  // tarjeta es la primera que ve un cocinero al entrar a Inicio: podía pulsar
+  // «Avanzar a: Confirmado» sobre un pedido nuevo y el botón ejecutaba la
+  // transición que su perfil tiene prohibida. `null` (pedido terminal o ya en
+  // la última etapa) también oculta el botón: no hay avance que ofrecer.
+  const puedeAvanzar = puedeMoverA(siguienteEstado);
 
   const handleAvanzar = () => {
     if (!pedidoActivo) return;
@@ -171,14 +180,16 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
 
             {/* Pie de acciones con mayor altura y presencia */}
             <div className="flex flex-col sm:flex-row items-center gap-3.5 pt-3 border-t border-white/15">
-              <button
-                type="button"
-                onClick={handleAvanzar}
-                className="w-full sm:flex-[1.6] flex items-center justify-center gap-2.5 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03514] dark:bg-[#190088] dark:hover:bg-[#13006d] px-6 py-4 text-base sm:text-lg font-bold text-white shadow-md transition-all active:scale-98 cursor-pointer border border-white/10"
-              >
-                <CheckCircleIcon className="size-5 shrink-0" />
-                <span>Avanzar a: {labelLimpio}</span>
-              </button>
+              {puedeAvanzar && (
+                <button
+                  type="button"
+                  onClick={handleAvanzar}
+                  className="w-full sm:flex-[1.6] flex items-center justify-center gap-2.5 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03514] dark:bg-[#190088] dark:hover:bg-[#13006d] px-6 py-4 text-base sm:text-lg font-bold text-white shadow-md transition-all active:scale-98 cursor-pointer border border-white/10"
+                >
+                  <CheckCircleIcon className="size-5 shrink-0" />
+                  <span>Avanzar a: {labelLimpio}</span>
+                </button>
+              )}
 
               <button
                 type="button"

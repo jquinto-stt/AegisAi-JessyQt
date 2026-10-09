@@ -6,7 +6,7 @@ import { Modal } from "@/elements/ui/modal";
 import { EyeIcon, ArrowRightIcon, AiIcon } from "@/icons";
 import { conversacionesStore, etiquetaEstado } from "@/stores/conversaciones.store";
 import { pedidosStore } from "@/stores/pedidos.store";
-import { formatoMoneda } from "@/utils";
+import { comportamientoScroll, formatoMoneda } from "@/utils";
 import {
   claseSegmentoActivo,
   claseSegmentoInactivo,
@@ -89,9 +89,12 @@ export const ChatView = observer(({
   const itemsVisibles = items.slice(-limiteMensajes);
   const hayMasMensajes = items.length > limiteMensajes;
 
-  // Auto-scroll al final cuando entra un mensaje o cambia la conversación
+  // Auto-scroll al final cuando entra un mensaje o cambia la conversación.
+  // `comportamientoScroll()` y no `"smooth"` fijo: el desplazamiento suave es
+  // movimiento que el navegador NO neutraliza con `prefers-reduced-motion`, así
+  // que sin esta consulta quien pidió menos movimiento lo recibiría igual.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: comportamientoScroll() });
   }, [convId, items.length]);
 
   const handleScroll = () => {
@@ -102,7 +105,7 @@ export const ChatView = observer(({
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: comportamientoScroll() });
   };
 
   // ── Pestañas de contexto ─────────────────────────────────────────────────
@@ -493,18 +496,30 @@ export const ChatView = observer(({
           <button
             type="button"
             onClick={scrollToBottom}
-            className="sticky bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-brand-500 hover:bg-brand-600 px-4 py-1.5 text-xs font-medium text-white shadow-lg transition-all hover:scale-105 active:scale-95 z-20"
+            className="animate-aparecer sticky bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-brand-500 hover:bg-brand-600 px-4 py-1.5 text-xs font-medium text-white shadow-lg transition-all hover:scale-105 active:scale-95 z-20"
           >
             ↓ Nuevos mensajes
           </button>
         )}
       </div>
       ) : (
-        /* Cuerpo de la pestaña de un módulo o Historial de pedidos */
+        /* Cuerpo de la pestaña de un módulo o Historial de pedidos.
+        
+           `key={vistaActiva}` NO es decorativa: las dos ramas de este ternario
+           son un `<div>`, y React reconcilia por posición —al cambiar de
+           pestaña reutilizaría el MISMO nodo, el `animate-aparecer` no se
+           volvería a disparar y el cambio seguiría siendo un salto seco—. Con la
+           clave, cada pestaña es un nodo nuevo y el fundido se ve.
+
+           Fundido puro (`animate-aparecer`, 200 ms) y no `entrada-panel`: este
+           panel ocupa todo el alto del chat, y el asentamiento de escala de
+           `entrada-panel` sobre un área completa se lee como un zoom de
+           diapositiva, no como una capa que se asienta. */
         <div
+          key={vistaActiva}
           role="tabpanel"
           aria-label={vistaActiva === "pedidos" ? "Historial de pedidos" : (moduloActivo?.label ?? "Contexto del módulo")}
-          className="min-h-0 flex-1 overflow-hidden font-sans"
+          className="animate-aparecer min-h-0 flex-1 overflow-hidden font-sans"
         >
           <ContextoModulo convId={convId} modulo={vistaActiva as ModuloIntegrable} />
         </div>
