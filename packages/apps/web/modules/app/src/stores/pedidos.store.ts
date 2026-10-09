@@ -359,12 +359,26 @@ export const ETIQUETA_PAGO = {
   sinPagar: "Pendiente de pago",
 } as const;
 
-/** Configuración de la alerta sonora de "requieren atención". */
+/** Configuración de la alerta sonora y notificaciones del módulo de pedidos. */
 export interface AlertaAtencion {
-  /** ¿Suena de forma recurrente cuando hay clientes que requieren atención? */
+  /** ¿Suena de forma recurrente cuando hay clientes o pedidos que requieren atención? */
   activo: boolean;
   /** Cada cuántos segundos vuelve a sonar (por defecto 30). */
   cadaSegundos: number;
+  /** ¿Timbre al ingresar un nuevo pedido? */
+  nuevoPedidoSonido?: boolean;
+  /** ¿Alerta sonora cuando una orden excede el tiempo estimado de su etapa (SLA)? */
+  demorasSonido?: boolean;
+  /** ¿Chime al pasar a listo en pantalla de turnos / display? */
+  pantallaTurnosSonido?: boolean;
+  /** ¿Notificaciones de escritorio en el navegador? */
+  notificacionesEscritorio?: boolean;
+  /** Tono seleccionado para la campana de nuevo pedido. */
+  tonoTimbre?: string;
+  /** Porcentaje de volumen para alertas de SLA (0 a 100). */
+  volumenSla?: number;
+  /** Alerta visual en pestaña inactiva (Favicon/Título). */
+  alertaPestanaInactiva?: boolean;
 }
 
 /**
@@ -597,6 +611,13 @@ const DEFAULT_CONFIG: PedidosConfig = {
   alertaAtencion: {
     activo: false,
     cadaSegundos: 30,
+    nuevoPedidoSonido: true,
+    demorasSonido: true,
+    pantallaTurnosSonido: true,
+    notificacionesEscritorio: false,
+    tonoTimbre: "ding_moderno",
+    volumenSla: 75,
+    alertaPestanaInactiva: true,
   },
   // Apagado de fábrica: un negocio que no ha configurado su horario no debe
   // empezar a contestar «estamos cerrados» a nadie. Se enciende a conciencia.

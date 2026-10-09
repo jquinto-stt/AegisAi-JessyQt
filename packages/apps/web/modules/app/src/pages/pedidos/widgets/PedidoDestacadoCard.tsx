@@ -1,23 +1,16 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
-import { pedidosStore, puedeMoverA, type Modalidad, type Pedido } from "@/stores";
+import { pedidosStore, sessionStore, puedeMoverA, type Modalidad, type Pedido } from "@/stores";
 import { avanzarPedido } from "../pedidos.notificaciones";
 import { money } from "./widgets.comunes";
 import {
   BuildingStorefrontIcon,
   ChevronDownIcon,
-  CheckCircleIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
-import { Bike, UtensilsCrossed } from "lucide-react";
+import { Bike, UtensilsCrossed, Check } from "lucide-react";
 
 type FiltroModalidad = "todas" | Modalidad;
-
-const MODALIDADES: { id: FiltroModalidad; label: string }[] = [
-  { id: "todas", label: "Todas las modalidades" },
-  { id: "retiro", label: "Retiro en local" },
-  { id: "domicilio", label: "Envío a domicilio" },
-  { id: "en_sitio", label: "Atención en sitio" },
-];
 
 function formatMinutos(isoString?: string): string {
   if (!isoString) return "Recién creado";
@@ -35,11 +28,11 @@ export interface PedidoDestacadoCardProps {
 }
 
 /**
- * PedidoDestacadoCard — Tarjeta de pedido prioritario en formato de alta visibilidad.
- * Sigue estrictamente la paleta de marca NECTO (#190088, #FF3F1A, #97D6DF).
+ * PedidoDestacadoCard — Tarjeta de pedido prioritario en formato Spotlight Hero de alta visibilidad.
+ * Diseño refinado con fondo azul profundo (#0d0442), resplandores radiales y acciones de un clic.
  */
 export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCardProps) => {
-  const [filtro, setFiltro] = useState<FiltroModalidad>("todas");
+  const [filtro] = useState<FiltroModalidad>("todas");
 
   // Filtrar pedidos activos no terminales
   const enCurso = pedidosStore
@@ -57,14 +50,8 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
   const labelSiguiente = siguienteEstado ? pedidosStore.estadoLabel(siguienteEstado) : "Completar";
   const labelLimpio = labelSiguiente.replace(/\s*\([^)]*\)/g, "").trim();
 
-  // Misma compuerta que el tablero y la cola de preparación: el avance se
-  // gobierna por la capacidad del DESTINO (`orders.confirm` para confirmar,
-  // `preparation.manage` para preparar/entregar). Estaba sin guarda, y esta
-  // tarjeta es la primera que ve un cocinero al entrar a Inicio: podía pulsar
-  // «Avanzar a: Confirmado» sobre un pedido nuevo y el botón ejecutaba la
-  // transición que su perfil tiene prohibida. `null` (pedido terminal o ya en
-  // la última etapa) también oculta el botón: no hay avance que ofrecer.
   const puedeAvanzar = puedeMoverA(siguienteEstado);
+  const puedeVerMontos = sessionStore.hasPermission("team.read");
 
   const handleAvanzar = () => {
     if (!pedidoActivo) return;
@@ -74,119 +61,152 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
   const itemPrincipal = pedidoActivo?.items?.[0];
   const fotoItem =
     (itemPrincipal as { foto?: string })?.foto ||
-    "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=300&q=80";
+    "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80";
+
+  const totalItemsCount = pedidoActivo
+    ? pedidoActivo.items.reduce((acc, it) => acc + (it.cantidad || 1), 0)
+    : 0;
 
   return (
-    <div className="relative overflow-hidden flex flex-col justify-between h-full rounded-3xl bg-[#190088] dark:bg-[#FF3F1A] p-6 sm:p-8 lg:p-9 text-white shadow-xl min-h-[360px] font-sans border border-white/10 transition-colors duration-300">
-      {/* Contenido en capa superior */}
-      <div className="relative z-10 flex flex-col justify-between h-full gap-6">
+    <section aria-label="Pedido activo en foco" className="flex flex-col h-full w-full">
+      <div className="rounded-3xl bg-[#0d0442] text-white p-6 md:p-8 shadow-xl relative overflow-hidden border border-indigo-900/40 flex flex-col justify-between h-full min-h-[380px]">
+        {/* Subtle decorative radial background glow */}
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-rose-600/10 rounded-full blur-3xl pointer-events-none" />
+
         {pedidoActivo ? (
           <>
-            {/* Sección principal: ocupa el espacio vertical con proporciones generosas */}
-            <div className="my-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center py-2">
-              {/* Columna Izquierda: Código gigante, Estado, Cliente y Total */}
-              <div className="lg:col-span-5 flex flex-col justify-center gap-3 sm:gap-4 min-w-0">
-                {/* Código principal prominente */}
-                <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black font-mono tracking-tight text-white leading-none drop-shadow-md">
+            {/* Top meta: Order number and Badge */}
+            <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-4xl md:text-5xl font-black tracking-tight text-white font-mono">
                   {pedidoActivo.numero}
                 </h2>
+              </div>
 
-                {/* Badge de prioridad y estado con punto que alterna entre naranja (claro) e índigo (oscuro) */}
-                <div className="inline-flex items-center gap-2.5 self-start rounded-full bg-white/10 border border-white/20 px-3.5 py-1.5 text-xs sm:text-sm font-bold text-white/95 backdrop-blur-xs">
+              {/* Status Badge */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-700/60 text-indigo-200 text-xs md:text-sm font-semibold tracking-wide backdrop-blur-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                </span>
+                <span>
+                  Pedido Prioritario ({pedidosStore.estadoLabel(pedidoActivo.estado)})
+                </span>
+              </div>
+            </div>
+
+            {/* Mid section: Customer info and item breakdown */}
+            <div className="relative z-10 mt-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-center flex-1">
+              {/* Left Info column: Customer & Total Amount */}
+              <div className="md:col-span-5 space-y-4">
+                {/* Customer / Repartidor */}
+                <div className="flex items-center gap-3 text-slate-100">
+                  <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-white shrink-0">
+                    {pedidoActivo.modalidad === "domicilio" ? (
+                      <Bike className="w-6 h-6 text-indigo-200" />
+                    ) : pedidoActivo.modalidad === "retiro" ? (
+                      <BuildingStorefrontIcon className="w-6 h-6 text-indigo-200" />
+                    ) : (
+                      <UtensilsCrossed className="w-6 h-6 text-indigo-200" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-indigo-200 font-medium tracking-wide truncate">
+                      {pedidoActivo.repartidor
+                        ? "Repartidor asignado"
+                        : `Cliente · ${pedidosStore.modalidadLabel(pedidoActivo.modalidad)}`}
+                    </p>
+                    <p className="text-xl md:text-2xl font-bold text-white tracking-tight truncate">
+                      {pedidoActivo.repartidor || pedidoActivo.cliente}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Total price or item count based on role */}
+                <div>
+                  <p className="text-xs text-indigo-300 font-semibold uppercase tracking-wider">
+                    {puedeVerMontos ? "Total a cobrar" : "Artículos en orden"}
+                  </p>
+                  <p className="text-4xl md:text-5xl font-black text-white tracking-tight mt-0.5 font-mono">
+                    {puedeVerMontos
+                      ? money(pedidosStore.totalPedido(pedidoActivo))
+                      : `${totalItemsCount} ${totalItemsCount === 1 ? "artículo" : "artículos"}`}
+                  </p>
+                </div>
+
+                {/* Time in current stage badge */}
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/30 border border-white/10 text-xs font-medium text-slate-200">
+                  <ClockIcon className="w-3.5 h-3.5 text-amber-400" />
                   <span>
-                    Pedido Prioritario ({pedidosStore.estadoLabel(pedidoActivo.estado)})
-                  </span>
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF3F1A] dark:bg-[#190088] opacity-75" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#FF3F1A] dark:bg-[#190088]" />
-                  </span>
-                </div>
-
-                {/* Cliente con icono de modalidad grande */}
-                <div className="flex items-center gap-3 text-xl sm:text-2xl md:text-3xl font-bold text-white">
-                  {pedidoActivo.modalidad === "domicilio" ? (
-                    <Bike className="size-6 sm:size-7 md:size-8 text-[#97D6DF] dark:text-white shrink-0" />
-                  ) : pedidoActivo.modalidad === "retiro" ? (
-                    <BuildingStorefrontIcon className="size-6 sm:size-7 md:size-8 text-[#97D6DF] dark:text-white shrink-0" />
-                  ) : (
-                    <UtensilsCrossed className="size-6 sm:size-7 md:size-8 text-[#97D6DF] dark:text-white shrink-0" />
-                  )}
-                  <span className="truncate">{pedidoActivo.cliente}</span>
-                </div>
-
-                {/* Total en tipografía mono muy grande */}
-                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white font-mono tracking-tight leading-none">
-                  {money(pedidosStore.totalPedido(pedidoActivo))}
-                </div>
-
-                {/* Píldora de tiempo */}
-                <div className="inline-flex items-center gap-2 self-start rounded-xl bg-black/40 border border-white/20 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white/90">
-                  <span className="text-white/70">Tiempo en estado:</span>
-                  <span className="font-mono font-bold text-white">
-                    {formatMinutos(pedidoActivo.estadoDesde || pedidoActivo.createdAt)}
+                    Tiempo en estado:{" "}
+                    <strong className="text-white font-bold ml-1 font-mono">
+                      {formatMinutos(pedidoActivo.estadoDesde || pedidoActivo.createdAt)}
+                    </strong>
                   </span>
                 </div>
               </div>
 
-              {/* Columna Derecha: Tarjeta de producto notablemente más larga y amplia */}
-              <div className="lg:col-span-7 flex items-center justify-end w-full">
-                <div className="w-full rounded-3xl border border-white/20 bg-white/10 p-5 sm:p-6 lg:p-7 flex flex-col sm:flex-row items-center gap-5 sm:gap-6 backdrop-blur-xs shadow-inner">
-                  {/* Imagen grande del producto */}
-                  <div className="relative size-32 sm:size-36 md:size-44 lg:size-48 rounded-2xl overflow-hidden bg-black/30 shrink-0 border border-white/20 shadow-md">
-                    <img
-                      src={fotoItem}
-                      alt={itemPrincipal?.nombre || "Producto"}
-                      className="w-full h-full object-cover"
-                    />
+              {/* Right Box: Food item presentation card */}
+              <div className="md:col-span-7 bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md flex flex-col sm:flex-row items-center gap-4">
+                {/* Item Thumbnail */}
+                <div className="relative w-full sm:w-36 h-36 flex-shrink-0 rounded-xl overflow-hidden shadow-md bg-slate-900 border border-white/10">
+                  <img
+                    alt={itemPrincipal?.nombre || "Producto"}
+                    src={fotoItem}
+                    className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+
+                {/* Item info */}
+                <div className="flex-1 text-center sm:text-left space-y-2 min-w-0">
+                  <div className="flex items-center justify-center sm:justify-start gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-indigo-400 shrink-0" />
+                    <h3 className="text-lg md:text-xl font-extrabold text-white leading-snug truncate">
+                      {itemPrincipal
+                        ? `${itemPrincipal.cantidad}× ${itemPrincipal.nombre}`
+                        : "1× Ítem en pedido"}
+                    </h3>
                   </div>
 
-                  {/* Detalle y texto amplio para ocupar el largo de la tarjeta */}
-                  <div className="min-w-0 flex-1 flex flex-col justify-between py-1 text-left w-full gap-2">
-                    <div className="flex items-start gap-2.5">
-                      <span className="text-base text-[#97D6DF] dark:text-white mt-0.5 shrink-0 font-bold">•</span>
-                      <p className="text-base sm:text-lg md:text-xl font-black text-white leading-snug line-clamp-3">
-                        {itemPrincipal
-                          ? `${itemPrincipal.cantidad}× ${itemPrincipal.nombre}`
-                          : "1× Ítem en pedido"}
-                      </p>
-                    </div>
+                  {puedeVerMontos && itemPrincipal?.precio ? (
+                    <p className="text-sm text-indigo-200 font-medium">
+                      Valor unitario:{" "}
+                      <span className="text-white font-semibold font-mono">
+                        {money(itemPrincipal.precio)}
+                      </span>
+                    </p>
+                  ) : null}
 
-                    {itemPrincipal?.precio ? (
-                      <p className="text-xs sm:text-sm text-white/80 pl-4 font-semibold">
-                        Valor unitario: {money(itemPrincipal.precio)}
-                      </p>
-                    ) : null}
+                  {pedidoActivo.items.length > 1 && (
+                    <p className="text-xs text-indigo-300 font-medium">
+                      +{pedidoActivo.items.length - 1} producto(s) adicional(es)
+                    </p>
+                  )}
 
-                    {pedidoActivo.items.length > 1 && (
-                      <p className="text-xs sm:text-sm text-[#97D6DF] dark:text-white/90 pl-4 font-bold">
-                        +{pedidoActivo.items.length - 1} producto(s) adicional(es) en esta orden
-                      </p>
-                    )}
-
-                    <div className="mt-3 pl-4">
-                      <button
-                        type="button"
-                        onClick={() => onVerDetalle(pedidoActivo.id)}
-                        className="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 border border-white/25 px-4.5 py-2 text-xs sm:text-sm font-bold text-white transition-colors cursor-pointer"
-                      >
-                        <span>Más info.</span>
-                        <ChevronDownIcon className="size-4" />
-                      </button>
-                    </div>
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => onVerDetalle(pedidoActivo.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-white border border-white/15 transition-colors cursor-pointer"
+                    >
+                      <span>Más info</span>
+                      <ChevronDownIcon className="w-3.5 h-3.5 text-indigo-300" />
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Pie de acciones con mayor altura y presencia */}
-            <div className="flex flex-col sm:flex-row items-center gap-3.5 pt-3 border-t border-white/15">
+            {/* Bottom Action Buttons Toolbar */}
+            <div className="relative z-10 mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center gap-3">
               {puedeAvanzar && (
                 <button
                   type="button"
                   onClick={handleAvanzar}
-                  className="w-full sm:flex-[1.6] flex items-center justify-center gap-2.5 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03514] dark:bg-[#190088] dark:hover:bg-[#13006d] px-6 py-4 text-base sm:text-lg font-bold text-white shadow-md transition-all active:scale-98 cursor-pointer border border-white/10"
+                  className="w-full sm:flex-1 py-3.5 px-6 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-sm tracking-wide shadow-[0_8px_24px_-4px_rgba(239,68,68,0.45)] hover:shadow-lg transition-all flex items-center justify-center gap-2 group active:scale-[0.99] cursor-pointer"
                 >
-                  <CheckCircleIcon className="size-5 shrink-0" />
+                  <Check className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
                   <span>Avanzar a: {labelLimpio}</span>
                 </button>
               )}
@@ -194,22 +214,22 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
               <button
                 type="button"
                 onClick={() => onVerDetalle(pedidoActivo.id)}
-                className="w-full sm:flex-1 flex items-center justify-center gap-2 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/25 px-6 py-4 text-base sm:text-lg font-bold text-white shadow-xs transition-all active:scale-98 cursor-pointer"
+                className="w-full sm:w-auto min-w-[200px] py-3.5 px-6 rounded-xl bg-indigo-950/70 hover:bg-indigo-900/80 border border-indigo-700/60 text-slate-200 hover:text-white font-bold text-sm tracking-wide transition-all text-center focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer"
               >
-                <span>Pausar / Reportar</span>
+                Pausar / Reportar
               </button>
             </div>
           </>
         ) : (
-          <div className="my-auto py-12 text-center">
+          <div className="relative z-10 my-auto py-12 text-center">
             <p className="text-2xl sm:text-3xl font-bold text-white">Todos los pedidos al día</p>
-            <p className="mt-2 text-sm sm:text-base text-white/80 font-normal">
+            <p className="mt-2 text-sm sm:text-base text-indigo-200 font-normal">
               No hay pedidos que requieran atención inmediata en este momento.
             </p>
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 });
 

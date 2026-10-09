@@ -24,7 +24,7 @@ const columns: FooterColumn[] = [
     title: "Servicios",
     links: [
       { label: "Gestion de Pedidos", href: "#" },
-      { label: "KDS & Pantalla de Despacho", href: "#" },
+      { label: "Pantalla de Despacho", href: "#" },
       { label: "Catalogo de Productos", href: "#" },
     ],
   },

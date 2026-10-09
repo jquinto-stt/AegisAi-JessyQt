@@ -378,9 +378,9 @@ describe("homePathActual", () => {
     expect(sessionStore.homePathActual).toBe("/pedidos/inicio");
   });
 
-  it("lleva a cocina directamente a su tablero KDS", async () => {
+  it("lleva al perfil de preparación directo a su tablero", async () => {
     const { sessionStore } = await freshStores();
-    // d4 (Jefe de Cocina) no tiene orders.create, por lo que aterriza directo en el Tablero.
+    // d4 (Preparación) no tiene orders.create, por lo que aterriza directo en el Tablero.
     sessionStore.simular("d4");
     expect(sessionStore.homePathActual).toBe("/pedidos");
   });

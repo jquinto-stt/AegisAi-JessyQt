@@ -7,7 +7,7 @@ import { useState } from "react";
  * - `"gray"` — Neutral dark track (`bg-gray-800`)
  * @kgId ee266f1cc67b
  */
-export type SwitchColor = "blue" | "gray";
+export type SwitchColor = "blue" | "gray" | "orange";
 
 /**
  * Props for the Switch component.
@@ -141,7 +141,16 @@ const Switch: React.FC<SwitchProps> = ({
   };
 
   const switchColors =
-    color === "blue"
+    color === "orange"
+      ? {
+          background: isChecked
+            ? "bg-[#FF3F1A]"
+            : "bg-gray-200 dark:bg-white/10",
+          knob: isChecked
+            ? "translate-x-full bg-white"
+            : "translate-x-0 bg-white",
+        }
+      : color === "blue"
       ? {
           background: isChecked
             ? "bg-brand-500 "

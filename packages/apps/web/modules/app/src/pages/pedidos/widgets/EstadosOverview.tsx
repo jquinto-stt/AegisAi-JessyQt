@@ -59,25 +59,22 @@ const ETAPAS: EtapaMeta[] = [
     estados: ["nuevo"],
     icon: InboxStackIcon,
     colorClases: {
-      badgeBg: "bg-[#FF3F1A]/10",
-      iconColor: "text-[#FF3F1A]",
-      barColor: "bg-[#FF3F1A]",
-      borderColor: "border-[#FF3F1A]/20",
+      badgeBg: "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400",
+      iconColor: "text-rose-600 dark:text-rose-400",
+      barColor: "bg-rose-500",
+      borderColor: "border-rose-200/60",
     },
   },
   {
-    // Mismo naranja que «Nuevos», un tono más claro: la pareja era UNA etapa
-    // («Nuevos y confirmados») y sigue leyéndose como el bloque de ingreso, solo
-    // que ahora en dos pasos. Se distinguen por glifo y rótulo, no por color.
     id: "confirmados",
     nombre: "Confirmados",
     estados: ["confirmado"],
     icon: CheckBadgeIcon,
     colorClases: {
-      badgeBg: "bg-[#FF3F1A]/15",
-      iconColor: "text-[#FF3F1A]",
-      barColor: "bg-[#FF3F1A]/45",
-      borderColor: "border-[#FF3F1A]/15",
+      badgeBg: "bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-400",
+      iconColor: "text-red-500 dark:text-red-400",
+      barColor: "bg-red-500",
+      borderColor: "border-red-200/60",
     },
   },
   {
@@ -86,10 +83,10 @@ const ETAPAS: EtapaMeta[] = [
     estados: ["en_preparacion"],
     icon: ClockIcon,
     colorClases: {
-      badgeBg: "bg-[#EFE6D3]",
-      iconColor: "text-[#190088]",
-      barColor: "bg-[#EFE6D3]",
-      borderColor: "border-[#EFE6D3]",
+      badgeBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
+      iconColor: "text-amber-600 dark:text-amber-400",
+      barColor: "bg-amber-500",
+      borderColor: "border-amber-200/60",
     },
   },
   {
@@ -98,10 +95,10 @@ const ETAPAS: EtapaMeta[] = [
     estados: ["listo"],
     icon: ShoppingBagIcon,
     colorClases: {
-      badgeBg: "bg-[#97D6DF]/20",
-      iconColor: "text-[#190088]",
-      barColor: "bg-[#97D6DF]",
-      borderColor: "border-[#97D6DF]/30",
+      badgeBg: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400",
+      iconColor: "text-indigo-600 dark:text-indigo-400",
+      barColor: "bg-indigo-500",
+      borderColor: "border-indigo-200/60",
     },
   },
   {
@@ -110,15 +107,13 @@ const ETAPAS: EtapaMeta[] = [
     estados: ["en_camino"],
     icon: TruckIcon,
     colorClases: {
-      badgeBg: "bg-[#190088]/10",
-      iconColor: "text-[#190088]",
-      barColor: "bg-[#190088]",
-      borderColor: "border-[#190088]/20",
+      badgeBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
+      iconColor: "text-blue-600 dark:text-blue-400",
+      barColor: "bg-blue-500",
+      borderColor: "border-blue-200/60",
     },
   },
   {
-    // Última tarjeta y fuera de la barra: `cancelado` es terminal y no pertenece
-    // al recorrido «ingreso → entrega final». Tinta oscura = estado apagado.
     id: "cancelados",
     nombre: "Cancelados",
     estados: ["cancelado"],
@@ -126,22 +121,16 @@ const ETAPAS: EtapaMeta[] = [
     enBarra: false,
     destino: "/pedidos/historial",
     colorClases: {
-      badgeBg: "bg-[#212121]/10 dark:bg-gray-700",
-      iconColor: "text-[#212121] dark:text-gray-300",
-      barColor: "bg-[#212121]",
-      borderColor: "border-[#212121]/20",
+      badgeBg: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+      iconColor: "text-slate-500 dark:text-slate-400",
+      barColor: "bg-slate-400",
+      borderColor: "border-slate-200/60",
     },
   },
 ];
 
 /**
- * Una tarjeta de etapa.
- *
- * Es un componente propio —y no el cuerpo de un `map` en línea— porque el
- * contador necesita **un hook por tarjeta**: los hooks no se pueden llamar
- * dentro de un bucle, y el número que sube es estado interno de cada tarjeta.
- * Con las seis tarjetas en el mismo componente solo cabría un contador
- * compartido, que es justo lo que no se quiere (cada una cuenta la suya).
+ * Una tarjeta de etapa con animación de conteo numérico y proporciones del diseño.
  */
 const EtapaCard = observer(
   ({
@@ -154,41 +143,38 @@ const EtapaCard = observer(
     onAbrir: () => void;
   }) => {
     const Icon = etapa.icon;
-    // El conteo arranca en 0 y llega al valor real. El hook devuelve un número
-    // crudo a propósito, así que el redondeo vive aquí: una cantidad de pedidos
-    // es entera, y quien decide eso es la tarjeta, no el hook.
     const cantidad = Math.round(useConteoAnimado(etapa.cantidad));
 
     return (
-      <div
+      <article
         onClick={onAbrir}
-        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-3.5 sm:p-4 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900 flex flex-col justify-between"
+        className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
       >
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between">
           <div
-            className={`flex size-9 sm:size-10 items-center justify-center rounded-xl ${etapa.colorClases.badgeBg} ${etapa.colorClases.iconColor} transition-transform duration-200 group-hover:scale-105`}
+            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold ${etapa.colorClases.badgeBg} transition-transform group-hover:scale-105`}
           >
-            <Icon className="size-4.5 sm:size-5" />
+            <Icon className="w-5 h-5" />
           </div>
           {porcentaje !== null ? (
-            <span className="inline-flex items-center rounded-full bg-accent-50 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-accent-700 dark:bg-accent-950/50 dark:text-accent-400">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100/90 dark:bg-slate-800 px-2 py-0.5 rounded-full">
               {porcentaje}%
             </span>
           ) : (
-            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+            <span className="text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
               Historial
             </span>
           )}
         </div>
 
         <div className="mt-3">
-          <p className="text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 truncate">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
             {etapa.nombre}
           </p>
-          <p className="mt-0.5 text-xl sm:text-2xl font-bold tracking-tight text-ink-title dark:text-white">
+          <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">
             {cantidad.toLocaleString()}
           </p>
-          <p className="mt-0.5 text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 truncate">
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium truncate">
             {etapa.id === "nuevos" && "Por gestionar"}
             {etapa.id === "confirmados" && "Verificados"}
             {etapa.id === "preparacion" && "En cocina / armado"}
@@ -197,7 +183,7 @@ const EtapaCard = observer(
             {etapa.id === "cancelados" && "Cerrados"}
           </p>
         </div>
-      </div>
+      </article>
     );
   },
 );

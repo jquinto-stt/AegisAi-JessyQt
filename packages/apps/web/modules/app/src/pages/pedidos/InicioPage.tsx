@@ -444,123 +444,126 @@ const ClientesCardWidget = observer(
       .sort((a, b) => b.conv.ultimaActividad.localeCompare(a.conv.ultimaActividad));
     const items = [...urgentes, ...resto].slice(0, 4);
 
+    const numNotificaciones = urgentes.length;
+
     return (
-      <div
-        className={`rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 flex flex-col justify-between ${className}`}
-      >
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">Chat & Conversaciones</h2>
-          {!canalesActivos ? (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
-              Desconectado
-            </span>
-          ) : (
-            <CampanitaAtencion onClick={onAbrir} />
-          )}
-        </div>
-        {/* El acceso a Conversaciones es el botón del pie («Ver todas las
-            conversaciones»): un segundo botón arriba para el mismo destino era
-            el mismo atajo dos veces. */}
-        <BotonSilenciar />
-      </div>
-
-      {!canalesActivos && (
-        <div className="mb-3 flex items-center justify-between gap-2 rounded-2xl border border-amber-200/90 bg-amber-50/70 p-3 text-xs text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
-            <span className="truncate">Canales de chat inactivos · No es posible enviar mensajes</span>
+      <aside aria-label="Canales de Chat y Atención" className="h-full">
+        <div
+          className={`bg-white rounded-3xl p-5 md:p-6 border border-slate-200/90 shadow-sm flex flex-col h-full dark:border-gray-800 dark:bg-gray-900 ${className}`}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-gray-800">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                Chat & Conversaciones
+              </h2>
+              {numNotificaciones > 0 && (
+                <div
+                  onClick={onAbrir}
+                  className="inline-flex items-center gap-1 bg-rose-50 border border-rose-200/80 text-rose-600 px-2 py-0.5 rounded-full text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                  </svg>
+                  <span>{numNotificaciones}</span>
+                </div>
+              )}
+              {!canalesActivos && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                  Desconectado
+                </span>
+              )}
+            </div>
+            <BotonSilenciar />
           </div>
-          {/* El enlace va a `/pedidos/config`, que exige `settings.read`. Un rol
-              con `channels.read` pero sin `settings.read` (Vendedor) veía el
-              botón y al pulsarlo caía en «No tienes acceso»: un enlace que su
-              perfil no puede seguir. Sin la capacidad queda solo el aviso. */}
-          {puedeConfigurar && (
-            <button
-              type="button"
-              onClick={() => navigate("/pedidos/config?seccion=integraciones")}
-              className="font-bold underline text-[#190088] hover:text-[#FF3F1A] dark:text-amber-300 shrink-0 cursor-pointer"
-            >
-              Configurar
-            </button>
+
+          {!canalesActivos && (
+            <div className="my-3 flex items-center justify-between gap-2 rounded-2xl border border-amber-200/90 bg-amber-50/70 p-3 text-xs text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+                <span className="truncate">Canales de chat inactivos</span>
+              </div>
+              {puedeConfigurar && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/pedidos/config?seccion=integraciones")}
+                  className="font-bold underline text-[#190088] hover:text-[#FF3F1A] dark:text-amber-300 shrink-0 cursor-pointer"
+                >
+                  Configurar
+                </button>
+              )}
+            </div>
           )}
-        </div>
-      )}
 
-      {items.length === 0 ? (
-        <ListaVacia>Sin conversaciones activas.</ListaVacia>
-      ) : (
-        <div className="space-y-3">
-          {items.map((f) => {
-            const { conv, pedido } = f;
-            const atencion = estadoAtencionDe(conv);
-            const subtitulo = pedido
-              ? `${pedidosStore.estadoLabel(pedido.estado)} · ${pedidosStore.modalidadLabel(pedido.modalidad)}`
-              : `${etiquetaEstado(conv.estado)} · ${ATENCION_LABEL[conv.atencion]}`;
+          {items.length === 0 ? (
+            <div className="py-8">
+              <ListaVacia>Sin conversaciones activas.</ListaVacia>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-gray-800/60 my-2 space-y-1">
+              {items.map((f) => {
+                const { conv, pedido } = f;
+                const atencion = estadoAtencionDe(conv);
+                const subtitulo = pedido
+                  ? `${pedidosStore.estadoLabel(pedido.estado)} · ${pedidosStore.modalidadLabel(pedido.modalidad)}`
+                  : `${etiquetaEstado(conv.estado)} · ${ATENCION_LABEL[conv.atencion]}`;
 
-            return (
-              <div
-                key={conv.id}
-                onClick={() => onChat(conv.id)}
-                className={`group cursor-pointer rounded-2xl p-4 border transition-all duration-200 ${
-                  atencion === "pide_asesor"
-                    ? "border-error-200 bg-error-50/50 hover:border-error-300 dark:border-error-900/50 dark:bg-error-950/20"
-                    : "border-gray-100 bg-gray-50/50 hover:bg-white hover:border-secondary-200 hover:shadow-theme-xs dark:border-gray-800/80 dark:bg-gray-800/30 dark:hover:bg-gray-800"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <CanalAvatar
-                      canal={conv.canal}
-                      nombre={conv.contacto.nombre}
-                      size="medium"
-                      status={atencion === "pide_asesor" ? "busy" : "online"}
-                    />
-                    <div className="min-w-0">
-                      <h4 className="text-xs sm:text-sm font-bold text-ink-title dark:text-white truncate">
-                        {conv.contacto.nombre}
-                      </h4>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                        {subtitulo}
-                      </p>
+                return (
+                  <div
+                    key={conv.id}
+                    onClick={() => onChat(conv.id)}
+                    className="py-3 px-2 rounded-2xl hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors cursor-pointer flex items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative shrink-0">
+                        <CanalAvatar
+                          canal={conv.canal}
+                          nombre={conv.contacto.nombre}
+                          size="medium"
+                          status={atencion === "pide_asesor" ? "busy" : "online"}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-slate-800 dark:text-white truncate group-hover:text-brand-600 transition-colors">
+                          {conv.contacto.nombre}
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          {subtitulo}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-0.5 shrink-0">
+                      <span className="text-[11px] font-semibold text-slate-400">
+                        {relativo(conversacionesStore.minutosEsperando(conv))}
+                      </span>
+                      {atencion === "pide_asesor" && (
+                        <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                          {canalesActivos && puedeResponder ? "Atender" : "Urgente"}
+                        </span>
+                      )}
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          )}
 
-                  <span className="text-[10px] font-medium text-gray-400 shrink-0">
-                    {relativo(conversacionesStore.minutosEsperando(conv))}
-                  </span>
-                </div>
-
-                {atencion === "pide_asesor" && (
-                  <div className="mt-2.5 flex items-center justify-between border-t border-error-100/80 pt-2 text-[11px] font-semibold text-error-600 dark:border-error-900/40 dark:text-error-400">
-                    <span className="flex items-center gap-1">
-                      <ExclamationCircleIcon className="size-3" />
-                      Solicitó atención humana
-                    </span>
-                    <span className={canalesActivos && puedeResponder ? "text-secondary-600 dark:text-brand-400 hover:underline" : "text-amber-700 dark:text-amber-400"}>
-                      {canalesActivos && puedeResponder ? "Responder →" : "Solo lectura"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {/* Bottom Show All Link */}
+          <div className="mt-auto pt-3">
+            <button
+              type="button"
+              onClick={() => navigate("/conversaciones")}
+              className="w-full py-2.5 px-4 rounded-xl text-center text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-gray-700 dark:text-slate-300 transition-colors cursor-pointer"
+            >
+              Ver todas las conversaciones ({filas.length})
+            </button>
+          </div>
         </div>
-      )}
-
-      {/* Va a la consola de Conversaciones, no al modal de filtro: «ver todas»
-          significa todas, y el modal solo lista las cinco de la tarjeta con un
-          segmento puesto. */}
-      <button
-        type="button"
-        onClick={() => navigate("/conversaciones")}
-        className="mt-4 w-full rounded-xl border border-dashed border-gray-200 py-2.5 text-center text-xs font-semibold text-gray-500 transition-colors hover:border-secondary-300 hover:text-secondary-600 dark:border-gray-800 dark:text-gray-400 dark:hover:border-brand-500 cursor-pointer"
-      >
-        Ver todas las conversaciones ({filas.length})
-      </button>
-    </div>
-  );
-});
+      </aside>
+    );
+  },
+);
 
 
 
@@ -710,27 +713,27 @@ export const InicioPage = observer(() => {
       />
 
       {/* ── HEADER SALUDO Y ACCIONES PRINCIPALES ── */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <header className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-1">
+        <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
-              {saludoText}
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              Bienvenido de nuevo{nombreUsuario ? <>, <span className="text-brand-600 dark:text-brand-400">{nombreUsuario}</span></> : null}
             </h1>
           </div>
-          <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-2xl">
             Resumen claro y en tiempo real del rendimiento operativo, pedidos y atención multicanal.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start sm:self-auto">
-          <BotonSilenciar className="h-10 w-10 bg-white dark:bg-gray-900 border-gray-200/90 shadow-theme-xs" />
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start lg:self-auto">
+          <BotonSilenciar className="inline-flex items-center justify-center p-2.5 size-10 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 shadow-sm transition-all" />
 
           <button
             type="button"
             onClick={() => setDisplayOpen(true)}
-            className="flex h-10 items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 text-xs sm:text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold text-sm transition-all shadow-sm hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
           >
-            <TvIcon className="size-4 text-brand-500" />
+            <TvIcon className="w-4 h-4 text-slate-500 dark:text-slate-400" />
             <span>Modo Enfoque</span>
           </button>
 
@@ -738,9 +741,9 @@ export const InicioPage = observer(() => {
             <button
               type="button"
               onClick={() => navigate("/pedidos/crear")}
-              className="flex h-10 items-center gap-1.5 rounded-xl bg-brand-500 hover:bg-brand-600 px-4 text-xs sm:text-sm font-semibold text-white shadow-theme-xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm tracking-wide shadow-sm hover:shadow transition-all cursor-pointer"
             >
-              <PlusIcon className="size-4 stroke-[2.5]" />
+              <PlusIcon className="w-4 h-4 stroke-[2.5]" />
               <span>Crear pedido</span>
             </button>
           )}
@@ -748,13 +751,13 @@ export const InicioPage = observer(() => {
           <button
             type="button"
             onClick={() => setCalendarioOpen(true)}
-            className="flex h-10 items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 text-xs sm:text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
           >
-            <CalendarIcon className="size-4 text-gray-500" />
+            <CalendarIcon className="w-4 h-4 text-slate-400" />
             <span className="capitalize">{esHoy(dia) ? fechaActualTexto : fechaCorta(dia)}</span>
           </button>
         </div>
-      </div>
+      </header>
 
       {/* ── FILA 1: FLUJO OPERATIVO DE PEDIDOS (6 ETAPAS DEL PIPELINE) ── */}
       <div className="mb-6">

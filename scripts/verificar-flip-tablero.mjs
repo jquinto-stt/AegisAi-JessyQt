@@ -251,27 +251,38 @@ const ANIMACIONES = `(() => {
   return { flip: flip, css: css };
 })()`;
 
-const abrirMenu = () =>
-  ev(`(() => {
-    const b = [...document.querySelectorAll('button')]
-      .find((x) => x.textContent.trim().startsWith('Filtrar y ordenar'));
-    if (!b) return false;
-    b.click();
-    return true;
-  })()`);
-
 /**
- * Pulsa una opción de ordenación. NO lee nada: el efecto del clic llega en una
- * tarea posterior (ver la trampa 3 de la cabecera).
+ * Pulsa el disparador que recoloca las tarjetas. NO lee nada: el efecto del
+ * clic llega en una tarea posterior (ver la trampa 3 de la cabecera).
+ *
+ * ── Por qué el disparador son las PESTAÑAS de etapa y no el orden (09/10) ──
+ *
+ * Las fases 2 y 3 pulsaban las opciones del menú «Filtrar y ordenar». Ese botón
+ * y su menú se retiraron: el buscador pasó a estar en línea y el orden dejó de
+ * ser un ajuste del tablero (es fijo: más recientes primero). Sin él, el
+ * reordenado por criterio ya no es una afordancia de usuario, así que un arnés
+ * que lo pulsara estaría midiendo una pantalla que ya no existe.
+ *
+ * El sustituto es la pestaña de etapa, que sigue siendo una afordancia real y
+ * **no muta nada**: al filtrar, la rejilla pasa de N columnas a una, la columna
+ * superviviente se desplaza y sus tarjetas con ella. Eso es un desplazamiento
+ * real que el FLIP tiene que animar — exactamente lo que estas fases miden.
+ *
+ * El matcher es por PREFIJO, no por igualdad: la pestaña concatena su etiqueta
+ * con el contador y sin espacios («En preparación3»), así que una igualdad
+ * estricta no encontraría nada y la fase pasaría midiendo el vacío.
  */
 const disparar = (etiqueta) =>
   ev(`(() => {
     const boton = [...document.querySelectorAll('button')]
-      .find((b) => b.textContent.trim() === ${JSON.stringify(etiqueta)});
+      .find((b) => b.textContent.trim().startsWith(${JSON.stringify(etiqueta)}));
     if (!boton) return false;
     boton.click();
     return true;
   })()`);
+
+/** Vuelve a «Todas las tareas» para que el siguiente disparador parta del tablero completo. */
+const volverATodas = () => disparar("Todas las tareas");
 
 /**
  * Vigila las animaciones de los nodos durante toda una ventana y devuelve las
@@ -378,15 +389,14 @@ check(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FASE 2 — ordenar produce FLIP
+// FASE 2 — recolocar la disposición produce FLIP
 // ═══════════════════════════════════════════════════════════════════════════
-console.log("── Fase 2 · reordenar dispara el FLIP ──");
+console.log("── Fase 2 · recolocar dispara el FLIP ──");
 
-const menuAbierto = await abrirMenu();
-check("se abre el menú «Filtrar y ordenar»", menuAbierto);
-await sleep(400);
-
-const CANDIDATOS = ["Más antiguos primero", "Mayor importe", "Urgentes primero"];
+// Disparador: las pestañas de etapa (ver el docblock de `disparar`). Filtrar a
+// una sola columna desplaza la columna superviviente y sus tarjetas, que es el
+// movimiento que el FLIP tiene que animar. NO muta nada.
+const CANDIDATOS = ["En preparación", "Listo", "Confirmado", "En camino"];
 let disparo = null;
 
 for (const etiqueta of CANDIDATOS) {
@@ -396,7 +406,7 @@ for (const etiqueta of CANDIDATOS) {
   // —Supabase sigue entregando pedidos— tiene derecho a su entrada.
   const clavesAntes = await clavesActuales();
   if (!(await disparar(etiqueta))) {
-    check(`la opción «${etiqueta}» existe`, false);
+    check(`la pestaña «${etiqueta}» existe`, false);
     continue;
   }
   const vistas = await vigilarAnimaciones();
@@ -406,7 +416,7 @@ for (const etiqueta of CANDIDATOS) {
 
   const cssPropias = vistas.css.filter((c) => clavesAntes.includes(c.clave));
   console.log(
-    `  «${etiqueta}»: orden ${cambioElOrden ? "CAMBIÓ" : "igual"} · ` +
+    `  «${etiqueta}»: disposición ${cambioElOrden ? "CAMBIÓ" : "igual"} · ` +
       `${vistas.flip.length} muestra(s) con FLIP · ${cssPropias.length} de CSS en tarjetas ya presentes`,
   );
   if (cambioElOrden && vistas.flip.length > 0) {
@@ -414,10 +424,12 @@ for (const etiqueta of CANDIDATOS) {
     break;
   }
   if (cambioElOrden && !disparo) disparo = { etiqueta, animaciones: vistas.flip, css: cssPropias, clavesAntes };
+  await volverATodas();
+  await sleep(400);
 }
 
 check(
-  "ordenar cambió el orden de las tarjetas (si no, no hay nada que medir)",
+  "filtrar por etapa recolocó las tarjetas (si no, no hay nada que medir)",
   disparo !== null,
   disparo ? `«${disparo.etiqueta}»` : "ningún candidato movió nada",
 );
@@ -503,32 +515,36 @@ const emulado = await ev(`window.matchMedia('(prefers-reduced-motion: reduce)').
 check("la emulación de reduced-motion llegó a la página", emulado === true, `matches=${emulado}`);
 
 let conReduccion = null;
-for (const etiqueta of ["Más recientes primero", "Más antiguos primero", "Mayor importe"]) {
+for (const etiqueta of ["En preparación", "Listo", "Confirmado", "En camino"]) {
   const ordenAntes = await ev(ORDEN);
   if (!(await disparar(etiqueta))) continue;
   const vistas = await vigilarAnimaciones();
   await sleep(300);
   const ordenDespues = await ev(ORDEN);
-  if (ordenAntes === ordenDespues) continue;
+  if (ordenAntes === ordenDespues) {
+    await volverATodas();
+    await sleep(400);
+    continue;
+  }
   conReduccion = { etiqueta, flip: vistas.flip };
   break;
 }
 
 if (conReduccion) {
-  console.log(`  «${conReduccion.etiqueta}»: orden CAMBIÓ · ${conReduccion.flip.length} muestra(s) de FLIP`);
-  // Las dos mitades importan. «El orden cambió» prueba que el efecto se disparó
-  // (la firma cambió y el `useLayoutEffect` corrió); «cero animaciones» prueba que
-  // la guarda lo apagó. Sin la primera, la segunda pasaría por vacío.
+  console.log(`  «${conReduccion.etiqueta}»: disposición CAMBIÓ · ${conReduccion.flip.length} muestra(s) de FLIP`);
+  // Las dos mitades importan. «La disposición cambió» prueba que el efecto se
+  // disparó (la firma cambió y el `useLayoutEffect` corrió); «cero animaciones»
+  // prueba que la guarda lo apagó. Sin la primera, la segunda pasaría por vacío.
   check(
-    "con reduced-motion el orden cambia pero NO se anima nada",
+    "con reduced-motion la disposición cambia pero NO se anima nada",
     conReduccion.flip.length === 0,
     `muestras=${conReduccion.flip.length}`,
   );
 } else {
   check(
-    "con reduced-motion el orden cambia pero NO se anima nada",
+    "con reduced-motion la disposición cambia pero NO se anima nada",
     false,
-    "ningún disparador cambió el orden: la aserción no probaría nada",
+    "ningún disparador recolocó nada: la aserción no probaría nada",
   );
 }
 

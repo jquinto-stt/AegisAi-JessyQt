@@ -45,9 +45,14 @@ const OPCIONES_VISTA: {
   },
   {
     id: "kanban",
-    titulo: "KDS Estaciones de Cocina",
+    // El rótulo decía «KDS Estaciones de Cocina» / «Cocina / Prep». Se
+    // neutraliza (09/10) junto con el retiro del «Modo Cocina» del tablero: el
+    // perfil comercial es configurable —puede ser venta de ropa— y la pantalla
+    // no debe dar por hecho un restaurante. La CLAVE sigue siendo `kanban`
+    // porque viaja en el almacenamiento y la lee el propio display.
+    titulo: "Estaciones de preparación",
     subtitulo: "3 columnas proporcionales con avance táctil en 1 toque",
-    badge: "Cocina / Prep",
+    badge: "Preparación",
     icon: ViewColumnsIcon,
   },
   {
@@ -68,7 +73,7 @@ const OPCIONES_MODALIDAD: { id: "todas" | Modalidad; label: string; desc: string
 
 /**
  * ConfigureDisplayModal — Modal para configurar y proyectar la pantalla
- * de enfoque / KDS / TV monitor con estética oficial Necto.
+ * de enfoque / despacho / TV monitor con estética oficial Necto.
  */
 export const ConfigureDisplayModal = observer(({ isOpen, onClose }: ConfigureDisplayModalProps) => {
   const [vista, setVista] = useState<TipoVista>("despacho");
@@ -108,11 +113,11 @@ export const ConfigureDisplayModal = observer(({ isOpen, onClose }: ConfigureDis
             </h3>
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brand-500/15 text-brand-500 rounded">
               <SparklesIcon className="size-2.5" />
-              KDS / TV
+              TV / Pantalla
             </span>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Aprovechamiento total de pantalla para estaciones de despacho, cocina y salas de espera.
+            Aprovechamiento total de pantalla para estaciones de despacho, preparación y salas de espera.
           </p>
         </div>
       </div>

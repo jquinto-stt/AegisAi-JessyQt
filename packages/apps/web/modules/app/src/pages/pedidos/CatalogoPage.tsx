@@ -517,9 +517,6 @@ export const CatalogoPage: React.FC = observer(() => {
                   <h1 className="text-lg sm:text-xl font-bold text-[#190088] dark:text-white tracking-tight">
                     Catálogo
                   </h1>
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                    En línea
-                  </span>
                   <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                     · {productos.length} {productos.length === 1 ? 'producto' : 'productos'}
                   </span>

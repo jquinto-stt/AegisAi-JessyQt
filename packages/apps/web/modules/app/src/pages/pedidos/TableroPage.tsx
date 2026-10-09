@@ -6,9 +6,9 @@ import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
 import { Modal } from "@/elements/ui/modal";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
+import { SearchInput } from "@/elements";
 import {
   pedidosStore,
-  sessionStore,
   ETIQUETA_PAGO,
   puedeMoverA,
   puedeCancelarPedido,
@@ -31,12 +31,10 @@ import {
 import { BUSINESS_PROFILES } from "@/domain/pedidos/pedidos.profiles";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
 import {
-  AdjustmentsHorizontalIcon,
   ArrowDownTrayIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   CalendarDaysIcon,
-  CheckIcon,
   EllipsisHorizontalIcon,
   MagnifyingGlassIcon,
   PencilIcon,
@@ -1023,7 +1021,12 @@ const VistaToggle = ({ vista, onChange }: { vista: VistaTablero; onChange: (v: V
   const opciones: { id: VistaTablero; label: string; icon: React.ReactNode }[] = [
     {
       id: "kanban",
-      label: "Kanban",
+      // El rótulo decía «Kanban», que es jerga de metodología: describe cómo está
+      // hecha la vista, no lo que el usuario ve. Se cambia a «Tabla» (09/10) — la
+      // CLAVE sigue siendo `kanban`, porque viaja en el almacenamiento
+      // (`loadVista`/`saveVista`) y renombrarla invalidaría la preferencia de
+      // quien ya la tenía guardada.
+      label: "Tabla",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h5v14H4zM15 5h5v9h-5z" />
@@ -1320,10 +1323,9 @@ export const TableroPage = observer(() => {
   const [entregaId, setEntregaId] = useState<string | null>(null);
   const [reprogramarId, setReprogramarId] = useState<string | null>(null);
   const [verTodosProgramados, setVerTodosProgramados] = useState(false);
-  type CriterioOrden = "reciente" | "antiguo" | "monto" | "urgente";
-  const [criterioOrden, setCriterioOrden] = useState<CriterioOrden>("reciente");
-  const [menuFilterOpen, setMenuFilterOpen] = useState(false);
   const [busquedaTablero, setBusquedaTablero] = useState("");
+  /** El campo de búsqueda se muestra bajo demanda desde la lupa de la barra. */
+  const [buscadorAbierto, setBuscadorAbierto] = useState(false);
 
   type FiltroPago = "todos" | "pendientes" | "pagados";
   const [filtroPago, setFiltroPago] = useState<FiltroPago>("todos");
@@ -1387,7 +1389,9 @@ export const TableroPage = observer(() => {
   // Enfoque y filtros al llegar desde el dashboard o URL:
   // ?detalle=<id> (abre modal detalle)
   // ?estado=<estado o e1,e2> (filtra columnas/lista por esa etapa)
-  // ?pago=<pendientes|pagados|todos> (filtra por estado de pago)
+  // ?pago=<pendientes|pagados|todos> (filtra por estado de pago; lo emite el
+  //   donut de pagos — es su única superficie desde el 09/10, cuando se retiró
+  //   el selector de la barra del tablero)
   // ?focus=<id> (resalta pedido programado)
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
@@ -1460,16 +1464,12 @@ export const TableroPage = observer(() => {
         return clienteMatch || numeroMatch || itemsMatch;
       });
     }
-    if (criterioOrden === "reciente") {
-      list = [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    } else if (criterioOrden === "antiguo") {
-      list = [...list].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    } else if (criterioOrden === "monto") {
-      list = [...list].sort((a, b) => pedidosStore.totalPedido(b) - pedidosStore.totalPedido(a));
-    } else if (criterioOrden === "urgente") {
-      list = [...list].sort((a, b) => (pedidosStore.esUrgente(b) ? 1 : 0) - (pedidosStore.esUrgente(a) ? 1 : 0));
-    }
-    return list;
+    // Orden FIJO: más recientes primero. Era el criterio por defecto del
+    // selector de orden, que se retiró el 09/10 junto con el filtro de pago del
+    // popover «Filtrar y ordenar». Se deja escrito aquí y no en un `sort` que
+    // nadie configura: un orden que ya no se puede cambiar no es un ajuste, es
+    // la forma en que el tablero presenta la columna.
+    return [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   };
 
   // ── Apertura de modales, gobernada por capacidad ─────────────────────────
@@ -1498,29 +1498,27 @@ export const TableroPage = observer(() => {
   // Estados filtrados según la pestaña activa superior ("All Tasks", o columna específica)
   const [columnaFiltroActiva, setColumnaFiltroActiva] = useState<string>("all");
 
-  // Modo Cocina / KDS: exclusivo para operadores con permiso de preparación en cocina.
-  //
-  // `esPerfilCocina` se resuelve SOLO con capacidades, nunca con el id del rol.
-  // Comparaba además `rolId === "preparacion"`, y esa cláusula era **redundante**:
-  // el rol `preparacion` no tiene `orders.create`, así que la segunda condición ya
-  // lo cubre. Peor: era una segunda fuente de verdad que congelaba el
-  // comportamiento — un admin que le concediera `orders.create` a un cocinero
-  // seguiría viéndolo encerrado en el KDS, porque el string del rol ganaba.
-  const tienePermisoCocina = sessionStore.hasPermission("preparation.manage");
-  const esPerfilCocina = !sessionStore.hasPermission("orders.create") && tienePermisoCocina;
-  const [modoCocinaManual, setModoCocinaManual] = useState<boolean>(false);
-
-  // KDS activo solo si tiene capacidad de cocina y es perfil de cocina o lo activó supervisor/admin
-  const modoCocinaKDS = tienePermisoCocina && (esPerfilCocina || modoCocinaManual);
-
   const totalTareasGlobal = pedidosStore.totalEnCurso;
 
-  const columnasBase = modoCocinaKDS
-    ? columnas.filter((c) => c === "en_preparacion" || c === "listo")
-    : columnas;
+  // ── «Modo Cocina / KDS» — RETIRADO el 09/10 ──────────────────────────────
+  //
+  // Aquí vivía una vista que estrechaba el tablero a dos columnas
+  // (`en_preparacion` y `listo`) y se auto-activaba para los perfiles de
+  // preparación, con un botón para que el admin la encendiera a mano.
+  //
+  // Se retira porque el producto **no es un restaurante**: el perfil comercial
+  // es configurable y puede ser venta de ropa, ferretería o cualquier otro
+  // retail. Una pantalla que se pliega sola por el nombre del rol y habla de
+  // «cocina» y «comandas» deja de ser neutral en cuanto el negocio cambia, y
+  // el tablero es la pantalla que más se mira.
+  //
+  // Qué NO se toca: la capacidad `preparation.manage` sigue gobernando las
+  // etapas de preparación (avanzar a `en_preparacion`, `listo`, `en_camino` y
+  // `entregado`), y `en_preparacion` sigue siendo una etapa del pipeline. Lo
+  // retirado es la VISTA, no la autorización ni el flujo.
 
   // Filtrado de columnas visibles según la pestaña seleccionada
-  const columnasVisibles = columnasBase.filter((estado) => {
+  const columnasVisibles = columnas.filter((estado) => {
     if (columnaFiltroActiva === "all") return true;
     if (columnaFiltroActiva.includes(",")) {
       return columnaFiltroActiva.split(",").map((s) => s.trim()).includes(estado);
@@ -1599,7 +1597,7 @@ export const TableroPage = observer(() => {
           })}
         </div>
 
-        {/* Acciones derechas: Chips de filtros activos + VistaToggle + Filtrar y ordenar + Crear pedido */}
+        {/* Acciones derechas: Chips de filtros activos + Buscador (lupa) + VistaToggle + Crear pedido */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
           {/* Chip de filtro activo de pago */}
           {filtroPago !== "todos" && (
@@ -1639,245 +1637,79 @@ export const TableroPage = observer(() => {
             </span>
           )}
 
-          {/* Selector de vista: Kanban / Lista */}
+          {/* ── Buscador: se abre y se cierra con la lupa ────────────────────
+              Antes el buscador vivía dentro de un popover que abría el botón
+              «Filtrar y ordenar»; después pasó a estar en línea, y ahora se
+              muestra bajo demanda desde la lupa.
+
+              Va a la IZQUIERDA del selector de vista: la lupa y el buscador son
+              el control de la izquierda del conmutador, que así queda pegado a
+              «Añadir pedido» —la acción de la barra— y no emparedado entre dos
+              controles.
+
+              Con él se retiraron el selector de estado de pago y el de orden
+              (09/10). El de PAGO sigue existiendo como filtro, pero su superficie
+              ya no está aquí: lo pone el donut de pagos navegando a
+              `/pedidos?pago=…`, y cuando está activo se ve y se quita con el chip
+              «Pago: …» de esta misma barra. El de ORDEN se retira entero —no
+              tenía otra superficie— y el tablero queda con un orden fijo: más
+              recientes primero, que era su valor por defecto.
+
+              Al cerrar el buscador se LIMPIA el término, y no es un detalle: un
+              campo escondido con un filtro vivo deja el tablero recortado sin que
+              se vea por qué — justo el control que miente que este proyecto no
+              acepta. */}
+          {buscadorAbierto ? (
+            <SearchInput
+              autoFocus
+              value={busquedaTablero}
+              onChange={(e) => setBusquedaTablero(e.target.value)}
+              onClear={() => setBusquedaTablero("")}
+              placeholder="Cliente, # pedido, producto…"
+              className="h-10 w-48 sm:w-64 shrink-0"
+              aria-label="Buscar pedidos en el tablero"
+            />
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => {
+              // Al cerrar se limpia: ver el docblock de arriba.
+              if (buscadorAbierto) setBusquedaTablero("");
+              setBuscadorAbierto((v) => !v);
+            }}
+            aria-expanded={buscadorAbierto}
+            aria-label={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
+            title={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
+            className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
+              buscadorAbierto
+                ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300"
+                : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+            }`}
+          >
+            <MagnifyingGlassIcon className="size-4" />
+          </button>
+
+          {/* Selector de vista: Tabla / Lista */}
           <VistaToggle vista={vista} onChange={cambiarVista} />
 
-          {/* Botón Modo Cocina / KDS: SOLO visible para roles con permiso de cocina */}
-          {tienePermisoCocina && (
-            <button
-              type="button"
-              onClick={() => setModoCocinaManual((v) => !v)}
-              className={`flex h-10 items-center gap-1.5 rounded-xl border px-3 sm:px-3.5 text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                modoCocinaKDS
-                  ? "border-amber-400 bg-amber-50 text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-300 shadow-theme-xs ring-2 ring-amber-400/20"
-                  : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-              }`}
-              title={
-                modoCocinaKDS
-                  ? "KDS Cocina activado: mostrando solo preparación y listos"
-                  : "Activar vista enfocada en cocina (KDS)"
-              }
-            >
-              <span>🍳</span>
-              <span>{modoCocinaKDS ? "KDS Cocina" : "Modo Cocina"}</span>
-            </button>
-          )}
-
-          {/* Botón y menú Filtrar y ordenar con Buscador y Filtro de Pago */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setMenuFilterOpen((v) => !v)}
-              className={`flex h-10 items-center gap-2 rounded-xl border px-3.5 sm:px-4 text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                busquedaTablero.trim() || criterioOrden !== "reciente" || filtroPago !== "todos"
-                  ? "border-secondary-300 bg-secondary-50/60 text-ink-title dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300 shadow-theme-xs"
-                  : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-              }`}
-            >
-              <AdjustmentsHorizontalIcon className="size-4 shrink-0" />
-              <span>Filtrar y ordenar</span>
-              {(busquedaTablero.trim() || criterioOrden !== "reciente" || filtroPago !== "todos") && (
-                <span className="size-2 rounded-full bg-brand-500 shrink-0" />
-              )}
-            </button>
-
-            {menuFilterOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setMenuFilterOpen(false)}
-                />
-                <div
-                  className="absolute right-0 top-full mt-2 z-50 w-72 rounded-2xl border border-gray-100 bg-white p-3.5 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900 animate-aparecer"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Cabecera del popover con opción de limpiar si hay filtros */}
-                  <div className="flex items-center justify-between px-1 mb-2.5">
-                    <span className="text-xs font-bold text-ink-title dark:text-white">Filtros & Orden</span>
-                    {(busquedaTablero.trim() || criterioOrden !== "reciente" || filtroPago !== "todos") && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setBusquedaTablero("");
-                          setCriterioOrden("reciente");
-                          setFiltroPago("todos");
-                        }}
-                        className="text-[11px] font-semibold text-brand-500 hover:text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
-                      >
-                        Limpiar todo
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Campo de búsqueda integrado */}
-                  <div className="mb-3">
-                    <p className="px-1 mb-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Buscar tarjetas</p>
-                    <div className="relative flex items-center">
-                      <MagnifyingGlassIcon className="absolute left-3 size-3.5 text-gray-400 pointer-events-none" />
-                      <input
-                        type="text"
-                        autoFocus
-                        value={busquedaTablero}
-                        onChange={(e) => setBusquedaTablero(e.target.value)}
-                        placeholder="Cliente, # pedido, producto..."
-                        className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50 pl-8.5 pr-8 text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800/80 dark:text-white dark:placeholder:text-gray-500 transition-all"
-                      />
-                      {busquedaTablero && (
-                        <button
-                          type="button"
-                          onClick={() => setBusquedaTablero("")}
-                          className="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-                        >
-                          <XMarkIcon className="size-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Filtro por estado de pago (Todo, Por cobrar, Pagado) */}
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between px-1 mb-1.5">
-                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Estado de pago</p>
-                      {filtroPago !== "todos" && (
-                        <span className="text-[10px] font-semibold text-brand-500 dark:text-brand-400">
-                          {filtroPago === "pendientes" ? "Por cobrar" : "Pagados"}
-                        </span>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-3 gap-1 rounded-xl border border-gray-200/90 bg-gray-50/80 p-1 dark:border-gray-800 dark:bg-gray-800/50">
-                      <button
-                        type="button"
-                        onClick={() => setFiltroPago("todos")}
-                        className={`flex h-8 items-center justify-center rounded-lg px-2 text-xs font-semibold transition-colors cursor-pointer ${
-                          filtroPago === "todos"
-                            ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
-                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                        }`}
-                      >
-                        Todo
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFiltroPago("pendientes")}
-                        className={`flex h-8 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                          filtroPago === "pendientes"
-                            ? "bg-white text-brand-700 shadow-theme-xs dark:bg-gray-900 dark:text-brand-400"
-                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                        }`}
-                      >
-                        <span className="truncate">Por cobrar</span>
-                        {pedidosStore.totalPorCobrar > 0 && (
-                          <span className="flex size-4 items-center justify-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-800 dark:bg-brand-950 dark:text-brand-300 shrink-0">
-                            {pedidosStore.totalPorCobrar}
-                          </span>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFiltroPago("pagados")}
-                        className={`flex h-8 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                          filtroPago === "pagados"
-                            ? "bg-white text-accent-700 shadow-theme-xs dark:bg-gray-900 dark:text-accent-400"
-                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                        }`}
-                      >
-                        <span className="truncate">Pagados</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Divisor */}
-                  <div className="my-2 border-t border-gray-100 dark:border-gray-800" />
-
-                  {/* Ordenación */}
-                  <div>
-                    <p className="px-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ordenar por</p>
-                    <div className="space-y-1">
-                      {[
-                        { id: "reciente", label: "Más recientes primero" },
-                        { id: "antiguo", label: "Más antiguos primero" },
-                        { id: "monto", label: "Mayor importe" },
-                        { id: "urgente", label: "Urgentes primero" },
-                      ].map((op) => (
-                        <button
-                          key={op.id}
-                          type="button"
-                          onClick={() => setCriterioOrden(op.id as typeof criterioOrden)}
-                          className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                            criterioOrden === op.id
-                              ? "bg-secondary-50 font-semibold text-secondary-700 dark:bg-accent-950/40 dark:text-accent-300"
-                              : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
-                          }`}
-                        >
-                          <span>{op.label}</span>
-                          {criterioOrden === op.id && <CheckIcon className="size-3.5 text-secondary-600 dark:text-accent-400" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Botón reset si hay filtros activos */}
-                  {(busquedaTablero.trim() || criterioOrden !== "reciente" || filtroPago !== "todos") && (
-                    <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setBusquedaTablero("");
-                          setCriterioOrden("reciente");
-                          setFiltroPago("todos");
-                        }}
-                        className="w-full rounded-lg py-1.5 text-center text-xs font-semibold text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-950/30 transition-colors cursor-pointer"
-                      >
-                        Limpiar todos los filtros
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Botón "+ Añadir tarea" (Navega a /pedidos/crear) */}
+          {/* Botón "+ Añadir pedido" (Navega a /pedidos/crear).
+              Va en el naranja de marca (`bg-brand-500`), el mismo relleno que el
+              «Crear pedido» de Inicio: es la acción principal de la barra, y en
+              `gray-900` se leía como un control neutro más, al lado del resto de
+              controles de filtrado. */}
           {puedeCrearPedido() && (
             <button
               type="button"
               onClick={() => navigate("/pedidos/crear")}
-              className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-theme-xs transition-colors cursor-pointer shrink-0"
+              className="flex items-center justify-center gap-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-theme-xs transition-colors cursor-pointer shrink-0"
             >
               <PlusIcon className="size-4 stroke-2" />
-              <span>Añadir tarea</span>
+              <span>Añadir pedido</span>
             </button>
           )}
         </div>
       </div>
-
-      {/* Banner de Modo Cocina / KDS cuando está activo */}
-      {modoCocinaKDS && (
-        <div className="mb-5 flex items-center justify-between rounded-2xl border border-amber-300 bg-amber-50/80 px-4 py-3 text-xs text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-          <div className="flex items-center gap-2.5">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-amber-500 text-sm font-bold text-white shadow-sm">
-              🍳
-            </span>
-            <div>
-              <p className="font-bold text-amber-950 dark:text-amber-100">
-                Modo Cocina / KDS Activo
-              </p>
-              <p className="text-[11px] text-amber-800 dark:text-amber-300">
-                Visualizando únicamente comandas en preparación y listas para despacho.
-              </p>
-            </div>
-          </div>
-          {!esPerfilCocina && (
-            <button
-              type="button"
-              onClick={() => setModoCocinaManual(false)}
-              className="rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-50 dark:border-amber-500/40 dark:bg-gray-900 dark:text-amber-200 cursor-pointer"
-            >
-              Ver todas las etapas
-            </button>
-          )}
-        </div>
-      )}
 
       {/* PEDIDOS PROGRAMADOS PARA FECHAS FUTURAS */}
       {verProgramados && (

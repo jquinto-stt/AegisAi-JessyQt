@@ -163,10 +163,10 @@ export function ConfigCard({
  */
 export function ConfigHeader({ titulo, descripcion, acciones }: ConfigHeaderProps) {
   return (
-    <div className="flex flex-col gap-3 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
+    <div className="flex flex-col gap-3 border-b border-[#ECECEC] pb-5 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
       <div className="min-w-0">
-        <h1 className="text-xl font-bold text-ink-title dark:text-white">{titulo}</h1>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{descripcion}</p>
+        <h1 className="text-[24px] sm:text-[36px] font-bold text-[#190088] leading-tight dark:text-white">{titulo}</h1>
+        <p className="mt-1 text-[14px] sm:text-[16px] font-normal text-[#212121] dark:text-gray-400">{descripcion}</p>
       </div>
 
       {acciones && (
@@ -191,7 +191,7 @@ export function ConfigHeader({ titulo, descripcion, acciones }: ConfigHeaderProp
  */
 export function CardHead({ children }: { children: ReactNode }) {
   return (
-    <h2 className="text-sm font-semibold text-ink-title dark:text-white">{children}</h2>
+    <h2 className="text-[16px] font-bold text-[#190088] dark:text-white">{children}</h2>
   );
 }
 
@@ -217,11 +217,11 @@ export function Label2({
 }) {
   return (
     <div className="min-w-0">
-      <Label htmlFor={htmlFor} className="mb-0">
+      <Label htmlFor={htmlFor} className="mb-0 text-[14px] font-bold text-[#212121] dark:text-white">
         {titulo}
       </Label>
       {descripcion && (
-        <p className="mt-0.5 max-w-md text-xs text-gray-500 dark:text-gray-400">
+        <p className="mt-0.5 max-w-md text-[12px] font-normal text-gray-500 dark:text-gray-400">
           {descripcion}
         </p>
       )}
@@ -477,7 +477,7 @@ export function RejillaOpciones<T extends string>({
             <div className="flex h-11 w-11 items-center justify-center mb-2.5">
               {activo ? (
                 <span
-                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-500 bg-white text-brand-500 shadow-xs dark:border-brand-500 dark:bg-gray-900 transition-transform duration-200 scale-105"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-500 bg-white text-brand-500 shadow-theme-xs dark:border-brand-500 dark:bg-gray-900 transition-transform duration-200 scale-105"
                   aria-hidden="true"
                 >
                   <CheckLineIcon className="h-5 w-5 stroke-[2.5]" />
@@ -538,20 +538,20 @@ export function BloqueConfig({
   children,
 }: BloqueConfigProps) {
   return (
-    <Card className="rounded-3xl border border-gray-100 bg-white p-6 sm:p-8 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
+    <Card className="rounded-3xl border border-[#ECECEC] bg-white p-6 sm:p-8 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
       <div className="flex items-start gap-4">
         <span
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#97D6DF]/20 text-[#190088] border border-[#97D6DF]/30 dark:bg-[#97D6DF]/15 dark:text-[#97D6DF] dark:border-[#97D6DF]/20"
           aria-hidden="true"
         >
           <Icono className="h-6 w-6" />
         </span>
 
         <div className="min-w-0 flex-1">
-          <h2 className="text-[20px] sm:text-[24px] leading-tight font-bold text-ink-title dark:text-white">
+          <h2 className="text-[20px] sm:text-[24px] leading-tight font-bold text-[#190088] dark:text-white">
             {pregunta}
           </h2>
-          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{descripcion}</p>
+          <p className="mt-1.5 text-[14px] font-normal text-[#212121] dark:text-gray-400">{descripcion}</p>
         </div>
       </div>
 
@@ -710,10 +710,10 @@ export function ConfigHub({ tarjetas, onEntrar, accion = "Entrar a configurar" }
               type="button"
               onClick={() => onEntrar(t.key)}
               className={cn(
-                "group flex h-full w-full cursor-pointer flex-col justify-between rounded-3xl border-2 border-gray-100 bg-white p-6 sm:p-7 text-left transition-all min-h-[260px] sm:min-h-[280px]",
-                "hover:-translate-y-1 hover:border-[#FF3F1A]/40 hover:shadow-theme-md",
+                "group flex h-full w-full cursor-pointer flex-col justify-between rounded-3xl border-2 border-[#ECECEC] bg-white p-6 sm:p-7 text-left transition-all min-h-[260px] sm:min-h-[280px]",
+                "hover:-translate-y-1 hover:border-[#FF3F1A] hover:shadow-theme-md",
                 "focus-visible:border-[#FF3F1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3F1A]/30",
-                "dark:border-gray-800 dark:bg-gray-900/60 dark:hover:border-[#FF3F1A]/50",
+                "dark:border-gray-800 dark:bg-gray-900/60 dark:hover:border-[#FF3F1A]",
               )}
             >
               <div>
@@ -721,9 +721,9 @@ export function ConfigHub({ tarjetas, onEntrar, accion = "Entrar a configurar" }
                 <div className="flex items-start justify-between gap-3">
                   <span
                     className={cn(
-                      "flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50/90 text-gray-700 transition-colors border border-gray-100",
-                      "group-hover:bg-[#FF3F1A]/10 group-hover:text-[#FF3F1A]",
-                      "dark:bg-white/[0.04] dark:border-gray-800 dark:text-gray-300 dark:group-hover:bg-[#FF3F1A]/15 dark:group-hover:text-[#FF3F1A]",
+                      "flex h-14 w-14 items-center justify-center rounded-2xl bg-[#97D6DF]/20 text-[#190088] transition-colors border border-[#97D6DF]/30",
+                      "group-hover:bg-[#FF3F1A] group-hover:text-white group-hover:border-[#FF3F1A]",
+                      "dark:bg-[#97D6DF]/15 dark:border-[#97D6DF]/20 dark:text-[#97D6DF] dark:group-hover:bg-[#FF3F1A] dark:group-hover:text-white",
                     )}
                     aria-hidden="true"
                   >
@@ -731,8 +731,8 @@ export function ConfigHub({ tarjetas, onEntrar, accion = "Entrar a configurar" }
                   </span>
 
                   {t.badge && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase bg-amber-500/10 text-amber-700 border border-amber-500/30 dark:bg-amber-400/10 dark:text-amber-400 dark:border-amber-400/20">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold tracking-wide uppercase bg-[#97D6DF]/30 text-[#190088] border border-[#97D6DF]/50 dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#190088] animate-pulse dark:bg-[#97D6DF]" />
                       {t.badge}
                     </span>
                   )}
@@ -740,31 +740,18 @@ export function ConfigHub({ tarjetas, onEntrar, accion = "Entrar a configurar" }
 
                 {/* Título en azul profundo NECTO (#190088) y descripción */}
                 <div className="mt-5">
-                  <span className="block text-lg sm:text-xl font-bold text-[#190088] dark:text-white">
+                  <span className="block text-[20px] sm:text-[24px] font-bold text-[#190088] group-hover:text-[#FF3F1A] dark:text-white dark:group-hover:text-[#97D6DF] transition-colors leading-tight">
                     {t.label}
                   </span>
-                  <span className="mt-2 block text-sm text-gray-600 leading-relaxed dark:text-gray-400">
+                  <span className="mt-2 block text-[14px] font-normal text-[#212121] leading-relaxed dark:text-gray-400">
                     {t.hint}
                   </span>
                 </div>
               </div>
 
-              {/* Acción inferior: «Entrar a configurar →».
-                  ── El naranja de marca no sirve como color de TEXTO ──────
-                  Iba en `text-[#FF3F1A]`, un hex literal que mide **3,51:1**
-                  sobre el blanco de la tarjeta. La etiqueta es `text-sm
-                  font-semibold`: no llega al umbral de «texto grande», así que
-                  le aplica el 4,5:1 de WCAG AA y no lo cumple.
-                  Se corrige con el mismo par que `VolverAlHub`, medido:
-                  `brand-700` en claro (5,40:1) y `brand-400` en oscuro
-                  (5,98:1). El hex literal tenía además un segundo problema: no
-                  tiene variante oscura, así que el enlace se quedaba en el
-                  naranja de marca sobre `gray-900` y el hover era indistinguible
-                  del reposo. Con el par de la rampa, el hover SÍ cambia de paso
-                  de tema (`brand-800` / `brand-300`), que es lo que hace visible
-                  que la tarjeta es pulsable. */}
+              {/* Acción inferior: «Entrar a configurar →» */}
               <div className="mt-6 pt-2">
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 transition-colors group-hover:text-brand-800 dark:text-brand-400 dark:group-hover:text-brand-300">
+                <span className="inline-flex items-center gap-1.5 text-[14px] font-bold text-[#FF3F1A] transition-colors group-hover:text-[#e5351a]">
                   {accion}
                   <ArrowRightIcon
                     className="h-4 w-4 transition-transform group-hover:translate-x-1"
@@ -793,26 +780,6 @@ export interface VolverAlHubProps {
 
 /**
  * VolverAlHub — el camino de vuelta desde una sección al menú de tarjetas.
- *
- * ── Por qué es un control propio y no el «atrás» del navegador ───────────
- *
- * Cuando se entra con un enlace directo (`/pedidos/config?seccion=pagos`) no hay
- * historial que retroceder: el «atrás» del navegador sacaría al usuario de la
- * aplicación, o lo devolvería a la página anterior del sitio, que no es el menú.
- * Y sin este control, quien llegue por enlace directo se queda encerrado en la
- * sección sin forma de ver las demás.
- *
- * Es un `<button>` y no un enlace porque no cambia de documento: solo quita el
- * parámetro de la URL. Un `<a href>` sin `preventDefault` recargaría la página
- * entera para el mismo efecto.
- *
- * ── El naranja del hover, por paso de tema ────────────────────────────────
- *
- * El hover pone el texto en naranja. Con `brand-500` medía **3,19:1** sobre el
- * `gray-100` del propio hover y 3,51:1 sobre blanco — por debajo de 4,5:1. Es
- * el mismo defecto que tenía el enlace de las tarjetas y se corrige igual, con
- * el mismo par: `brand-700` en claro (5,40:1 sobre `gray-100`) y `brand-400` en
- * oscuro. El reposo (`gray-600`) ya pasaba con 7,56:1 y no se toca.
  */
 export function VolverAlHub({ onVolver, etiqueta = "Volver a Configuración" }: VolverAlHubProps) {
   return (
@@ -821,9 +788,9 @@ export function VolverAlHub({ onVolver, etiqueta = "Volver a Configuración" }: 
       onClick={onVolver}
       className={cn(
         "-ml-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5",
-        "text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-brand-700",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
-        "dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-brand-400",
+        "text-[14px] font-bold text-[#212121] transition-colors hover:bg-gray-100 hover:text-[#FF3F1A]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3F1A]/40",
+        "dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-[#FF3F1A]",
       )}
     >
       <ChevronLeftIcon className="h-4 w-4" aria-hidden="true" />
@@ -866,10 +833,6 @@ export interface ConfigSectionNavProps {
 
 /**
  * ConfigSectionNav — navegación vertical de secciones en grupos.
- *
- * Es navegación por pestañas reales (solo la sección activa está montada), no
- * scroll-spy. En móvil se convierte en una fila desplazable horizontalmente
- * para no empujar el contenido hacia abajo.
  */
 export function ConfigSectionNav({
   grupos,
@@ -882,7 +845,7 @@ export function ConfigSectionNav({
       <ul className="flex flex-col gap-6">
         {grupos.map(({ grupo, label, secciones }) => (
           <li key={grupo}>
-            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
+            <p className="mb-2 px-3 text-[12px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
               {label}
             </p>
             <ul className="flex flex-row gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
@@ -896,39 +859,10 @@ export function ConfigSectionNav({
                       onClick={() => onSeleccionar(s.key)}
                       aria-current={estaActiva ? "page" : undefined}
                       className={cn(
-                        "inline-flex w-full items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer",
-                        // ── La sección activa va en el NARANJA de marca ────────
-                        //
-                        // Estaba en un gris neutro (`bg-gray-100 text-gray-900`).
-                        // Un gris no dice «estás aquí»: dice «esto es una fila».
-                        // Y era una regresión concreta: `/pedidos/config` montaba
-                        // el `<Tab variant="underline">` del catálogo, que marca
-                        // la activa con `bg-secondary-50 text-secondary-600` y una barra
-                        // inferior `bg-brand-500`; al unificar el mueble de las
-                        // cuatro pantallas se cambió el marcador de color por uno
-                        // neutro y el naranja desapareció sin que nadie lo pidiera.
-                        //
-                        // Se restaura AQUÍ, en el componente compartido, y no en
-                        // una pantalla: si cada configuración se pintara su propia
-                        // activa, volverían a divergir — que es justo lo que este
-                        // módulo existe para evitar. Las cuatro la heredan.
-                        //
-                        // Se usa LA MISMA cadena que el catalogo ya usa para una
-                        // pestaña vertical activa (`elements/ui/tabs/Tab.tsx:261`),
-                        // copiada literal: `bg-secondary-50 text-secondary-600` y, en
-                        // oscuro, `dark:bg-brand-400/20 dark:text-brand-400`.
-                        //
-                        // La primera version de este arreglo puso
-                        // `text-ink-title dark:text-brand-300` porque el 700 daba
-                        // mas contraste sobre `brand-50`. Estaba mal por dos
-                        // motivos: `brand-700` es `#be2a15`, un rojo ladrillo, no
-                        // el naranja de marca `#ff3f1a`; y esos pasos no son los
-                        // que el producto usa para un activo. El naranja de una
-                        // superficie no se elige por contraste, se toma del
-                        // sistema: si se cambia aqui, se cambia en `Tab` tambien.
+                        "inline-flex w-full items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-[14px] transition-colors cursor-pointer",
                         estaActiva
-                          ? "bg-secondary-50 text-secondary-600 dark:bg-brand-400/20 dark:text-brand-400"
-                          : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200",
+                          ? "bg-[#FF3F1A]/10 text-[#FF3F1A] font-bold dark:bg-[#FF3F1A]/20 dark:text-[#FF3F1A]"
+                          : "text-[#212121] font-normal hover:bg-gray-100 hover:text-[#190088] dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200",
                       )}
                     >
                       <Icono className="h-5 w-5 shrink-0" />
@@ -956,11 +890,6 @@ export interface ConfigShellProps {
   hint: string;
   /**
    * Control de vuelta al hub de tarjetas, sobre el título.
-   *
-   * Es opcional y no lo pinta la página por su cuenta porque su POSICIÓN —encima
-   * del título, alineado con el panel— es parte del patrón: si cada pantalla lo
-   * colocara a su manera, el mismo control aparecería en cuatro sitios distintos.
-   * Se pide como `ReactNode` ya construido, normalmente `<VolverAlHub />`.
    */
   volver?: ReactNode;
   /** Pie de la tarjeta o barra de acciones, opcional. */
@@ -969,13 +898,6 @@ export interface ConfigShellProps {
 
 /**
  * ConfigShell — columna del panel de contenido de la sección activa.
- *
- * `key={seccionKey}` fuerza el remontaje: al cambiar de sección React
- * desmonta el panel y monta uno nuevo, que reproduce `animate-aparecer`. Sin
- * la key reutilizaría el nodo y la sección se sustituiría de golpe.
- *
- * El fundido es PURO, sin desplazamiento: el panel nuevo ocupa el sitio del
- * anterior, así que moverlo sugeriría que viene de algún lado.
  */
 export function ConfigShell({
   children,
@@ -993,8 +915,8 @@ export function ConfigShell({
       {volver && <div className="mb-3">{volver}</div>}
 
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-ink-title dark:text-white/90">{titulo}</h2>
-        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{hint}</p>
+        <h2 className="text-[20px] sm:text-[24px] font-bold text-[#190088] dark:text-white leading-tight">{titulo}</h2>
+        <p className="mt-1 text-[14px] font-normal text-[#212121] dark:text-gray-400">{hint}</p>
       </div>
 
       <div className="flex-1 space-y-5">{children}</div>
@@ -1006,10 +928,6 @@ export function ConfigShell({
 
 /**
  * Barra de acciones del pie de una tarjeta o de la sección.
- *
- * Alinea los botones a la derecha con `flex justify-end gap-3 pt-4`, el patrón
- * indicado. Los mensajes de confirmación van a la izquierda (`mr-auto`) para
- * que no empujen los botones fuera de su sitio al aparecer y desaparecer.
  */
 export function ConfigAcciones({
   children,
@@ -1023,11 +941,11 @@ export function ConfigAcciones({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 pt-4 dark:border-gray-800",
+        "flex flex-wrap items-center justify-end gap-3 border-t border-[#ECECEC] pt-4 dark:border-gray-800",
         fija && "sticky bottom-0 mt-6 bg-white dark:bg-gray-900",
       )}
     >
-      {mensaje && <span className="mr-auto text-xs">{mensaje}</span>}
+      {mensaje && <span className="mr-auto text-[12px]">{mensaje}</span>}
       {children}
     </div>
   );
