@@ -12,6 +12,12 @@ export type { ButtonProps, ButtonVariant, ButtonSize } from './ui/button';
 export { Badge } from './ui/badge';
 export type { BadgeProps, BadgeVariant, BadgeSize, BadgeColor } from './ui/badge';
 
+export { Skeleton, SkeletonGrupo } from './ui/skeleton';
+export type { SkeletonProps, SkeletonGrupoProps } from './ui/skeleton';
+
+export { ThoughtLine } from './ui/thought-line';
+export type { ThoughtLineProps, GlifoThoughtLine } from './ui/thought-line';
+
 export {
   Card,
   CardHeader,

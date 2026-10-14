@@ -1480,7 +1480,10 @@ export const ConfigPage = observer(() => {
                 SECCIÓN: CUENTAS Y COBROS (PAGOS)
                ═════════════════════════════════════════════════════════════════════ */}
             {seccion === "pagos" && (
-              <div className="space-y-8 animate-aparecer">
+              // Sin clase de entrada: la pone `ConfigShell`, que envuelve esta
+              // sección y se remonta con ella. Dos fundidos anidados sobre el
+              // mismo cambio no suman movimiento, solo lo duplican.
+              <div className="space-y-8">
                 {/* ── BLOQUE 1: ¿A qué cuentas te transfieren? ─────────────── */}
                 <section
                   className="rounded-3xl border border-[#ECECEC] bg-white p-6 shadow-theme-xs sm:p-8 dark:border-gray-800 dark:bg-gray-900"
@@ -2508,7 +2511,9 @@ export const ConfigPage = observer(() => {
                 SECCIÓN: ALERTAS Y SONIDOS
                ═════════════════════════════════════════════════════════════════════ */}
             {seccion === "sonidos" && (
-              <div className="space-y-8 animate-aparecer">
+              // Sin clase de entrada: la pone `ConfigShell`. Ver la sección de
+              // «pagos» para el porqué.
+              <div className="space-y-8">
                 {/* ── CARD 1: SISTEMA PRINCIPAL DE CAMPANA Y AVISOS ─────── */}
                 <section
                   className="bg-white rounded-3xl border border-[#ECECEC] shadow-sm overflow-hidden dark:bg-gray-900 dark:border-gray-800"

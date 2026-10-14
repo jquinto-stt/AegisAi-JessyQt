@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { pedidosStore, type PedidoEstado } from "@/stores";
 import { useConteoAnimado } from "@/hooks/useConteoAnimado";
+import { useEntradaEscalonada } from "@/hooks/useEntradaEscalonada";
 import {
   CheckBadgeIcon,
   ClockIcon,
@@ -219,8 +220,21 @@ export const EstadosOverview = observer(() => {
     0,
   );
 
+  // Las seis etapas entran en cascada, de izquierda a derecha y de arriba abajo
+  // —el orden en que se leen—, con el mismo paso compartido de 40 ms que usa el
+  // resto del producto.
+  //
+  // No es adorno: este bloque es lo primero que se ve en Inicio y su contenido es
+  // un PIPELINE. La cascada recorre el flujo una vez y deja dicho cómo se lee la
+  // pantalla, que es justo lo que un usuario nuevo no sabe al abrirla. Antes las
+  // seis tarjetas aparecían de golpe.
+  const refEtapas = useEntradaEscalonada<HTMLDivElement>({ desde: 16, duracionMs: 480 });
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mb-6">
+    <div
+      ref={refEtapas}
+      className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mb-6"
+    >
       {etapasConteo.map((etapa) => {
         const porcentaje =
           totalActivos > 0 && etapa.enBarra !== false

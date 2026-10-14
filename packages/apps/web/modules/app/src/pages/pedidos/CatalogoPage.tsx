@@ -20,6 +20,7 @@ import {
 } from '@/icons';
 import { getSupabase, ESQUEMA } from '@/lib/supabase';
 import { PageMeta } from '@/shell/meta';
+import { Skeleton, SkeletonGrupo } from '@/elements';
 import { pedidosStore } from '@/stores';
 
 export interface ProductoCatalogoItem {
@@ -158,6 +159,35 @@ const CATALOGO_DEMO_EJEMPLO: ProductoCatalogoItem[] = [
     disponible: false,
   },
 ];
+
+/**
+ * Esqueleto de una tarjeta de producto.
+ *
+ * Vive AQUÍ y no en `@/elements` a propósito: la forma de un esqueleto es
+ * conocimiento del contenido que va a llegar, y solo esta página lo tiene. Un
+ * esqueleto genérico de «tarjeta» acabaría con una forma que no coincide con
+ * ninguna y reservaría mal el alto —que es justo lo único que un esqueleto
+ * tiene que hacer bien.
+ *
+ * Las medidas salen de la tarjeta real: imagen `h-36 sm:h-40`, contenido `p-3`
+ * con título, descripción y un pie separado por un filete. Copiadas, no
+ * inventadas: si la tarjeta cambia de alto, esto hay que cambiarlo con ella.
+ */
+const TarjetaProductoEsqueleto: React.FC = () => (
+  <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 overflow-hidden flex flex-col">
+    <Skeleton className="h-36 sm:h-40 w-full" />
+    <div className="p-3 flex-1 flex flex-col justify-between space-y-1.5">
+      <div className="space-y-1.5">
+        <Skeleton className="h-3.5 w-3/4 rounded-sm" />
+        <Skeleton className="h-3 w-1/2 rounded-sm" />
+      </div>
+      <div className="pt-1.5 flex items-center justify-between border-t border-gray-100 dark:border-gray-800/80">
+        <Skeleton className="h-3 w-10 rounded-sm" />
+        <Skeleton className="h-3.5 w-3.5 rounded-sm" />
+      </div>
+    </div>
+  </div>
+);
 
 export const CatalogoPage: React.FC = observer(() => {
   // Datos del catálogo
@@ -1031,9 +1061,23 @@ export const CatalogoPage: React.FC = observer(() => {
 
         {/* ── Vista de Productos: Cuadrícula o Tabla ── */}
         {cargandoInicial ? (
-          <div className="p-16 text-center text-gray-400 flex flex-col items-center justify-center space-y-3">
-            <p className="text-sm font-medium">Cargando catálogo...</p>
-          </div>
+          // Esqueleto en lugar de «Cargando catálogo…»: reserva el alto exacto
+          // de la rejilla —así el contenido no mueve la página al entrar— y
+          // enseña la forma de lo que viene. El anuncio para lectores de
+          // pantalla lo da `SkeletonGrupo` una sola vez; los bloques son
+          // decorativos.
+          //
+          // Doce huecos y no uno: es lo que ocupa la primera pantalla de la
+          // rejilla en escritorio (6 columnas × 2 filas) y en móvil (2 × 6). Un
+          // solo bloque dejaría la página casi vacía y el salto volvería.
+          <SkeletonGrupo
+            etiqueta="Cargando el catálogo de productos"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4"
+          >
+            {Array.from({ length: 12 }, (_, i) => (
+              <TarjetaProductoEsqueleto key={i} />
+            ))}
+          </SkeletonGrupo>
         ) : productosFiltrados.length === 0 ? (
           <div className="bg-white dark:bg-gray-900 rounded-3xl p-12 text-center border border-gray-200/80 dark:border-gray-800 space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-[#97D6DF]/20 dark:bg-[#97D6DF]/15 text-[#190088] dark:text-[#97D6DF] mx-auto flex items-center justify-center">

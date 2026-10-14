@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
@@ -22,6 +22,7 @@ import {
 import type { Pedido, PedidoEstado, Modalidad } from "@/stores/pedidos.store";
 import { retardoEscalonado } from "@/utils";
 import { useFlipLista } from "@/hooks/useFlipLista";
+import { useEntradaEscalonada } from "@/hooks/useEntradaEscalonada";
 import { ProgramarModal } from "./ProgramarModal";
 import { DetallePedidoModal } from "./DetallePedidoModal";
 import {
@@ -298,7 +299,7 @@ const PedidoCard = observer(
             onDetalle();
           }
         }}
-        className={`group relative select-none rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-300 ease-out hover:shadow-theme-md hover:-translate-y-0.5 hover:border-secondary-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
+        className={`group relative select-none rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-300 ease-out hover:shadow-theme-md hover:-translate-y-1 hover:border-secondary-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
           puedeArrastrar ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
         } ${
           esRecienMovido
@@ -904,7 +905,7 @@ const ListaView = observer(
   }) => {
     if (pedidos.length === 0) {
       return (
-        <div className="animate-aparecer rounded-2xl border border-dashed border-gray-200 py-16 text-center text-sm text-gray-400 dark:border-gray-800">
+        <div className="animate-entrada-lista rounded-2xl border border-dashed border-gray-200 py-16 text-center text-sm text-gray-400 dark:border-gray-800">
           No hay pedidos en curso.
         </div>
       );
@@ -917,10 +918,14 @@ const ListaView = observer(
 
     return (
       // La clase de entrada va aquí y no se recibe por prop: `ListaView` solo existe
-      // en la rama `lista`, así que se monta exactamente al conmutar de vista y el
-      // fundido se dispara justo cuando debe. Añadir una prop `className` para esto
+      // en la rama `lista`, así que se monta exactamente al conmutar de vista y la
+      // entrada se dispara justo cuando debe. Añadir una prop `className` para esto
       // sería ceremonia sin lector.
-      <div className="animate-aparecer overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      //
+      // `entrada-lista` y no `aparecer`: conmutar de vista es un cambio de
+      // superficie, y un fundido puro no lo cuenta. El desplazamiento de 10px sí,
+      // y sin escala —una tabla que se encoge al entrar se lee como un fallo—.
+      <div className="animate-entrada-lista overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -1536,6 +1541,36 @@ export const TableroPage = observer(() => {
     .join("|");
   const tableroRef = useFlipLista<HTMLDivElement>(firmaTablero);
 
+  // Entrada escalonada de las COLUMNAS. Antes el tablero entraba con un fundido
+  // de opacidad sobre el contenedor entero (200 ms, sin desplazamiento) y las
+  // columnas aparecían todas a la vez: el tablero se encendía, no se montaba. La
+  // cascada de izquierda a derecha sí cuenta algo — el pipeline tiene un orden, y
+  // el ojo lo recorre una vez y ya sabe cómo se lee la pantalla.
+  //
+  // El paso es el compartido (40 ms), así que las 5 columnas entran en 160 ms de
+  // diferencia, y dentro de cada una las tarjetas siguen entrando con su propio
+  // escalonado por CSS, que ya existía y no se toca.
+  const refEntradaColumnas = useEntradaEscalonada<HTMLDivElement>({
+    desde: 22,
+    duracionMs: 560,
+  });
+
+  // Dos hooks necesitan el MISMO nodo —el FLIP mide las tarjetas dentro, la
+  // entrada anima las columnas dentro— y un elemento admite un solo `ref`. Se
+  // funden en un callback que asigna los dos; no hay otra forma.
+  //
+  // Que convivan no es un accidente: la entrada mueve con `transform` y el FLIP
+  // mide con `offsetTop`/`offsetLeft`, que **ignoran los transforms**. Si el FLIP
+  // midiera con `getBoundingClientRect` —el error que documenta `useFlipLista`—
+  // esta entrada lo contaminaría y las tarjetas se animarían solas al montar.
+  const refTablero = useCallback(
+    (nodo: HTMLDivElement | null) => {
+      tableroRef.current = nodo;
+      refEntradaColumnas.current = nodo;
+    },
+    [tableroRef, refEntradaColumnas],
+  );
+
   return (
     <>
       <PageMeta title="Tablero de pedidos" description="Flujo de pedidos en vivo, de nuevo a entregado" />
@@ -1725,8 +1760,8 @@ export const TableroPage = observer(() => {
       {/* Tablero — vista Kanban o Lista */}
       {vista === "kanban" ? (
         <div
-          ref={tableroRef}
-          className={`animate-aparecer flex-1 min-h-0 h-full overflow-x-auto grid grid-cols-1 gap-6 ${
+          ref={refTablero}
+          className={`flex-1 min-h-0 h-full overflow-x-auto grid grid-cols-1 gap-6 ${
             columnasVisibles.length === 1
               ? "max-w-md w-full mr-auto"
               : columnasVisibles.length === 2

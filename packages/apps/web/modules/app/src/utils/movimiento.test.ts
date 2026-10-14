@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { comportamientoScroll, curvaConteo, prefiereMenosMovimiento, retardoEscalonado } from "@/utils";
+import {
+  CURVA_ASENTAR,
+  CURVA_PUNTOS,
+  comportamientoScroll,
+  curvaConteo,
+  PASO_ESCALONADO_MS,
+  prefiereMenosMovimiento,
+  retardoEscalonado,
+} from "@/utils";
+import { CURVA_ANIME } from "@/utils/anime";
 
 describe("curvaConteo", () => {
   it("empieza en 0 y termina exactamente en 1", () => {
@@ -52,6 +61,53 @@ describe("retardoEscalonado", () => {
 
   it("nunca devuelve un retardo negativo", () => {
     expect(retardoEscalonado(-4)).toBe("0ms");
+  });
+});
+
+describe("la curva es UNA, con dos formas", () => {
+  // El proyecto mueve con dos motores: CSS/WAAPI leen `CURVA_ASENTAR` (una
+  // cadena) y anime.js recibe `CURVA_ANIME` (una función). Si cada uno llevara
+  // su curva, el producto tendría dos movimientos distintos y se notaría al
+  // encadenar una entrada de anime con un FLIP de WAAPI.
+  //
+  // La aserción no compara cadenas —`cubic-bezier(...)` no es un valor que se
+  // pueda evaluar sin implementar el solver—, compara el **resultado** en el
+  // punto que el propio proyecto documenta: a mitad de tiempo, la curva del tema
+  // vale 96,1 % del recorrido. Si alguien cambia los puntos de una sola de las
+  // dos formas, este número deja de salir.
+  it("CURVA_ANIME reproduce el 96,1 % a mitad de tiempo que documenta CURVA_ASENTAR", () => {
+    expect(CURVA_ANIME(0.5)).toBeCloseTo(0.9614, 3);
+  });
+
+  it("empieza en 0 y termina en 1", () => {
+    expect(CURVA_ANIME(0)).toBeCloseTo(0, 6);
+    expect(CURVA_ANIME(1)).toBeCloseTo(1, 6);
+  });
+
+  it("es monótona creciente, como la del tema", () => {
+    let anterior = -1;
+    for (let i = 0; i <= 20; i++) {
+      const actual = CURVA_ANIME(i / 20);
+      expect(actual).toBeGreaterThanOrEqual(anterior);
+      anterior = actual;
+    }
+  });
+
+  it("los puntos sueltos son los que la cadena del tema escribe", () => {
+    // La fuente es `CURVA_PUNTOS`; `CURVA_ASENTAR` es su forma para WAAPI. Esta
+    // aserción es la que impide que alguien edite la cadena a mano y deje los
+    // puntos apuntando a otra curva.
+    expect(CURVA_ASENTAR).toBe(`cubic-bezier(${CURVA_PUNTOS.join(", ")})`);
+  });
+});
+
+describe("PASO_ESCALONADO_MS", () => {
+  it("es el paso que usan los dos motores de escalonado", () => {
+    // anime.js recibe este número por `stagger`; el CSS lo recibe por
+    // `retardoEscalonado`. Que el defecto de la función sea la constante es lo
+    // que garantiza que los dos escalonados se sientan igual.
+    expect(PASO_ESCALONADO_MS).toBe(40);
+    expect(retardoEscalonado(1)).toBe(`${PASO_ESCALONADO_MS}ms`);
   });
 });
 

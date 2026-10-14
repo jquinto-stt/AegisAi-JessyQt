@@ -910,7 +910,13 @@ export function ConfigShell({
   return (
     <div
       key={seccionKey}
-      className="animate-aparecer flex min-w-0 flex-1 flex-col"
+      // `entrada-lista` y no `aparecer`. Al cambiar de sección el panel se
+      // remonta —eso es lo que hace el `key`— y un fundido puro no cuenta que la
+      // sección anterior se fue y esta llegó: la pantalla parece quedarse quieta
+      // y cambiar de contenido sola. El desplazamiento de 10px sí lo cuenta, y
+      // sin escala, porque el panel no es una capa que se asienta sino el cuerpo
+      // de la sección. Lo heredan las cinco pantallas de configuración.
+      className="animate-entrada-lista flex min-w-0 flex-1 flex-col"
     >
       {volver && <div className="mb-3">{volver}</div>}
 

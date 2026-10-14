@@ -112,6 +112,7 @@
   .animate-salida-menu,
   .animate-entrada-lista,
   .animate-aterrizaje,
+  .animate-brillo,
   .necto-escalonado > * {
     animation: none;
   }

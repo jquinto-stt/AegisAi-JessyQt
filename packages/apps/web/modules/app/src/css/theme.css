@@ -310,13 +310,42 @@
      La de salida usa `forwards` y no `backwards`: mientras el componente espera
      a desmontarse, el estado final (invisible) tiene que seguir aplicado. Con
      `backwards` el panel reaparecería durante la ventana de desmontaje.
+     ── Amplitud: subida el 09/10 ───────────────────────────────────────────
+
+     Estas seis animaciones existían, corrían y no se veían. Medido antes de
+     tocarlas: `transition-colors` ×299 contra `transition-transform` ×30, y
+     recorridos de **4–8 px en 140–240 ms**. Por debajo de ~10 px a esa
+     velocidad el ojo no lee desplazamiento: lee un cambio de opacidad. El
+     sistema hacía exactamente lo que se le pidió, y lo que se le pidió era
+     demasiado poco.
+
+     El recorrido sube ~2× y la duración ~30 %. **No es un rediseño del
+     movimiento**: son los mismos tokens, la misma curva y las mismas
+     direcciones; solo dejan de estar por debajo del umbral perceptible. La
+     regla que acota el techo sigue en pie y está escrita en cada keyframe —un
+     modal NO entra desde muy lejos ni encogido al 0.9, porque eso se lee como
+     un zoom de diapositiva—.
+
+     `aterrizaje` no se toca: ya estaba por encima del umbral (12 px, escala
+     0.93→1.025, 380 ms) y es la prueba de que el problema era la calibración de
+     las otras cinco, no el sistema.
   */
   --animate-aparecer: aparecer 200ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  --animate-entrada-panel: entrada-panel 200ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  --animate-entrada-menu: entrada-menu 140ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  --animate-salida-menu: salida-menu 120ms ease-in forwards;
-  --animate-entrada-lista: entrada-lista 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-entrada-panel: entrada-panel 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-entrada-menu: entrada-menu 180ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-salida-menu: salida-menu 150ms ease-in forwards;
+  --animate-entrada-lista: entrada-lista 300ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
   --animate-aterrizaje: aterrizaje-tarjeta 380ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+
+  /* Barrido de un esqueleto de carga.
+     Es el ÚNICO movimiento del proyecto que se repite sin fin, y por eso es
+     `linear` y lento (1600 ms): una curva con frenada, en bucle, produce un
+     tirón perceptible en cada vuelta y el conjunto se lee como si parpadease.
+     Va en la lista enumerada de `css/base.css`, y no en la excepción de los que
+     comunican estado: el bloque gris ya dice «aquí falta contenido»; el barrido
+     es adorno encima. Con `prefers-reduced-motion` queda el bloque —que es la
+     información— y se va el brillo. */
+  --animate-brillo: brillo 1600ms linear infinite;
 
   /* Fundido puro. Para capas que ya se mueven por otro medio (el scrim de un
      panel) donde añadir desplazamiento sería movimiento por duplicado. */
@@ -329,14 +358,16 @@
     }
   }
 
-  /* Panel que ocupa la pantalla. El desplazamiento es de 8px y la escala de
-     0.97: deliberadamente pequeños. Un modal que entra desde muy lejos o
-     encogido al 0.9 se lee como un zoom de diapositiva, no como una capa que
-     se asienta sobre el contenido. */
+  /* Panel que ocupa la pantalla. El desplazamiento es de 16px y la escala de
+     0.965: sigue siendo contenido, no un zoom de diapositiva. El techo está
+     razonado —un modal que entra desde muy lejos o encogido al 0.9 se lee como
+     un cambio de diapositiva, no como una capa que se asienta sobre el
+     contenido—, pero el suelo también: a 8px el panel no se veía entrar, se
+     veía aparecer. El recorrido sube al doble y el techo no se mueve. */
   @keyframes entrada-panel {
     from {
       opacity: 0;
-      transform: translate3d(0, 8px, 0) scale(0.97);
+      transform: translate3d(0, 16px, 0) scale(0.965);
     }
     to {
       opacity: 1;
@@ -344,14 +375,14 @@
     }
   }
 
-  /* Menú desplegable. Sube desde -4px porque el panel cuelga de un disparador
+  /* Menú desplegable. Sube desde -8px porque el panel cuelga de un disparador
      que está POR ENCIMA: el movimiento continúa la dirección del layout en
      lugar de contradecirla (mismo criterio que el paneo horizontal del canvas
-     del asistente). */
+     del asistente). 4px no se percibían: el menú aparecía, no desplegaba. */
   @keyframes entrada-menu {
     from {
       opacity: 0;
-      transform: translate3d(0, -4px, 0) scale(0.98);
+      transform: translate3d(0, -8px, 0) scale(0.975);
     }
     to {
       opacity: 1;
@@ -366,16 +397,19 @@
     }
     to {
       opacity: 0;
-      transform: translate3d(0, -4px, 0) scale(0.98);
+      transform: translate3d(0, -8px, 0) scale(0.975);
     }
   }
 
   /* Elemento de lista. Sin escala: en una fila, un `scale` mueve los bordes
-     respecto a sus vecinas y el conjunto vibra. Solo desplazamiento vertical. */
+     respecto a sus vecinas y el conjunto vibra. Solo desplazamiento vertical.
+     10px y no más: esta animación corre en tablas densas —equipo, historial—,
+     donde una fila que sube demasiado se lee como un salto, no como una
+     entrada. A 6px, en cambio, no se veía. */
   @keyframes entrada-lista {
     from {
       opacity: 0;
-      transform: translate3d(0, 6px, 0);
+      transform: translate3d(0, 10px, 0);
     }
     to {
       opacity: 1;
@@ -396,6 +430,20 @@
     100% {
       opacity: 1;
       transform: scale(1) translate3d(0, 0, 0);
+    }
+  }
+
+  /* El barrido va de derecha a izquierda: es la dirección en la que se lee el
+     movimiento como «algo está pasando por encima», y es la misma en la que
+     barre cualquier indicador de carga del sistema operativo. El rango es 2× el
+     ancho del elemento (`background-size: 200% 100%` en el consumidor) para que
+     el brillo entre y salga entero, sin aparecer cortado en el borde. */
+  @keyframes brillo {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
     }
   }
 }

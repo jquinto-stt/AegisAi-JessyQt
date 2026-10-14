@@ -136,6 +136,18 @@ export function formatoMoneda(valor: number): string {
 }
 
 /**
+ * El paso y el tope del escalonado, como constantes propias.
+ *
+ * Estaban escritos dentro de la firma de `retardoEscalonado`, y eso bastaba
+ * mientras el escalonado solo lo hiciera el CSS (`animation-delay`). Con anime.js
+ * hay un **segundo** motor que también escalona (`stagger`), y dos motores con el
+ * paso escrito en dos sitios divergen en cuanto alguien toca uno. La decisión
+ * vive aquí y los dos motores la leen.
+ */
+export const PASO_ESCALONADO_MS = 40;
+export const TOPE_ESCALONADO = 6;
+
+/**
  * Retardo de entrada para el elemento `indice` de una lista escalonada.
  *
  * Devuelve un valor listo para `animationDelay`:
@@ -175,7 +187,11 @@ export function formatoMoneda(valor: number): string {
  * decisión**: si cada pantalla eligiera su paso, el escalonado se sentiría
  * distinto en cada sitio y dejaría de leerse como un sistema.
  */
-export function retardoEscalonado(indice: number, pasoMs = 40, tope = 6): string {
+export function retardoEscalonado(
+  indice: number,
+  pasoMs = PASO_ESCALONADO_MS,
+  tope = TOPE_ESCALONADO,
+): string {
   return `${Math.min(Math.max(indice, 0), tope) * pasoMs}ms`;
 }
 
@@ -241,6 +257,22 @@ export function curvaConteo(x: number): number {
  * colocando», y es el mismo gesto que ya hace `aterrizaje-tarjeta`.
  */
 export const CURVA_ASENTAR = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+/**
+ * Los cuatro puntos de control de la curva del tema, sueltos.
+ *
+ * `CURVA_ASENTAR` es la forma que entiende la Web Animations API —una cadena— y
+ * anime.js pide la suya —`cubicBezier(x1, y1, x2, y2)`—. Con los puntos
+ * escritos solo dentro de la cadena, el segundo motor tendría que **parsearla**
+ * o repetirlos, y las dos son malas: parsear ata el formato, repetir crea dos
+ * fuentes que se separan al primer cambio.
+ *
+ * Así que la fuente son los puntos, y cada motor compone su forma. Medido: la
+ * curva que produce `cubicBezier(0.22, 1, 0.36, 1)` vale **0,9614** a mitad de
+ * tiempo, que es el mismo 96,1 % documentado arriba para la cadena. Son la
+ * misma curva, no dos parecidas.
+ */
+export const CURVA_PUNTOS = [0.22, 1, 0.36, 1] as const;
 
 /**
  * ¿El sistema pidió menos movimiento?

@@ -94,8 +94,13 @@ const TarjetaPrep = observer(({ pedido, indice }: { pedido: Pedido; indice: numb
 
   return (
     <div
+      // `entrada-lista` y NO `aparecer`. El retardo escalonado ya estaba puesto
+      // —40 ms por tarjeta— y no se veía: `aparecer` es un fundido PURO, sin un
+      // solo píxel de desplazamiento, así que seis tarjetas aparecían en seis
+      // momentos distintos y el ojo las leía como un bloque. El escalonado solo
+      // existe si hay algo que escalonar.
       style={{ animationDelay: `${indice * 40}ms` }}
-      className="animate-aparecer rounded-xl border border-gray-200/70 p-4 dark:border-white/5"
+      className="animate-entrada-lista rounded-xl border border-gray-200/70 p-4 dark:border-white/5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
