@@ -1,0 +1,31 @@
+/**
+ * Scrollbar Utilities — Custom scrollbar styling.
+ *
+ * Provides two utilities:
+ * - no-scrollbar: completely hides the scrollbar (cross-browser)
+ * - custom-scrollbar: slim styled scrollbar with theme-aware colors
+ *
+ * Used across multiple components: sidebar, tables, chat, lists, etc.
+ */
+
+@utility no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@utility custom-scrollbar {
+  &::-webkit-scrollbar {
+    @apply size-1.5;
+  }
+
+  &::-webkit-scrollbar-track {
+    @apply rounded-full;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 rounded-full dark:bg-gray-700;
+  }
+}

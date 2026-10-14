@@ -1,0 +1,26 @@
+/**
+ * Base Layer — Global element defaults and resets.
+ *
+ * Defines foundational styles that apply to all HTML elements without classes.
+ * Anything here is overridden by utility classes (higher specificity layer).
+ */
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  html {
+    scrollbar-gutter: stable;
+  }
+  body {
+    @apply relative font-normal font-outfit z-1 bg-gray-50;
+  }
+}

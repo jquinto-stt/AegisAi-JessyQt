@@ -1,0 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap")
+layer(base);
+
+@import "tailwindcss";
+@import "./css/theme.css";
+@import "./css/base.css";
+@import "./css/shell.css";
+@import "./css/scrollbar.css";
+@import "./css/legacy.css";
+@import "./css/vendors.css";
