@@ -125,8 +125,8 @@ const SidebarFooter = observer(() => {
   }`;
 
   return (
-    <div className={`border-t border-gray-200/70 dark:border-white/5 ${showExpanded ? "pt-4 pb-6" : "pt-3 pb-3"}`}>
-      <ul className={`flex flex-col ${showExpanded ? "gap-1" : "gap-2 items-center"}`}>
+    <div className={`border-t border-gray-200/70 dark:border-white/5 ${showExpanded ? "pt-4 pb-6" : "pt-2 pb-1"}`}>
+      <ul className={`flex flex-col ${showExpanded ? "gap-1" : "gap-1.5 items-center"}`}>
         {/* Aquí vivía un enlace «Configuración» → `/configuracion`, que por entonces
             renderizaba un `PlaceholderPage` vacío. Se retira en vez de apuntarlo a
             la página real, por dos razones: (1) duplicaba «Configuración de Módulos»
@@ -377,7 +377,7 @@ const SidebarContent = observer(() => {
   const estaColapsado = (id: string) => showExpanded && Boolean(colapsados[id]);
 
   return (
-    <nav className="flex flex-col flex-1">
+    <nav className={`flex flex-col ${showExpanded ? "flex-1" : "flex-initial"}`}>
       <SimulacionBanner />
 
       {/* FLYOUT SUBMENU PANEL (Flotante a la derecha del rail contraído) */}
@@ -539,7 +539,7 @@ const SidebarContent = observer(() => {
         </div>
       ) : (
         /* RAIL MODE: En barra contraída, solo los iconos principales de cada módulo, centrados verticalmente */
-        <div ref={railRef} className="my-auto flex flex-col items-center justify-center gap-3 w-full py-2">
+        <div ref={railRef} className="flex flex-col items-center justify-center gap-2.5 w-full py-1">
           {modulosOperablesDeSesion(organizacionStore.modulosActivos).map((modulo) => {
             const info = CATALOGO_MODULOS[modulo];
             const isActivo = pathname.startsWith(`/${modulo}`);
@@ -586,7 +586,7 @@ const SidebarContent = observer(() => {
         </div>
       )}
 
-      <div className="mt-auto">
+      <div className={showExpanded ? "mt-auto" : "mt-2"}>
         <SidebarFooter />
       </div>
     </nav>

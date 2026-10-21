@@ -34,7 +34,11 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
 
   const positionClasses = contained
     ? "relative h-full"
-    : `fixed top-4 left-4 h-[calc(100vh-2rem)] z-50 ${uiStore.sidebarMobileOpen ? "translate-x-0" : "-translate-x-[120%]"} xl:translate-x-0`;
+    : `fixed left-4 z-50 ${uiStore.sidebarMobileOpen ? "translate-x-0" : "-translate-x-[120%]"} xl:translate-x-0 ${
+        showExpanded
+          ? "top-4 translate-y-0 h-[calc(100vh-2rem)]"
+          : "top-1/2 -translate-y-1/2 h-auto max-h-[calc(100vh-2rem)] py-3"
+      }`;
 
   return (
     <SidebarProvider collapsed={collapsed}>
@@ -46,7 +50,7 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
         {/* Logo section */}
         <div
           className={`flex shrink-0 ${
-            showExpanded ? "py-8 justify-start" : "py-4 justify-center"
+            showExpanded ? "py-8 justify-start" : "pb-2 pt-1 justify-center"
           }`}
         >
           <div key={showExpanded ? "expandido" : "colapsado"} className="animate-aparecer">
@@ -55,7 +59,11 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
         </div>
 
         {/* Content section */}
-        <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar flex-1">
+        <div
+          className={`flex flex-col duration-300 ease-linear no-scrollbar ${
+            showExpanded ? "flex-1 overflow-y-auto" : "flex-initial"
+          }`}
+        >
           {children}
         </div>
       </aside>
