@@ -39,28 +39,14 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
   return (
     <SidebarProvider collapsed={collapsed}>
       <aside
-        className={`flex flex-col px-5 bg-white dark:bg-gray-900 text-gray-900 transition-all duration-300 ease-in-out rounded-3xl shadow-theme-lg ring-1 ring-gray-200/80 dark:ring-white/10 
+        className={`flex flex-col bg-white dark:bg-gray-900 text-gray-900 transition-all duration-300 ease-in-out shadow-theme-lg ring-1 ring-gray-200/80 dark:ring-white/10 
           ${positionClasses}
-          ${showExpanded ? "w-[274px]" : "w-[78px]"}`}
+          ${showExpanded ? "w-[274px] px-5 rounded-3xl" : "w-[54px] px-1.5 rounded-full"}`}
       >
-        {/* Logo section.
-            El `key` es lo que dispara el fundido: al cambiar `showExpanded`,
-            React desmonta el bloque y monta uno nuevo, y el nuevo reproduce
-            `animate-aparecer`. Sin el `key` reutilizaría el mismo nodo, la clase
-            no cambiaría y el logo se sustituiría de golpe — que es justo el
-            defecto que se corrige.
-
-            Es un fundido de ENTRADA, no un crossfade, y la diferencia es
-            deliberada: un crossfade de verdad exige tener los dos logos montados
-            a la vez, y no miden lo mismo (`logo` es un wordmark de `h-5`, 
-            `logoCollapsed` un cuadrado de `h-10` con borde). Superponerlos haría
-            que el bloque midiera lo que el más grande y la barra daría un salto
-            vertical justo cuando se está contrayendo. Con el `key`, la estructura
-            del DOM es idéntica a la de antes: un solo hijo, el alto lo sigue
-            marcando el logo que toca, y el que llega aparece fundido. */}
+        {/* Logo section */}
         <div
-          className={`py-8 flex ${
-            !showExpanded ? "xl:justify-center" : "justify-start"
+          className={`flex shrink-0 ${
+            showExpanded ? "py-8 justify-start" : "py-4 justify-center"
           }`}
         >
           <div key={showExpanded ? "expandido" : "colapsado"} className="animate-aparecer">

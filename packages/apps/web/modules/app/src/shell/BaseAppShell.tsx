@@ -51,7 +51,7 @@ export const BaseAppShell: React.FC<BaseAppShellProps> = observer(({
       <Backdrop />
       <div
         className={`flex min-w-0 ${pantallaFija ? "h-screen overflow-hidden" : "min-h-screen"} flex-1 flex-col transition-all duration-300 ease-in-out ${
-          uiStore.isSidebarVisible ? "xl:ml-[290px]" : "xl:ml-[94px]"
+          uiStore.isSidebarVisible ? "xl:ml-[290px]" : "xl:ml-[72px]"
         }`}
       >
         {/* Header as a floating rounded panel */}
