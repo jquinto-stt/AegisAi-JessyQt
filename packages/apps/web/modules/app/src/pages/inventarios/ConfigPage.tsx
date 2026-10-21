@@ -133,17 +133,7 @@ export const InventariosConfigPage = observer(function InventariosConfigPage() {
         description="Parámetros operativos del inventario"
       />
 
-      <div className="mb-5">
-        <ConfigHeader
-          titulo="Configuración de Inventario"
-          descripcion="Preferencias y parámetros para el catálogo y almacén."
-          acciones={
-            <Badge color={puedeConfigurar ? "success" : "light"} size="sm">
-              {puedeConfigurar ? "Edición habilitada" : "Solo lectura"}
-            </Badge>
-          }
-        />
-      </div>
+
 
       <div className="mb-4">
         <VolverAlHub onVolver={volverAlHub} etiqueta="Volver a Configuración" />

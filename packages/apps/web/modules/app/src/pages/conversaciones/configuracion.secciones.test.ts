@@ -63,35 +63,33 @@ describe("Catálogo de secciones del canal", () => {
     expect(total).toBe(ORDEN_SECCIONES.length);
   });
 
-  it("la página tiene exactamente las 4 secciones que ajustan algo", () => {
+  it("la página tiene exactamente las 9 secciones configurables del canal", () => {
     expect(ORDEN_SECCIONES).toEqual([
-      "plantillas",
-      "atencion",
-      "aviso",
-      "alertas",
+      "modelo",
+      "qr",
+      "personalidad",
+      "instrucciones",
+      "servicios",
+      "horario",
+      "conocimiento",
+      "interruptor",
+      "probar",
     ]);
   });
 
-  it("las secciones retiradas siguen fuera (07/10)", () => {
-    // · «Perfil del canal» — tres datos de solo lectura.
-    // · «Automatización y escalado» — dos conteos y una leyenda.
-    // · «Módulos conectados» — la MISMA línea de código que «Módulos
-    //   integrados» del asistente: `integracionesStore.alternar(id)`.
-    // · «Horario de atención» — las horas de apertura son del NEGOCIO: gobiernan
-    //   `pedidosStore.estaAbierto()` y se editan en `/pedidos/config → Tiempos`.
-    //
-    // Se afirma la AUSENCIA a propósito: sin esta comprobación, volver a
-    // añadirlas pasaría desapercibido mientras el resto de la suite sigue verde.
+  it("las secciones retiradas de perfil y apariencia siguen fuera", () => {
     const claves: string[] = ORDEN_SECCIONES;
     expect(claves).not.toContain("perfil");
     expect(claves).not.toContain("automatizacion");
     expect(claves).not.toContain("modulos");
-    expect(claves).not.toContain("horario");
+    expect(claves).not.toContain("apariencia");
   });
 
-  it("la sección nueva de atención existe y está en el grupo de mensajería", () => {
-    expect(ORDEN_SECCIONES).toContain("atencion");
-    expect(META_SECCION.atencion.grupo).toBe("mensajeria");
+  it("la sección de interruptor maestro y qr existen y están en el grupo de canal", () => {
+    expect(ORDEN_SECCIONES).toContain("interruptor");
+    expect(META_SECCION.interruptor.grupo).toBe("canal");
+    expect(ORDEN_SECCIONES).toContain("qr");
+    expect(META_SECCION.qr.grupo).toBe("canal");
   });
 
   it("la sección de apariencia ya no vive aquí (07/10)", () => {

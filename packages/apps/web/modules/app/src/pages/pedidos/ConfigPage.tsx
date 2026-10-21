@@ -69,7 +69,6 @@ import {
   CampoConfig,
   ChipDia,
   ConfigAcciones,
-  ConfigHeader,
   ConfigHub,
   ConfigShell,
   Label2,
@@ -1072,18 +1071,7 @@ export const ConfigPage = observer(() => {
     <div className="pb-12">
       <PageMeta title="Configuración · Pedidos" description="Ajustes del módulo de pedidos" />
 
-      {/* ── CABECERA UNIFICADA ────────────────────────────────────────────── */}
-      {/* Sin botón de guardado. La acción vive en el pie de la sección, igual
-          que en `/conversaciones/config`: antes estaba aquí Y en el pie, así
-          que la misma acción salía dos veces en pantalla. El aviso de
-          «Guardado» también se pinta en el pie, junto al botón que lo produce
-          — un aviso separado del control que lo causa se lee tarde. */}
-      <div className="mb-5">
-        <ConfigHeader
-          titulo="Configuración de Pedidos"
-          descripcion="Ajustes del flujo operativo, modalidades, horario y productos frecuentes."
-        />
-      </div>
+
 
       {/* ── AVISO DE SOLO LECTURA ──────────────────────────────────────────── */}
       {soloLectura && (

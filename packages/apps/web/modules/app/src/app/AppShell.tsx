@@ -161,10 +161,13 @@ export const AppShell = () => {
     !location.pathname.startsWith("/asistente/config");
 
   const esChatConversaciones =
-    location.pathname === "/conversaciones" ||
-    location.pathname.startsWith("/conversaciones/") ||
-    location.pathname === "/pedidos/chats" ||
-    location.pathname.startsWith("/pedidos/chats/");
+    (location.pathname === "/conversaciones" ||
+      (location.pathname.startsWith("/conversaciones/") &&
+        !location.pathname.startsWith("/conversaciones/config") &&
+        !location.pathname.startsWith("/conversaciones/historial") &&
+        !location.pathname.startsWith("/conversaciones/analitica")) ||
+      location.pathname === "/pedidos/chats" ||
+      location.pathname.startsWith("/pedidos/chats/"));
 
   const esTableroKanban =
     location.pathname === "/pedidos" ||

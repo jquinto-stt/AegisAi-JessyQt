@@ -93,98 +93,105 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
  * `seccionesPorGrupo` y `META_SECCION` son `Record` sobre ella, así que añadir
  * una sección sin darle grupo o metadatos es un error de compilación.
  */
-export type SeccionCanal = "plantillas" | "atencion" | "aviso" | "alertas";
+export type SeccionCanal =
+  | "modelo"
+  | "qr"
+  | "personalidad"
+  | "instrucciones"
+  | "servicios"
+  | "horario"
+  | "conocimiento"
+  | "interruptor"
+  | "probar";
 
-/** Grupos de la navegación vertical, en orden de aparición. */
-export type GrupoSeccionCanal = "canal" | "mensajeria";
+/** Grupos de la navegación horizontal/vertical. */
+export type GrupoSeccionCanal = "canal";
 
 /** Etiqueta del grupo tal como se pinta en la cabecera pequeña en mayúsculas. */
 export const GRUPO_SECCION_LABEL: Record<GrupoSeccionCanal, string> = {
-  canal: "CANAL",
-  mensajeria: "MENSAJERÍA",
+  canal: "WHATSAPP & ASISTENTE IA",
 };
 
 /**
- * Orden canónico de los grupos. Declarado aparte de `Object.keys` para que el
- * orden de la navegación no dependa del orden de inserción de un objeto, que es
- * un detalle de implementación y no una decisión de diseño.
+ * Orden canónico de los grupos.
  */
-export const ORDEN_GRUPOS: GrupoSeccionCanal[] = ["canal", "mensajeria"];
+export const ORDEN_GRUPOS: GrupoSeccionCanal[] = ["canal"];
 
 /** Metadatos de presentación de una sección. */
 export interface MetaSeccion {
-  /** Etiqueta del ítem de la navegación vertical. */
   label: string;
-  /** Descripción de una línea bajo el título del panel. */
   hint: string;
-  /**
-   * Pregunta que titula el bloque de contenido, en el lenguaje de
-   * `BloqueConfig`.
-   *
-   * ── Por qué una PREGUNTA y no un rótulo ─────────────────────────────────
-   *
-   * El panel de una sección agrupaba tarjetas con un título corto («Identidad
-   * del canal», «Pausa del canal»), y el resultado era un volcado de filas: no
-   * se sabía qué decisión tomaba el usuario en esa pantalla. Un bloque titulado
-   * con una pregunta obliga a que el contenido CONTESTE algo, y deja fuera lo
-   * que no contesta nada — que era la mitad de las filas.
-   *
-   * Es el mismo criterio que ya rige en `configuracion` y en `equipo`, donde el
-   * bloque se titula con la pregunta del usuario y no con el nombre del grupo.
-   *
-   * Vive aquí y no en el JSX por la razón de siempre: escrita a mano en la
-   * página, la pregunta de una sección podría contradecir su `hint`.
-   */
   pregunta: string;
-  /** Grupo al que pertenece. */
   grupo: GrupoSeccionCanal;
-  /**
-   * Nombre del icono del catálogo `@/icons` que representa la sección.
-   *
-   * Se guarda como NOMBRE (string) y la página lo resuelve contra un mapa
-   * explícito, en vez de guardar el elemento JSX ya montado. Motivo: un módulo
-   * de catálogo sin JSX se puede importar desde un test de Node sin arrastrar el
-   * runtime de React ni el plugin de SVG.
-   */
   icono: IconoSeccion;
 }
 
 /** Iconos disponibles para la navegación de secciones (subconjunto de `@/icons`). */
-export type IconoSeccion = "DocsIcon" | "BoltIcon" | "InfoIcon" | "AlertIcon";
+export type IconoSeccion = "DocsIcon" | "BoltIcon" | "InfoIcon" | "AlertIcon" | "PlugInIcon" | "AiIcon";
 
-/**
- * Metadatos por sección. El orden de las claves de este objeto NO define el
- * orden de la navegación: lo define `ORDEN_SECCIONES`, para que reordenar la
- * navegación sea una edición explícita y no un efecto colateral de mover líneas.
- */
 export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
-  plantillas: {
-    label: "Plantillas de mensaje",
-    hint: "El texto que recibe el cliente cuando su pedido cambia de estado.",
-    pregunta: "¿Qué le escribes al cliente en cada paso?",
+  modelo: {
+    label: "Modelo OpenRouter",
+    hint: "Selección del LLM, temperatura y control del motor de inteligencia artificial.",
+    pregunta: "¿Qué modelo de OpenRouter atiende a tus clientes?",
+    grupo: "canal",
+    icono: "AiIcon",
+  },
+  qr: {
+    label: "WhatsApp QR",
+    hint: "Estado de conexión Baileys, código QR y número vinculado.",
+    pregunta: "¿Cómo está conectado tu WhatsApp?",
+    grupo: "canal",
+    icono: "PlugInIcon",
+  },
+  personalidad: {
+    label: "Personalidad",
+    hint: "Nombre del asistente, tono de comunicación y trato hacia el cliente.",
+    pregunta: "¿Cuál es la personalidad y voz del asistente?",
+    grupo: "canal",
+    icono: "InfoIcon",
+  },
+  instrucciones: {
+    label: "Instrucciones",
+    hint: "Prompt del sistema, reglas de derivación y límites operativos.",
+    pregunta: "¿Qué reglas e instrucciones sigue el asistente?",
     grupo: "canal",
     icono: "DocsIcon",
   },
-  atencion: {
-    label: "Atención automática",
-    hint: "Si el canal responde solo mientras nadie lo está atendiendo.",
-    pregunta: "¿Responde el canal por su cuenta?",
-    grupo: "mensajeria",
+  servicios: {
+    label: "Servicios",
+    hint: "Catálogo de servicios, precios, tiempos y herramientas de consulta.",
+    pregunta: "¿Qué servicios e información puede ofrecer?",
+    grupo: "canal",
+    icono: "DocsIcon",
+  },
+  horario: {
+    label: "Horario y Elevadores",
+    hint: "Horario de atención, capacidad de bahías/elevadores y turnos.",
+    pregunta: "¿Cuál es el horario y la capacidad operativa?",
+    grupo: "canal",
     icono: "BoltIcon",
   },
-  aviso: {
-    label: "Aviso fuera de horario",
-    hint: "Lo que recibe el cliente que escribe con el negocio cerrado.",
-    pregunta: "¿Qué le dices al cliente que escribe fuera de horario?",
-    grupo: "mensajeria",
-    icono: "InfoIcon",
+  conocimiento: {
+    label: "Conocimiento",
+    hint: "Preguntas frecuentes (FAQ) e información general del negocio.",
+    pregunta: "¿Qué información y preguntas frecuentes domina?",
+    grupo: "canal",
+    icono: "DocsIcon",
   },
-  alertas: {
-    label: "Alertas",
-    hint: "Aviso sonoro cuando hay clientes que requieren atención.",
-    pregunta: "¿Cómo te avisamos de un cliente esperando?",
-    grupo: "mensajeria",
-    icono: "AlertIcon",
+  interruptor: {
+    label: "Interruptor Maestro",
+    hint: "Encendido y apagado global de respuestas automáticas en el canal.",
+    pregunta: "¿Están activas las respuestas automáticas del asistente?",
+    grupo: "canal",
+    icono: "BoltIcon",
+  },
+  probar: {
+    label: "Probar Asistente",
+    hint: "Chat interno interactivo para probar respuestas y herramientas sin enviar a WhatsApp.",
+    pregunta: "¿Cómo responde el asistente ante preguntas de prueba?",
+    grupo: "canal",
+    icono: "PlugInIcon",
   },
 };
 
@@ -209,9 +216,12 @@ export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
  *     un borrador de `pedidosStore` que esa sección ni toca.
  */
 export const SECCIONES_CON_PIE_DE_GUARDADO: readonly SeccionCanal[] = [
-  "plantillas",
-  "aviso",
-  "alertas",
+  "modelo",
+  "personalidad",
+  "instrucciones",
+  "servicios",
+  "horario",
+  "conocimiento",
 ];
 
 /**
@@ -223,28 +233,16 @@ type SeccionSinGuardado = Exclude<
   (typeof SECCIONES_CON_PIE_DE_GUARDADO)[number]
 >;
 
-/**
- * Qué se le dice al usuario donde no hay botón de guardar.
- *
- * El silencio no vale: quitar el pie sin explicar por qué deja al usuario
- * buscando el botón que ya no está. Cada nota dice **por qué** esa sección no
- * se guarda desde aquí y **dónde** se cambia lo que muestra.
- *
- * El tipo es `Record` sobre las secciones sin pie, así que añadir una sección
- * nueva y olvidar su nota es un error de compilación — no una pantalla que
- * pierde el pie sin decir nada.
- */
 export const NOTA_SIN_GUARDADO: Record<SeccionSinGuardado, string> = {
-  atencion:
-    "Este interruptor se aplica al instante: apaga o enciende las respuestas automáticas de todo el canal en el momento en que lo pulsas, sin pasar por Guardar. El traspaso de un hilo concreto entre el bot y un asesor se hace desde la consola de conversaciones.",
+  qr: "El estado de vinculación se sincroniza en tiempo real con el socket de Baileys. Al escanear el QR o pulsar Desconectar, el cambio se aplica de inmediato.",
+  interruptor:
+    "Este interruptor maestro se aplica al instante: apaga o enciende las respuestas automáticas de todo el canal en el momento en que lo pulsas, sin pasar por Guardar.",
+  probar:
+    "El asistente de prueba corre en tiempo real en un entorno aislado sin enviar mensajes a clientes reales.",
 };
 
 /**
  * Nota de una sección, o `null` si esa sección sí se guarda.
- *
- * Existe para que la página no tenga que estrechar el tipo a mano: la única
- * conversión entre `SeccionCanal` y `SeccionSinGuardado` vive aquí, junto a las
- * dos tablas que la hacen cierta, y no repartida por el JSX.
  */
 export function notaSinGuardado(seccion: SeccionCanal): string | null {
   return seccion in NOTA_SIN_GUARDADO
@@ -254,10 +252,15 @@ export function notaSinGuardado(seccion: SeccionCanal): string | null {
 
 /** Orden de las secciones dentro de la navegación. */
 export const ORDEN_SECCIONES: SeccionCanal[] = [
-  "plantillas",
-  "atencion",
-  "aviso",
-  "alertas",
+  "modelo",
+  "qr",
+  "personalidad",
+  "instrucciones",
+  "servicios",
+  "horario",
+  "conocimiento",
+  "interruptor",
+  "probar",
 ];
 
 /**

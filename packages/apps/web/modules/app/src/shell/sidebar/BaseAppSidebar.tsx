@@ -37,7 +37,7 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
     : `fixed left-4 z-50 ${uiStore.sidebarMobileOpen ? "translate-x-0" : "-translate-x-[120%]"} xl:translate-x-0 ${
         showExpanded
           ? "top-4 translate-y-0 h-[calc(100vh-2rem)]"
-          : "top-1/2 -translate-y-1/2 h-[340px] py-3"
+          : "top-1/2 -translate-y-1/2 h-auto max-h-[calc(100vh-2rem)] py-3"
       }`;
 
   return (

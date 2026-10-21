@@ -228,17 +228,7 @@ export const AsistenteConfigPage = observer(() => {
         description="Estado del asistente interno: motor, herramientas y límites"
       />
 
-      <div className="mb-5">
-        <ConfigHeader
-          titulo="Configuración de NECTO AI"
-          descripcion="El asistente interno del equipo: qué consulta, con qué motor y qué no hace."
-          acciones={
-            <Badge color={MOTOR_BADGE[motor]} size="sm">
-              {MOTOR_BADGE_LABEL[motor]}
-            </Badge>
-          }
-        />
-      </div>
+
 
       {/* Distinción explícita con el bot de WhatsApp. Sin esto, es fácil que
           quien llega aquí crea que está configurando el bot que atiende a los
