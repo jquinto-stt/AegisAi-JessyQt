@@ -336,6 +336,7 @@
   --animate-salida-menu: salida-menu 150ms ease-in forwards;
   --animate-entrada-lista: entrada-lista 300ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
   --animate-aterrizaje: aterrizaje-tarjeta 380ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-flyout-lateral: flyout-lateral 220ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 
   /* Barrido de un esqueleto de carga.
      Es el ÚNICO movimiento del proyecto que se repite sin fin, y por eso es
@@ -398,6 +399,18 @@
     to {
       opacity: 0;
       transform: translate3d(0, -8px, 0) scale(0.975);
+    }
+  }
+
+  /* Popover lateral desde la barra contraída: entra con sutil deslizamiento horizontal y escala */
+  @keyframes flyout-lateral {
+    from {
+      opacity: 0;
+      transform: translate3d(-10px, -50%, 0) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, -50%, 0) scale(1);
     }
   }
 

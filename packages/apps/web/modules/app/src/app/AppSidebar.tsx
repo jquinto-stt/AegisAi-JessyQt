@@ -96,13 +96,13 @@ const Logo = () => (
 const LogoCollapsed = () => (
   <Link
     to={RUTA_LANZADOR}
-    className="flex items-center justify-center h-9 w-9 rounded-full transition-opacity hover:opacity-85"
+    className="group flex items-center justify-center h-9 w-9 rounded-full transition-all duration-200 hover:scale-110 active:scale-95 hover:opacity-90"
   >
     <img
       src="/images/logo/necto-icon.svg"
       alt="NECTO"
       title={TOOLTIP_LANZADOR}
-      className="h-5 w-5"
+      className="h-5 w-5 transition-transform duration-200 group-hover:rotate-6"
     />
   </Link>
 );
@@ -139,11 +139,11 @@ const SidebarFooter = observer(() => {
             className={
               showExpanded
                 ? rowClasses
-                : "flex items-center justify-center w-10 h-10 rounded-full text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF] transition-colors"
+                : "group flex items-center justify-center w-10 h-10 rounded-full text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF] hover:bg-gray-100/70 dark:hover:bg-white/5 transition-all duration-200 hover:scale-110 active:scale-95"
             }
             title={!showExpanded ? "Ayuda" : undefined}
           >
-            <span className={showExpanded ? "menu-item-icon-size menu-item-icon-inactive" : "flex items-center justify-center h-5 w-5"}>
+            <span className={showExpanded ? "menu-item-icon-size menu-item-icon-inactive" : "flex items-center justify-center h-5 w-5 transition-transform duration-200 group-hover:scale-110"}>
               <InfoIcon className="h-5 w-5" />
             </span>
             {showExpanded && <span className="menu-item-text">Ayuda</span>}
@@ -157,11 +157,11 @@ const SidebarFooter = observer(() => {
                 ? `menu-item group text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 cursor-pointer ${
                     !showExpanded ? "xl:justify-center" : "xl:justify-start"
                   }`
-                : "flex items-center justify-center w-10 h-10 rounded-full text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 cursor-pointer transition-colors"
+                : "group flex items-center justify-center w-10 h-10 rounded-full text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
             }
             title={!showExpanded ? "Cerrar sesión" : undefined}
           >
-            <span className={showExpanded ? "menu-item-icon-size text-error-500" : "flex items-center justify-center h-5 w-5"}>
+            <span className={showExpanded ? "menu-item-icon-size text-error-500" : "flex items-center justify-center h-5 w-5 transition-transform duration-200 group-hover:scale-110"}>
               <ArrowRightIcon className="h-5 w-5" />
             </span>
             {showExpanded && <span className="menu-item-text">Cerrar sesión</span>}
@@ -384,7 +384,7 @@ const SidebarContent = observer(() => {
       {!showExpanded && flyoutModulo && (
         <div
           ref={flyoutRef}
-          className="fixed left-[72px] xl:left-[76px] top-1/2 -translate-y-1/2 z-50 w-64 rounded-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/90 dark:border-white/10 shadow-2xl p-2.5 flex flex-col gap-1.5 animate-aparecer"
+          className="fixed left-[72px] xl:left-[76px] top-1/2 -translate-y-1/2 z-50 w-64 rounded-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/90 dark:border-white/10 shadow-2xl p-2.5 flex flex-col gap-1.5 animate-flyout-lateral"
         >
             {/* Cabecera del flyout */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-white/5">
@@ -422,14 +422,14 @@ const SidebarContent = observer(() => {
                 <Link
                   to="/configuracion"
                   onClick={() => setFlyoutModulo(null)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                  className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
                     esRutaConfiguracion("/configuracion")
                       ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
                   }`}
                 >
                   <span
-                    className={`text-base ${
+                    className={`text-base transition-transform duration-150 group-hover:scale-110 ${
                       esRutaConfiguracion("/configuracion") ? "text-white" : "text-gray-500 dark:text-gray-400"
                     }`}
                   >
@@ -451,13 +451,13 @@ const SidebarContent = observer(() => {
                         key={seccionId}
                         to={seccion.path}
                         onClick={() => setFlyoutModulo(null)}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                        className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
                           active
                             ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
                             : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
                         }`}
                       >
-                        <span className={`text-base ${active ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>
+                        <span className={`text-base transition-transform duration-150 group-hover:scale-110 ${active ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>
                           <Icono />
                         </span>
                         <span className="truncate">{seccion.label}</span>
@@ -553,13 +553,13 @@ const SidebarContent = observer(() => {
                 title={info.nombreCorto}
                 aria-label={info.nombreCorto}
                 onClick={() => setFlyoutModulo(isOpen ? null : modulo)}
-                className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-200 cursor-pointer ${
+                className={`group flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ease-out hover:scale-110 active:scale-95 cursor-pointer ${
                   isActivo || isOpen
-                    ? "text-[#190088] dark:text-[#97D6DF]"
-                    : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF]"
+                    ? "text-[#190088] dark:text-[#97D6DF] scale-105"
+                    : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF] hover:bg-gray-100/70 dark:hover:bg-white/5"
                 }`}
               >
-                <span className="h-5 w-5 flex items-center justify-center">
+                <span className="h-5 w-5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
                   <IconoModulo className="h-5 w-5" />
                 </span>
               </button>
@@ -572,13 +572,13 @@ const SidebarContent = observer(() => {
               title="Organización"
               aria-label="Organización"
               onClick={() => setFlyoutModulo(flyoutModulo === "organizacion" ? null : "organizacion")}
-              className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-200 cursor-pointer ${
+              className={`group flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ease-out hover:scale-110 active:scale-95 cursor-pointer ${
                 (pathname.startsWith("/configuracion") || pathname.startsWith("/equipo")) || flyoutModulo === "organizacion"
-                  ? "text-[#190088] dark:text-[#97D6DF]"
-                  : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF]"
+                  ? "text-[#190088] dark:text-[#97D6DF] scale-105"
+                  : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF] hover:bg-gray-100/70 dark:hover:bg-white/5"
               }`}
             >
-              <span className="h-5 w-5 flex items-center justify-center">
+              <span className="h-5 w-5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
                 <Cog6ToothIcon className="h-5 w-5" />
               </span>
             </button>

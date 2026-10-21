@@ -50,7 +50,7 @@ export const BaseAppShell: React.FC<BaseAppShellProps> = observer(({
       {sidebar}
       <Backdrop />
       <div
-        className={`flex min-w-0 ${pantallaFija ? "h-screen overflow-hidden" : "min-h-screen"} flex-1 flex-col transition-all duration-300 ease-in-out ${
+        className={`flex min-w-0 ${pantallaFija ? "h-screen overflow-hidden" : "min-h-screen"} flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           uiStore.isSidebarVisible ? "xl:ml-[290px]" : "xl:ml-[72px]"
         }`}
       >

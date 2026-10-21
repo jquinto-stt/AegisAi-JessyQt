@@ -37,13 +37,13 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
     : `fixed left-4 z-50 ${uiStore.sidebarMobileOpen ? "translate-x-0" : "-translate-x-[120%]"} xl:translate-x-0 ${
         showExpanded
           ? "top-4 translate-y-0 h-[calc(100vh-2rem)]"
-          : "top-1/2 -translate-y-1/2 h-auto max-h-[calc(100vh-2rem)] py-3"
+          : "top-1/2 -translate-y-1/2 h-[340px] py-3"
       }`;
 
   return (
     <SidebarProvider collapsed={collapsed}>
       <aside
-        className={`flex flex-col bg-white dark:bg-gray-900 text-gray-900 transition-all duration-300 ease-in-out shadow-theme-lg ring-1 ring-gray-200/80 dark:ring-white/10 
+        className={`flex flex-col bg-white dark:bg-gray-900 text-gray-900 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] shadow-theme-lg ring-1 ring-gray-200/80 dark:ring-white/10 
           ${positionClasses}
           ${showExpanded ? "w-[274px] px-5 rounded-3xl" : "w-[54px] px-1.5 rounded-full"}`}
       >
@@ -60,7 +60,8 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
 
         {/* Content section */}
         <div
-          className={`flex flex-col duration-300 ease-linear no-scrollbar ${
+          key={showExpanded ? "expandido" : "colapsado"}
+          className={`flex flex-col duration-300 ease-linear no-scrollbar animate-aparecer ${
             showExpanded ? "flex-1 overflow-y-auto" : "flex-initial"
           }`}
         >

@@ -9,7 +9,7 @@ export const ToggleAppSidebar: React.FC = observer(() => {
 
   return (
     <button
-      className={`flex items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg dark:border-gray-800 dark:text-gray-400 lg:h-11 lg:w-11 xl:border ${
+      className={`flex items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg dark:border-gray-800 dark:text-gray-400 lg:h-11 lg:w-11 xl:border transition-all duration-200 hover:bg-gray-100 dark:hover:bg-white/[0.06] active:scale-95 cursor-pointer ${
         isOpen ? "bg-gray-100 dark:bg-white/[0.03]" : ""
       }`}
       onClick={() => uiStore.toggleSidebar()}
