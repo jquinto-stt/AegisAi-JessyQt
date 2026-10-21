@@ -1,7 +1,7 @@
 import React from "react";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
 import { DecorativeCircles } from "@/elements/common/DecorativeCircles";
-import { ThemeToggle } from "@/compositions/shared/ThemeToggle";
+import { ThemeToggleButton } from "@/shell";
 import { cn } from "@/utils";
 
 export interface AuthPageLayoutProps {
@@ -103,7 +103,7 @@ export default function AuthPageLayout({
           </div>
         </div>
         <div className="fixed z-50 top-4 right-4 sm:top-6 sm:right-6">
-          <ThemeToggle />
+          <ThemeToggleButton />
         </div>
       </div>
     </div>

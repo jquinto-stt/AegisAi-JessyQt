@@ -14,7 +14,6 @@
 export { DashboardPage } from "./DashboardPage";
 export { ProductosPage } from "./ProductosPage";
 export { DetalleProductoPage } from "./DetalleProductoPage";
-export { SedesPage } from "./SedesPage";
 export { OrdenesPage } from "./OrdenesPage";
 export { ProveedoresPage } from "./ProveedoresPage";
 export { ReportesPage } from "./ReportesPage";
@@ -23,15 +22,12 @@ export { InventarioZeroState } from "./InventarioZeroState";
 export { InventariosPage, default as InventariosPageDefault } from "./InventariosPage";
 export { CrearInventarioPage } from "./CrearInventarioPage";
 export { DetalleInventarioPage } from "./DetalleInventarioPage";
-export { ElementosPage } from "./ElementosPage";
 export { DetalleElementoPage } from "./DetalleElementoPage";
-export { UbicacionesPage } from "./UbicacionesPage";
 export { HistorialPage } from "./HistorialPage";
 export { AlertasPage } from "./AlertasPage";
 
 export { ModalAgregarElemento } from "./ModalAgregarElemento";
 export { ModalElemento } from "./ModalElemento";
-export { ModalUbicacion, NodoUbicacion } from "./ModalUbicacion";
 
 export { InventariosTabla } from "./InventariosTabla";
 export { LineasTabla } from "./LineasTabla";
