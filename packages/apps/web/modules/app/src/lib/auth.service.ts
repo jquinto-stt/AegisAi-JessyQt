@@ -12,7 +12,14 @@
 // funciona en modo maqueta limpio sin lanzar excepciones.
 
 import { getSupabase, hayConfiguracion, haySesion } from "@/lib/supabase";
-import { sessionStore, organizacionStore, modulosOperablesDeSesion } from "@/stores";
+import {
+  sessionStore,
+  organizacionStore,
+  modulosOperablesDeSesion,
+  pedidosStore,
+  inventariosStore,
+  operadoresStore,
+} from "@/stores";
 import type { RedesSociales, DireccionPerfil } from "@/stores/organizacion.store";
 import { bootstrapConversaciones } from "@/lib/db.bootstrap";
 import { activarModoDemo } from "@/lib/modo-demo";

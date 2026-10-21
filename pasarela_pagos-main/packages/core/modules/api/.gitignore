@@ -1,5 +1,0 @@
-dist/
-.env
-
-# SST generated files
-sst.run.mjs
