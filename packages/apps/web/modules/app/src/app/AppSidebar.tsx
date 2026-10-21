@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router";
 import { observer } from "mobx-react-lite";
 import {
@@ -34,6 +34,8 @@ import {
   TimeIcon,
   AlertHexaIcon,
   CheckLineIcon,
+  CartIcon,
+  CloseIcon,
 } from "@/icons";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -94,7 +96,7 @@ const Logo = () => (
 const LogoCollapsed = () => (
   <Link
     to={RUTA_LANZADOR}
-    className="flex items-center justify-center h-10 w-10 rounded-xl border-2 border-brand-500"
+    className="flex items-center justify-center h-10 w-10 rounded-xl transition-opacity hover:opacity-85"
   >
     <img
       src="/images/logo/necto-icon.svg"
@@ -308,6 +310,22 @@ const SidebarContent = observer(() => {
     }
   });
 
+  const [flyoutModulo, setFlyoutModulo] = useState<string | null>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar flyout al cambiar de ruta, al expandir la barra, o con Escape
+  useEffect(() => {
+    setFlyoutModulo(null);
+  }, [pathname, showExpanded]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFlyoutModulo(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const toggleSeccion = (id: string) => {
     setColapsados((prev) => {
       const next = { ...prev, [id]: !prev[id] };
@@ -326,111 +344,225 @@ const SidebarContent = observer(() => {
     <nav className="flex flex-col flex-1">
       <SimulacionBanner />
 
-      <div className="flex flex-col gap-5">
+      {/* FLYOUT SUBMENU PANEL (Flotante a la derecha del rail contraído) */}
+      {!showExpanded && flyoutModulo && (
+        <>
+          {/* Backdrop sutil para cerrar al hacer clic afuera */}
+          <div
+            className="fixed inset-0 z-40 bg-black/10 dark:bg-black/30 backdrop-blur-[1px]"
+            onClick={() => setFlyoutModulo(null)}
+          />
 
+          <div
+            ref={flyoutRef}
+            className={`fixed left-[88px] xl:left-[102px] z-50 w-64 rounded-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/90 dark:border-white/10 shadow-2xl p-2.5 flex flex-col gap-1.5 animate-aparecer ${
+              flyoutModulo === "pedidos"
+                ? "top-20"
+                : flyoutModulo === "inventarios"
+                ? "top-32"
+                : "top-44"
+            }`}
+          >
+            {/* Cabecera del flyout */}
+            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-white/5">
+              <div className="flex items-center gap-2">
+                <span className="p-1 rounded-lg bg-[#190088]/10 dark:bg-white/10 text-[#190088] dark:text-[#97D6DF]">
+                  {flyoutModulo === "pedidos" ? (
+                    <CartIcon className="h-4 w-4" />
+                  ) : flyoutModulo === "inventarios" ? (
+                    <BoxIcon className="h-4 w-4" />
+                  ) : (
+                    <Cog6ToothIcon className="h-4 w-4" />
+                  )}
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
+                  {flyoutModulo === "pedidos"
+                    ? CATALOGO_MODULOS.pedidos.nombreCorto
+                    : flyoutModulo === "inventarios"
+                    ? CATALOGO_MODULOS.inventarios.nombreCorto
+                    : "Organización"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFlyoutModulo(null)}
+                className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer"
+                title="Cerrar submenú"
+              >
+                <CloseIcon className="h-4 w-4" />
+              </button>
+            </div>
 
+            {/* Lista de opciones del flyout */}
+            <div className="max-h-[calc(100vh-160px)] overflow-y-auto no-scrollbar py-1 flex flex-col gap-0.5">
+              {flyoutModulo === "organizacion" ? (
+                <Link
+                  to="/configuracion"
+                  onClick={() => setFlyoutModulo(null)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                    esRutaConfiguracion("/configuracion")
+                      ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+                  }`}
+                >
+                  <span
+                    className={`text-base ${
+                      esRutaConfiguracion("/configuracion") ? "text-white" : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    <Cog6ToothIcon className="size-5" />
+                  </span>
+                  <span className="truncate">Ajustes Generales</span>
+                </Link>
+              ) : (
+                ITEMS_MODULO[flyoutModulo as Modulo]
+                  .flatMap(({ seccionId, Icono }) => {
+                    const seccion = seccionDe(flyoutModulo as Modulo, seccionId);
+                    if (!seccion || !puedeVerSeccion(flyoutModulo as Modulo, seccionId)) return [];
+                    return [{ seccionId, Icono, seccion }];
+                  })
+                  .map(({ seccionId, Icono, seccion }) => {
+                    const active = isActive(seccion.path);
+                    return (
+                      <Link
+                        key={seccionId}
+                        to={seccion.path}
+                        onClick={() => setFlyoutModulo(null)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                          active
+                            ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+                        }`}
+                      >
+                        <span className={`text-base ${active ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>
+                          <Icono />
+                        </span>
+                        <span className="truncate">{seccion.label}</span>
+                      </Link>
+                    );
+                  })
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
+      {showExpanded ? (
+        <div className="flex flex-col gap-5">
+          {/* Módulos de negocio — modo barra expandida */}
+          {modulosOperablesDeSesion(organizacionStore.modulosActivos).map((modulo) => {
+            const visibles = ITEMS_MODULO[modulo].flatMap(({ seccionId, Icono }) => {
+              const seccion = seccionDe(modulo, seccionId);
+              if (!seccion) return [];
+              if (!puedeVerSeccion(modulo, seccionId)) return [];
+              return [{ seccionId, Icono, seccion }];
+            });
 
-        {/* Módulos de negocio — UNA rama por módulo, y ninguna escrita a mano.
-            Antes era una rama literal de Pedidos con el título `"Pedidos"` y seis
-            `puedePedidos(...)` cableados, y el comentario decía «y, más adelante,
-            Inventario». Eso dejó de ser una promesa: el módulo existe.
+            if (visibles.length === 0) return null;
 
-            Dos decisiones, y las dos son sobre no mentir:
-              · La lista sale de `modulosOperablesDeSesion(modulosActivos)` —el
-                mismo vocabulario que usa el `ModuleSwitcher`—, no de un array
-                literal. Un módulo que la app no sabe nombrar no tiene rama, y uno
-                que la organización no tiene encendido no se pinta.
-              · El título es `CATALOGO_MODULOS[modulo].nombreCorto`. Con Pedidos
-                como módulo único, `"Pedidos"` literal era invisible; con dos,
-                habría titulado «Pedidos» una sección de Inventario.
-              · La sección entera se omite si no queda NINGÚN ítem visible. Sin
-                esto, un rol sin `inventory.read` ni `settings.read` —el rol
-                «Operador», por ejemplo— vería un encabezado «Inventario» plegable
-                con nada debajo: una sección que promete un destino y no lleva a
-                ninguno. Los ítems ya se filtraban por capacidad; el título no. */}
-        {modulosOperablesDeSesion(organizacionStore.modulosActivos).map((modulo) => {
-          const visibles = ITEMS_MODULO[modulo].flatMap(({ seccionId, Icono }) => {
-            const seccion = seccionDe(modulo, seccionId);
-            // Sección inexistente en el catálogo: se omite en vez de pintar un
-            // enlace sin destino. Ver `seccionDe`.
-            if (!seccion) return [];
-            if (!puedeVerSeccion(modulo, seccionId)) return [];
-            return [{ seccionId, Icono, seccion }];
-          });
+            return (
+              <div key={modulo}>
+                <MenuSectionHeader
+                  title={CATALOGO_MODULOS[modulo].nombreCorto}
+                  collapsible
+                  isCollapsed={estaColapsado(modulo)}
+                  onToggle={() => toggleSeccion(modulo)}
+                />
+                <div
+                  className={`transition-all duration-200 ease-in-out overflow-hidden ${
+                    estaColapsado(modulo) ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
+                  }`}
+                >
+                  <ul className="flex flex-col gap-1">
+                    {visibles.map(({ seccionId, Icono, seccion }) => (
+                      <MenuItem
+                        key={seccionId}
+                        icon={<Icono />}
+                        name={seccion.label}
+                        path={seccion.path}
+                        isActive={isActive}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            );
+          })}
 
-          if (visibles.length === 0) return null;
-
-          return (
-            <div key={modulo}>
+          {/* Organización — modo barra expandida */}
+          {puedeGestionarEquipo && (
+            <div>
               <MenuSectionHeader
-                title={CATALOGO_MODULOS[modulo].nombreCorto}
+                title="Organización"
                 collapsible
-                isCollapsed={estaColapsado(modulo)}
-                onToggle={() => toggleSeccion(modulo)}
+                isCollapsed={estaColapsado("organizacion")}
+                onToggle={() => toggleSeccion("organizacion")}
               />
               <div
                 className={`transition-all duration-200 ease-in-out overflow-hidden ${
-                  estaColapsado(modulo) ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
+                  estaColapsado("organizacion") ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
                 }`}
               >
                 <ul className="flex flex-col gap-1">
-                  {visibles.map(({ seccionId, Icono, seccion }) => (
-                    <MenuItem
-                      key={seccionId}
-                      icon={<Icono />}
-                      name={seccion.label}
-                      path={seccion.path}
-                      isActive={isActive}
-                    />
-                  ))}
+                  <MenuItem
+                    icon={<Cog6ToothIcon className="size-5" />}
+                    name="Ajustes Generales"
+                    path="/configuracion"
+                    isActive={esRutaConfiguracion}
+                  />
                 </ul>
               </div>
             </div>
-          );
-        })}
+          )}
+        </div>
+      ) : (
+        /* RAIL MODE: En barra contraída, solo los iconos principales de cada módulo */
+        <div className="flex flex-col items-center gap-4 w-full py-2">
+          {modulosOperablesDeSesion(organizacionStore.modulosActivos).map((modulo) => {
+            const info = CATALOGO_MODULOS[modulo];
+            const isActivo = pathname.startsWith(`/${modulo}`);
+            const isOpen = flyoutModulo === modulo;
+            const IconoModulo = modulo === "pedidos" ? CartIcon : BoxIcon;
 
-        {/* Organización — DOS entradas para DOS pantallas.
-            Antes era un solo enlace porque equipo vivía como pestaña dentro de
-            Configuración; al sacarlo, dos enlaces al mismo sitio serían dos
-            caminos sin razón para elegir uno. Ahora cada uno lleva a su
-            pantalla, y van seguidas para que se lean como lo que son: lo que se
-            ajusta una vez, y las personas con las que se trabaja cada día.
+            return (
+              <button
+                key={modulo}
+                type="button"
+                title={info.nombreCorto}
+                aria-label={info.nombreCorto}
+                onClick={() => setFlyoutModulo(isOpen ? null : modulo)}
+                className={`flex items-center justify-center w-11 h-11 transition-colors duration-200 cursor-pointer ${
+                  isActivo || isOpen
+                    ? "text-[#190088] dark:text-[#97D6DF]"
+                    : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF]"
+                }`}
+              >
+                <span className="h-6 w-6 flex items-center justify-center">
+                  <IconoModulo className="h-6 w-6" />
+                </span>
+              </button>
+            );
+          })}
 
-            «Equipo y perfiles» va DEBAJO de «Configuración» a propósito: es la
-            que más se usa, y en una lista vertical lo más usado va lo más cerca
-            de la mano. El icono de equipo es el mismo que usa el menú de usuario
-            para perfiles, que es lo que hace que dos accesos al mismo sitio se
-            lean como el mismo sitio.
-
-            El grupo entero solo se pinta con `team.manage`: las dos rutas lo
-            exigen, así que un enlace visible sería una promesa que la ruta
-            rompe al primer clic. */}
-        {puedeGestionarEquipo && (
-          <div>
-            <MenuSectionHeader
+          {puedeGestionarEquipo && (
+            <button
+              type="button"
               title="Organización"
-              collapsible
-              isCollapsed={estaColapsado("organizacion")}
-              onToggle={() => toggleSeccion("organizacion")}
-            />
-            <div
-              className={`transition-all duration-200 ease-in-out overflow-hidden ${
-                estaColapsado("organizacion") ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
+              aria-label="Organización"
+              onClick={() => setFlyoutModulo(flyoutModulo === "organizacion" ? null : "organizacion")}
+              className={`flex items-center justify-center w-11 h-11 transition-colors duration-200 cursor-pointer ${
+                (pathname.startsWith("/configuracion") || pathname.startsWith("/equipo")) || flyoutModulo === "organizacion"
+                  ? "text-[#190088] dark:text-[#97D6DF]"
+                  : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF]"
               }`}
             >
-              <ul className="flex flex-col gap-1">
-                <MenuItem
-                  icon={<Cog6ToothIcon className="size-5" />}
-                  name="Ajustes Generales"
-                  path="/configuracion"
-                  isActive={esRutaConfiguracion}
-                />
-              </ul>
-            </div>
-          </div>
-        )}
-      </div>
+              <span className="h-6 w-6 flex items-center justify-center">
+                <Cog6ToothIcon className="h-6 w-6" />
+              </span>
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="mt-auto">
         <SidebarFooter />
