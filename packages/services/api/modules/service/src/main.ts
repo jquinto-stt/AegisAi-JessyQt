@@ -66,6 +66,14 @@ export async function main() {
   return { app };
 }
 
+// Inicializar WhatsApp Baileys en proceso de larga duración
+import { WhatsAppBaileysService } from './services/WhatsAppBaileysService.js';
+try {
+  WhatsAppBaileysService.getInstance().iniciar();
+} catch (err: any) {
+  console.error('[Baileys] Error arrancando servicio:', err);
+}
+
 const time = Date.now();
 main()
   .then(() => {

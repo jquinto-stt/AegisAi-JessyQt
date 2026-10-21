@@ -13,6 +13,13 @@ namespace EP {
   export const $ZernioWebhook = Root$.sub('/webhooks/zernio').endpoint(Method.POST);
 
   // ══════════════════════════════════════════════════════════════════════
+  //!PATH - WhatsApp Baileys
+  // ══════════════════════════════════════════════════════════════════════
+  export const WhatsApp$ = Root$.sub('/whatsapp');
+  export const $WhatsAppStatus = WhatsApp$.sub('/status').endpoint(Method.GET);
+  export const $WhatsAppDisconnect = WhatsApp$.sub('/disconnect').endpoint(Method.POST);
+
+  // ══════════════════════════════════════════════════════════════════════
   //!PATH - Conversaciones (bandeja del operador)
   // ══════════════════════════════════════════════════════════════════════
   export const Conversaciones$ = Root$.sub('/conversaciones');

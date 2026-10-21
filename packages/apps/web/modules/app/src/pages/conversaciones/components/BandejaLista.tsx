@@ -21,10 +21,13 @@ import {
 } from "../conversaciones.utils";
 
 const FILTROS_ESTADO: ReadonlyArray<{ valor: FiltroBandeja; etiqueta: string }> = [
-  { valor: "todas", etiqueta: "Ver todas" },
-  { valor: "requieren_atencion", etiqueta: "Requieren atención" },
+  { valor: "todas", etiqueta: "Todas" },
+  { valor: "mis_conversaciones", etiqueta: "Mis conversaciones" },
+  { valor: "sin_asignar", etiqueta: "Sin asignar" },
+  { valor: "ia_activa", etiqueta: "IA activa" },
+  { valor: "requieren_atencion", etiqueta: "Necesitan atención" },
   { valor: "no_leidas", etiqueta: "Solo no leídas" },
-  { valor: "cerradas", etiqueta: "Cerradas" },
+  { valor: "cerradas", etiqueta: "Resueltas" },
 ];
 
 const FILTROS_INTENCION: ReadonlyArray<{ valor: FiltroIntencion; etiqueta: string }> = [

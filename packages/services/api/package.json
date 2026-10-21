@@ -9,5 +9,14 @@
   "scripts": {
     "srv.api": "npm run webiai:dev",
     "webiai:dev": "webiai infra dev"
+  },
+  "devDependencies": {
+    "prisma": "^7.10.1"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.10.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "qrcode": "^1.5.4",
+    "zod": "^4.6.7"
   }
 }

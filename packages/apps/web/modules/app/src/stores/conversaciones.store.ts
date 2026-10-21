@@ -729,13 +729,20 @@ export class ConversacionesStore {
       switch (this.filtro) {
         case "todas":
           return true;
+        case "mis_conversaciones": {
+          const miOperadorId =
+            (window as any)?.__sessionStore?.accessContext?.operadorId ||
+            (window as any)?.__sessionStore?.accessContext?.rolId;
+          return c.operadorAsignadoId === miOperadorId;
+        }
+        case "sin_asignar":
+          return c.operadorAsignadoId === null || c.operadorAsignadoId === undefined;
+        case "ia_activa":
+          return c.iaActiva !== false && c.atencion === "bot";
         case "no_leidas":
           return c.noLeidos > 0;
         case "requieren_atencion":
-          // Delega en el predicado canónico. Escribir aquí `c.estado ===
-          // "en_espera"` era una SEGUNDA implementación del mismo conjunto: con
-          // el predicado cambiado, el filtro y el contador divergían en silencio.
-          return this.requiereAtencionHumana(c);
+          return this.requiereAtencionHumana(c) || c.necesitaAtencion === true;
         case "cerradas":
           return c.estado === "cerrada";
         default:
@@ -745,9 +752,14 @@ export class ConversacionesStore {
 
     const coincideBusqueda = (c: Conversacion): boolean => {
       if (termino === "") return true;
-      const nombre = c.contacto.nombre.toLowerCase();
-      const telefono = c.contacto.telefono.toLowerCase();
-      return nombre.includes(termino) || telefono.includes(termino);
+      const nombre = (c.contacto.nombre || "").toLowerCase();
+      const telefono = (c.contacto.telefono || "").toLowerCase();
+      const lid = (c.contacto.lid || "").toLowerCase();
+      return (
+        nombre.includes(termino) ||
+        telefono.includes(termino) ||
+        lid.includes(termino)
+      );
     };
 
     return this.conversaciones

@@ -320,6 +320,22 @@ export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelC
           )}
         </button>
 
+        {conv.contacto.lid && (
+          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+            <span className="font-semibold text-gray-400">LID:</span>
+            <span className="font-mono truncate max-w-[200px]" title={conv.contacto.lid}>
+              {conv.contacto.lid}
+            </span>
+          </div>
+        )}
+
+        {conv.contacto.email && (
+          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+            <span className="font-semibold text-gray-400">Email:</span>
+            <span className="truncate max-w-[200px]">{conv.contacto.email}</span>
+          </div>
+        )}
+
         {/* Dirección frecuente (Memoria CRM) */}
         {(() => {
           const dirs = pedidosStore.direccionesDe(telefono);

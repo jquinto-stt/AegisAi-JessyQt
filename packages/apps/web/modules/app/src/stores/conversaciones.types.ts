@@ -163,6 +163,11 @@ export interface Contacto {
   telefono: string;
   nombre: string;
   origen: "whatsapp" | "telegram";
+  lid?: string | null;
+  email?: string | null;
+  notasInternas?: string | null;
+  etiquetas?: string[];
+  ultimoMensajeAt?: string;
 }
 
 /**
@@ -179,6 +184,9 @@ export interface Conversacion {
   operadorAsignadoId: string | null;
   noLeidos: number;
   ultimaActividad: string; // ISO 8601
+  iaActiva?: boolean;
+  necesitaAtencion?: boolean;
+  motivoDerivacion?: string | null;
   /**
    * @deprecated NO USAR. Campo declarado y nunca poblado (el seed lo deja
    * `undefined`), porque sería una SEGUNDA FUENTE DE VERDAD frente a
@@ -193,8 +201,15 @@ export interface Conversacion {
   pedidoActivoId?: string;
 }
 
-/** Filtros de la bandeja. `requieren_atencion` == estado "en_espera". */
-export type FiltroBandeja = "todas" | "no_leidas" | "requieren_atencion" | "cerradas";
+/** Filtros de la bandeja compartida de atención. */
+export type FiltroBandeja =
+  | "todas"
+  | "mis_conversaciones"
+  | "sin_asignar"
+  | "ia_activa"
+  | "requieren_atencion"
+  | "no_leidas"
+  | "cerradas";
 
 /**
  * Intención de una conversación: QUÉ QUIERE EL CLIENTE.
