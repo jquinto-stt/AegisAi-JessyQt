@@ -15,6 +15,7 @@ import { Label } from "@/elements/form/label";
 import {
   AlertHexaIcon,
   ArrowDownIcon,
+  ArrowRightIcon,
   ArrowUpIcon,
   AudioIcon,
   BoltIcon,
@@ -205,7 +206,7 @@ const META_SECCION: Record<
   },
   integraciones: {
     label: "Integraciones y canales",
-    hint: "Canales de mensajería y conectores externos (WhatsApp, Instagram, Webhooks).",
+    hint: "Canales de mensajería (WhatsApp, Telegram, etc.) administrados en Ajustes Generales.",
     icono: PlugInIcon,
   },
 };
@@ -225,7 +226,7 @@ const ACCION_SECCION: Record<ClaveSeccion, string> = {
   perfil: "Configurar",
   tiempos: "Configurar",
   sonidos: "Configurar",
-  integraciones: "Conectar",
+  integraciones: "Ir a Ajustes",
 };
 
 /**
@@ -405,7 +406,13 @@ export const ConfigPage = observer(() => {
     return v !== null && (ORDEN_SECCIONES as string[]).includes(v);
   }
 
-  const entrarASeccion = (k: string) => setSearchParams({ seccion: k });
+  const entrarASeccion = (k: string) => {
+    if (k === "integraciones") {
+      navigate("/configuracion?tab=canales");
+      return;
+    }
+    setSearchParams({ seccion: k });
+  };
   const volverAlHub = () => setSearchParams({});
 
   // Borrador local: preserva el store intacto hasta presionar "Guardar cambios".
@@ -3076,223 +3083,28 @@ export const ConfigPage = observer(() => {
             {seccion === "integraciones" && (
               <BloqueConfig
                 icono={PlugInIcon}
-                pregunta="Conecta tus canales de venta y mensajería"
-                descripcion="Centraliza la recepción de pedidos, notificaciones de despacho y atención omnicanal en un solo lugar."
+                pregunta="Canales de mensajería e integraciones"
+                descripcion="Los canales de mensajería (WhatsApp, Telegram, Instagram y Facebook) ahora se administran a nivel de Organización en Ajustes Generales para nutrir a todos tus módulos de forma centralizada."
               >
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {/* WhatsApp Business */}
-                  <div
-                    className={cn(
-                      "relative flex flex-col justify-between rounded-3xl border bg-white p-6 shadow-sm transition-all dark:bg-gray-900/60",
-                      canalesActivos.whatsapp
-                        ? "border-2 border-[#ECECEC] hover:border-[#FF3F1A]"
-                        : "border border-[#ECECEC] opacity-75 dark:border-gray-800/60",
-                    )}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "flex h-12 w-12 items-center justify-center rounded-2xl",
-                              canalesActivos.whatsapp
-                                ? "bg-[#97D6DF]/20 border border-[#97D6DF]/30 text-[#190088]"
-                                : "bg-[#ECECEC] text-[#212121]",
-                            )}
-                          >
-                            <WhatsAppIcon className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <h4 className="text-[16px] font-bold text-[#190088]">
-                              WhatsApp Business
-                            </h4>
-                            <span className="text-[12px] font-normal text-[#212121]">
-                              Bandeja omnicanal
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className={cn(
-                              "px-2.5 py-0.5 rounded-lg text-[12px] font-bold",
-                              canalesActivos.whatsapp
-                                ? "bg-[#FF3F1A]/10 text-[#FF3F1A] border border-[#FF3F1A]/20"
-                                : "bg-[#ECECEC] text-[#212121]"
-                            )}
-                          >
-                            {canalesActivos.whatsapp ? "Activo" : "Inactivo"}
-                          </span>
-                          <Switch
-                            checked={canalesActivos.whatsapp}
-                            color="orange"
-                            onChange={(val) => toggleCanal("whatsapp", val)}
-                            label=""
-                          />
-                        </div>
-                      </div>
-
-                      <p className="mt-3.5 text-[14px] leading-relaxed text-[#212121]">
-                        Bandeja omnicanal y notificaciones automáticas de pedidos a clientes.
-                      </p>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between border-t border-[#ECECEC] pt-4">
-                      <span className="text-[12px] text-gray-500 font-normal">
-                        {canalesActivos.whatsapp ? "Sincronización en tiempo real" : "Canal desactivado"}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={!canalesActivos.whatsapp}
-                        onClick={() =>
-                          navigate(
-                            "/conversaciones/config?canal=whatsapp&from=/pedidos/config?seccion=integraciones",
-                          )
-                        }
-                        className="px-3.5 py-1.5 rounded-xl border border-[#ECECEC] hover:border-[#FF3F1A] text-[#212121] hover:text-[#FF3F1A] font-bold text-[12px] transition-colors disabled:opacity-50 cursor-pointer"
-                      >
-                        Configurar bot
-                      </button>
-                    </div>
+                <div className="rounded-3xl border border-secondary-100 bg-secondary-50/40 p-8 text-center dark:border-white/10 dark:bg-white/[0.02]">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary-600 text-white dark:bg-accent-300 dark:text-ink-body mb-4">
+                    <PlugInIcon className="h-7 w-7" />
                   </div>
-
-                  {/* Instagram */}
-                  <div
-                    className={cn(
-                      "relative flex flex-col justify-between rounded-3xl border bg-white p-6 shadow-sm transition-all dark:bg-gray-900/60",
-                      canalesActivos.instagram
-                        ? "border-2 border-[#ECECEC] hover:border-[#FF3F1A]"
-                        : "border border-[#ECECEC] opacity-75 dark:border-gray-800/60",
-                    )}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "flex h-12 w-12 items-center justify-center rounded-2xl",
-                              canalesActivos.instagram
-                                ? "bg-[#97D6DF]/20 border border-[#97D6DF]/30 text-[#190088]"
-                                : "bg-[#ECECEC] text-[#212121]",
-                            )}
-                          >
-                            <InstagramIcon className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <h4 className="text-[16px] font-bold text-[#190088]">
-                              Instagram
-                            </h4>
-                            <span className="text-[12px] font-normal text-[#212121]">
-                              Direct Messages
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className={cn(
-                              "px-2.5 py-0.5 rounded-lg text-[12px] font-bold",
-                              canalesActivos.instagram
-                                ? "bg-[#FF3F1A]/10 text-[#FF3F1A] border border-[#FF3F1A]/20"
-                                : "bg-[#ECECEC] text-[#212121]"
-                            )}
-                          >
-                            {canalesActivos.instagram ? "Activo" : "Inactivo"}
-                          </span>
-                          <Switch
-                            checked={canalesActivos.instagram}
-                            color="orange"
-                            onChange={(val) => toggleCanal("instagram", val)}
-                            label=""
-                          />
-                        </div>
-                      </div>
-
-                      <p className="mt-3.5 text-[14px] leading-relaxed text-[#212121]">
-                        Recepción de pedidos por mensajes directos (DM) y catálogo interactivo en historias y chat.
-                      </p>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between border-t border-[#ECECEC] pt-4">
-                      <span className="text-[12px] text-gray-500 font-normal">
-                        Meta Graph API
-                      </span>
-                      <button
-                        type="button"
-                        disabled={!canalesActivos.instagram}
-                        className="px-3.5 py-1.5 rounded-xl border border-[#ECECEC] hover:border-[#FF3F1A] text-[#212121] hover:text-[#FF3F1A] font-bold text-[12px] transition-colors disabled:opacity-50 cursor-pointer"
-                      >
-                        Conectar cuenta
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Facebook */}
-                  <div
-                    className={cn(
-                      "relative flex flex-col justify-between rounded-3xl border bg-white p-6 shadow-sm transition-all dark:bg-gray-900/60",
-                      canalesActivos.facebook
-                        ? "border-2 border-[#ECECEC] hover:border-[#FF3F1A]"
-                        : "border border-[#ECECEC] opacity-75 dark:border-gray-800/60",
-                    )}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "flex h-12 w-12 items-center justify-center rounded-2xl",
-                              canalesActivos.facebook
-                                ? "bg-[#97D6DF]/20 border border-[#97D6DF]/30 text-[#190088]"
-                                : "bg-[#ECECEC] text-[#212121]",
-                            )}
-                          >
-                            <FacebookIcon className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <h4 className="text-[16px] font-bold text-[#190088]">
-                              Facebook
-                            </h4>
-                            <span className="text-[12px] font-normal text-[#212121]">
-                              Messenger & Fan Page
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className={cn(
-                              "px-2.5 py-0.5 rounded-lg text-[12px] font-bold",
-                              canalesActivos.facebook
-                                ? "bg-[#FF3F1A]/10 text-[#FF3F1A] border border-[#FF3F1A]/20"
-                                : "bg-[#ECECEC] text-[#212121]"
-                            )}
-                          >
-                            {canalesActivos.facebook ? "Activo" : "Inactivo"}
-                          </span>
-                          <Switch
-                            checked={canalesActivos.facebook}
-                            color="orange"
-                            onChange={(val) => toggleCanal("facebook", val)}
-                            label=""
-                          />
-                        </div>
-                      </div>
-
-                      <p className="mt-3.5 text-[14px] leading-relaxed text-[#212121]">
-                        Gestión de ventas, respuestas a comentarios de publicaciones y sincronización con Messenger.
-                      </p>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between border-t border-[#ECECEC] pt-4">
-                      <span className="text-[12px] text-gray-500 font-normal">
-                        Facebook Business
-                      </span>
-                      <button
-                        type="button"
-                        disabled={!canalesActivos.facebook}
-                        className="px-3.5 py-1.5 rounded-xl border border-[#ECECEC] hover:border-[#FF3F1A] text-[#212121] hover:text-[#FF3F1A] font-bold text-[12px] transition-colors disabled:opacity-50 cursor-pointer"
-                      >
-                        Conectar página
-                      </button>
-                    </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    Administración centralizada en Ajustes Generales
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-lg text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                    La configuración de WhatsApp, Instagram, Telegram y conectores externos se trasladó a Ajustes Generales de la organización para que esté disponible en toda la plataforma.
+                  </p>
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => navigate("/configuracion?tab=canales")}
+                      className="inline-flex items-center gap-2 rounded-xl bg-secondary-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-secondary-700 active:scale-95 cursor-pointer dark:bg-accent-300 dark:text-ink-body dark:hover:bg-accent-400"
+                    >
+                      <span>Ir a Canales en Ajustes Generales</span>
+                      <ArrowRightIcon className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               </BloqueConfig>

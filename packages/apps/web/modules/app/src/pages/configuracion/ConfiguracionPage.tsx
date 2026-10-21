@@ -10,41 +10,24 @@ import { ConfigShell } from "@/pages/config-layout";
 import { AparienciaTab } from "./AparienciaTab";
 import { GeneralOrgTab } from "./GeneralOrgTab";
 import { ModulosTab } from "@/pages/equipo";
+import { CanalesOrgTab } from "./CanalesOrgTab";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CENTRO DE CONFIGURACIÓN — /configuracion
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // Al ingresar sin parámetro (`/configuracion`), muestra el selector inicial de
-// TRES tarjetas:
+// CUATRO tarjetas:
 //   1. «Información de la sede» (nombre comercial, logo, país, moneda y rubro)
 //      — clave `general`, que es la que viaja en la URL
 //   2. «Módulos e integraciones» — clave `modulos`
-//   3. «Apariencia» — clave `apariencia`
-//
-// El rótulo visible y la CLAVE son independientes: la clave `general` se
-// conserva porque está en `?tab=general` y la leen guardas y tests; el rótulo
-// se cambió a «Información de la sede» porque «General» no describía su
-// contenido (06/10).
-//
-// ── Por qué «Apariencia» entró aquí (07/10) ───────────────────────────────
-//
-// El tema y las dos densidades se administraban desde cuatro sitios —el botón de
-// la cabecera, la configuración del asistente y la del canal— con tres
-// vocabularios, y dos de ellos no los leía nadie. Son preferencias de la
-// APLICACIÓN, no de un módulo, y esta es la pantalla de los ajustes que valen
-// para todo. Un módulo no es dueño de una preferencia global.
-//
-// ── Por qué las pestañas ya no se enlazan entre sí ────────────────────────
-//
-// Cada vista interna llevaba un «Ir a <la otra>» arriba a la derecha. Con dos
-// pestañas era un atajo razonable; con tres, el enlace elige arbitrariamente a
-// cuál de las dos otras lleva. Se retiró: el camino de vuelta al selector es uno
-// solo («Volver a Configuración») y desde ahí se elige.
+//   3. «Canales de mensajería» (WhatsApp, Telegram, Instagram, Facebook)
+//      — clave `canales`
+//   4. «Apariencia» — clave `apariencia`
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type ClaveConfig = "general" | "modulos" | "apariencia";
+export type ClaveConfig = "general" | "modulos" | "canales" | "apariencia";
 
 /** Cabecera de una vista interna: el camino de vuelta al selector. */
 const VolverAlSelector = ({ onVolver }: { onVolver: () => void }) => (
@@ -78,11 +61,19 @@ const TARJETAS_AJUSTES: {
   },
   {
     key: "modulos",
-    label: "Módulos e integraciones",
-    hint: "Herramientas activas, catálogo de extensiones y conectores externos.",
+    label: "Módulos de la plataforma",
+    hint: "Herramientas activas, catálogo de extensiones y funciones del sistema.",
     icono: PlugInIcon,
     accion: "Configurar",
-    palabrasClave: ["modulos", "integraciones", "extensiones", "servicios", "conectores", "whatsapp", "telegram", "funciones"],
+    palabrasClave: ["modulos", "extensiones", "servicios", "plataforma", "funciones"],
+  },
+  {
+    key: "canales",
+    label: "Canales de mensajería",
+    hint: "Conexión centralizada de WhatsApp, Telegram, Instagram y Facebook.",
+    icono: PlugInIcon,
+    accion: "Conectar",
+    palabrasClave: ["whatsapp", "telegram", "instagram", "facebook", "canales", "conectores", "mensajeria", "api", "webhooks", "chat"],
   },
   {
     key: "apariencia",
@@ -133,13 +124,13 @@ export const ConfiguracionPage = observer(() => {
     );
   }
 
-  // ── VISTA INTERNA: MÓDULOS E INTEGRACIONES ───────────────────────────────
+  // ── VISTA INTERNA: MÓDULOS DE LA PLATAFORMA ──────────────────────────────
   if (tab === "modulos") {
     return (
       <div className="mx-auto max-w-5xl pb-12">
         <PageMeta
-          title="Ajustes Generales · Módulos e integraciones"
-          description="Servicios y conexiones activas de la organización"
+          title="Ajustes Generales · Módulos de la plataforma"
+          description="Servicios y extensiones activas de la organización"
         />
 
         <VolverAlSelector onVolver={volverAlHub} />
@@ -147,10 +138,34 @@ export const ConfiguracionPage = observer(() => {
         <div className="animate-aparecer">
           <ConfigShell
             seccionKey="modulos"
-            titulo="Módulos e integraciones"
-            hint="Activa o desactiva capacidades y conecta servicios externos"
+            titulo="Módulos de la plataforma"
+            hint="Activa o desactiva capacidades instaladas en tu organización"
           >
             <ModulosTab />
+          </ConfigShell>
+        </div>
+      </div>
+    );
+  }
+
+  // ── VISTA INTERNA: CANALES DE MENSAJERÍA ──────────────────────────────────
+  if (tab === "canales") {
+    return (
+      <div className="mx-auto max-w-5xl pb-12">
+        <PageMeta
+          title="Ajustes Generales · Canales de mensajería"
+          description="Conexión centralizada de WhatsApp, Telegram, Instagram y Facebook"
+        />
+
+        <VolverAlSelector onVolver={volverAlHub} />
+
+        <div className="animate-aparecer">
+          <ConfigShell
+            seccionKey="canales"
+            titulo="Canales de mensajería"
+            hint="Centraliza la recepción de mensajes, pedidos y atención omnicanal"
+          >
+            <CanalesOrgTab />
           </ConfigShell>
         </div>
       </div>
