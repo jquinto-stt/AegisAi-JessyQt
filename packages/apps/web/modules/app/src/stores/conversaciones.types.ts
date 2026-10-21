@@ -116,6 +116,8 @@ export interface Mensaje {
   timestamp: string; // ISO 8601
   /** Módulo de dominio con el que se relaciona el mensaje (si aplica). */
   moduloContexto?: ModuloDestino;
+  /** Si es true, el mensaje es una nota interna entre operadores y no se envía al cliente. */
+  esNotaInterna?: boolean;
   /**
    * Datos de dominio referenciados por el mensaje. Solo primitivos/ids: NO se
    * incrusta la entidad Pedido, para respetar el encapsulamiento (invariante D2).

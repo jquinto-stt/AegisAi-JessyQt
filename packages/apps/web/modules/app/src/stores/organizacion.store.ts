@@ -713,7 +713,7 @@ export class OrganizacionStore {
     if (id === "pedidos") return this.esModuloActivo("pedidos");
     if (id === "inventarios") return this.esModuloActivo("inventarios");
     if (id === "asistente") return this.tieneConectorActivo("necto_ia");
-    if (id === "conversaciones") return this.tieneConectorActivo("whatsapp");
+    if (id === "conversaciones" || id === "whatsapp") return this.tieneConectorActivo("whatsapp");
     return false;
   }
 

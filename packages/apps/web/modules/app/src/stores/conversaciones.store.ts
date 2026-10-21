@@ -1190,6 +1190,35 @@ export class ConversacionesStore {
     else this.mensajesPorConv.set(convId, [mensaje]);
   }
 
+  /**
+   * Agrega una nota interna del equipo a la conversación.
+   * No se envía al cliente ni requiere WhatsApp conectado.
+   * Permite que los operadores dejen contexto operativo en el hilo.
+   */
+  agregarNotaInterna(convId: string, texto: string): Mensaje | null {
+    const conv = this.getConversacion(convId);
+    if (!conv) return null;
+    const limpio = texto.trim();
+    if (limpio === "") return null;
+
+    const mensaje: Mensaje = {
+      id: generarId(),
+      conversacionId: convId,
+      autor: "negocio",
+      contenido: { tipo: "texto", texto: limpio },
+      timestamp: nowIso(),
+      esNotaInterna: true,
+    };
+
+    const grupo = this.mensajesPorConv.get(convId);
+    if (grupo) grupo.push(mensaje);
+    else this.mensajesPorConv.set(convId, [mensaje]);
+
+    conv.ultimaActividad = nowIso();
+    this.persistir();
+    return mensaje;
+  }
+
   // ── Handoff: máquina de estados (tarea 3.6) ──────────────────────────────────
 
   /**

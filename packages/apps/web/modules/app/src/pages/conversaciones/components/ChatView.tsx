@@ -471,6 +471,39 @@ export const ChatView = observer(({
               );
             }
 
+            // ── 2.5 NOTA INTERNA DEL EQUIPO: Centro / Ancho destacado con fondo ámbar (no visible para cliente) ──
+            if (m.esNotaInterna) {
+              return (
+                <div key={m.id} className="animate-entrada-lista my-3 flex justify-center">
+                  <div className="w-full max-w-xl rounded-xl border border-amber-300/80 bg-amber-50/90 p-3.5 shadow-xs dark:border-amber-500/30 dark:bg-amber-950/20">
+                    <div className="mb-1.5 flex items-center justify-between gap-2 border-b border-amber-200/80 pb-1 text-xs dark:border-amber-500/20">
+                      <div className="flex items-center gap-1.5 font-semibold text-amber-900 dark:text-amber-300">
+                        <svg
+                          className="h-3.5 w-3.5"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        <span>Nota interna del equipo</span>
+                      </div>
+                      <span className="text-[11px] font-normal text-amber-700/80 dark:text-amber-400/80">
+                        Solo visible para operadores · {horaDe(m.timestamp)}
+                      </span>
+                    </div>
+                    <div className="text-sm leading-relaxed text-amber-950 dark:text-amber-100">
+                      <TextoMensajeFormateado texto={m.contenido.texto} />
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             // ── 3. ASESOR HUMANO (Equipo): DERECHA con Naranja NECTO (bg-brand-500) según Repo-prueba-master ──
             return (
               <div key={m.id} className="animate-entrada-lista flex justify-end">

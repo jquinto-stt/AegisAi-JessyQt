@@ -298,6 +298,9 @@ const SidebarContent = observer(() => {
   const puedeVerSeccion = (modulo: Modulo, seccionId: string) =>
     sessionStore.puedeVerSeccion(modulo, seccionId);
   const puedeGestionarEquipo = sessionStore.hasPermission("team.manage");
+  const puedeVerCanales = sessionStore.hasPermission("channels.read");
+  const puedeGestionarCanales = sessionStore.hasPermission("channels.manage");
+  const esRutaCanales = (path: string) => pathname === path || pathname.startsWith(`${path}/`) || pathname.startsWith(`${path}?`);
   const esRutaConHijas = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
 
   /**
@@ -394,6 +397,8 @@ const SidebarContent = observer(() => {
                     <CartIcon className="h-4 w-4" />
                   ) : flyoutModulo === "inventarios" ? (
                     <BoxIcon className="h-4 w-4" />
+                  ) : flyoutModulo === "whatsapp" ? (
+                    <ChatIcon className="h-4 w-4" />
                   ) : (
                     <Cog6ToothIcon className="h-4 w-4" />
                   )}
@@ -403,6 +408,8 @@ const SidebarContent = observer(() => {
                     ? CATALOGO_MODULOS.pedidos.nombreCorto
                     : flyoutModulo === "inventarios"
                     ? CATALOGO_MODULOS.inventarios.nombreCorto
+                    : flyoutModulo === "whatsapp"
+                    ? "WhatsApp"
                     : "Organización"}
                 </span>
               </div>
@@ -437,6 +444,67 @@ const SidebarContent = observer(() => {
                   </span>
                   <span className="truncate">Ajustes Generales</span>
                 </Link>
+              ) : flyoutModulo === "whatsapp" ? (
+                <>
+                  <Link
+                    to="/conversaciones"
+                    onClick={() => setFlyoutModulo(null)}
+                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
+                      pathname === "/conversaciones" || pathname.startsWith("/conversaciones?")
+                        ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    <span className="text-base text-gray-500 dark:text-gray-400 group-hover:scale-110">
+                      <ChatIcon className="size-5" />
+                    </span>
+                    <span className="truncate">Bandeja de chats</span>
+                  </Link>
+                  <Link
+                    to="/conversaciones/historial"
+                    onClick={() => setFlyoutModulo(null)}
+                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
+                      pathname.startsWith("/conversaciones/historial")
+                        ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    <span className="text-base text-gray-500 dark:text-gray-400 group-hover:scale-110">
+                      <TimeIcon className="size-5" />
+                    </span>
+                    <span className="truncate">Historial de atención</span>
+                  </Link>
+                  <Link
+                    to="/conversaciones/analitica"
+                    onClick={() => setFlyoutModulo(null)}
+                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
+                      pathname.startsWith("/conversaciones/analitica")
+                        ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    <span className="text-base text-gray-500 dark:text-gray-400 group-hover:scale-110">
+                      <PieChartIcon className="size-5" />
+                    </span>
+                    <span className="truncate">Analítica</span>
+                  </Link>
+                  {puedeGestionarCanales && (
+                    <Link
+                      to="/conversaciones/config"
+                      onClick={() => setFlyoutModulo(null)}
+                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
+                        pathname.startsWith("/conversaciones/config")
+                          ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      <span className="text-base text-gray-500 dark:text-gray-400 group-hover:scale-110">
+                        <PlugInIcon className="size-5" />
+                      </span>
+                      <span className="truncate">Configuración</span>
+                    </Link>
+                  )}
+                </>
               ) : (
                 ITEMS_MODULO[flyoutModulo as Modulo]
                   .flatMap(({ seccionId, Icono }) => {
@@ -511,6 +579,52 @@ const SidebarContent = observer(() => {
             );
           })}
 
+          {/* Módulo WhatsApp — primer nivel */}
+          {puedeVerCanales && (
+            <div>
+              <MenuSectionHeader
+                title="WhatsApp"
+                collapsible
+                isCollapsed={estaColapsado("whatsapp")}
+                onToggle={() => toggleSeccion("whatsapp")}
+              />
+              <div
+                className={`transition-all duration-200 ease-in-out overflow-hidden ${
+                  estaColapsado("whatsapp") ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
+                }`}
+              >
+                <ul className="flex flex-col gap-1">
+                  <MenuItem
+                    icon={<ChatIcon className="size-5" />}
+                    name="Bandeja de chats"
+                    path="/conversaciones"
+                    isActive={esRutaCanales}
+                  />
+                  <MenuItem
+                    icon={<TimeIcon className="size-5" />}
+                    name="Historial de atención"
+                    path="/conversaciones/historial"
+                    isActive={esRutaCanales}
+                  />
+                  <MenuItem
+                    icon={<PieChartIcon className="size-5" />}
+                    name="Analítica"
+                    path="/conversaciones/analitica"
+                    isActive={esRutaCanales}
+                  />
+                  {puedeGestionarCanales && (
+                    <MenuItem
+                      icon={<PlugInIcon className="size-5" />}
+                      name="Configuración"
+                      path="/conversaciones/config"
+                      isActive={esRutaCanales}
+                    />
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
+
           {/* Organización — modo barra expandida */}
           {puedeGestionarEquipo && (
             <div>
@@ -565,6 +679,25 @@ const SidebarContent = observer(() => {
               </button>
             );
           })}
+
+          {/* Botón WhatsApp en Rail Mode */}
+          {puedeVerCanales && (
+            <button
+              type="button"
+              title="WhatsApp"
+              aria-label="WhatsApp"
+              onClick={() => setFlyoutModulo(flyoutModulo === "whatsapp" ? null : "whatsapp")}
+              className={`group flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ease-out hover:scale-110 active:scale-95 cursor-pointer ${
+                pathname.startsWith("/conversaciones") || flyoutModulo === "whatsapp"
+                  ? "text-[#190088] dark:text-[#97D6DF] scale-105"
+                  : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF] hover:bg-gray-100/70 dark:hover:bg-white/5"
+              }`}
+            >
+              <span className="h-5 w-5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
+                <ChatIcon className="h-5 w-5" />
+              </span>
+            </button>
+          )}
 
           {puedeGestionarEquipo && (
             <button

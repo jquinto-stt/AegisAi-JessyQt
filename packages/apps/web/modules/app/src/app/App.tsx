@@ -150,7 +150,7 @@ export default function App() {
         <Route path="/pedidos/catalogo" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><CatalogoPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/crear" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><CrearPedidoPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/historial" element={<Navigate to="/pedidos/analitica?vista=historial" replace />} />
-        <Route path="/pedidos/chats" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/chats" element={<Navigate to="/conversaciones" replace />} />
         <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="team.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/config" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/operadores" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="team.read"><EquipoPage modulo="pedidos" /></CapabilityGuard></ModuloGuard>} />
@@ -194,11 +194,13 @@ export default function App() {
         <Route path="/asistente" element={<ModuloGuard modulo="asistente"><CapabilityGuard capacidad="assistant.use"><AsistentePage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/asistente/config" element={<ModuloGuard modulo="asistente"><CapabilityGuard capacidad="assistant.use"><AsistenteConfigPage /></CapabilityGuard></ModuloGuard>} />
 
-        {/* Plugin Canales WhatsApp / Chats en Pedidos */}
-        <Route path="/conversaciones" element={<Navigate to="/pedidos/chats" replace />} />
+        {/* Módulo Canales WhatsApp / Conversaciones */}
+        <Route path="/conversaciones" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/conversaciones/historial" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><HistorialAtencionPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/conversaciones/analitica" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><AnaliticaConversacionesPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/conversaciones/config" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.manage"><ConversacionesConfigPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/whatsapp" element={<Navigate to="/conversaciones" replace />} />
+        <Route path="/pedidos/chats" element={<Navigate to="/conversaciones" replace />} />
         <Route path="/dashboard" element={<Navigate to="/pedidos/inicio" replace />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/perfil" element={<ProfilePage />} />

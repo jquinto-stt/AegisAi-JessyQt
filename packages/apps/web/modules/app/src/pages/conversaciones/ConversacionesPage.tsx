@@ -12,7 +12,7 @@ import { PanelContexto } from "@/pages/conversaciones/components/PanelContexto";
 import { WhatsAppIcon } from "@/pages/conversaciones/components/CanalAvatar";
 
 const obtenerEstadoCanales = () => {
-  const waStore = organizacionStore.esConectorActivo("pedidos", "whatsapp");
+  const waStore = organizacionStore.tieneConectorActivo("whatsapp");
   try {
     const guardado = localStorage.getItem("pedidos_canales_integraciones");
     if (guardado) {
@@ -109,14 +109,14 @@ export const ConversacionesPage = observer(() => {
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden font-sans text-[#212121] dark:text-white/90">
       <PageMeta
-        title="Chats · Pedidos"
-        description="Consola de mensajería y WhatsApp en Pedidos — bandeja, chat y contexto del contacto"
+        title="WhatsApp · Consola de Atención"
+        description="Consola de mensajería y atención multicanal — bandeja, chat y contexto de clientes"
       />
 
       {/* ── Cabecera de la página ────────────────────────────────────────── */}
       <div className="shrink-0 mb-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <h1 className="text-2xl font-bold text-[#190088] dark:text-white/90 tracking-tight">Chats</h1>
+          <h1 className="text-2xl font-bold text-[#190088] dark:text-white/90 tracking-tight">WhatsApp</h1>
           {/* Indicador de tiempo real */}
           {conversacionesStore.origenDatos === "real" && enVivo && (
             <span
@@ -159,9 +159,9 @@ export const ConversacionesPage = observer(() => {
               </a>
             ) : (
               <Link
-                to="/pedidos/config?seccion=integraciones"
+                to="/configuracion?tab=canales"
                 className="group inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-2.5 py-1 text-[12px] font-medium text-amber-900 transition-all hover:bg-amber-100 hover:border-amber-400 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
-                title="Canales de mensajería desconectados. Configurar en Integraciones"
+                title="Canales de mensajería desconectados. Configurar en Ajustes Generales"
               >
                 <span className="relative flex h-2 w-2">
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
