@@ -149079,7 +149079,35 @@ No hay artículos por debajo del punto mínimo de reorden en este momento. El in
       const entregaStr = draftParaCrear.modalidad === "domicilio" ? `Domicilio en <i>${draftParaCrear.direccion}</i>` : `Retiro en local`;
       const destinatarioStr = draftParaCrear.destinatario && draftParaCrear.destinatario.tipo === "tercero" ? `
 <b>Destinatario:</b> ${draftParaCrear.destinatario.nombre || "Otra persona"} (Tel: ${draftParaCrear.destinatario.telefono || "Sin especificar"}) \uD83C\uDF81` : "";
-      const checkoutLink = `${baseUrl}/checkout/${pedidoCreado.numero}?cliente=${encodeURIComponent(nombreCliente)}&total=${pedidoCreado.total}&email=${encodeURIComponent(clientePerfilSiguiente?.email || "")}&chatId=${encodeURIComponent(chatId)}&modalidad=${encodeURIComponent(draftParaCrear.modalidad || "retiro")}&direccion=${encodeURIComponent(draftParaCrear.direccion || "")}`;
+      let checkoutLink = `${baseUrl}/checkout/${pedidoCreado.numero}?cliente=${encodeURIComponent(nombreCliente)}&total=${pedidoCreado.total}&email=${encodeURIComponent(clientePerfilSiguiente?.email || "")}&chatId=${encodeURIComponent(chatId)}&modalidad=${encodeURIComponent(draftParaCrear.modalidad || "retiro")}&direccion=${encodeURIComponent(draftParaCrear.direccion || "")}`;
+      let nombrePasarela = "GlobalPay Redeban";
+      try {
+        const paymentApiUrl = process.env.PAYMENT_API_URL || "http://localhost:8081";
+        const rawPhone = (clientePerfilSiguiente?.telefono || "+573000000000").trim();
+        const formattedPhone = rawPhone.startsWith("+") ? rawPhone : `+57${rawPhone}`;
+        const paymentRes = await fetch(`${paymentApiUrl}/payment-orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: Math.round(Number(pedidoCreado.total) * 100),
+            currency: "COP",
+            orderId: pedidoCreado.numero,
+            customerName: nombreCliente,
+            phoneNumber: formattedPhone,
+            channel: "URL"
+          })
+        });
+        if (paymentRes.ok) {
+          const paymentData = await paymentRes.json();
+          if (paymentData?.paymentURL) {
+            checkoutLink = paymentData.paymentURL;
+            nombrePasarela = "PayZen / Necto Pay";
+            console.info(`[TelegramHandler] ✅ Orden de pago generada en microservicio: ${checkoutLink}`);
+          }
+        }
+      } catch (err) {
+        console.warn("[TelegramHandler] Microservicio de pagos 8081 no disponible, usando fallback:", err);
+      }
       textoFinal = `<b>PEDIDO REGISTRADO CON ÉXITO</b>
 <blockquote>` + `<b>Orden:</b> <code>#${pedidoCreado.numero}</code>
 ` + `<b>Cliente:</b> ${nombreCliente}
@@ -149089,17 +149117,17 @@ No hay artículos por debajo del punto mínimo de reorden en este momento. El in
 ` + `<b>Total a pagar:</b> <code>$${totalFmt} COP</code>
 ` + `<b>Modalidad:</b> ${entregaStr}${destinatarioStr}</blockquote>
 
-` + `<b>Enlace de pago seguro (GlobalPay Redeban):</b>
+` + `<b>Enlace de pago seguro (${nombrePasarela}):</b>
 ${checkoutLink}
 
 ` + `<i>Acepta Tarjeta de crédito/débito y PSE. Una vez confirmado el pago, iniciamos la preparación de tu orden.</i>`;
       botonesFinales = ["Estado de mis pedidos", "Hacer otro pedido", "Hablar con asesor"];
       borradorFinal = null;
       nextState = "IDLE";
-      if (baseUrl.startsWith("https://")) {
+      if (checkoutLink.startsWith("https://") || checkoutLink.startsWith("http://")) {
         customReplyMarkup = {
           inline_keyboard: [
-            [{ text: "\uD83D\uDCB3 Pagar con GlobalPay Redeban", url: checkoutLink }]
+            [{ text: `\uD83D\uDCB3 Pagar con ${nombrePasarela}`, url: checkoutLink }]
           ]
         };
       }

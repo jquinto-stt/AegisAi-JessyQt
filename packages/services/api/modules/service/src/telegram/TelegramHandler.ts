@@ -416,7 +416,38 @@ export class TelegramHandler {
         ? `\n<b>Destinatario:</b> ${draftParaCrear.destinatario.nombre || 'Otra persona'} (Tel: ${draftParaCrear.destinatario.telefono || 'Sin especificar'}) 🎁`
         : '';
 
-      const checkoutLink = `${baseUrl}/checkout/${pedidoCreado.numero}?cliente=${encodeURIComponent(nombreCliente)}&total=${pedidoCreado.total}&email=${encodeURIComponent(clientePerfilSiguiente?.email || '')}&chatId=${encodeURIComponent(chatId)}&modalidad=${encodeURIComponent(draftParaCrear.modalidad || 'retiro')}&direccion=${encodeURIComponent(draftParaCrear.direccion || '')}`;
+      let checkoutLink = `${baseUrl}/checkout/${pedidoCreado.numero}?cliente=${encodeURIComponent(nombreCliente)}&total=${pedidoCreado.total}&email=${encodeURIComponent(clientePerfilSiguiente?.email || '')}&chatId=${encodeURIComponent(chatId)}&modalidad=${encodeURIComponent(draftParaCrear.modalidad || 'retiro')}&direccion=${encodeURIComponent(draftParaCrear.direccion || '')}`;
+      let nombrePasarela = 'GlobalPay Redeban';
+
+      // Integración con microservicio PayZen / Necto Pay en http://localhost:8081
+      try {
+        const paymentApiUrl = (process.env as any)['PAYMENT_API_URL'] || 'http://localhost:8081';
+        const rawPhone = (clientePerfilSiguiente?.telefono || '+573000000000').trim();
+        const formattedPhone = rawPhone.startsWith('+') ? rawPhone : `+57${rawPhone}`;
+        const paymentRes = await fetch(`${paymentApiUrl}/payment-orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: Math.round(Number(pedidoCreado.total) * 100),
+            currency: 'COP',
+            orderId: pedidoCreado.numero,
+            customerName: nombreCliente,
+            phoneNumber: formattedPhone,
+            channel: 'URL',
+          }),
+        });
+
+        if (paymentRes.ok) {
+          const paymentData = (await paymentRes.json()) as any;
+          if (paymentData?.paymentURL) {
+            checkoutLink = paymentData.paymentURL;
+            nombrePasarela = 'PayZen / Necto Pay';
+            console.info(`[TelegramHandler] ✅ Orden de pago generada en microservicio: ${checkoutLink}`);
+          }
+        }
+      } catch (err) {
+        console.warn('[TelegramHandler] Microservicio de pagos 8081 no disponible, usando fallback:', err);
+      }
 
       textoFinal = `<b>PEDIDO REGISTRADO CON ÉXITO</b>\n<blockquote>` +
         `<b>Orden:</b> <code>#${pedidoCreado.numero}</code>\n` +
@@ -426,17 +457,17 @@ export class TelegramHandler {
         `──────────────────────────\n` +
         `<b>Total a pagar:</b> <code>$${totalFmt} COP</code>\n` +
         `<b>Modalidad:</b> ${entregaStr}${destinatarioStr}</blockquote>\n\n` +
-        `<b>Enlace de pago seguro (GlobalPay Redeban):</b>\n${checkoutLink}\n\n` +
+        `<b>Enlace de pago seguro (${nombrePasarela}):</b>\n${checkoutLink}\n\n` +
         `<i>Acepta Tarjeta de crédito/débito y PSE. Una vez confirmado el pago, iniciamos la preparación de tu orden.</i>`;
 
       botonesFinales = ['Estado de mis pedidos', 'Hacer otro pedido', 'Hablar con asesor'];
       borradorFinal = null;
       nextState = 'IDLE';
 
-      if (baseUrl.startsWith('https://')) {
+      if (checkoutLink.startsWith('https://') || checkoutLink.startsWith('http://')) {
         customReplyMarkup = {
           inline_keyboard: [
-            [{ text: '💳 Pagar con GlobalPay Redeban', url: checkoutLink }],
+            [{ text: `💳 Pagar con ${nombrePasarela}`, url: checkoutLink }],
           ],
         };
       }
