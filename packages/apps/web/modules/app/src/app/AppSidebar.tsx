@@ -325,6 +325,7 @@ const SidebarContent = observer(() => {
 
   const [flyoutModulo, setFlyoutModulo] = useState<string | null>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
+  const railRef = useRef<HTMLDivElement>(null);
 
   // Cerrar flyout al cambiar de ruta, al expandir la barra, o con Escape
   useEffect(() => {
@@ -338,6 +339,28 @@ const SidebarContent = observer(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // Cerrar flyout al hacer click en cualquier parte fuera del submenú
+  useEffect(() => {
+    if (!flyoutModulo) return;
+
+    const handleClickOutside = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (
+        flyoutRef.current &&
+        !flyoutRef.current.contains(target) &&
+        railRef.current &&
+        !railRef.current.contains(target)
+      ) {
+        setFlyoutModulo(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => {
+      document.removeEventListener("pointerdown", handleClickOutside);
+    };
+  }, [flyoutModulo]);
 
   const toggleSeccion = (id: string) => {
     setColapsados((prev) => {
@@ -359,17 +382,10 @@ const SidebarContent = observer(() => {
 
       {/* FLYOUT SUBMENU PANEL (Flotante a la derecha del rail contraído) */}
       {!showExpanded && flyoutModulo && (
-        <>
-          {/* Backdrop sutil para cerrar al hacer clic afuera */}
-          <div
-            className="fixed inset-0 z-40 bg-black/10 dark:bg-black/30 backdrop-blur-[1px]"
-            onClick={() => setFlyoutModulo(null)}
-          />
-
-          <div
-            ref={flyoutRef}
-            className="fixed left-[72px] xl:left-[76px] top-1/2 -translate-y-1/2 z-50 w-64 rounded-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/90 dark:border-white/10 shadow-2xl p-2.5 flex flex-col gap-1.5 animate-aparecer"
-          >
+        <div
+          ref={flyoutRef}
+          className="fixed left-[72px] xl:left-[76px] top-1/2 -translate-y-1/2 z-50 w-64 rounded-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/90 dark:border-white/10 shadow-2xl p-2.5 flex flex-col gap-1.5 animate-aparecer"
+        >
             {/* Cabecera del flyout */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-white/5">
               <div className="flex items-center gap-2">
@@ -451,7 +467,6 @@ const SidebarContent = observer(() => {
               )}
             </div>
           </div>
-        </>
       )}
 
       {showExpanded ? (
@@ -524,7 +539,7 @@ const SidebarContent = observer(() => {
         </div>
       ) : (
         /* RAIL MODE: En barra contraída, solo los iconos principales de cada módulo, centrados verticalmente */
-        <div className="my-auto flex flex-col items-center justify-center gap-3 w-full py-2">
+        <div ref={railRef} className="my-auto flex flex-col items-center justify-center gap-3 w-full py-2">
           {modulosOperablesDeSesion(organizacionStore.modulosActivos).map((modulo) => {
             const info = CATALOGO_MODULOS[modulo];
             const isActivo = pathname.startsWith(`/${modulo}`);
