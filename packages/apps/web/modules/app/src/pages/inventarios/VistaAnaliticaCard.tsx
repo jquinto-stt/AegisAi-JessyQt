@@ -57,19 +57,23 @@ export function VistaAnaliticaCard({
   const [periodoActivo, setPeriodoActivo] = useState<Periodo>("year");
   const [celdaHover, setCeldaHover] = useState<{ fila: number; colIdx: number; valor: number } | null>(null);
 
-  // Mapeo de colores por nivel (exactos al diseño proporcionado)
+  // Paleta oficial NECTO:
+  // Nivel 1 (0-200): #ECECEC (Gris claro)
+  // Nivel 2 (200-1000): #97D6DF al 45% (Cyan suave)
+  // Nivel 3 (1000-2000): #97D6DF pleno (Cyan NECTO)
+  // Nivel 4 (2000-3000): #190088 (Azul profundo NECTO)
   const colorNivel = (nivel: number) => {
     switch (nivel) {
       case 1:
-        return "bg-[#EEF1FE] dark:bg-[#1E2340] border-transparent";
+        return "bg-[#ECECEC] dark:bg-white/[0.08]";
       case 2:
-        return "bg-[#C8D4FD] dark:bg-[#2C3875] border-transparent";
+        return "bg-[#97D6DF]/45 dark:bg-[#97D6DF]/30";
       case 3:
-        return "bg-[#8CA2FF] dark:bg-[#4357B8] border-transparent";
+        return "bg-[#97D6DF] dark:bg-[#97D6DF]/75";
       case 4:
-        return "bg-[#2A23F7] dark:bg-[#3D35FA] border-transparent";
+        return "bg-[#190088] dark:bg-[#97D6DF]";
       default:
-        return "bg-[#EEF1FE] dark:bg-[#1E2340] border-transparent";
+        return "bg-[#ECECEC] dark:bg-white/[0.08]";
     }
   };
 
@@ -90,14 +94,14 @@ export function VistaAnaliticaCard({
 
   return (
     <section
-      className="relative w-full rounded-3xl border border-gray-100 bg-white p-6 sm:p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900/60 font-sans"
+      className="relative w-full rounded-2xl border border-[#ECECEC] bg-white p-5 sm:p-6 shadow-theme-xs dark:border-white/10 dark:bg-white/[0.03] font-sans"
       aria-labelledby="analytic-view-title"
     >
       {/* ── Encabezado ────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2
           id="analytic-view-title"
-          className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-white"
+          className="text-[24px] font-bold tracking-tight text-[#190088] dark:text-white"
         >
           Analytic View
         </h2>
@@ -113,13 +117,13 @@ export function VistaAnaliticaCard({
                   type="button"
                   onClick={() => setPeriodoActivo(p.id)}
                   className={cx(
-                    "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs sm:text-sm font-medium transition-all cursor-pointer select-none",
+                    "flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] transition-all cursor-pointer select-none",
                     activo
-                      ? "border border-gray-200 bg-white text-gray-900 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                      : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white",
+                      ? "border border-[#ECECEC] bg-white text-[#190088] font-bold shadow-xs dark:border-white/20 dark:bg-white/10 dark:text-white"
+                      : "text-[#212121]/70 hover:text-[#212121] font-normal dark:text-[#ECECEC]/70 dark:hover:text-white",
                   )}
                 >
-                  {activo && <span className="size-2 rounded-full bg-[#2A23F7] dark:bg-[#3D35FA]" />}
+                  {activo && <span className="size-2 rounded-full bg-[#FF3F1A]" />}
                   <span>{p.etiqueta}</span>
                 </button>
               );
@@ -133,7 +137,7 @@ export function VistaAnaliticaCard({
               onClick={onVerDetalle}
               title="Ver reporte detallado de movimientos"
               aria-label="Ver reporte detallado"
-              className="flex size-8 items-center justify-center rounded-full border border-gray-100 bg-gray-50 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer"
+              className="flex size-8 items-center justify-center rounded-full border border-[#ECECEC] bg-white text-[#190088] transition-colors hover:border-[#FF3F1A] hover:text-[#FF3F1A] dark:border-white/10 dark:bg-white/[0.05] dark:text-white dark:hover:border-[#FF3F1A] cursor-pointer"
             >
               <ArrowUpRight className="h-4 w-4" />
             </button>
@@ -145,33 +149,33 @@ export function VistaAnaliticaCard({
       <div className="mt-6 sm:mt-8 grid grid-cols-3 items-start gap-4">
         {/* Minimal stock */}
         <div>
-          <div className="flex items-center gap-1 text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <div className="flex items-center gap-1 text-[36px] font-bold tracking-tight text-[#190088] dark:text-white leading-10">
             <span>{stockMinimo}</span>
-            <span className="text-xs sm:text-sm font-semibold text-gray-400 dark:text-gray-500">↗</span>
+            <span className="text-[14px] font-bold text-[#97D6DF]">↗</span>
           </div>
-          <p className="mt-1 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-[14px] font-normal text-[#212121]/70 dark:text-[#ECECEC]/70">
             Minimal stock
           </p>
         </div>
 
         {/* Average stock */}
         <div className="text-center sm:text-left">
-          <div className="flex items-center justify-center sm:justify-start gap-1 text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <div className="flex items-center justify-center sm:justify-start gap-1 text-[36px] font-bold tracking-tight text-[#190088] dark:text-white leading-10">
             <span>{stockPromedio}</span>
-            <span className="text-xs sm:text-sm font-semibold text-gray-400 dark:text-gray-500">↗</span>
+            <span className="text-[14px] font-bold text-[#97D6DF]">↗</span>
           </div>
-          <p className="mt-1 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-[14px] font-normal text-[#212121]/70 dark:text-[#ECECEC]/70">
             Average stock
           </p>
         </div>
 
         {/* Maximum stock */}
         <div className="text-right sm:text-left">
-          <div className="flex items-center justify-end sm:justify-start gap-1 text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <div className="flex items-center justify-end sm:justify-start gap-1 text-[36px] font-bold tracking-tight text-[#190088] dark:text-white leading-10">
             <span>{stockMaximo}</span>
-            <span className="text-xs sm:text-sm font-semibold text-gray-400 dark:text-gray-500">↗</span>
+            <span className="text-[14px] font-bold text-[#97D6DF]">↗</span>
           </div>
-          <p className="mt-1 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-[14px] font-normal text-[#212121]/70 dark:text-[#ECECEC]/70">
             Maximum stock
           </p>
         </div>
@@ -185,7 +189,7 @@ export function VistaAnaliticaCard({
             {[4, 3, 2, 1].map((fila) => (
               <div key={fila} className="flex items-center gap-3">
                 {/* Etiqueta del eje Y */}
-                <span className="w-4 shrink-0 text-right text-xs font-medium text-gray-400 dark:text-gray-500 select-none">
+                <span className="w-4 shrink-0 text-right text-[12px] font-light text-[#212121]/60 dark:text-[#ECECEC]/60 select-none">
                   {fila}
                 </span>
 
@@ -202,13 +206,13 @@ export function VistaAnaliticaCard({
                         onMouseEnter={() => setCeldaHover({ fila, colIdx, valor: nivel })}
                         onMouseLeave={() => setCeldaHover(null)}
                         className={cx(
-                          "relative h-10 sm:h-12 w-full rounded-xl sm:rounded-2xl transition-transform hover:scale-105 cursor-pointer",
+                          "relative h-10 sm:h-12 w-full rounded-xl transition-transform hover:scale-105 cursor-pointer",
                           colorNivel(nivel),
                         )}
                         title={`${m.nombre} (Semana ${fila}): ${rangoTexto(nivel)} unidades`}
                       >
                         {esHover && (
-                          <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1 text-[11px] font-medium text-white shadow-lg pointer-events-none dark:bg-gray-100 dark:text-gray-900">
+                          <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap rounded-lg bg-[#212121] px-2.5 py-1 text-[12px] font-normal text-white shadow-lg pointer-events-none dark:bg-white dark:text-[#212121]">
                             {m.etiqueta} W{fila}: {rangoTexto(nivel)}
                           </div>
                         )}
@@ -223,7 +227,7 @@ export function VistaAnaliticaCard({
           {/* Eje X (Nombres de los meses) */}
           <div className="mt-3 flex items-center gap-3">
             <span className="w-4 shrink-0" aria-hidden />
-            <div className="grid flex-1 grid-cols-12 gap-2.5 text-center text-xs font-medium text-gray-400 dark:text-gray-500 select-none">
+            <div className="grid flex-1 grid-cols-12 gap-2.5 text-center text-[12px] font-normal text-[#212121]/70 dark:text-[#ECECEC]/70 select-none">
               {MESES.map((m) => (
                 <span key={m.clave}>{m.etiqueta}</span>
               ))}
@@ -233,28 +237,28 @@ export function VistaAnaliticaCard({
       </div>
 
       {/* ── Leyenda inferior (Transaction Stock) ─────────────── */}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-gray-500 dark:text-gray-400 select-none">
-        <span className="font-semibold text-gray-800 dark:text-gray-200">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-[12px] font-normal text-[#212121]/80 dark:text-[#ECECEC]/80 select-none">
+        <span className="font-bold text-[#190088] dark:text-white">
           Transaction Stock
         </span>
 
         <div className="flex items-center gap-2">
-          <span className="size-3.5 rounded bg-[#EEF1FE] dark:bg-[#1E2340]" />
+          <span className="size-3.5 rounded bg-[#ECECEC] dark:bg-white/[0.08]" />
           <span>(0 - 200)</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="size-3.5 rounded bg-[#C8D4FD] dark:bg-[#2C3875]" />
+          <span className="size-3.5 rounded bg-[#97D6DF]/45 dark:bg-[#97D6DF]/30" />
           <span>(200 - 1,000)</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="size-3.5 rounded bg-[#8CA2FF] dark:bg-[#4357B8]" />
+          <span className="size-3.5 rounded bg-[#97D6DF] dark:bg-[#97D6DF]/75" />
           <span>(1,000 - 2,000)</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="size-3.5 rounded bg-[#2A23F7] dark:bg-[#3D35FA]" />
+          <span className="size-3.5 rounded bg-[#190088] dark:bg-[#97D6DF]" />
           <span>(2,000 - 3,000)</span>
         </div>
       </div>

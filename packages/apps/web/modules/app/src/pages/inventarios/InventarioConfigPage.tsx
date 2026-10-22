@@ -324,14 +324,14 @@ export const InventarioConfigPage = observer(() => {
       >
         {/* Banner de mensajes de estado */}
         {guardado && (
-          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300 flex items-center gap-2 text-sm font-semibold animate-fadeIn">
+          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300 flex items-center gap-2 text-[14px] font-bold animate-fadeIn">
             <CheckLineIcon className="w-5 h-5" />
             Cambios guardados correctamente en la configuración de Inventario.
           </div>
         )}
 
         {mensajeError && (
-          <div className="p-4 rounded-xl bg-error-50 border border-error-200 text-error-800 dark:bg-error-950/40 dark:border-error-800 dark:text-error-300 flex items-center gap-2 text-sm font-semibold animate-fadeIn">
+          <div className="p-4 rounded-xl bg-error-50 border border-error-200 text-error-800 dark:bg-error-950/40 dark:border-error-800 dark:text-error-300 flex items-center gap-2 text-[14px] font-bold animate-fadeIn">
             <AlertHexaIcon className="w-5 h-5 text-error-600" />
             {mensajeError}
           </div>

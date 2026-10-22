@@ -289,13 +289,13 @@ export function TextoMovimiento({ tipo }: { tipo: TipoMovimiento }) {
 
 /** Pestañas agrupadas en píldoras con contador en badge suave, diseño unificado con Tablero y NECTO. */
 export function Pestanas<T extends string>({
-  valor,
   opciones,
+  valor,
   onCambio,
   className,
 }: {
-  valor: T;
   opciones: { valor: T; etiqueta: string; cuenta?: number }[];
+  valor: T;
   onCambio: (v: T) => void;
   className?: string;
 }) {
@@ -303,7 +303,7 @@ export function Pestanas<T extends string>({
     <div
       role="tablist"
       className={cx(
-        "flex w-fit max-w-full items-center gap-1.5 overflow-x-auto rounded-2xl border border-gray-200/70 bg-gray-50 p-1.5 dark:border-gray-800/60 dark:bg-gray-800/40 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0",
+        "flex w-fit max-w-full items-center gap-1.5 overflow-x-auto rounded-2xl border border-[#ECECEC] bg-[#ECECEC]/30 p-1.5 dark:border-white/10 dark:bg-white/[0.03] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0 font-sans",
         className,
       )}
     >
@@ -317,20 +317,20 @@ export function Pestanas<T extends string>({
             type="button"
             onClick={() => onCambio(o.valor)}
             className={cx(
-              "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap shrink-0 cursor-pointer select-none",
+              "flex items-center gap-2 rounded-xl px-3.5 py-2 text-[12px] sm:text-[14px] transition-all whitespace-nowrap shrink-0 cursor-pointer select-none",
               activa
-                ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white font-semibold"
-                : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white",
+                ? "bg-white text-[#212121] shadow-theme-xs dark:bg-white/10 dark:text-white font-bold"
+                : "text-[#212121]/70 hover:text-[#212121] dark:text-[#ECECEC]/70 dark:hover:text-white font-normal",
             )}
           >
             <span className="whitespace-nowrap">{o.etiqueta}</span>
             {o.cuenta !== undefined && (
               <span
                 className={cx(
-                  "flex size-5.5 min-w-[22px] px-1.5 items-center justify-center rounded-full text-xs shrink-0 tabular-nums",
+                  "flex size-5.5 min-w-[22px] px-1.5 items-center justify-center rounded-full text-[12px] shrink-0 tabular-nums",
                   activa
-                    ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400 font-bold"
-                    : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300 font-semibold",
+                    ? "bg-[#97D6DF]/20 text-[#190088] dark:bg-[#97D6DF]/30 dark:text-[#97D6DF] font-bold"
+                    : "bg-[#ECECEC] text-[#212121]/70 dark:bg-white/10 dark:text-white/80 font-normal",
                 )}
               >
                 {o.cuenta}
