@@ -77,7 +77,8 @@ const ETIQUETA_VISTA: Record<EstadoStock, string> = {
 };
 
 const TONO_VISTA: Record<EstadoStock, "exito" | "aviso" | "error" | "neutro"> = {
-  normal: "exito",
+  // Solo lo que pide atención lleva color; "Disponible" y "Exceso" quedan en gris.
+  normal: "neutro",
   bajo: "aviso",
   agotado: "error",
   exceso: "neutro",
@@ -701,6 +702,16 @@ export const ArticulosPage = observer(function ArticulosPage() {
                     </span>
                     <ChevronRight className="cat-card__chev" aria-hidden />
                   </span>
+                  {a.activo && (
+                    <span className="cat-card__level">
+                      <span className="flex min-w-0 flex-1">
+                        <NivelStock stock={stockTotal(a)} puntoReorden={a.puntoReorden} stockMaximo={a.stockMaximo} estado={estadoStock(a)} ancho="w-full" />
+                      </span>
+                      <span className="cat-card__range">
+                        mín. {formatearEntero(a.puntoReorden)} · máx. {formatearEntero(a.stockMaximo)}
+                      </span>
+                    </span>
+                  )}
                   <span className="cat-card__stats">
                     <span className="cat-stat">
                       <span className="cat-stat__label">Existencia</span>

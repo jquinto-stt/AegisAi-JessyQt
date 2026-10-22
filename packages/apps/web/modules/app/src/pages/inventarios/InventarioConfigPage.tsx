@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useSearchParams } from "react-router";
 import { PageMeta } from "@/shell/meta";
@@ -19,13 +19,16 @@ import {
 } from "@/icons";
 import {
   BloqueConfig,
+  ConfigHubPagina,
   ConfigShell,
   ConfigAcciones,
   VolverAlHub,
   claseFila,
+  type TarjetaHub,
 } from "@/pages/config-layout";
 import {
   inventarioStore,
+  ETIQUETA_UNIDAD,
   type ConfigInventario,
   type MetodoValoracion,
   type UnidadMedida,
@@ -57,7 +60,7 @@ const META_SECCIONES: Record<ClaveSeccion, MetaSeccionInfo> = {
   },
   reorden: {
     label: "Puntos de reorden y alertas",
-    hint: "Umbrales mínimos de stock por SKU, avisos de desabastecimiento crítico y reglas de reposición preventiva.",
+    hint: "Punto de reorden y stock máximo para artículos nuevos, días de cobertura y alertas de stock bajo.",
     icono: AlertHexaIcon,
     palabrasClave: ["reorden", "minimo", "maximo", "alerta", "agotado", "whatsapp", "notificacion", "cobertura"],
   },
@@ -69,22 +72,32 @@ const META_SECCIONES: Record<ClaveSeccion, MetaSeccionInfo> = {
   },
   costeo: {
     label: "Valoración y costeo",
-    hint: "Método de costeo de inventario (Promedio ponderado, PEPS/FIFO), márgenes sugeridos e impuestos aplicables.",
+    hint: "Método con el que se calcula el costo de lo que sale del almacén: promedio ponderado o PEPS/FIFO.",
     icono: DollarLineIcon,
     palabrasClave: ["costo", "valoracion", "promedio", "fifo", "peps", "margen", "precio"],
   },
   conteos: {
     label: "Conteos y ajustes",
-    hint: "Frecuencia de conteos cíclicos, motivos estándar de mermas, tolerancias de diferencias y auditorías.",
+    hint: "Conteo a ciegas, revisión ante diferencias, umbral de alerta y referencia obligatoria en salidas.",
     icono: ShieldCheckIcon,
     palabrasClave: ["conteo", "ajuste", "merma", "ciego", "auditoria", "tolerancia", "diferencia"],
   },
   ordenes: {
     label: "Órdenes de compra y proveedores",
-    hint: "Prefijo de numeración (OC), notas por defecto, múltiplos de pedido y condiciones con proveedores.",
+    hint: "Prefijo de numeración, mercancía en tránsito, múltiplo de pedido y notas por defecto.",
     icono: PlugInIcon,
     palabrasClave: ["orden", "compra", "proveedor", "prefijo", "oc", "pedido", "abastecimiento"],
   },
+};
+
+/** Los ajustes que hay dentro de cada sección, con el nombre que llevan en ella. */
+const AJUSTES_SECCION: Record<ClaveSeccion, string[]> = {
+  almacenes: ["Almacén de recepción", "Bodegas y ubicaciones"],
+  reorden: ["Punto de reorden", "Stock máximo", "Días de cobertura", "Alertas de stock bajo"],
+  catalogos: ["Unidad de medida", "Categorías"],
+  costeo: ["Método de valoración"],
+  conteos: ["Conteo a ciegas", "Revisión ante diferencias", "Umbral de alerta", "Referencia en salidas"],
+  ordenes: ["Prefijo de órdenes", "Descontar en tránsito", "Múltiplo de pedido", "Notas por defecto"],
 };
 
 const ORDEN_SECCIONES: ClaveSeccion[] = [
@@ -109,7 +122,6 @@ const UNIDADES_MEDIDA: { id: UnidadMedida; label: string }[] = [
 export const InventarioConfigPage = observer(() => {
   const [params, setParams] = useSearchParams();
   const seccion = params.get("seccion") as ClaveSeccion | null;
-  const [busqueda, setBusqueda] = useState("");
 
   // Borrador de configuración sincronizado con el store
   const [draft, setDraft] = useState<ConfigInventario>(() => ({ ...inventarioStore.config }));
@@ -148,151 +160,43 @@ export const InventarioConfigPage = observer(() => {
     setMensajeError(null);
   };
 
-  // Filtrado de tarjetas para la búsqueda interactiva
-  const tarjetasFiltradas = useMemo(() => {
-    const q = busqueda.toLowerCase().trim();
-    if (!q) return ORDEN_SECCIONES;
-    return ORDEN_SECCIONES.filter((key) => {
-      const meta = META_SECCIONES[key];
-      const matchTitulo = meta.label.toLowerCase().includes(q);
-      const matchDesc = meta.hint.toLowerCase().includes(q);
-      const matchKeywords = meta.palabrasClave.some((kw) => kw.includes(q));
-      return matchTitulo || matchDesc || matchKeywords;
-    });
-  }, [busqueda]);
+  // Cómo está configurada hoy cada sección: se lee del store, no del borrador.
+  const cfg = inventarioStore.config;
+  const ubicacionesActivas = inventarioStore.ubicacionesActivas.length;
+  const estadoSeccion: Record<ClaveSeccion, string> = {
+    almacenes: `Recibe en ${inventarioStore.nombreUbicacion(cfg.ubicacionRecepcionId)} · ${ubicacionesActivas} ${ubicacionesActivas === 1 ? "ubicación activa" : "ubicaciones activas"}`,
+    reorden: `Reorden en ${cfg.puntoReordenPorDefecto} · máximo ${cfg.stockMaximoPorDefecto}`,
+    catalogos: `${cfg.categorias.length} categorías · artículos nuevos en ${ETIQUETA_UNIDAD[cfg.unidadPorDefecto].toLowerCase()}`,
+    costeo: cfg.metodoValoracion === "fifo" ? "Usa PEPS/FIFO" : "Usa promedio ponderado",
+    conteos: cfg.conteoCiego ? "Conteo a ciegas activado" : "Conteo a ciegas apagado",
+    ordenes: `Numeración ${cfg.prefijoOrdenCompra}-0001`,
+  };
 
-  // ═════════════════════════════════════════════════════════════════════════
-  // VISTA RAÍZ: CUADRÍCULA DE TARJETAS (HUB)
-  // ═════════════════════════════════════════════════════════════════════════
+  const tarjetasHub: TarjetaHub[] = ORDEN_SECCIONES.map((k) => ({
+    key: k,
+    label: META_SECCIONES[k].label,
+    hint: META_SECCIONES[k].hint,
+    icono: META_SECCIONES[k].icono,
+    badge: META_SECCIONES[k].badge,
+    ajustes: AJUSTES_SECCION[k],
+    estado: estadoSeccion[k],
+    palabrasClave: META_SECCIONES[k].palabrasClave,
+  }));
+
   if (!seccion) {
     return (
-      <div className="pb-12 space-y-8 font-sans">
+      <>
         <PageMeta
           title="Configuración · Inventario"
           description="Ajustes y parámetros operativos del módulo de inventarios"
         />
-
-        {/* ── Encabezado de la página con barra de búsqueda ─────────────── */}
-        <section className="space-y-6" data-purpose="page-header">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div className="space-y-1.5">
-              <h1 className="text-[24px] sm:text-[36px] font-bold text-[#190088] leading-tight dark:text-white">
-                Configuración de Inventario
-              </h1>
-              <p className="text-[14px] sm:text-[16px] text-[#212121] dark:text-gray-400 max-w-2xl font-normal leading-relaxed">
-                Gestiona el flujo operativo, almacenes físicos, puntos de reorden, unidades de medida y métodos de costeo.
-              </p>
-            </div>
-
-            {/* Barra de búsqueda interactiva */}
-            <div className="w-full md:w-80 relative shrink-0">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </div>
-              <input
-                id="inventorySearchInput"
-                type="text"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar ajuste o parámetro..."
-                className="w-full pl-10 pr-9 py-2.5 text-[14px] font-normal bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-[#FF3F1A]/20 focus:border-[#FF3F1A] dark:focus:border-[#FF3F1A] text-[#212121] dark:text-white shadow-theme-xs transition placeholder-gray-400 dark:placeholder-gray-500"
-              />
-              {busqueda && (
-                <button
-                  type="button"
-                  onClick={() => setBusqueda("")}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-                  aria-label="Borrar búsqueda"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      d="M6 18L18 6M6 6l12 12"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="h-px bg-[#ECECEC] dark:bg-gray-800" />
-        </section>
-
-        {/* ── Cuadrícula de 6 Tarjetas Estructuradas ─────────────────────── */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-purpose="modules-grid">
-          {tarjetasFiltradas.length > 0 ? (
-            tarjetasFiltradas.map((key) => {
-              const meta = META_SECCIONES[key];
-              const Icono = meta.icono;
-              return (
-                <article
-                  key={key}
-                  onClick={() => entrarASeccion(key)}
-                  className="group relative bg-white dark:bg-gray-900 border-2 border-[#ECECEC] dark:border-gray-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] rounded-3xl p-6 sm:p-7 shadow-theme-xs hover:shadow-theme-md transition-all duration-200 flex flex-col justify-between cursor-pointer hover:-translate-y-1"
-                >
-                  <div>
-                    {/* Header de la tarjeta */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="w-14 h-14 rounded-2xl bg-[#97D6DF]/20 border border-[#97D6DF]/30 flex items-center justify-center text-[#190088] group-hover:bg-[#FF3F1A] group-hover:text-white group-hover:border-[#FF3F1A] transition-all duration-200 dark:bg-[#97D6DF]/15 dark:text-[#97D6DF]">
-                        <Icono className="w-7 h-7 stroke-[1.75]" />
-                      </div>
-                      {meta.badge && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold tracking-wide uppercase bg-[#97D6DF]/30 text-[#190088] border border-[#97D6DF]/50">
-                          {meta.badge}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Título y descripción */}
-                    <h3 className="text-[20px] sm:text-[24px] font-bold text-[#190088] dark:text-white mb-2 group-hover:text-[#FF3F1A] transition-colors leading-tight">
-                      {meta.label}
-                    </h3>
-                    <p className="text-[14px] font-normal text-[#212121] dark:text-gray-400 leading-relaxed mb-6">
-                      {meta.hint}
-                    </p>
-                  </div>
-
-                  {/* Footer con llamada a la acción */}
-                  <div className="pt-4 border-t border-[#ECECEC] dark:border-gray-800 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-[14px] font-bold text-[#FF3F1A] group-hover:text-[#e5351a] transition-colors">
-                      <span>Configurar</span>
-                      <svg
-                        className="w-4 h-4 text-[#FF3F1A] group-hover:translate-x-1 transition-all"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      </svg>
-                    </span>
-                  </div>
-                </article>
-              );
-            })
-          ) : (
-            <div className="col-span-full py-12 text-center bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-[#ECECEC] dark:border-gray-800">
-              <p className="text-[14px] text-gray-500 dark:text-gray-400">
-                No se encontraron ajustes con el término «{busqueda}».
-              </p>
-              <button
-                type="button"
-                onClick={() => setBusqueda("")}
-                className="mt-3 text-[14px] font-bold text-[#FF3F1A] hover:underline cursor-pointer"
-              >
-                Limpiar búsqueda
-              </button>
-            </div>
-          )}
-        </section>
-      </div>
+        <ConfigHubPagina
+          titulo="Configuración de Inventario"
+          descripcion="Elige una sección para ajustar dónde se guarda la mercancía, cuándo reponer, cómo se cuenta y cómo se compra."
+          tarjetas={tarjetasHub}
+          onEntrar={(k) => entrarASeccion(k as ClaveSeccion)}
+        />
+      </>
     );
   }
 

@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useSearchParams } from "react-router";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Check, Plus } from "lucide-react";
 import {
   inventarioStore,
   diferenciaLinea,
@@ -187,15 +187,36 @@ const CampoContado = observer(function CampoContado({
   conteo,
   linea,
   onError,
+  mostrarCoincide = false,
 }: {
   conteo: Conteo;
   linea: LineaConteo;
   onError: (m: string) => void;
+  /** Botón para anotar lo esperado de un toque. Nunca en conteo ciego. */
+  mostrarCoincide?: boolean;
 }) {
   const nombre =
     inventarioStore.articulo(linea.articuloId)?.nombre ?? "artículo";
+  const coincide = () => {
+    const r = inventarioStore.registrarConteoLinea(conteo.id, linea.articuloId, linea.esperado);
+    if (!r.ok) onError(r.error);
+  };
   // `CONTROL` trae `w-full`; el ancho fijo de 96px lo pone el contenedor.
   return (
+    <span className="flex shrink-0 items-center gap-2">
+      {mostrarCoincide && (
+        <button
+          type="button"
+          onClick={coincide}
+          disabled={linea.contado === linea.esperado}
+          aria-label={`${nombre}: coincide con lo esperado (${linea.esperado})`}
+          title="Coincide con lo esperado"
+          className="inline-flex h-9 items-center gap-1 rounded-[10px] px-2.5 text-theme-xs text-gray-600 transition-colors hover:bg-gray-100 hover:text-ink-title focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:text-gray-400 disabled:hover:bg-transparent dark:text-white dark:hover:bg-white/5"
+        >
+          <Check className="h-4 w-4" aria-hidden />
+          Coincide
+        </button>
+      )}
     <span className="block w-24 shrink-0">
       <input
         data-campo-conteo
@@ -205,7 +226,7 @@ const CampoContado = observer(function CampoContado({
         step={1}
         aria-label={`Cantidad contada de ${nombre}`}
         value={linea.contado ?? ""}
-        placeholder="—"
+        placeholder="Contar"
         onChange={(e) => {
           const v = e.target.value;
           if (v === "") {
@@ -234,6 +255,7 @@ const CampoContado = observer(function CampoContado({
         className={cx(CONTROL, "text-right tabular-nums")}
       />
     </span>
+    </span>
   );
 });
 
@@ -250,6 +272,19 @@ const VistaConteo = observer(function VistaConteo({
     conteo.estado === "en_progreso" ? "pendientes" : "diferencias",
   );
   const [confirmar, setConfirmar] = useState<"aplicar" | "anular" | null>(null);
+  // Lo que estaba por contar al abrir la pestaña. Una fila que se cuenta ahí
+  // sigue a la vista (con su cifra) hasta cambiar de pestaña: si desapareciera
+  // al teclear el primer dígito, el foco se perdería a mitad de la cifra.
+  const [enVista, setEnVista] = useState<Set<string>>(
+    () => new Set(conteo.lineas.filter((l) => l.contado === null).map((l) => l.articuloId)),
+  );
+  useEffect(() => {
+    if (pestana === "pendientes") {
+      setEnVista(new Set(conteo.lineas.filter((l) => l.contado === null).map((l) => l.articuloId)));
+    }
+    // Solo al entrar a la pestaña; no en cada cifra registrada.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pestana, conteo.id]);
   const [error, setError] = useState<string | null>(null);
 
   const c = conteo;
@@ -262,7 +297,7 @@ const VistaConteo = observer(function VistaConteo({
 
   const lineas = (
     pestana === "pendientes"
-      ? c.lineas.filter((l) => l.contado === null)
+      ? c.lineas.filter((l) => l.contado === null || enVista.has(l.articuloId))
       : pestana === "diferencias"
         ? conDiferencia
         : c.lineas
@@ -444,6 +479,7 @@ const VistaConteo = observer(function VistaConteo({
                             conteo={c}
                             linea={l}
                             onError={mostrar}
+                            mostrarCoincide={!ciego}
                           />
                         </div>
                       ) : (
@@ -464,7 +500,7 @@ const VistaConteo = observer(function VistaConteo({
                             : d < 0
                               ? "text-error-700 dark:text-error-400"
                               : d > 0
-                                ? "text-success-700 dark:text-success-400"
+                                ? "text-ink-title dark:text-accent-300"
                                 : "text-gray-600",
                         )}
                       >
@@ -504,7 +540,7 @@ const VistaConteo = observer(function VistaConteo({
                   )}
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-bold text-ink-body dark:text-white">
+                    <p className="line-clamp-2 font-bold text-ink-body dark:text-white">
                       {a?.nombre}
                     </p>
                     <p className="mt-0.5 text-theme-xs text-gray-600 dark:text-gray-400">
@@ -517,7 +553,7 @@ const VistaConteo = observer(function VistaConteo({
                     </p>
                   </div>
                   {enProgreso ? (
-                    <CampoContado conteo={c} linea={l} onError={mostrar} />
+                    <CampoContado conteo={c} linea={l} onError={mostrar} mostrarCoincide={!ciego} />
                   ) : (
                     <span className="font-bold tabular-nums">
                       {l.contado === null ? "—" : formatearEntero(l.contado)}
@@ -545,6 +581,12 @@ const VistaConteo = observer(function VistaConteo({
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {pendientes > 0 && (enProgreso || c.estado === "en_revision") && (
+              <span className="text-theme-xs text-gray-600 dark:text-gray-400">
+                Cuenta {pendientes === 1 ? "el que falta" : `los ${formatearEntero(pendientes)} que faltan`} para{" "}
+                {enProgreso && !puedeAplicarDirecto ? "enviarlo a revisión" : "aplicar los ajustes"}
+              </span>
+            )}
             <Boton variante="texto" onClick={() => setConfirmar("anular")}>
               Anular conteo
             </Boton>

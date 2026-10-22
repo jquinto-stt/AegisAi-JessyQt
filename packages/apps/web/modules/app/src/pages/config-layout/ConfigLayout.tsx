@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 import { Card } from "@/elements/ui/card";
 import { Label } from "@/elements/form/label";
-import { ArrowRightIcon, CheckLineIcon, ChevronLeftIcon } from "@/icons";
+import { ArrowRightIcon, CheckLineIcon, ChevronLeftIcon, MagnifyingGlassIcon as SearchIcon } from "@/icons";
 import { cn } from "@/utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -165,12 +165,12 @@ export function ConfigHeader({ titulo, descripcion, acciones }: ConfigHeaderProp
   return (
     <div className="flex flex-col gap-3 border-b border-[#ECECEC] pb-5 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
       <div className="min-w-0">
-        <h1 className="text-[24px] sm:text-[36px] font-bold text-[#190088] leading-tight dark:text-white">{titulo}</h1>
-        <p className="mt-1 text-[14px] sm:text-[16px] font-normal text-[#212121] dark:text-gray-400">{descripcion}</p>
+        <h1 className="text-[24px] font-bold leading-8 tracking-tight text-[#190088] dark:text-white">{titulo}</h1>
+        <p className="mt-1 max-w-2xl text-[14px] font-normal text-gray-600 dark:text-gray-400">{descripcion}</p>
       </div>
 
       {acciones && (
-        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+        <div className="flex w-full flex-wrap items-center gap-2.5 self-start sm:w-auto sm:self-auto">
           {acciones}
         </div>
       )}
@@ -628,12 +628,29 @@ export interface TarjetaHub {
   key: string;
   /** Nombre de la sección, en negrita en la tarjeta. */
   label: string;
-  /** Una línea que explica qué se ajusta ahí. */
+  /**
+   * Una línea que explica qué se ajusta ahí. Solo se muestra si la sección no
+   * declara `ajustes`; en ambos casos alimenta la búsqueda.
+   */
   hint: string;
   /** Icono, ya resuelto por la página. */
   icono: IconoConfig;
   /** Badge o indicador distintivo opcional en la tarjeta. */
   badge?: string;
+  /**
+   * Los ajustes concretos que hay dentro, con el mismo nombre que llevan en la
+   * sección («Prefijo de órdenes», «Conteo a ciegas»). Se leen de un vistazo y
+   * son lo que el usuario busca, no una descripción general.
+   */
+  ajustes?: string[];
+  /** Cómo está configurado hoy, en una frase corta («Costeo: promedio ponderado»). */
+  estado?: string;
+  /** `aviso` pinta el estado en naranja: algo que conviene revisar. */
+  estadoTono?: "neutro" | "aviso";
+  /** Términos extra para la búsqueda (sinónimos que no aparecen en el texto). */
+  palabrasClave?: string[];
+  /** Texto del enlace de esta tarjeta, si difiere del general («Ir a Ajustes»). */
+  accion?: string;
 }
 
 export interface ConfigHubProps {
@@ -641,129 +658,176 @@ export interface ConfigHubProps {
   tarjetas: TarjetaHub[];
   /** Se llama con la clave de la tarjeta pulsada. */
   onEntrar: (key: string) => void;
-  /** Texto del enlace de cada tarjeta. Por defecto «Entrar a configurar». */
+  /** Texto accesible de la acción de cada tarjeta. Por defecto «Configurar». */
   accion?: string;
 }
 
 /**
  * ConfigHub — la pantalla de entrada de una configuración, como cuadrícula de
- * tarjetas prominentes.
+ * tarjetas.
  *
  * ── Qué problema resuelve ────────────────────────────────────────────────
  *
- * La navegación lateral (`ConfigSectionNav`) funciona cuando el usuario YA sabe
- * qué sección busca: es una lista de etiquetas, y hay que leerlas todas para
- * encontrar la propia. Quien entra por primera vez no sabe qué hay dentro de
- * «Operación y flujo», y la única forma de averiguarlo es entrar una por una.
+ * Quien entra por primera vez no sabe qué hay dentro de «Operación y flujo».
+ * Cada tarjeta lo dice ANTES de entrar: el nombre de la sección, los ajustes
+ * concretos que contiene y cómo está configurada hoy. Así el usuario encuentra
+ * el ajuste sin abrir las secciones una por una, y muchas veces ni siquiera
+ * necesita entrar para saber si hay algo que cambiar.
  *
- * Con tarjetas, cada sección trae su icono y su descripción ANTES de entrar: se
- * reconoce la sección sin leer el nombre, que es lo que hace una pantalla
- * manejable para alguien que no la conoce. Es la agrupación que pidió el usuario
- * (06/10), y por eso las cuatro pantallas de configuración la comparten.
+ * ── Por qué tarjetas compactas ───────────────────────────────────────────
+ *
+ * Todas las secciones deben verse a la vez, sin desplazarse, para poder
+ * compararlas. Por eso la tarjeta no lleva un párrafo descriptivo ni un icono
+ * en un cuadro de color: el icono va pequeño junto al título y el espacio se
+ * dedica a los ajustes y al estado actual.
  *
  * ── Por qué NO es una lista de pestañas ni un acordeón ───────────────────
  *
- * El requisito es que elegir una tarjeta **navegue a pantalla completa**, no que
- * despliegue el contenido debajo. Un acordeón dejaría las otras secciones a la
- * vista como distracción mientras se edita una, y en móvil obligaría a
- * desplazarse por lo ya resuelto. Aquí la sección ocupa la pantalla y hay un
- * camino explícito de vuelta.
- *
- * ── Sobre el color de realce ─────────────────────────────────────────────
- *
- * El realce del hover va en `brand-500`, el naranja de marca, **no** en el verde
- * `#17b363` que pedía el borrador inicial: ese verde se retiró de la paleta
- * (20/09) y no figura en el manual de NECTO. Un hex literal, además, no tendría
- * variante oscura y el hover desaparecería en tema oscuro.
+ * Elegir una tarjeta navega a pantalla completa: la sección ocupa la pantalla y
+ * hay un camino explícito de vuelta (`VolverAlHub`).
  */
-export function ConfigHub({ tarjetas, onEntrar, accion = "Entrar a configurar" }: ConfigHubProps) {
-  // ── El número de columnas lo fija el número de TARJETAS ───────────────────
-  //
-  // No es un detalle estético: con 2 tarjetas a 4 columnas la fila queda medio
-  // vacía, y con 3 a 4 columnas sobra una pista entera y las tarjetas se
-  // estrechan de más. Cada caso tiene su ancho máximo para que las tarjetas
-  // conserven un tamaño legible.
-  //
-  // Los grupos por número de columnas siguen siendo la unidad de comparación del
-  // arnés (`verificar-config-hub.mjs`): todas las pantallas del MISMO tamaño
-  // deben medir lo mismo, y la divergencia entre grupos es deliberada.
-  const esDoble = tarjetas.length === 2;
-  const esTriple = tarjetas.length === 3;
+export function ConfigHub({ tarjetas, onEntrar, accion = "Configurar" }: ConfigHubProps) {
+  // Con 2 tarjetas, tres columnas dejarían una pista vacía: se quedan en dos.
+  const columnas = tarjetas.length <= 2 ? "sm:grid-cols-2" : "sm:grid-cols-2 xl:grid-cols-3";
 
   return (
-    <ul
-      className={cn(
-        "grid grid-cols-1 gap-6 sm:grid-cols-2",
-        esDoble
-          ? "max-w-2xl mx-auto"
-          : esTriple
-            ? "lg:grid-cols-3 max-w-5xl mx-auto"
-            : "lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto",
-      )}
-    >
+    <ul className={cn("grid grid-cols-1 gap-4", columnas)}>
       {tarjetas.map((t) => {
         const Icono = t.icono;
         return (
           <li key={t.key} className="flex">
-            {/* Tarjeta con proporciones compactas según la referencia visual del usuario */}
             <button
               type="button"
               onClick={() => onEntrar(t.key)}
+              aria-label={`${t.accion ?? accion}: ${t.label}`}
               className={cn(
-                "group flex h-full w-full cursor-pointer flex-col justify-between rounded-3xl border-2 border-[#ECECEC] bg-white p-6 sm:p-7 text-left transition-all min-h-[260px] sm:min-h-[280px]",
-                "hover:-translate-y-1 hover:border-[#FF3F1A] hover:shadow-theme-md",
-                "focus-visible:border-[#FF3F1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3F1A]/30",
-                "dark:border-gray-800 dark:bg-gray-900/60 dark:hover:border-[#FF3F1A]",
+                "group flex h-full w-full cursor-pointer flex-col rounded-2xl border border-gray-200 bg-white p-5 text-left transition-colors",
+                "hover:border-brand-500 hover:bg-gray-50",
+                "focus-visible:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30",
+                "dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-brand-500 dark:hover:bg-white/[0.04]",
               )}
             >
-              <div>
-                {/* Cabecera de la tarjeta: Icono y Badge distintivo opcional */}
-                <div className="flex items-start justify-between gap-3">
+              <span className="flex w-full items-start gap-3">
+                <Icono className="mt-0.5 h-5 w-5 shrink-0 text-ink-title dark:text-accent-300" aria-hidden="true" />
+                <span className="min-w-0 flex-1 text-[16px] font-bold leading-6 text-ink-title dark:text-white">
+                  {t.label}
+                </span>
+                {t.badge && (
+                  <span className="shrink-0 rounded-full bg-cream px-2 py-0.5 text-[12px] font-bold text-ink-body dark:bg-cream/15 dark:text-cream">
+                    {t.badge}
+                  </span>
+                )}
+                <ArrowRightIcon
+                  className="mt-0.5 h-5 w-5 shrink-0 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-500"
+                  aria-hidden="true"
+                />
+              </span>
+
+              <span className="mt-2 block pl-8 text-[14px] leading-5 text-gray-600 dark:text-gray-400">
+                {t.ajustes && t.ajustes.length > 0 ? t.ajustes.join(" · ") : t.hint}
+              </span>
+
+              {t.estado && (
+                <span
+                  className={cn(
+                    "mt-auto flex items-start gap-2 pl-8 pt-4 text-[12px] leading-[18px]",
+                    t.estadoTono === "aviso"
+                      ? "font-bold text-brand-700 dark:text-brand-400"
+                      : "text-ink-body dark:text-gray-300",
+                  )}
+                >
                   <span
                     className={cn(
-                      "flex h-14 w-14 items-center justify-center rounded-2xl bg-[#97D6DF]/20 text-[#190088] transition-colors border border-[#97D6DF]/30",
-                      "group-hover:bg-[#FF3F1A] group-hover:text-white group-hover:border-[#FF3F1A]",
-                      "dark:bg-[#97D6DF]/15 dark:border-[#97D6DF]/20 dark:text-[#97D6DF] dark:group-hover:bg-[#FF3F1A] dark:group-hover:text-white",
+                      "mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full",
+                      t.estadoTono === "aviso" ? "bg-brand-500" : "bg-accent-300",
                     )}
                     aria-hidden="true"
-                  >
-                    <Icono className="h-7 w-7 stroke-[1.75]" />
-                  </span>
-
-                  {t.badge && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold tracking-wide uppercase bg-[#97D6DF]/30 text-[#190088] border border-[#97D6DF]/50 dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#190088] animate-pulse dark:bg-[#97D6DF]" />
-                      {t.badge}
-                    </span>
-                  )}
-                </div>
-
-                {/* Título en azul profundo NECTO (#190088) y descripción */}
-                <div className="mt-5">
-                  <span className="block text-[20px] sm:text-[24px] font-bold text-[#190088] group-hover:text-[#FF3F1A] dark:text-white dark:group-hover:text-[#97D6DF] transition-colors leading-tight">
-                    {t.label}
-                  </span>
-                  <span className="mt-2 block text-[14px] font-normal text-[#212121] leading-relaxed dark:text-gray-400">
-                    {t.hint}
-                  </span>
-                </div>
-              </div>
-
-              {/* Acción inferior: «Entrar a configurar →» */}
-              <div className="mt-6 pt-2">
-                <span className="inline-flex items-center gap-1.5 text-[14px] font-bold text-[#FF3F1A] transition-colors group-hover:text-[#e5351a]">
-                  {accion}
-                  <ArrowRightIcon
-                    className="h-4 w-4 transition-transform group-hover:translate-x-1"
-                    aria-hidden="true"
                   />
+                  {t.estado}
                 </span>
-              </div>
+              )}
             </button>
           </li>
         );
       })}
     </ul>
+  );
+}
+
+/** ¿La tarjeta responde a la búsqueda? Busca en nombre, ajustes, descripción y sinónimos. */
+export function tarjetaCoincide(t: TarjetaHub, busqueda: string): boolean {
+  const q = sinAcentos(busqueda.trim().toLowerCase());
+  if (!q) return true;
+  const textos = [t.label, t.hint, t.estado ?? "", ...(t.ajustes ?? []), ...(t.palabrasClave ?? [])];
+  return textos.some((x) => sinAcentos(x.toLowerCase()).includes(q));
+}
+
+function sinAcentos(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+export interface ConfigHubPaginaProps {
+  titulo: string;
+  descripcion: string;
+  tarjetas: TarjetaHub[];
+  onEntrar: (key: string) => void;
+}
+
+/**
+ * ConfigHubPagina — cabecera, buscador y cuadrícula del hub en una sola pieza,
+ * para que todas las configuraciones de módulo se vean y busquen igual.
+ *
+ * El buscador encuentra ajustes concretos («prefijo», «conteo ciego»): filtra
+ * las tarjetas cuyo nombre, ajustes o sinónimos contienen el término.
+ */
+export function ConfigHubPagina({ titulo, descripcion, tarjetas, onEntrar }: ConfigHubPaginaProps) {
+  const [busqueda, setBusqueda] = useState("");
+  const visibles = tarjetas.filter((t) => tarjetaCoincide(t, busqueda));
+  const idBuscador = useId();
+
+  return (
+    <div className="space-y-6 pb-12 font-sans">
+      <ConfigHeader
+        titulo={titulo}
+        descripcion={descripcion}
+        acciones={
+          <div className="relative w-full sm:w-80">
+            <label htmlFor={idBuscador} className="sr-only">
+              Buscar un ajuste
+            </label>
+            <SearchIcon
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+              aria-hidden="true"
+            />
+            <input
+              id={idBuscador}
+              type="search"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar un ajuste por nombre"
+              className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 text-[14px] text-ink-body placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-white/10 dark:bg-white/[0.03] dark:text-white"
+            />
+          </div>
+        }
+      />
+
+      {visibles.length > 0 ? (
+        <ConfigHub tarjetas={visibles} onEntrar={onEntrar} />
+      ) : (
+        <div className="rounded-2xl border border-dashed border-gray-300 px-5 py-10 text-center dark:border-white/15">
+          <p className="text-[14px] text-ink-body dark:text-gray-300">
+            Ningún ajuste coincide con «<span className="font-bold">{busqueda}</span>».
+          </p>
+          <button
+            type="button"
+            onClick={() => setBusqueda("")}
+            className="mt-2 rounded-md text-[14px] font-bold text-ink-title hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:text-white"
+          >
+            Ver todas las secciones
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -25,6 +25,34 @@ function cn(...classes: (string | boolean | undefined | null)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
+export interface CanalesGuardados {
+  whatsapp: boolean;
+  telegram: boolean;
+  instagram: boolean;
+  facebook: boolean;
+}
+
+/**
+ * Estado de los canales tal como lo guarda esta pantalla. Lo lee también la
+ * tarjeta del hub de Ajustes generales, para que ambas digan lo mismo.
+ */
+export function leerCanalesGuardados(): CanalesGuardados {
+  const waStore = organizacionStore.esConectorActivo("pedidos", "whatsapp");
+  try {
+    const guardado = localStorage.getItem("pedidos_canales_integraciones");
+    if (guardado) {
+      const parsed = JSON.parse(guardado);
+      return {
+        whatsapp: parsed.whatsapp !== undefined ? Boolean(parsed.whatsapp) : waStore,
+        telegram: parsed.telegram !== undefined ? Boolean(parsed.telegram) : true,
+        instagram: Boolean(parsed.instagram),
+        facebook: Boolean(parsed.facebook),
+      };
+    }
+  } catch {}
+  return { whatsapp: waStore, telegram: true, instagram: false, facebook: false };
+}
+
 /**
  * Pestaña de Canales e Integraciones a nivel de Organización.
  * Gestiona de forma transversal la conectividad de WhatsApp, Telegram, Instagram y Facebook.
@@ -32,32 +60,7 @@ function cn(...classes: (string | boolean | undefined | null)[]) {
 export const CanalesOrgTab: React.FC = observer(() => {
   const navigate = useNavigate();
 
-  const [canales, setCanales] = useState<{
-    whatsapp: boolean;
-    telegram: boolean;
-    instagram: boolean;
-    facebook: boolean;
-  }>(() => {
-    const waStore = organizacionStore.esConectorActivo("pedidos", "whatsapp");
-    try {
-      const guardado = localStorage.getItem("pedidos_canales_integraciones");
-      if (guardado) {
-        const parsed = JSON.parse(guardado);
-        return {
-          whatsapp: parsed.whatsapp !== undefined ? Boolean(parsed.whatsapp) : waStore,
-          telegram: parsed.telegram !== undefined ? Boolean(parsed.telegram) : true,
-          instagram: Boolean(parsed.instagram),
-          facebook: Boolean(parsed.facebook),
-        };
-      }
-    } catch {}
-    return {
-      whatsapp: waStore,
-      telegram: true,
-      instagram: false,
-      facebook: false,
-    };
-  });
+  const [canales, setCanales] = useState<CanalesGuardados>(leerCanalesGuardados);
 
   const toggleCanal = (
     canal: "whatsapp" | "telegram" | "instagram" | "facebook",

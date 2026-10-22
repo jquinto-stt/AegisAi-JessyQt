@@ -31,6 +31,7 @@ import {
   Campo,
   CeldaDoble,
   Confirmar,
+  ContactoProveedor,
   CONTROL,
   cx,
   DistintivoOrden,
@@ -74,6 +75,13 @@ function unidades(oc: OrdenCompra) {
   );
 }
 
+/** «Caja de cartón 40x30x30 y 1 más»: qué se pidió, sin abrir la orden. */
+function resumenArticulos(oc: OrdenCompra): string {
+  const primero = inventarioStore.articulo(oc.lineas[0]?.articuloId ?? "")?.nombre ?? "Sin artículos";
+  const resto = oc.lineas.length - 1;
+  return resto > 0 ? `${primero} y ${resto} más` : primero;
+}
+
 function Llegada({ oc }: { oc: OrdenCompra }) {
   if (oc.estado === "recibida") {
     const f = oc.fechaRecepcion ?? oc.fechaEsperada;
@@ -83,6 +91,49 @@ function Llegada({ oc }: { oc: OrdenCompra }) {
   if (atrasada(oc)) return <span className="text-error-700 dark:text-error-400">Atrasada · {fechaRelativa(oc.fechaEsperada)}</span>;
   if (oc.estado === "cancelada") return <span className="text-gray-600 dark:text-gray-400">{formatearFecha(oc.fechaEsperada)}</span>;
   return <span>{fechaRelativa(oc.fechaEsperada)}</span>;
+}
+
+const ETAPAS: { estado: EstadoOrdenCompra; etiqueta: string }[] = [
+  { estado: "borrador", etiqueta: "Borrador" },
+  { estado: "enviada", etiqueta: "Enviada" },
+  { estado: "parcial", etiqueta: "Llegando" },
+  { estado: "recibida", etiqueta: "Recibida" },
+];
+
+/**
+ * En qué punto va la orden, de borrador a recibida. Una orden enviada que aún
+ * no recibe nada salta directo de «Enviada» a «Recibida» si llega completa; por
+ * eso «Llegando» solo se marca cuando de verdad hubo una llegada parcial.
+ */
+function EtapasOrden({ oc }: { oc: OrdenCompra }) {
+  if (oc.estado === "cancelada") {
+    return (
+      <p className="rounded-xl bg-gray-50 px-4 py-3 text-theme-sm text-gray-700 dark:bg-white/[0.03] dark:text-gray-300">
+        Orden cancelada: ya no se espera nada de ella.
+      </p>
+    );
+  }
+  const actual = ETAPAS.findIndex((e) => e.estado === oc.estado);
+  const fecha: Partial<Record<EstadoOrdenCompra, string>> = {
+    borrador: `Creada ${fechaRelativa(oc.fechaCreacion)}`,
+    recibida: oc.fechaRecepcion ? `Llegó ${fechaRelativa(oc.fechaRecepcion)}` : undefined,
+  };
+  return (
+    <ol className="grid grid-cols-4 gap-2" aria-label="Etapas de la orden">
+      {ETAPAS.map((e, i) => {
+        const hecha = i <= actual;
+        return (
+          <li key={e.estado} aria-current={i === actual ? "step" : undefined} className="min-w-0">
+            <span className={cx("block h-1.5 rounded-full", hecha ? "bg-ink-title dark:bg-accent-300" : "bg-gray-200 dark:bg-white/10")} />
+            <span className={cx("mt-2 block truncate text-theme-xs", i === actual ? "font-bold text-ink-body dark:text-white" : hecha ? "text-ink-body dark:text-gray-300" : "text-gray-500")}>
+              {e.etiqueta}
+            </span>
+            {fecha[e.estado] && hecha && <span className="block truncate text-theme-xs text-gray-600 dark:text-gray-400">{fecha[e.estado]}</span>}
+          </li>
+        );
+      })}
+    </ol>
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -145,6 +196,7 @@ const PanelDetalle = observer(function PanelDetalle({
   };
 
   const u = unidades(oc);
+  const proveedor = s.proveedor(oc.proveedorId);
   const cerrable = oc.estado !== "recibida" && oc.estado !== "cancelada";
 
   const pie = recibiendo ? (
@@ -190,6 +242,20 @@ const PanelDetalle = observer(function PanelDetalle({
       ancho="sm:max-w-2xl"
       pie={pie}
     >
+      {!recibiendo && <EtapasOrden oc={oc} />}
+
+      {!recibiendo && atrasada(oc) && oc.fechaEsperada && (
+        <div className="rounded-xl border border-error-200 bg-error-50 px-4 py-3 text-theme-sm text-error-800 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-300">
+          <p className="font-bold">Se esperaba {fechaRelativa(oc.fechaEsperada)} y faltan {formatearEntero(u.pedidas - u.recibidas)} unidades.</p>
+          <p className="mt-0.5">Confirma con el proveedor cuándo llega el saldo.</p>
+          {proveedor && (
+            <div className="mt-3">
+              <ContactoProveedor proveedor={proveedor} mensaje={`Sobre la orden ${oc.numero}`} />
+            </div>
+          )}
+        </div>
+      )}
+
       {!recibiendo && (
         <ListaDatos
           items={[
@@ -245,35 +311,31 @@ const PanelDetalle = observer(function PanelDetalle({
         </section>
       ) : (
         <section>
-          <Subtitulo>Artículos</Subtitulo>
-          <table className={TABLA.tabla}>
-            <thead>
-              <tr>
-                <th className={TABLA.th}>Artículo</th>
-                <th className={TABLA.thNum}>Pedido</th>
-                <th className={cx(TABLA.thNum, "hidden sm:table-cell")}>Recibido</th>
-                <th className={TABLA.thNum}>Pendiente</th>
-                <th className={TABLA.thNum}>Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {oc.lineas.map((l) => {
-                const a = s.articulo(l.articuloId);
-                const pendiente = unidadesPendientes(l);
-                return (
-                  <tr key={l.articuloId} className={TABLA.fila}>
-                    <td className={cx(TABLA.td, "max-w-[200px]")}>
-                      <CeldaDoble principal={a?.nombre ?? "Artículo eliminado"} secundaria={`${a?.sku ?? ""} · ${formatearMoneda(l.costoUnitario)} c/u`} />
-                    </td>
-                    <td className={TABLA.tdNum}>{formatearEntero(l.cantidad)}</td>
-                    <td className={cx(TABLA.tdNum, "hidden sm:table-cell")}>{formatearEntero(l.recibida)}</td>
-                    <td className={TABLA.tdNum}>{pendiente > 0 && cerrable ? formatearEntero(pendiente) : <Falta />}</td>
-                    <td className={TABLA.tdNum}>{formatearMoneda(l.cantidad * l.costoUnitario)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <Subtitulo>
+            {oc.lineas.length} {oc.lineas.length === 1 ? "artículo" : "artículos"}
+          </Subtitulo>
+          <ul>
+            {oc.lineas.map((l) => {
+              const a = s.articulo(l.articuloId);
+              const pendiente = unidadesPendientes(l);
+              return (
+                <li key={l.articuloId} className="border-t border-gray-100 py-3 first:border-t-0 dark:border-white/5">
+                  <div className="flex items-start justify-between gap-4">
+                    <CeldaDoble principal={a?.nombre ?? "Artículo eliminado"} secundaria={`${a?.sku ?? ""} · ${formatearEntero(l.cantidad)} × ${formatearMoneda(l.costoUnitario)}`} />
+                    <span className="shrink-0 font-bold tabular-nums text-ink-body dark:text-white">{formatearMoneda(l.cantidad * l.costoUnitario)}</span>
+                  </div>
+                  {oc.estado !== "borrador" && oc.estado !== "cancelada" && (
+                    <div className="mt-2 flex items-center gap-3">
+                      <BarraAvance valor={l.recibida} total={l.cantidad} ancho="flex-1" />
+                      <span className="shrink-0 text-theme-xs tabular-nums text-gray-600 dark:text-gray-400">
+                        {pendiente > 0 ? `${formatearEntero(l.recibida)} de ${formatearEntero(l.cantidad)} · faltan ${formatearEntero(pendiente)}` : "Completo"}
+                      </span>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
           <div className="flex items-center justify-between border-t border-gray-200 pt-3 dark:border-white/10">
             <span className="font-bold">Total</span>
             <span className="font-bold tabular-nums text-ink-title dark:text-white">{formatearMoneda(totalOrden(oc))}</span>
@@ -285,6 +347,13 @@ const PanelDetalle = observer(function PanelDetalle({
         <section>
           <Subtitulo>Notas</Subtitulo>
           <p className="whitespace-pre-line text-gray-700 dark:text-gray-300">{oc.notas}</p>
+        </section>
+      )}
+
+      {!recibiendo && proveedor && !atrasada(oc) && (
+        <section>
+          <Subtitulo>Proveedor</Subtitulo>
+          <ContactoProveedor proveedor={proveedor} mensaje={`Sobre la orden ${oc.numero}`} />
         </section>
       )}
 
@@ -665,6 +734,7 @@ export const OrdenesCompraPage = observer(function OrdenesCompraPage() {
             <thead>
               <tr>
                 <th className={TABLA.th}>Orden</th>
+                <th className={cx(TABLA.th, "hidden xl:table-cell")}>Artículos</th>
                 <th className={TABLA.th}>Estado</th>
                 <th className={TABLA.th}>Llegada</th>
                 <th className={cx(TABLA.th, "hidden md:table-cell")}>Recibido</th>
@@ -689,6 +759,9 @@ export const OrdenesCompraPage = observer(function OrdenesCompraPage() {
                   >
                     <td className={cx(TABLA.td, "max-w-[300px]")}>
                       <CeldaDoble principal={o.numero} secundaria={s.nombreProveedor(o.proveedorId)} />
+                    </td>
+                    <td className={cx(TABLA.td, "hidden max-w-[320px] text-gray-600 xl:table-cell dark:text-gray-400")}>
+                      <span className="block truncate">{resumenArticulos(o)}</span>
                     </td>
                     <td className={TABLA.td}>
                       <DistintivoOrden estado={o.estado} />

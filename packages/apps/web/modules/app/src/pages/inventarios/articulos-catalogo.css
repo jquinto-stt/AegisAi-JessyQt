@@ -150,6 +150,19 @@
   margin-top: 16px;
 }
 
+/* El catálogo ocupa todo el ancho: en monitores grandes caben más fichas por fila. */
+@media (min-width: 1680px) {
+  .cat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 2200px) {
+  .cat-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
 .cat-card {
   display: flex;
   min-width: 0;
@@ -278,6 +291,23 @@
   height: 16px;
   margin-top: 4px;
   color: var(--c-faint);
+}
+
+.cat-card__level {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.cat-card__range {
+  flex: none;
+  color: var(--c-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .cat-card__stats {

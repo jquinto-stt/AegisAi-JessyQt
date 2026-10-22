@@ -13,7 +13,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
-import { Package, ShoppingCart, Sparkles } from "lucide-react";
+import { Package, ShoppingCart } from "lucide-react";
 import {
   inventarioStore,
   formatearEntero,
@@ -24,7 +24,7 @@ import {
   Aviso,
   Boton,
   cx,
-  Distintivo,
+  DistintivoStock,
   PaginaInventario,
   useAviso,
   Vacio,
@@ -106,6 +106,22 @@ export const ReordenPage = observer(function ReordenPage() {
   const tope = Number(presupuesto);
   const hayTope = Number.isFinite(tope) && tope > 0;
   const excede = hayTope && totalEfectivo > tope;
+
+  // Una orden por proveedor: la cola se agrupa igual que los borradores que se van a crear.
+  const grupos: { clave: string; nombre: string; plazo: number | null; pedible: boolean; items: ItemReorden[] }[] = [];
+  for (const i of cola) {
+    const prov = i.articulo.proveedorId ? s.proveedor(i.articulo.proveedorId) : undefined;
+    const clave = prov?.activo ? prov.id : "sin-proveedor";
+    let g = grupos.find((x) => x.clave === clave);
+    if (!g) {
+      g = prov?.activo
+        ? { clave, nombre: prov.nombre, plazo: prov.plazoEntregaDias, pedible: true, items: [] }
+        : { clave, nombre: "Sin proveedor activo", plazo: null, pedible: false, items: [] };
+      grupos.push(g);
+    }
+    g.items.push(i);
+  }
+  grupos.sort((x, y) => Number(y.pedible) - Number(x.pedible));
 
   useEffect(() => {
     if (refTodos.current) refTodos.current.indeterminate = algunos && !todos;
@@ -242,28 +258,13 @@ export const ReordenPage = observer(function ReordenPage() {
         {cola.length > 0 && (
           <>
             <section className="rq-plan" aria-labelledby="rq-plan-title">
-              <div className="rq-plan__head">
-                <div className="rq-plan__title">
-                  <Sparkles aria-hidden />
-                  <h2 id="rq-plan-title">Plan de reposición</h2>
-                </div>
-                <button
-                  type="button"
-                  className="rq-plan__go"
-                  onClick={sugerirPlan}
-                  disabled={pedibles.length === 0}
-                >
-                  <Sparkles aria-hidden />
-                  Sugerir plan
-                </button>
-              </div>
+              <h2 id="rq-plan-title" className="rq-plan__title">Ajustar a un presupuesto</h2>
               <p className="rq-plan__intro">
-                Si defines un presupuesto, el plan entra por agotados y luego por existencia baja,
-                sin pasarse. Sin presupuesto, entra toda la cola pedible.
+                Opcional. Entran primero los agotados y luego los bajos, sin pasarse del tope.
               </p>
               <div className="rq-plan__fields">
                 <label className="rq-field">
-                  <span>Presupuesto (opcional)</span>
+                  <span>Presupuesto</span>
                   <input
                     type="number"
                     min={0}
@@ -278,20 +279,23 @@ export const ReordenPage = observer(function ReordenPage() {
                   />
                 </label>
                 <label className="rq-field">
-                  <span>Nota para las órdenes (opcional)</span>
+                  <span>Nota para las órdenes</span>
                   <input
                     type="text"
-                    placeholder="Ej. priorizar agotados; avisar al proveedor"
+                    placeholder="Se copia en cada orden"
                     value={notaPlan}
                     onChange={(e) => setNotaPlan(e.target.value)}
                   />
                 </label>
+                <Boton className="rq-plan__go" onClick={sugerirPlan} disabled={pedibles.length === 0}>
+                  {hayTope ? "Seleccionar dentro del tope" : "Seleccionar todo lo pedible"}
+                </Boton>
               </div>
-              {planMsg && <p className="rq-plan__msg">{planMsg}</p>}
-              <p className="rq-plan__hint">
-                La nota se copia en cada orden. Las cantidades se pueden editar antes de crear
-                los borradores.
-              </p>
+              {planMsg && (
+                <p className="rq-plan__msg" role="status">
+                  {planMsg}
+                </p>
+              )}
             </section>
 
             <div className="rq-bar">
@@ -317,88 +321,100 @@ export const ReordenPage = observer(function ReordenPage() {
                   </>
                 ) : (
                   <>
-                    Sin selección: se creará toda la cola ({formatearEntero(pedibles.length)}) ·{" "}
-                    {formatearMoneda(totalSugerido)}
+                    Sin selección se pide toda la cola · {formatearMoneda(totalSugerido)}
                     {excede && ` · excede ${formatearMoneda(totalSugerido - tope)}`}
                   </>
                 )}
               </span>
             </div>
 
-            <ul className="rq-list" aria-label="Artículos por reponer">
-              {cola.map((i) => {
-                const bloqueo = motivoBloqueo(i);
-                const qty = cantidadDe(i);
-                const estaSeleccionado = seleccion.has(i.articulo.id) && !bloqueo;
-                const proveedor = i.articulo.proveedorId
-                  ? s.proveedor(i.articulo.proveedorId)
-                  : undefined;
-                const esAgotado = i.estado === "agotado";
-                return (
-                  <li
-                    key={i.articulo.id}
-                    className={cx(
-                      "rq-row",
-                      estaSeleccionado && "is-selected",
-                      Boolean(bloqueo) && "is-blocked",
-                    )}
-                  >
-                    <input
-                      className="rq-check"
-                      type="checkbox"
-                      checked={estaSeleccionado}
-                      disabled={Boolean(bloqueo)}
-                      onChange={() => alternar(i.articulo.id)}
-                      aria-label={`Seleccionar ${i.articulo.nombre}`}
-                    />
-                    <FotoProducto item={i} />
-                    <div className="rq-main">
-                      <div className="rq-tags">
-                        <span className="rq-sku">{i.articulo.sku}</span>
-                        <Distintivo tono={esAgotado ? "error" : "aviso"}>
-                          {esAgotado ? "Agotado" : "Bajo mínimo"}
-                        </Distintivo>
-                        <Distintivo tono={esAgotado ? "error" : "aviso"}>
-                          {esAgotado ? "Crítico" : "Alto"}
-                        </Distintivo>
-                      </div>
-                      <p className="rq-name">{i.articulo.nombre}</p>
-                      <p className="rq-meta">
-                        {i.articulo.categoria} ·{" "}
-                        {proveedor ? proveedor.nombre : "Sin proveedor"}
-                        {proveedor && ` (${formatearEntero(proveedor.plazoEntregaDias)} días)`} ·
-                        máx {formatearEntero(i.articulo.stockMaximo)}
+            {grupos.map((g) => {
+              const enOrden = g.items.filter((i) => efectivos.includes(i) && cantidadDe(i) > 0);
+              const subtotal = enOrden.reduce((t, i) => t + cantidadDe(i) * i.articulo.costoUnitario, 0);
+              return (
+                <section key={g.clave} className="rq-group" aria-label={g.nombre}>
+                  <header className="rq-group__head">
+                    <div className="min-w-0">
+                      <h3 className="rq-group__name">{g.nombre}</h3>
+                      <p className="rq-group__meta">
+                        {g.plazo !== null ? `Entrega en ${formatearEntero(g.plazo)} días · ` : ""}
+                        {formatearEntero(g.items.length)} {g.items.length === 1 ? "artículo" : "artículos"}
                       </p>
-                      {bloqueo && (
-                        <p className="rq-blocked">{TEXTO_MOTIVO[bloqueo]}</p>
-                      )}
                     </div>
-                    <div className="rq-stats">
-                      <div className="rq-stat">
-                        <span>Existencia</span>
-                        <strong className={esAgotado ? "is-danger" : "is-warn"}>
-                          {formatearEntero(i.stock)}
-                        </strong>
-                      </div>
-                      <div className="rq-stat">
-                        <span>Mínimo</span>
-                        <strong>{formatearEntero(i.articulo.puntoReorden)}</strong>
-                      </div>
-                      <div className="rq-stat rq-stat--qty">
-                        <span>Cantidad</span>
-                        {campoCantidad(i, bloqueo)}
-                      </div>
-                      <div className="rq-stat rq-stat--cost">
-                        <span>Costo est.</span>
-                        <strong>
-                          {formatearMoneda(qty * i.articulo.costoUnitario)}
-                        </strong>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                    {g.pedible && (
+                      <p className="rq-group__sum">
+                        <span>{enOrden.length > 0 ? "En la orden" : "Fuera de la orden"}</span>
+                        <strong>{formatearMoneda(subtotal)}</strong>
+                      </p>
+                    )}
+                  </header>
+                  <div className="rq-cols" aria-hidden>
+                    <span>Existencia</span>
+                    <span>Mínimo</span>
+                    <span>Pedir</span>
+                    <span>Costo</span>
+                  </div>
+                  <ul className="rq-list">
+                    {g.items.map((i) => {
+                      const bloqueo = motivoBloqueo(i);
+                      const qty = cantidadDe(i);
+                      const estaSeleccionado = seleccion.has(i.articulo.id) && !bloqueo;
+                      const esAgotado = i.estado === "agotado";
+                      return (
+                        <li
+                          key={i.articulo.id}
+                          className={cx(
+                            "rq-row",
+                            estaSeleccionado && "is-selected",
+                            Boolean(bloqueo) && "is-blocked",
+                          )}
+                        >
+                          <input
+                            className="rq-check"
+                            type="checkbox"
+                            checked={estaSeleccionado}
+                            disabled={Boolean(bloqueo)}
+                            onChange={() => alternar(i.articulo.id)}
+                            aria-label={`Seleccionar ${i.articulo.nombre}`}
+                          />
+                          <FotoProducto item={i} />
+                          <div className="rq-main">
+                            <p className="rq-name">{i.articulo.nombre}</p>
+                            <p className="rq-meta">
+                              <DistintivoStock estado={i.estado} />
+                              <span className="rq-meta__text">
+                                {i.articulo.sku} · {i.articulo.categoria} · máx {formatearEntero(i.articulo.stockMaximo)}
+                              </span>
+                            </p>
+                            {bloqueo && <p className="rq-blocked">{TEXTO_MOTIVO[bloqueo]}</p>}
+                          </div>
+                          <div className="rq-stats">
+                            <div className="rq-stat">
+                              <span>Existencia</span>
+                              <strong className={esAgotado ? "is-danger" : undefined}>
+                                {formatearEntero(i.stock)}
+                              </strong>
+                            </div>
+                            <div className="rq-stat">
+                              <span>Mínimo</span>
+                              <strong className="is-quiet">{formatearEntero(i.articulo.puntoReorden)}</strong>
+                            </div>
+                            <div className="rq-stat rq-stat--qty">
+                              <span>Pedir</span>
+                              {campoCantidad(i, bloqueo)}
+                            </div>
+                            <div className="rq-stat rq-stat--cost">
+                              <span>Costo</span>
+                              <strong>{formatearMoneda(qty * i.articulo.costoUnitario)}</strong>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              );
+            })}
           </>
         )}
 

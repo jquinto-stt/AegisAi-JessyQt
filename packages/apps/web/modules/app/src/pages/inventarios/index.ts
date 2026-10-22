@@ -6,7 +6,3 @@ export { OrdenesCompraPage } from "./OrdenesCompraPage";
 export { ReordenPage } from "./ReordenPage";
 export { ConteosPage } from "./ConteosPage";
 export { ProveedoresPage } from "./ProveedoresPage";
-export { VistaAnaliticaCard } from "./VistaAnaliticaCard";
-export { BestSellingProductsCard } from "./BestSellingProductsCard";
-export { ActiveWorkOrdersCard } from "./ActiveWorkOrdersCard";
-export { SalesOrderSummaryCard } from "./SalesOrderSummaryCard";

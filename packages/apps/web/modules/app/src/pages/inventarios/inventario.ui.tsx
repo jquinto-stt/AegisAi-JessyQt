@@ -21,7 +21,7 @@
  */
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, Search, X } from "lucide-react";
+import { ChevronDown, Mail, MessageCircle, Phone, Search, X } from "lucide-react";
 import type {
   EstadoConteo,
   EstadoOrdenCompra,
@@ -60,7 +60,7 @@ export function PaginaInventario({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-[1240px] font-sans text-theme-sm text-ink-body dark:text-gray-300">
+    <div className="w-full font-sans text-theme-sm text-ink-body dark:text-gray-300">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-theme-2xl font-bold tracking-tight text-ink-title dark:text-white">{titulo}</h1>
@@ -490,7 +490,7 @@ export function Falta() {
 type VarianteBoton = "principal" | "secundario" | "texto" | "peligro";
 
 const BOTON: Record<VarianteBoton, string> = {
-  principal: "bg-brand-500 text-white hover:bg-brand-600 active:bg-brand-700 disabled:bg-brand-200",
+  principal: "bg-brand-500 text-white hover:bg-brand-600 active:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-500 dark:disabled:bg-white/10 dark:disabled:text-gray-500",
   secundario:
     "border border-gray-300 bg-white text-ink-body hover:bg-gray-50 active:bg-gray-100 disabled:text-gray-400 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/5",
   texto: "text-ink-title hover:bg-gray-100 active:bg-gray-200 disabled:text-gray-400 dark:text-white dark:hover:bg-white/5",
@@ -845,6 +845,63 @@ export function ListaDatos({ items }: { items: { etiqueta: string; valor: React.
         </div>
       ))}
     </dl>
+  );
+}
+
+/**
+ * Cómo comunicarse con un proveedor: tres acciones directas (llamar, WhatsApp,
+ * correo) en lugar de datos sueltos que hay que copiar. Solo aparecen las que
+ * tienen dato.
+ */
+export function ContactoProveedor({
+  proveedor,
+  mensaje,
+}: {
+  proveedor: { nombre: string; contacto: string; telefono: string; email: string };
+  /** Texto prellenado para WhatsApp y el asunto del correo («Sobre OC-0002»). */
+  mensaje?: string;
+}) {
+  const p = proveedor;
+  const digitos = p.telefono.replace(/\D/g, "");
+  const acciones = [
+    digitos && { etiqueta: "Llamar", href: `tel:+${digitos}`, Icono: Phone },
+    digitos && {
+      etiqueta: "WhatsApp",
+      href: `https://wa.me/${digitos}${mensaje ? `?text=${encodeURIComponent(mensaje)}` : ""}`,
+      Icono: MessageCircle,
+    },
+    p.email && {
+      etiqueta: "Correo",
+      href: `mailto:${p.email}${mensaje ? `?subject=${encodeURIComponent(mensaje)}` : ""}`,
+      Icono: Mail,
+    },
+  ].filter(Boolean) as { etiqueta: string; href: string; Icono: React.FC<{ className?: string }> }[];
+
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-transparent">
+      <div className="min-w-0">
+        <p className="truncate font-bold text-ink-body dark:text-white">{p.contacto || p.nombre}</p>
+        <p className="text-theme-xs text-gray-600 dark:text-gray-400">
+          {[p.contacto ? p.nombre : null, p.telefono, p.email].filter(Boolean).join(" · ")}
+        </p>
+      </div>
+      {acciones.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {acciones.map(({ etiqueta, href, Icono }) => (
+            <a
+              key={etiqueta}
+              href={href}
+              target={href.startsWith("http") ? "_blank" : undefined}
+              rel={href.startsWith("http") ? "noreferrer" : undefined}
+              className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-gray-300 px-3 text-theme-sm font-bold text-ink-body transition-colors hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-white/15 dark:text-white dark:hover:bg-white/5"
+            >
+              <Icono className="h-4 w-4" />
+              {etiqueta}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

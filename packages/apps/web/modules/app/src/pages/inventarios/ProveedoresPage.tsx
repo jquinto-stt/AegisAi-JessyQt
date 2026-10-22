@@ -28,6 +28,7 @@ import {
   Campo,
   CeldaDoble,
   Confirmar,
+  ContactoProveedor,
   CONTROL,
   cx,
   DistintivoOrden,
@@ -56,6 +57,7 @@ function cifrasDe(p: Proveedor) {
   return {
     articulos: s.articulos.filter((a) => a.activo && a.proveedorId === p.id).length,
     enCurso: ordenes.filter(ordenAbierta).length,
+    porReponer: s.colaReorden.filter((i) => i.articulo.proveedorId === p.id && i.sugerido > 0).length,
     comprado: ordenes.filter((o) => o.estado !== "cancelada").reduce((t, o) => t + totalOrden(o), 0),
   };
 }
@@ -238,6 +240,8 @@ const PanelDetalle = observer(function PanelDetalle({
   const p = proveedor;
   const c = cifrasDe(p);
   const articulos = s.articulos.filter((a) => a.activo && a.proveedorId === p.id).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const porReponer = s.colaReorden.filter((i) => i.articulo.proveedorId === p.id && i.sugerido > 0);
+  const costoReponer = porReponer.reduce((t, i) => t + i.sugerido * i.articulo.costoUnitario, 0);
   const ordenes = s.ordenes
     .filter((o) => o.proveedorId === p.id)
     .sort((a, b) => b.fechaCreacion.localeCompare(a.fechaCreacion))
@@ -265,16 +269,34 @@ const PanelDetalle = observer(function PanelDetalle({
         </>
       }
     >
+      <ContactoProveedor proveedor={p} />
+
       <ListaDatos
         items={[
-          { etiqueta: "Contacto", valor: p.contacto || <Falta /> },
-          { etiqueta: "Teléfono", valor: p.telefono ? <a className="hover:underline" href={`tel:${p.telefono.replace(/\s/g, "")}`}>{p.telefono}</a> : <Falta /> },
-          { etiqueta: "Correo", valor: p.email ? <a className="hover:underline" href={`mailto:${p.email}`}>{p.email}</a> : <Falta /> },
           { etiqueta: "Entrega", valor: `${p.plazoEntregaDias} ${p.plazoEntregaDias === 1 ? "día" : "días"}` },
           { etiqueta: "Pago", valor: p.condicionesPago || <Falta /> },
           { etiqueta: "Comprado", valor: <span className="tabular-nums">{formatearMoneda(c.comprado)}</span> },
         ]}
       />
+
+      {porReponer.length > 0 && p.activo && (
+        <section className="rounded-2xl border border-brand-200 bg-brand-50 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="font-bold text-ink-body dark:text-white">
+                {porReponer.length} {porReponer.length === 1 ? "artículo por reponer" : "artículos por reponer"} · {formatearMoneda(costoReponer)}
+              </p>
+              <p className="mt-0.5 text-theme-xs text-gray-700 dark:text-gray-300">
+                {porReponer.slice(0, 3).map((i) => i.articulo.nombre).join(", ")}
+                {porReponer.length > 3 && ` y ${porReponer.length - 3} más`}
+              </p>
+            </div>
+            <Boton variante="secundario" className="shrink-0" onClick={() => navigate("/inventarios/reorden")}>
+              Ver en la cola
+            </Boton>
+          </div>
+        </section>
+      )}
 
       <section>
         <Subtitulo>Artículos que suministra</Subtitulo>
@@ -421,6 +443,7 @@ export const ProveedoresPage = observer(function ProveedoresPage() {
                 <th className={TABLA.thNum}>Entrega</th>
                 <th className={cx(TABLA.th, "hidden md:table-cell")}>Pago</th>
                 <th className={cx(TABLA.thNum, "hidden md:table-cell")}>Artículos</th>
+                <th className={TABLA.thNum}>Por reponer</th>
                 <th className={TABLA.thNum}>En curso</th>
                 <th className={TABLA.thNum}>Comprado</th>
               </tr>
@@ -468,6 +491,9 @@ export const ProveedoresPage = observer(function ProveedoresPage() {
                     </td>
                     <td className={cx(TABLA.td, "hidden whitespace-nowrap text-gray-700 md:table-cell dark:text-gray-300")}>{p.condicionesPago || <Falta />}</td>
                     <td className={cx(TABLA.tdNum, "hidden md:table-cell")}>{formatearEntero(c.articulos)}</td>
+                    <td className={TABLA.tdNum}>
+                      {c.porReponer > 0 ? <span className="font-bold text-brand-700 dark:text-brand-400">{formatearEntero(c.porReponer)}</span> : <Falta />}
+                    </td>
                     <td className={TABLA.tdNum}>{c.enCurso > 0 ? formatearEntero(c.enCurso) : <Falta />}</td>
                     <td className={TABLA.tdNum}>{formatearMoneda(c.comprado)}</td>
                   </tr>

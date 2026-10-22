@@ -69,7 +69,7 @@ import {
   CampoConfig,
   ChipDia,
   ConfigAcciones,
-  ConfigHub,
+  ConfigHubPagina,
   ConfigShell,
   Label2,
   ToggleRow,
@@ -217,6 +217,16 @@ const PALABRAS_CLAVE_SECCION: Record<ClaveSeccion, string[]> = {
   tiempos: ["horario", "atencion", "sla", "demoras", "urgente", "tiempo", "dias", "horas", "24/7"],
   sonidos: ["sonido", "audio", "alerta", "campana", "timbre", "notificacion", "volumen", "chime", "aviso", "demora", "escritorio"],
   integraciones: ["whatsapp", "instagram", "facebook", "telegram", "canales", "conectores", "mensajeria", "api", "webhooks"],
+};
+
+/** Los ajustes que hay dentro de cada sección, con el nombre que llevan en ella. */
+const AJUSTES_SECCION: Record<ClaveSeccion, string[]> = {
+  flujo: ["Modalidades de entrega", "Nombres de etapas", "Columnas del tablero"],
+  pagos: ["Medios de pago", "Cuentas para transferencias", "Pasarela de pago", "Mensaje de cobro"],
+  perfil: ["Tipo de negocio", "Catálogo base", "Terminología"],
+  tiempos: ["Horario de atención", "Tiempo máximo por etapa", "Aviso fuera de horario"],
+  sonidos: ["Timbre de pedido nuevo", "Alerta de demoras", "Recordatorio", "Notificaciones de escritorio"],
+  integraciones: ["WhatsApp", "Instagram", "Facebook", "Telegram"],
 };
 
 const ACCION_SECCION: Record<ClaveSeccion, string> = {
@@ -418,7 +428,6 @@ export const ConfigPage = observer(() => {
   const [draft, setDraft] = useState<PedidosConfig>(() => copiaDe(pedidosStore.config));
 
   const [guardado, setGuardado] = useState(false);
-  const [busqueda, setBusqueda] = useState("");
 
   // ── Canales e integraciones (estado sincronizado con organizacionStore) ──
   const [canalesActivos, setCanalesActivos] = useState<{
@@ -929,12 +938,53 @@ export const ConfigPage = observer(() => {
   // lista copiada: una sección nueva aparece aquí sola y no puede quedarse sin
   // tarjeta —ni al revés— que es como una navegación se desincroniza del
   // contenido.
+  const cfg = pedidosStore.config;
+  const banco = cfg.datosBancarios;
+  const mediosPago = [
+    banco?.efectivoActivo && "efectivo",
+    banco?.transferenciaActivo && "transferencia",
+    banco?.contraEntregaActivo && "contra entrega",
+    banco?.linkPagoActivo && "link de pago",
+  ].filter(Boolean) as string[];
+  const estadoSeccion: Record<ClaveSeccion, { texto: string; aviso?: boolean }> = {
+    flujo: {
+      texto: `${cfg.modalidades.length} ${cfg.modalidades.length === 1 ? "modalidad activa" : "modalidades activas"} · ${columnas.length} columnas`,
+    },
+    pagos:
+      mediosPago.length > 0
+        ? { texto: `Acepta ${mediosPago.join(", ")}` }
+        : { texto: "Sin medios de pago configurados", aviso: true },
+    perfil: {
+      texto: cfg.perfilComercial ? BUSINESS_PROFILES[cfg.perfilComercial].name : "Sin perfil elegido",
+    },
+    tiempos: {
+      texto: cfg.horario.activo
+        ? `Atiende ${cfg.horario.apertura} a ${cfg.horario.cierre}`
+        : "Atiende a toda hora",
+    },
+    sonidos: {
+      texto: cfg.alertaAtencion.activo
+        ? `Recordatorio cada ${cfg.alertaAtencion.cadaSegundos} s`
+        : "Recordatorio sonoro apagado",
+    },
+    integraciones: { texto: "Se administran en Ajustes generales" },
+  };
+
+  // Las tarjetas del hub salen de `ORDEN_SECCIONES` y `META_SECCION`, no de una
+  // lista copiada: una sección nueva aparece aquí sola y no puede quedarse sin
+  // tarjeta —ni al revés— que es como una navegación se desincroniza del
+  // contenido.
   const tarjetasHub: TarjetaHub[] = ORDEN_SECCIONES.map((k) => ({
     key: k,
     label: META_SECCION[k].label,
     hint: META_SECCION[k].hint,
     icono: META_SECCION[k].icono,
     badge: k === "perfil" ? "Solo desarrollo" : undefined,
+    ajustes: AJUSTES_SECCION[k],
+    estado: estadoSeccion[k].texto,
+    estadoTono: estadoSeccion[k].aviso ? "aviso" : "neutro",
+    palabrasClave: PALABRAS_CLAVE_SECCION[k],
+    accion: ACCION_SECCION[k],
   }));
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -946,122 +996,16 @@ export const ConfigPage = observer(() => {
   // navegar entre secciones no es editar, y desactivar la navegación dejaría al
   // usuario en modo lectura sin poder ni mirar las otras secciones.
   if (!seccion) {
-    const query = busqueda.toLowerCase().trim();
-    const tarjetasFiltradas = tarjetasHub.filter((t) => {
-      if (!query) return true;
-      const coincideTexto =
-        t.label.toLowerCase().includes(query) ||
-        t.hint.toLowerCase().includes(query);
-      const palabrasClave = PALABRAS_CLAVE_SECCION[t.key as ClaveSeccion] || [];
-      const coincidePalabrasClave = palabrasClave.some((p) => p.includes(query));
-      return coincideTexto || coincidePalabrasClave;
-    });
-
     return (
-      <div className="pb-12 space-y-8">
+      <>
         <PageMeta title="Configuración · Pedidos" description="Ajustes del módulo de pedidos" />
-
-        {/* ── Encabezado con buscador interactivo ─────────────────────── */}
-        <section className="space-y-6" data-purpose="page-header">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div className="space-y-1.5">
-              <h1 className="text-[24px] sm:text-[36px] font-bold text-[#190088] leading-tight dark:text-white">
-                Configuración de Pedidos
-              </h1>
-              <p className="text-[14px] sm:text-[16px] text-[#212121] dark:text-gray-400 max-w-2xl font-normal leading-relaxed">
-                Gestiona el flujo operativo, tiempos, cuentas de cobro, integraciones de mensajería y personalización del tablero.
-              </p>
-            </div>
-
-            {/* Barra de búsqueda interactiva */}
-            <div className="w-full md:w-80 relative shrink-0">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                </svg>
-              </div>
-              <input
-                id="moduleSearchInput"
-                type="text"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar ajuste o parámetro..."
-                className="w-full pl-10 pr-9 py-2.5 text-[14px] font-normal bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-[#FF3F1A]/20 focus:border-[#FF3F1A] dark:focus:border-[#FF3F1A] text-[#212121] dark:text-white shadow-theme-xs transition placeholder-gray-400 dark:placeholder-gray-500"
-              />
-              {busqueda && (
-                <button
-                  type="button"
-                  onClick={() => setBusqueda("")}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-                  aria-label="Borrar búsqueda"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="h-px bg-[#ECECEC] dark:bg-gray-800"></div>
-        </section>
-
-        {/* ── Cuadrícula de módulos ─────────────────────────────────────── */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-purpose="modules-grid">
-          {tarjetasFiltradas.length > 0 ? (
-            tarjetasFiltradas.map((t) => {
-              const Icono = t.icono;
-              const accionLabel = ACCION_SECCION[t.key as ClaveSeccion] || "Configurar";
-              return (
-                <article
-                  key={t.key}
-                  onClick={() => entrarASeccion(t.key)}
-                  className="group relative bg-white dark:bg-gray-900 border-2 border-[#ECECEC] dark:border-gray-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] rounded-3xl p-6 sm:p-7 shadow-theme-xs hover:shadow-theme-md transition-all duration-200 flex flex-col justify-between cursor-pointer hover:-translate-y-1"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="w-14 h-14 rounded-2xl bg-[#97D6DF]/20 border border-[#97D6DF]/30 flex items-center justify-center text-[#190088] group-hover:bg-[#FF3F1A] group-hover:text-white group-hover:border-[#FF3F1A] transition-all duration-200">
-                        <Icono className="w-7 h-7 stroke-[1.75]" />
-                      </div>
-                      {t.badge && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold tracking-wide uppercase bg-[#97D6DF]/30 text-[#190088] border border-[#97D6DF]/50">
-                          {t.badge}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-[20px] sm:text-[24px] font-bold text-[#190088] dark:text-white mb-2 group-hover:text-[#FF3F1A] transition-colors leading-tight">
-                      {t.label}
-                    </h3>
-                    <p className="text-[14px] font-normal text-[#212121] dark:text-gray-400 leading-relaxed mb-6">
-                      {t.hint}
-                    </p>
-                  </div>
-                  <div className="pt-4 border-t border-[#ECECEC] dark:border-gray-800 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-[14px] font-bold text-[#FF3F1A] group-hover:text-[#e5351a] transition-colors">
-                      <span>{accionLabel}</span>
-                      <svg className="w-4 h-4 text-[#FF3F1A] group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      </svg>
-                    </span>
-                  </div>
-                </article>
-              );
-            })
-          ) : (
-            <div className="col-span-full py-12 text-center bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-[#ECECEC] dark:border-gray-800">
-              <p className="text-[14px] text-[#212121] dark:text-gray-400 font-normal">
-                No se encontraron ajustes para «<span className="font-bold">{busqueda}</span>».
-              </p>
-              <button
-                type="button"
-                onClick={() => setBusqueda("")}
-                className="mt-3 inline-flex items-center text-[12px] font-bold text-[#FF3F1A] hover:underline cursor-pointer"
-              >
-                Limpiar búsqueda
-              </button>
-            </div>
-          )}
-        </section>
-      </div>
+        <ConfigHubPagina
+          titulo="Configuración de Pedidos"
+          descripcion="Elige una sección para ajustar cómo recibes, preparas, cobras y entregas los pedidos."
+          tarjetas={tarjetasHub}
+          onEntrar={entrarASeccion}
+        />
+      </>
     );
   }
 
