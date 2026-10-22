@@ -90,39 +90,21 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
     { id: "tablero", label: "Tablero", path: "/pedidos", capacidad: "orders.read" },
     { id: "catalogo", label: "Catálogo", path: "/pedidos/catalogo", capacidad: "orders.create" },
     { id: "crear", label: "Crear pedido", path: "/pedidos/crear", capacidad: "orders.create" },
-    { id: "chats", label: "Chats", path: "/conversaciones", capacidad: "channels.read" },
+    { id: "chats", label: "Conversaciones", path: "/conversaciones", capacidad: "channels.read" },
     { id: "analitica", label: "Analítica", path: "/pedidos/analitica", capacidad: "team.read" },
     { id: "configuracion", label: "Configuración", path: "/pedidos/config", capacidad: "settings.read" },
     { id: "operadores", label: "Operadores", path: "/pedidos/operadores", capacidad: "team.read" },
     { id: "asistente", label: "Asistente", path: "/asistente", capacidad: "assistant.use" },
   ],
-
-  /**
-   * Inventarios: el acto de contar, de arriba abajo.
-   *
-   * El orden es el de la operación, no el alfabético: primero el trabajo del día
-   * (los conteos), después el catálogo que los alimenta (elementos, ubicaciones),
-   * después lo que sale de ellos (historial, alertas, reportes) y por último lo
-   * que se ajusta una vez (configuración).
-   *
-   * **Siete secciones y no nueve rutas**: `/inventarios/nuevo` y
-   * `/inventarios/:id` no son secciones de navegación —son pantallas a las que
-   * se llega desde un botón y desde una fila— así que no se declaran aquí. Ese
-   * es el motivo de que `SECCIONES` no sea un espejo de la tabla de rutas: una
-   * sección es un DESTINO, y «crear» no es un sitio al que se vaya sin más.
-   *
-   * Todas las secciones exigen `inventory.read`, incluida la de configuración,
-   * que se entra a mirar para luego guardar con `inventory.configure`. Entrar y
-   * operar se gobiernan por capacidades distintas (invariante C5).
-   */
   inventarios: [
-    { id: "inicio", label: "Dashboard", path: "/inventarios", capacidad: "inventory.read" },
-    { id: "productos", label: "Productos", path: "/inventarios/productos", capacidad: "inventory.read" },
-    { id: "ordenes", label: "Órdenes", path: "/inventarios/ordenes", capacidad: "inventory.read" },
-    { id: "proveedores", label: "Proveedores", path: "/inventarios/proveedores", capacidad: "inventory.read" },
-    { id: "reportes", label: "Reportes", path: "/inventarios/reportes", capacidad: "inventory.read" },
-    { id: "configuracion", label: "Configuración", path: "/inventarios/config", capacidad: "inventory.read" },
-    { id: "operadores", label: "Operadores", path: "/inventarios/operadores", capacidad: "team.read" },
+    { id: "dashboard", label: "Resumen", path: "/inventarios", capacidad: "settings.read" },
+    { id: "articulos", label: "Catálogo de artículos", path: "/inventarios/articulos", capacidad: "settings.read" },
+    { id: "movimientos", label: "Entradas y salidas", path: "/inventarios/movimientos", capacidad: "settings.read" },
+    { id: "ordenes_compra", label: "Órdenes de compra", path: "/inventarios/ordenes-compra", capacidad: "settings.read" },
+    { id: "reorden", label: "Cola de reorden", path: "/inventarios/reorden", capacidad: "settings.read" },
+    { id: "conteos", label: "Conteos y ajustes", path: "/inventarios/conteos", capacidad: "settings.read" },
+    { id: "proveedores", label: "Proveedores", path: "/inventarios/proveedores", capacidad: "settings.read" },
+    { id: "admin", label: "Configuración", path: "/inventarios/config", capacidad: "settings.read" },
   ],
 };
 
@@ -189,51 +171,6 @@ const SEED: Operador[] = [
     estado: "activo",
     modulo: "pedidos",
     rolId: "personalizado",
-  },
-  // ── Operadores de Inventarios ───────────────────────────────────────────
-  {
-    id: "inv1",
-    nombre: "Carlos Mendoza",
-    email: "carlos.mendoza@negocio.com",
-    telefono: "+57 301 234 5678",
-    cargo: "Supervisor de Bodega",
-    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    estado: "activo",
-    modulo: "inventarios",
-    rolId: "supervisor_pedidos",
-  },
-  {
-    id: "inv2",
-    nombre: "Mariana Duarte",
-    email: "mariana.duarte@negocio.com",
-    telefono: "+57 311 345 6789",
-    cargo: "Auxiliar de Inventarios",
-    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-    estado: "activo",
-    modulo: "inventarios",
-    rolId: "vendedor",
-  },
-  {
-    id: "inv3",
-    nombre: "Jorge Rentería",
-    email: "jorge.renteria@negocio.com",
-    telefono: "+57 315 456 7890",
-    cargo: "Analista de Stock",
-    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-    estado: "activo",
-    modulo: "inventarios",
-    rolId: "analista_inventarios",
-  },
-  {
-    id: "inv4",
-    nombre: "Felipe Restrepo",
-    email: "felipe.restrepo@negocio.com",
-    telefono: "+57 320 567 8901",
-    cargo: "Conteo y Picking",
-    avatarUrl: "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&auto=format&fit=crop&q=80",
-    estado: "pendiente",
-    modulo: "inventarios",
-    rolId: "vendedor",
   },
 ];
 

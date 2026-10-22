@@ -65,16 +65,6 @@
      hacer scroll las tarjetas parecerían moverse sobre un color que cambia. */
   .necto-lienzo {
     @apply bg-gray-100 dark:bg-gray-950;
-    background-image:
-      radial-gradient(1100px 520px at 6% -12%, rgb(255 63 26 / 0.07), transparent 62%),
-      radial-gradient(900px 460px at 102% -6%, rgb(25 0 136 / 0.06), transparent 60%);
-    background-attachment: fixed;
-  }
-
-  .dark .necto-lienzo {
-    background-image:
-      radial-gradient(1100px 520px at 6% -12%, rgb(255 63 26 / 0.1), transparent 62%),
-      radial-gradient(900px 460px at 102% -6%, rgb(81 32 220 / 0.14), transparent 60%);
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -89,8 +79,8 @@
      Sin `overflow-hidden`: hay páginas con menús desplegables y `sticky` que se
      recortarían. El radio se respeta igual porque los hijos no llegan al borde. */
   .necto-panel {
-    @apply rounded-3xl bg-white ring-1 ring-gray-200/80 shadow-theme-xs
-           dark:bg-gray-900 dark:ring-white/10;
+    @apply rounded-3xl border border-gray-200/80 bg-white
+           dark:border-white/10 dark:bg-gray-900;
   }
 
   /* ══════════════════════════════════════════════════════════════════════════

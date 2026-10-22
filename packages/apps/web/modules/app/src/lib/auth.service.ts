@@ -17,7 +17,7 @@ import {
   organizacionStore,
   modulosOperablesDeSesion,
   pedidosStore,
-  inventariosStore,
+  inventarioStore,
   operadoresStore,
 } from "@/stores";
 import type { RedesSociales, DireccionPerfil } from "@/stores/organizacion.store";
@@ -206,7 +206,7 @@ export function asegurarSesionPruebas(emailPersonalizado?: string): ResultadoAut
   }
 
   pedidosStore.restaurarSeed();
-  inventariosStore.restaurarSeed();
+  inventarioStore.restablecer();
   operadoresStore.restaurarSeed();
 
   if (!organizacionStore.esModuloInstalado("pedidos")) {

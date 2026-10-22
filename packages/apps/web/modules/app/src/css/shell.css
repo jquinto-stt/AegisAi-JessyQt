@@ -12,18 +12,15 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @utility menu-item {
-  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-xl text-theme-sm transition-colors duration-150;
+  @apply relative flex items-center w-full gap-3 px-3 py-2 font-normal rounded-xl text-theme-sm transition-colors duration-150;
 }
 
-/* Activo = índigo pleno de marca (`secondary-600` = #190088), que es el color
-   secundario de la guía y el que usa «grow together» en el logotipo. El naranja
-   queda para la ACCIÓN (botones, focos); si el ítem activo del menú fuera
-   naranja, la navegación competiría con el botón primario de cada pantalla. */
+/* La navegación recede: el ítem activo es una pastilla gris neutra y la tinta
+   del título. El naranja queda para la ACCIÓN y para el dato que pide
+   atención; si el ítem activo fuera naranja o índigo pleno, la navegación
+   competiría con el botón primario de cada pantalla. */
 @utility menu-item-active {
-  /* Modo oscuro: el azul profundo NO se usa —lo dice la lamina—, lo reemplaza
-     el azul claro de la paleta. El texto va en la tinta oscura porque blanco
-     sobre `#97D6DF` da 1,6:1. */
-  @apply bg-secondary-600 text-white shadow-theme-xs dark:bg-accent-300 dark:text-ink-body;
+  @apply bg-gray-100 font-bold text-ink-title dark:bg-white/10 dark:text-white;
 }
 
 @utility menu-item-inactive {
@@ -35,7 +32,7 @@
 }
 
 @utility menu-item-icon-active {
-  @apply text-white dark:text-ink-body;
+  @apply text-ink-title dark:text-white;
 }
 
 @utility menu-item-icon-size {

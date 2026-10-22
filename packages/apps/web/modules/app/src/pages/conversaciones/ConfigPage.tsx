@@ -102,26 +102,25 @@ export const ConfigPage = observer(() => {
 
   // ── Estados locales de configuración de IA y Canal ──
   const [configIa, setConfigIa] = useState(() => {
-    try {
-      const guardadoStr = localStorage.getItem("necto_config_ia");
-      if (guardadoStr) return JSON.parse(guardadoStr);
-    } catch {}
-    return {
+    const defaults = {
       apiKey: "sk-or-v1-necto-production-key-sample",
       modelo: "google/gemini-2.0-flash-001",
       temperatura: 0.3,
       maxTokens: 1000,
       apiKeyStatus: "Configurada",
-      nombreAsistente: "NectoBot",
-      tono: "profesional",
+      nombreAsistente: "Asistente Necto",
+      tono: "amable",
       trato: "tu",
-      saludo: "¡Hola! Gracias por comunicarte con nuestro taller. ¿En qué podemos ayudarte hoy?",
+      estiloRespuesta: "guiado",
+      conEmojis: true,
+      derivarReclamos: true,
+      saludo: "¡Hola {cliente}! Gracias por escribir a {empresa}. ¿En qué te podemos ayudar hoy?",
       promptPrincipal:
-        "Eres el asistente virtual oficial de nuestro taller mecánico y centro de servicio automotriz. Atiendes de manera cordial, rápida y precisa en español. Tu objetivo es ayudar a los clientes con dudas sobre servicios, presupuestos estimados y agendamiento de citas en nuestros elevadores. Si el cliente requiere atención personalizada, presupuesto complejo o expresa inconformidad, deriva la conversación con un asesor del equipo.",
+        "Eres el asistente virtual oficial de nuestro negocio. Atiendes de manera cordial, rápida y precisa en español. Tu objetivo es resolver dudas de los clientes sobre productos, disponibilidad, pedidos y precios. Si el cliente requiere atención personalizada o expresa alguna inconformidad, deriva la conversación con un asesor del equipo.",
       reglasDerivacion:
-        "1. Derivar si el cliente solicita explícitamente hablar con un humano o asesor.\n2. Derivar ante reclamaciones o incidencias graves de trabajos anteriores.\n3. Derivar si la avería descrita requiere diagnóstico presencial especializado sin servicio estándar.",
+        "1. Derivar si el cliente solicita explícitamente hablar con una persona o asesor.\n2. Derivar ante reclamos o quejas sobre compras anteriores.\n3. Derivar ante consultas que requieran autorización especial.",
       restricciones:
-        "- No inventar precios ni tiempos no listados en el catálogo.\n- No prometer entregas inmediatas sin confirmación de carga en elevadores.",
+        "- No inventar precios ni disponibilidad no confirmada.\n- Mantener un tono respetuoso y claro en todo momento.",
       permitirCotizar: true,
       servicios: [
         { id: "1", nombre: "Cambio de aceite y filtro", precio: 65, duracionMin: 45, activo: true },
@@ -155,6 +154,12 @@ export const ConfigPage = observer(() => {
         },
       ],
     };
+
+    try {
+      const guardadoStr = localStorage.getItem("necto_config_ia");
+      if (guardadoStr) return { ...defaults, ...JSON.parse(guardadoStr) };
+    } catch {}
+    return defaults;
   });
 
   const [mostrarApiKey, setMostrarApiKey] = useState(false);
@@ -386,7 +391,7 @@ export const ConfigPage = observer(() => {
         titulo={meta.label}
         hint={meta.hint}
         footer={
-          seccionActiva === "modelo" ? null : notaSinGuardado(seccionActiva) === null ? (
+          seccionActiva === "modelo" || seccionActiva === "personalidad" ? null : notaSinGuardado(seccionActiva) === null ? (
             <ConfigAcciones
               fija
               mensaje={
@@ -824,84 +829,312 @@ export const ConfigPage = observer(() => {
           </div>
         )}
 
-        {/* ───────────── 3. PERSONALIDAD ───────────── */}
+        {/* ───────────── 3. PERSONALIDAD DEL ASISTENTE ───────────── */}
         {seccionActiva === "personalidad" && (
-          <BloqueConfig
-            icono={ICONO_SECCION[meta.icono]}
-            pregunta={meta.pregunta}
-            descripcion="Personaliza el nombre, tono de voz y saludo que utiliza el asistente con tus clientes."
-          >
-            <div className="space-y-6">
+          <div className="space-y-6">
+            {/* TARJETA 1: Estilo de Atención */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900 space-y-6">
+              {/* Cabecera */}
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+                    Estilo de atención del asistente
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Define cómo se presenta y cómo se comunica con tus clientes en WhatsApp.
+                  </p>
+                </div>
+              </div>
+
+              {/* Grid: Nombre y Tratamiento */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <CampoConfig
-                  etiqueta="Nombre del Asistente"
-                  ayuda="Nombre con el que se presentará el asistente ante los clientes en WhatsApp."
-                  ancho="max-w-md"
-                >
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    Nombre del asistente
+                  </label>
                   <Input
                     value={configIa.nombreAsistente}
                     onChange={(e) => setConfigIa({ ...configIa, nombreAsistente: e.target.value })}
-                    placeholder="Ej: NectoBot, Sofía del Taller..."
+                    placeholder="Ej: Asistente Necto, Sofía..."
                   />
-                </CampoConfig>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500">
+                    Es el nombre visible con el que responderá en las conversaciones.
+                  </p>
+                </div>
 
-                <CampoConfig
-                  etiqueta="Tratamiento al cliente"
-                  ayuda="Define si el trato será informal ('Tú') o formal ('Usted')."
-                  ancho="max-w-md"
-                >
-                  <select
-                    value={configIa.trato}
-                    onChange={(e) => setConfigIa({ ...configIa, trato: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-800 shadow-xs dark:border-gray-800 dark:bg-gray-900 dark:text-white"
-                  >
-                    <option value="tu">Tú (Cercano, empático y directo)</option>
-                    <option value="usted">Usted (Formal y corporativo)</option>
-                  </select>
-                </CampoConfig>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    ¿Cómo debe tratar a los clientes?
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { id: "tu", titulo: "Tú", desc: "Cercano, amigable y dinámico" },
+                      { id: "usted", titulo: "Usted", desc: "Formal, respetuoso y corporativo" },
+                    ].map((op) => (
+                      <button
+                        key={op.id}
+                        type="button"
+                        onClick={() => setConfigIa({ ...configIa, trato: op.id })}
+                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                          configIa.trato === op.id
+                            ? "border-[#FF3F1A] bg-[#FF3F1A]/5 shadow-2xs dark:border-[#FF3F1A] dark:bg-[#FF3F1A]/10"
+                            : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-950/40"
+                        }`}
+                      >
+                        <p className={`text-xs font-bold ${configIa.trato === op.id ? "text-[#FF3F1A]" : "text-gray-900 dark:text-white"}`}>
+                          {op.titulo}
+                        </p>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                          {op.desc}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              <CampoConfig
-                etiqueta="Tono general de comunicación"
-                ayuda="Determina el estilo de redacción de los mensajes enviados por el asistente."
-                ancho="max-w-xl"
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { id: "profesional", titulo: "Profesional y Técnico", desc: "Claro, preciso y con terminología adecuada." },
-                    { id: "cercano", titulo: "Cercano y Amigable", desc: "Cálido, accesible y con emojis comedidos." },
-                    { id: "ejecutivo", titulo: "Conciso y Directo", desc: "Rápido, al punto, sin rodeos." },
-                  ].map((t) => (
-                    <div
-                      key={t.id}
-                      onClick={() => setConfigIa({ ...configIa, tono: t.id })}
-                      className={cn(
-                        "p-3.5 rounded-xl border cursor-pointer transition-all",
-                        configIa.tono === t.id
-                          ? "border-indigo-600 bg-indigo-50/40 dark:border-indigo-500 dark:bg-indigo-500/10"
-                          : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900"
-                      )}
-                    >
-                      <p className="text-xs font-bold text-gray-900 dark:text-white">{t.titulo}</p>
-                      <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">{t.desc}</p>
-                    </div>
-                  ))}
+              {/* Grid: Forma de responder y Emojis */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-gray-100 dark:border-gray-800/80">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    ¿Cómo debe responder?
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      {
+                        id: "guiado",
+                        titulo: "Amable y guiado",
+                        desc: "Pregunta y orienta al cliente paso a paso",
+                      },
+                      {
+                        id: "directo",
+                        titulo: "Rápido y directo",
+                        desc: "Responde solo lo que el cliente consulta",
+                      },
+                    ].map((op) => (
+                      <button
+                        key={op.id}
+                        type="button"
+                        onClick={() => setConfigIa({ ...configIa, estiloRespuesta: op.id })}
+                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                          configIa.estiloRespuesta === op.id
+                            ? "border-[#190088] bg-[#190088]/5 dark:border-white dark:bg-white/10"
+                            : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-950/40"
+                        }`}
+                      >
+                        <p className={`text-xs font-bold ${configIa.estiloRespuesta === op.id ? "text-[#190088] dark:text-white" : "text-gray-900 dark:text-white"}`}>
+                          {op.titulo}
+                        </p>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-tight">
+                          {op.desc}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </CampoConfig>
 
-              <CampoConfig
-                etiqueta="Mensaje de bienvenida automático"
-                ayuda="Mensaje que envía el asistente al iniciar el primer contacto con un nuevo cliente."
-                ancho="max-w-none"
-              >
-                <TextArea
-                  rows={3}
-                  value={configIa.saludo}
-                  onChange={(v) => setConfigIa({ ...configIa, saludo: v })}
-                />
-              </CampoConfig>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    Uso de emojis
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { id: true, titulo: "Con emojis 😊", desc: "Mensajes más cálidos y expresivos" },
+                      { id: false, titulo: "Solo texto", desc: "Estilo sobrio, sin emoticonos" },
+                    ].map((op) => (
+                      <button
+                        key={String(op.id)}
+                        type="button"
+                        onClick={() => setConfigIa({ ...configIa, conEmojis: op.id })}
+                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                          Boolean(configIa.conEmojis) === op.id
+                            ? "border-[#190088] bg-[#190088]/5 dark:border-white dark:bg-white/10"
+                            : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-950/40"
+                        }`}
+                      >
+                        <p className={`text-xs font-bold ${Boolean(configIa.conEmojis) === op.id ? "text-[#190088] dark:text-white" : "text-gray-900 dark:text-white"}`}>
+                          {op.titulo}
+                        </p>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-tight">
+                          {op.desc}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Atención ante reclamos */}
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-950/30 flex items-center justify-between gap-4">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-bold text-gray-900 dark:text-white">
+                    Pasar a una persona si el cliente tiene un reclamo o pide ayuda humana
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    El asistente se pausa automáticamente para que alguien de tu equipo tome la conversación.
+                  </p>
+                </div>
+                <div className="shrink-0">
+                  <Switch
+                    checked={Boolean(configIa.derivarReclamos)}
+                    onChange={(checked) => setConfigIa({ ...configIa, derivarReclamos: checked })}
+                    color="orange"
+                  />
+                </div>
+              </div>
             </div>
-          </BloqueConfig>
+
+            {/* TARJETA 2: Mensaje de Bienvenida y Vista Previa */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-900 space-y-6">
+              {/* Cabecera */}
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+                    Mensaje de bienvenida
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    El primer mensaje que recibe un cliente nuevo al escribir a tu WhatsApp.
+                  </p>
+                </div>
+              </div>
+
+              {/* Grid: Editor + Simulador WhatsApp */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Columna Izquierda: Editor */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      Texto del mensaje
+                    </label>
+                    <TextArea
+                      rows={4}
+                      value={configIa.saludo}
+                      onChange={(v) => setConfigIa({ ...configIa, saludo: v })}
+                      placeholder="Escribe el mensaje de bienvenida..."
+                    />
+                  </div>
+
+                  {/* Insertar datos rápidos */}
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                      Toca para insertar datos automáticamente:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!configIa.saludo.includes("{cliente}")) {
+                            setConfigIa({ ...configIa, saludo: `${configIa.saludo} {cliente}`.trim() });
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-700 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-300 transition-colors cursor-pointer"
+                      >
+                        <span>+ Nombre del cliente</span>
+                        <span className="font-mono text-[10px] text-gray-400">({"{cliente}"})</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!configIa.saludo.includes("{empresa}")) {
+                            setConfigIa({ ...configIa, saludo: `${configIa.saludo} {empresa}`.trim() });
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-700 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-300 transition-colors cursor-pointer"
+                      >
+                        <span>+ Tu negocio</span>
+                        <span className="font-mono text-[10px] text-gray-400">({"{empresa}"})</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Columna Derecha: Vista previa tipo WhatsApp */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-[#EFEAE2] dark:bg-[#0B141A] overflow-hidden shadow-xs flex flex-col">
+                    {/* Barra verde de WhatsApp */}
+                    <div className="bg-[#008069] dark:bg-[#1F2C34] text-white px-3.5 py-2.5 flex items-center gap-2.5 shrink-0">
+                      <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                        {configIa.nombreAsistente?.charAt(0) || "A"}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold leading-tight truncate">
+                          {configIa.nombreAsistente || "Asistente Necto"}
+                        </p>
+                        <p className="text-[10px] text-emerald-200 dark:text-emerald-400 leading-tight">
+                          en línea
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Chat */}
+                    <div className="p-4 space-y-3 min-h-[160px] flex flex-col justify-end">
+                      <div className="flex justify-end">
+                        <div className="max-w-[90%] rounded-2xl rounded-tr-xs bg-[#E7FFDB] dark:bg-[#005C4B] p-3 text-gray-900 dark:text-white shadow-2xs">
+                          <p className="text-xs leading-relaxed whitespace-pre-wrap">
+                            {configIa.saludo
+                              .replace(/{cliente}/g, "Carlos")
+                              .replace(/{empresa}/g, organizacionStore.organizacion?.nombre || "Mi Tienda")
+                              .replace(/{taller}/g, organizacionStore.organizacion?.nombre || "Mi Tienda") || "Escribe un mensaje de bienvenida..."}
+                          </p>
+
+                          <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-gray-500 dark:text-emerald-200/80">
+                            <span>10:42</span>
+                            <svg className="w-3.5 h-3.5 text-[#53bdeb]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7m-14 4l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="px-3 py-1.5 bg-gray-100/80 dark:bg-gray-900/80 border-t border-gray-200/50 dark:border-gray-800 text-center">
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                        Así lo verá el cliente en su teléfono
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Barra inferior de acciones con estilo Necto */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Los cambios se aplican de inmediato en tus conversaciones de WhatsApp al guardar.
+              </p>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={descartarCambios}
+                  className="text-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer px-2 py-1"
+                >
+                  Descartar cambios
+                </button>
+                <button
+                  type="button"
+                  onClick={guardarCambios}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#FF3F1A] hover:bg-[#e5351a] text-white text-xs font-bold shadow-md shadow-[#FF3F1A]/20 transition-all active:scale-98 cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  <span>Guardar cambios</span>
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ───────────── 4. INSTRUCCIONES ───────────── */}

@@ -21,9 +21,8 @@ describe("catálogo de capacidades", () => {
   it("C4: todas las capacidades nombran acciones, no pantallas", async () => {
     const { CAPACIDADES } = await freshRolesStore();
 
-    // 23 = 18 de Pedidos/canales/equipo/asistente + 5 de Inventarios
-    // (`inventory.read` / `count` / `manage` / `finalize` / `configure`).
-    expect(CAPACIDADES).toHaveLength(23);
+    // 18 = Pedidos/canales/equipo/asistente
+    expect(CAPACIDADES).toHaveLength(18);
     for (const cap of CAPACIDADES) {
       // Formato `<dominio>.<accion>`.
       expect(cap).toMatch(/^[a-z]+\.[a-z]+$/);
@@ -197,60 +196,8 @@ describe("mutaciones del catálogo", () => {
 
     rolesStore.crear({ nombre: "Ruido" });
     expect(rolesStore.roles).toHaveLength(ROLES_SEED.length + 1);
-    // El SEED original no debe haberse mutado. 6 = administrador, supervisor de
-    // operaciones, operador, preparación, analista de inventarios, personalizado.
-    expect(ROLES_SEED).toHaveLength(6);
-  });
-});
-
-describe("capacidades de Inventarios", () => {
-  it("las cinco existen, tienen etiqueta y viven en su propio grupo", async () => {
-    const { CAPACIDADES, CAPACIDAD_LABEL, CAPACIDAD_GRUPOS } = await freshRolesStore();
-
-    const inventario = [
-      "inventory.read",
-      "inventory.count",
-      "inventory.manage",
-      "inventory.finalize",
-      "inventory.configure",
-    ] as const;
-
-    for (const cap of inventario) {
-      expect(CAPACIDADES).toContain(cap);
-      expect(CAPACIDAD_LABEL[cap]).toBeTruthy();
-    }
-
-    const grupo = CAPACIDAD_GRUPOS.find((g) => g.id === "inventarios");
-    expect(grupo).toBeDefined();
-    expect(new Set(grupo?.capacidades)).toEqual(new Set(inventario));
-  });
-
-  it("«quien cuenta no firma»: el rol Operador tiene count y NO finalize", async () => {
-    // Es la separación de responsabilidades del módulo, y se comprueba sobre el
-    // rol de sistema en vez de sobre una descripción: si alguien añade
-    // `inventory.finalize` al rol Operador, la firma deja de verificar nada y
-    // este test lo dice.
-    const { ROLES_SEED } = await freshRolesStore();
-
-    const operador = ROLES_SEED.find((r) => r.id === "vendedor");
-    expect(operador?.capacidades).toContain("inventory.count");
-    expect(operador?.capacidades).not.toContain("inventory.finalize");
-  });
-
-  it("el Analista de inventarios solo puede leer: ni un permiso de mutación", async () => {
-    const { ROLES_SEED } = await freshRolesStore();
-
-    const analista = ROLES_SEED.find((r) => r.id === "analista_inventarios");
-    expect(analista).toBeDefined();
-    expect(analista?.capacidades).toEqual(["inventory.read", "settings.read"]);
-
-    for (const cap of [
-      "inventory.count",
-      "inventory.manage",
-      "inventory.finalize",
-      "inventory.configure",
-    ]) {
-      expect(analista?.capacidades, `el analista no debería tener ${cap}`).not.toContain(cap);
-    }
+    // El SEED original no debe haberse mutado. 5 = administrador, supervisor de
+    // operaciones, operador, preparación, personalizado.
+    expect(ROLES_SEED).toHaveLength(5);
   });
 });

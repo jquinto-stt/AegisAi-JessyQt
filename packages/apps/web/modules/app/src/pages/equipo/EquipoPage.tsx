@@ -92,7 +92,7 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
   const [tocados, setTocados] = useState<Partial<Record<CampoForm, boolean>>>({});
 
   const moduloActivo: Modulo = modulo;
-  const moduloLabel = moduloActivo === "inventarios" ? "Inventarios" : "Pedidos";
+  const moduloLabel = "Pedidos";
   const equipo = operadoresStore.porModulo(moduloActivo);
   const pendientes = operadoresStore.pendientesCount(moduloActivo);
 

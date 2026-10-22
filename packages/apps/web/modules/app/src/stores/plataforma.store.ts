@@ -85,32 +85,19 @@ export const CATALOGO_MODULOS: Record<IdModuloNegocio, InfoModuloNegocio> = {
       "Agentes IA & WhatsApp",
     ],
   },
-  /**
-   * Inventarios — **conteos, no stock.**
-   *
-   * La `descripcion` está escrita con cuidado porque es la primera línea que
-   * lee quien decide si enciende el módulo, y una descripción que prometa
-   * «control de existencias» atraería exactamente la expectativa equivocada.
-   * Aquí se dice lo que hace: contar, dónde, quién y cuándo. No administra
-   * stock, no descuenta por ventas, no tiene precios ni costos.
-   *
-   * `rutaConfig` apunta a `/inventarios/config`, que es la configuración del
-   * módulo — distinta de `/configuracion`, que es la de la organización.
-   */
   inventarios: {
     id: "inventarios",
-    nombre: "Inventarios",
-    nombreCorto: "Inventarios",
-    tagline: "Control y Verificación",
-    descripcion:
-      "Registra qué se contó, dónde, quién y cuándo. Conteos iniciales, periódicos y finales con evidencia fotográfica y trazabilidad por elemento y ubicación.",
+    nombre: "Inventario",
+    nombreCorto: "Inventario",
+    tagline: "Control de stock y reorden inteligente",
+    descripcion: "Catálogo de artículos, control de existencias, órdenes de compra, proveedores y sugerencias de reabastecimiento con IA.",
     rutaPrincipal: "/inventarios",
     rutaConfig: "/inventarios/config",
     disponible: true,
     destacados: [
-      "Conteos con cantidad esperada vs. observada",
-      "Ubicaciones por cliente, sede y espacio",
-      "Historial y evidencia por elemento",
+      "Monitoreo de existencias en tiempo real",
+      "Plan de reorden asistido por IA",
+      "Órdenes de compra y seguimiento de proveedores",
     ],
   },
 };
@@ -138,27 +125,24 @@ export const DETALLE_CONECTORES: Record<IdModuloNegocio, Record<IdConector, Info
       ],
     },
   },
-  /**
-   * Inventarios **no tiene conectores**, y se declara con los dos en `false`.
-   *
-   * No es un hueco por falta de tiempo: es una decisión. El módulo cuenta lo
-   * que hay en un sitio; un canal de WhatsApp que pregunte «¿cuántos extintores
-   * hay?» exigiría que el conteo fuera un stock vivo, que es justo lo que este
-   * módulo no es. Los dos conectores quedan apagados y sin beneficios que
-   * prometer, para que la UI no ofrezca un interruptor que no lleva a nada.
-   */
   inventarios: {
     necto_ia: {
       id: "necto_ia",
-      nombre: "Necto Intelligence (IA)",
-      descripcion: "No disponible para Inventarios. Los conteos se registran desde el módulo.",
-      beneficios: [],
+      nombre: "IA de Inventario",
+      descripcion: "Cálculo y predicción de niveles óptimos de reposición.",
+      beneficios: [
+        "Generación automática del plan de reorden",
+        "Detección predictiva de quiebres de stock",
+      ],
     },
     whatsapp: {
       id: "whatsapp",
-      nombre: "Canales de WhatsApp",
-      descripcion: "No disponible para Inventarios. Un conteo no se responde por chat.",
-      beneficios: [],
+      nombre: "Alertas WhatsApp de Inventario",
+      descripcion: "Notificaciones directas de existencias críticas a proveedores y equipo.",
+      beneficios: [
+        "Alertas instantáneas de stock bajo",
+        "Envío de órdenes de compra en PDF por WhatsApp",
+      ],
     },
   },
 };

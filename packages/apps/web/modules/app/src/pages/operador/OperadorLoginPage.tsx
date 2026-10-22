@@ -10,7 +10,6 @@ import {
   operadoresStore,
   sessionStore,
   pedidosStore,
-  inventariosStore,
   rolesStore,
   type Modulo,
 } from "@/stores";
@@ -163,7 +162,6 @@ export const OperadorLoginPage = observer(() => {
                 onClick={() => {
                   sessionStore.reset();
                   pedidosStore.iniciarDesdeCero();
-                  inventariosStore.iniciarDesdeCero();
                   operadoresStore.iniciarDesdeCero();
                   navigate("/onboarding/perfil");
                 }}

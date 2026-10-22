@@ -29,7 +29,7 @@ describe("PlataformaStore — catálogo (nivel 1)", () => {
   const store = new PlataformaStore();
 
   it("expone el catálogo completo, en orden de declaración", () => {
-    expect(store.catalogoModulos.map((m) => m.id)).toEqual(["pedidos", "inventarios"]);
+    expect(store.catalogoModulos.map((m) => m.id)).toEqual(["pedidos"]);
     expect(store.catalogoModulos).toHaveLength(Object.keys(CATALOGO_MODULOS).length);
   });
 
@@ -41,7 +41,6 @@ describe("PlataformaStore — catálogo (nivel 1)", () => {
     expect(store.catalogoModulos.map((m) => m.id)).toContain("pedidos");
     expect(store.catalogoModulos.filter((m) => m.disponible).map((m) => m.id)).toEqual([
       "pedidos",
-      "inventarios",
     ]);
   });
 
@@ -61,17 +60,6 @@ describe("PlataformaStore — catálogo (nivel 1)", () => {
 
   it("conectoresDe devuelve los conectores del módulo en orden canónico", () => {
     expect(store.conectoresDe("pedidos")).toEqual(IDS_CONECTORES);
-    expect(store.conectoresDe("inventarios")).toEqual(IDS_CONECTORES);
-  });
-
-  it("Inventarios declara sus dos conectores SIN beneficios: no promete lo que no hace", () => {
-    // Un conector con beneficios escritos es una promesa de producto. El módulo
-    // de conteos no tiene ninguno, y la UI lee esta lista para pintar la
-    // tarjeta. Si alguien rellenara estos arrays, la configuración empezaría a
-    // ofrecer encender algo que no existe.
-    for (const conector of IDS_CONECTORES) {
-      expect(DETALLE_CONECTORES.inventarios[conector].beneficios).toEqual([]);
-    }
   });
 
   it("el catálogo es exhaustivo: todo id del tipo tiene módulo y conectores declarados", () => {

@@ -43,7 +43,7 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
   return (
     <SidebarProvider collapsed={collapsed}>
       <aside
-        className={`flex flex-col bg-white dark:bg-gray-900 text-gray-900 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] shadow-theme-lg ring-1 ring-gray-200/80 dark:ring-white/10 
+        className={`flex flex-col border border-gray-200/80 bg-white dark:border-white/10 dark:bg-gray-900 text-gray-900 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] 
           ${positionClasses}
           ${showExpanded ? "w-[274px] px-5 rounded-3xl" : "w-[54px] px-1.5 rounded-full"}`}
       >

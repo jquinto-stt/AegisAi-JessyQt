@@ -28,6 +28,8 @@ interface MenuItemProps {
   openMenuName?: string | null;
   /** Callback when this menu is toggled (for accordion behavior) */
   onMenuToggle?: (name: string | null) => void;
+  /** Pending items in a queue that needs action (e.g. articles to reorder). Hidden when 0. */
+  cuenta?: number;
 }
 
 /**
@@ -43,6 +45,7 @@ export const MenuItem: React.FC<MenuItemProps> = observer(({
   isActive = () => false,
   openMenuName,
   onMenuToggle,
+  cuenta,
 }) => {
   // Use controlled state if accordion props are provided, otherwise local state
   const isControlled = openMenuName !== undefined && onMenuToggle !== undefined;
@@ -124,6 +127,11 @@ export const MenuItem: React.FC<MenuItemProps> = observer(({
         <Link to={path} className={itemClasses} onClick={handleLinkClick}>
           <span className={iconClasses}>{icon}</span>
           {showExpanded && <span className="menu-item-text">{name}</span>}
+          {showExpanded && !!cuenta && cuenta > 0 && (
+            <span className="ml-auto text-theme-xs tabular-nums opacity-70" aria-label={`${cuenta} pendientes`}>
+              {cuenta}
+            </span>
+          )}
         </Link>
       </li>
     );

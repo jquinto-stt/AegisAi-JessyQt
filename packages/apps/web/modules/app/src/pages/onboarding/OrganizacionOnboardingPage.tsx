@@ -147,9 +147,7 @@ export const OrganizacionOnboardingPage = observer(() => {
     const destino =
       sessionStore.moduloEntryPath && sessionStore.moduloEntryPath !== "/seleccionar"
         ? sessionStore.moduloEntryPath
-        : modulos.includes("pedidos")
-        ? "/pedidos/inicio"
-        : "/inventarios/existencias";
+        : "/pedidos/inicio";
 
     navigate(destino);
   };

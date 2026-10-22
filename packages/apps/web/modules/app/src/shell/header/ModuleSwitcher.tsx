@@ -63,9 +63,6 @@ const RUTA_LANZADOR = "/modulos";
 
 const ICONO_MODULO: Record<Modulo, React.FC<React.SVGProps<SVGSVGElement>>> = {
   pedidos: CartIcon,
-  // Reutiliza el icono de caja del catálogo en vez de declarar un SVG suelto:
-  // el conmutador solo necesita algo que distinga un módulo de otro, y un icono
-  // dibujado aquí sería una quinta copia del mismo símbolo.
   inventarios: BoxIcon,
 };
 

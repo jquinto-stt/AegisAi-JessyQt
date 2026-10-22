@@ -25,6 +25,7 @@ import {
   rolesStore,
   type Capacidad,
   type Rol,
+  type Modulo,
 } from "@/stores";
 import {
   BloqueConfig,
@@ -64,13 +65,11 @@ const miembrosConRol = (rolId: string) =>
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface RolesTabProps {
-  modulo?: "pedidos" | "inventarios";
+  modulo?: Modulo;
 }
 
 export const RolesTab = observer(({ modulo = "pedidos" }: RolesTabProps) => {
-  const rolesDisponibles = modulo === "pedidos"
-    ? rolesStore.roles.filter((r) => r.id !== "analista_inventarios")
-    : rolesStore.roles;
+  const rolesDisponibles = rolesStore.roles;
 
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(rolesDisponibles[0]?.id ?? null);
   const seleccionado = rolesStore.porId(seleccionadoId);

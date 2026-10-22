@@ -123,7 +123,7 @@ const MODULOS_DE_PLATAFORMA: { value: IdModuloNegocio; label: string }[] = (
  * sería un error de zona muerta temporal en tiempo de carga del módulo.
  */
 const esModuloRegistrable = (id: IdModuloNegocio): id is Modulo =>
-  id === "pedidos" || id === "inventarios";
+  id === "pedidos";
 
 /**
  * Módulos que la organización o sesión tienen activos.

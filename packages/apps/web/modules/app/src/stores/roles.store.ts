@@ -54,12 +54,6 @@ export type Capacidad =
   | "channels.read"
   | "channels.respond"
   | "channels.manage"
-  // Inventarios
-  | "inventory.read"
-  | "inventory.count"
-  | "inventory.manage"
-  | "inventory.finalize"
-  | "inventory.configure"
   // Ajustes del módulo
   | "settings.read"
   | "settings.manage"
@@ -70,7 +64,7 @@ export type Capacidad =
   | "assistant.use";
 
 /**
- * Catálogo completo de capacidades (pedidos + inventarios + asistente IA).
+ * Catálogo completo de capacidades (pedidos + asistente IA).
  */
 export const CAPACIDADES: Capacidad[] = [
   "orders.read",
@@ -86,11 +80,6 @@ export const CAPACIDADES: Capacidad[] = [
   "channels.read",
   "channels.respond",
   "channels.manage",
-  "inventory.read",
-  "inventory.count",
-  "inventory.manage",
-  "inventory.finalize",
-  "inventory.configure",
   "settings.read",
   "settings.manage",
   "team.read",
@@ -113,11 +102,6 @@ export const CAPACIDAD_LABEL: Record<Capacidad, string> = {
   "channels.read": "Ver canales",
   "channels.respond": "Responder en canales",
   "channels.manage": "Gestionar canales",
-  "inventory.read": "Ver inventarios",
-  "inventory.count": "Contar y agregar elementos",
-  "inventory.manage": "Gestionar elementos y ubicaciones",
-  "inventory.finalize": "Finalizar y anular inventarios",
-  "inventory.configure": "Configurar el módulo de inventarios",
   "settings.read": "Ver configuración",
   "settings.manage": "Editar configuración",
   "team.read": "Ver equipo",
@@ -140,7 +124,6 @@ export const CAPACIDAD_GRUPOS: CapacidadGrupo[] = [
   { id: "preparacion", label: "Preparación", capacidades: ["preparation.read", "preparation.manage"] },
   { id: "programados", label: "Programados", capacidades: ["scheduled.read", "scheduled.manage"] },
   { id: "canales", label: "Canales", capacidades: ["channels.read", "channels.respond", "channels.manage"] },
-  { id: "inventarios", label: "Inventarios", capacidades: ["inventory.read", "inventory.count", "inventory.manage", "inventory.finalize", "inventory.configure"] },
   { id: "ajustes", label: "Configuración", capacidades: ["settings.read", "settings.manage"] },
   { id: "equipo", label: "Equipo", capacidades: ["team.read", "team.manage"] },
   { id: "asistente", label: "Asistente", capacidades: ["assistant.use"] },
@@ -182,7 +165,6 @@ export const ROLES_SEED: Rol[] = [
       "preparation.read", "preparation.manage",
       "scheduled.read", "scheduled.manage",
       "channels.read", "channels.respond", "channels.manage",
-      "inventory.read", "inventory.count", "inventory.manage",
       "settings.read",
       "team.read",
     ],
@@ -196,7 +178,6 @@ export const ROLES_SEED: Rol[] = [
       "orders.read", "orders.create", "orders.confirm", "orders.cancel", "orders.edit",
       "scheduled.read", "scheduled.manage",
       "channels.read", "channels.respond",
-      "inventory.read", "inventory.count",
     ],
     sistema: true,
   },
@@ -205,16 +186,6 @@ export const ROLES_SEED: Rol[] = [
     nombre: "Preparación",
     descripcion: "Prepara y despacha los pedidos confirmados en cocina o bodega.",
     capacidades: ["orders.read", "preparation.read", "preparation.manage", "scheduled.read"],
-    sistema: true,
-  },
-  {
-    id: "analista_inventarios",
-    nombre: "Analista de inventarios",
-    descripcion: "Consulta el módulo de inventarios y exporta reportes, sin modificar nada.",
-    capacidades: [
-      "inventory.read",
-      "settings.read",
-    ],
     sistema: true,
   },
   {

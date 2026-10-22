@@ -9,7 +9,6 @@ import {
   organizacionStore,
   sessionStore,
   pedidosStore,
-  inventariosStore,
   operadoresStore,
 } from "@/stores";
 import {
@@ -36,9 +35,8 @@ export default function SignInForm() {
     const email = credenciales.email.trim() || "equipo@necto.io";
     const nombre = email.includes("@") ? email.split("@")[0] : "Admin";
 
-    // 1. Restaurar todos los datos reales y de prueba (pedidos, inventarios, operadores)
+    // 1. Restaurar datos reales y de prueba (pedidos, operadores)
     pedidosStore.restaurarSeed();
-    inventariosStore.restaurarSeed();
     operadoresStore.restaurarSeed();
 
     // 2. Asegurar perfil y organización activos
@@ -62,11 +60,8 @@ export default function SignInForm() {
     if (!organizacionStore.esModuloInstalado("pedidos")) {
       organizacionStore.instalarModulo("pedidos");
     }
-    if (!organizacionStore.esModuloInstalado("inventarios")) {
-      organizacionStore.instalarModulo("inventarios");
-    }
 
-    sessionStore.configurar(["pedidos", "inventarios"], "administrador");
+    sessionStore.configurar(["pedidos"], "administrador");
 
     navigate("/pedidos/inicio");
   };
@@ -74,7 +69,6 @@ export default function SignInForm() {
   const simularDesdeCero = () => {
     sessionStore.reset();
     pedidosStore.iniciarDesdeCero();
-    inventariosStore.iniciarDesdeCero();
     operadoresStore.iniciarDesdeCero();
     navigate("/onboarding/perfil");
   };

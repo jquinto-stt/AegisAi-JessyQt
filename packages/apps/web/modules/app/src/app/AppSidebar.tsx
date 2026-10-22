@@ -7,7 +7,7 @@ import {
   MenuItem,
 } from "@/shell";
 import { useSidebarContext } from "@/shell/sidebar/SidebarContext";
-import { sessionStore, organizacionStore, SECCIONES, modulosOperablesDeSesion } from "@/stores";
+import { sessionStore, organizacionStore, inventarioStore, SECCIONES, modulosOperablesDeSesion } from "@/stores";
 import { cerrarSesion } from "@/lib/auth.service";
 import type { Modulo, Seccion } from "@/stores";
 import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
@@ -154,14 +154,14 @@ const SidebarFooter = observer(() => {
             onClick={handleLogout}
             className={
               showExpanded
-                ? `menu-item group text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 cursor-pointer ${
+                ? `menu-item group text-error-700 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10 cursor-pointer ${
                     !showExpanded ? "xl:justify-center" : "xl:justify-start"
                   }`
-                : "group flex items-center justify-center w-10 h-10 rounded-full text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
+                : "group flex items-center justify-center w-10 h-10 rounded-full text-error-700 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10 transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
             }
             title={!showExpanded ? "Cerrar sesión" : undefined}
           >
-            <span className={showExpanded ? "menu-item-icon-size text-error-500" : "flex items-center justify-center h-5 w-5 transition-transform duration-200 group-hover:scale-110"}>
+            <span className={showExpanded ? "menu-item-icon-size text-error-700 dark:text-error-400" : "flex items-center justify-center h-5 w-5 transition-transform duration-200 group-hover:scale-110"}>
               <ArrowRightIcon className="h-5 w-5" />
             </span>
             {showExpanded && <span className="menu-item-text">Cerrar sesión</span>}
@@ -264,17 +264,15 @@ const ITEMS_MODULO: Record<Modulo, { seccionId: string; Icono: React.FC<React.SV
     { seccionId: "configuracion", Icono: PlugInIcon },
     { seccionId: "operadores", Icono: GroupIcon },
   ],
-  /**
-   * Inventarios: ocho ítems, en el orden de la operación.
-   */
   inventarios: [
-    { seccionId: "inicio", Icono: GridIcon },
-    { seccionId: "productos", Icono: BoxIcon },
-    { seccionId: "ordenes", Icono: CheckLineIcon },
+    { seccionId: "dashboard", Icono: GridIcon },
+    { seccionId: "articulos", Icono: TableIcon },
+    { seccionId: "movimientos", Icono: ArrowRightIcon },
+    { seccionId: "ordenes_compra", Icono: CartIcon },
+    { seccionId: "reorden", Icono: TaskIcon },
+    { seccionId: "conteos", Icono: ListIcon },
     { seccionId: "proveedores", Icono: GroupIcon },
-    { seccionId: "reportes", Icono: PieChartIcon },
-    { seccionId: "configuracion", Icono: PlugInIcon },
-    { seccionId: "operadores", Icono: GroupIcon },
+    { seccionId: "admin", Icono: PlugInIcon },
   ],
 };
 
@@ -288,6 +286,19 @@ const ITEMS_MODULO: Record<Modulo, { seccionId: string; Icono: React.FC<React.SV
  */
 function seccionDe(modulo: Modulo, seccionId: string): Seccion | null {
   return SECCIONES[modulo]?.find((s) => s.id === seccionId) ?? null;
+}
+
+/**
+ * Cuenta junto a una sección SOLO cuando es una cola que pide acción y su
+ * sustantivo se entiende por la etiqueta: «Cola de reorden 11» son artículos
+ * por reponer; «Conteos y ajustes 2», conteos abiertos. Ninguna otra sección
+ * lleva número: un contador en todo deja de señalar nada.
+ */
+function cuentaDeSeccion(modulo: Modulo, seccionId: string): number | undefined {
+  if (modulo !== "inventarios") return undefined;
+  if (seccionId === "reorden") return inventarioStore.colaReorden.length;
+  if (seccionId === "conteos") return inventarioStore.resumen.conteosAbiertos;
+  return undefined;
 }
 
 const SidebarContent = observer(() => {
@@ -396,7 +407,7 @@ const SidebarContent = observer(() => {
                   {flyoutModulo === "pedidos" ? (
                     <CartIcon className="h-4 w-4" />
                   ) : flyoutModulo === "inventarios" ? (
-                    <BoxIcon className="h-4 w-4" />
+                    <BoxCubeIcon className="h-4 w-4" />
                   ) : flyoutModulo === "whatsapp" ? (
                     <ChatIcon className="h-4 w-4" />
                   ) : (
@@ -458,7 +469,7 @@ const SidebarContent = observer(() => {
                     <span className="text-base text-gray-500 dark:text-gray-400 group-hover:scale-110">
                       <ChatIcon className="size-5" />
                     </span>
-                    <span className="truncate">Bandeja de chats</span>
+                    <span className="truncate">Bandeja de conversaciones</span>
                   </Link>
                   <Link
                     to="/conversaciones/historial"
@@ -571,6 +582,7 @@ const SidebarContent = observer(() => {
                         name={seccion.label}
                         path={seccion.path}
                         isActive={isActive}
+                        cuenta={cuentaDeSeccion(modulo, seccionId)}
                       />
                     ))}
                   </ul>
@@ -596,7 +608,7 @@ const SidebarContent = observer(() => {
                 <ul className="flex flex-col gap-1">
                   <MenuItem
                     icon={<ChatIcon className="size-5" />}
-                    name="Bandeja de chats"
+                    name="Bandeja de conversaciones"
                     path="/conversaciones"
                     isActive={esRutaCanales}
                   />
@@ -658,7 +670,7 @@ const SidebarContent = observer(() => {
             const info = CATALOGO_MODULOS[modulo];
             const isActivo = pathname.startsWith(`/${modulo}`);
             const isOpen = flyoutModulo === modulo;
-            const IconoModulo = modulo === "pedidos" ? CartIcon : BoxIcon;
+            const IconoModulo = modulo === "inventarios" ? BoxCubeIcon : CartIcon;
 
             return (
               <button

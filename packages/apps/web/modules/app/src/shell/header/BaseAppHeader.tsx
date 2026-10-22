@@ -17,7 +17,7 @@ export const BaseAppHeader: React.FC<BaseAppHeaderProps> = observer(({
   children,
 }) => {
   return (
-    <header className="flex w-full rounded-2xl bg-white ring-1 ring-gray-200/80 shadow-theme-xs z-99999 dark:bg-gray-900 dark:ring-white/10">
+    <header className="flex w-full rounded-2xl border border-gray-200/80 bg-white z-99999 dark:border-white/10 dark:bg-gray-900">
       <div className="flex flex-col items-center justify-between grow xl:flex-row xl:px-6">
         {/* Top row */}
         <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200/70 dark:border-white/5 sm:gap-4 xl:justify-normal xl:border-b-0 xl:px-0 lg:py-4">

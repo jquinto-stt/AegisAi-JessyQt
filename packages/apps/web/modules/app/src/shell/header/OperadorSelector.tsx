@@ -75,16 +75,16 @@ export const OperadorSelector: React.FC = observer(() => {
 
         <div className="hidden flex-col leading-tight sm:flex">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400">
-              {isSimulando ? "Simulando Rol" : "Perfil Activo"}
+            <span className="text-theme-xs font-normal text-brand-700 dark:text-brand-400">
+              {isSimulando ? "Simulando rol" : "Perfil activo"}
             </span>
             {isSimulando && (
-              <span className="rounded bg-amber-100 px-1 py-0.2 text-[9px] font-bold uppercase text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
+              <span className="rounded bg-amber-100 px-1 py-0.2 text-theme-xs font-bold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
                 Test
               </span>
             )}
           </div>
-          <span className="max-w-[140px] truncate text-xs font-semibold text-gray-900 dark:text-white">
+          <span className="max-w-[140px] truncate text-theme-xs font-bold text-gray-900 dark:text-white">
             {rolTexto}
             <span className="ml-1 font-normal text-gray-500 dark:text-gray-400">
               · {nombreTexto}
