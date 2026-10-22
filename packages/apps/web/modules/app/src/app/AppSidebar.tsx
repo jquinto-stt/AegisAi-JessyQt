@@ -291,7 +291,7 @@ function seccionDe(modulo: Modulo, seccionId: string): Seccion | null {
 /**
  * Cuenta junto a una sección SOLO cuando es una cola que pide acción y su
  * sustantivo se entiende por la etiqueta: «Cola de reorden 11» son artículos
- * por reponer; «Conteos y ajustes 2», conteos abiertos. Ninguna otra sección
+ * por reponer; «Toma de inventario 2», tomas abiertas. Ninguna otra sección
  * lleva número: un contador en todo deja de señalar nada.
  */
 function cuentaDeSeccion(modulo: Modulo, seccionId: string): number | undefined {

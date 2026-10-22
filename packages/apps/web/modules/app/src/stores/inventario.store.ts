@@ -57,7 +57,30 @@ export type DatosProveedor = Omit<Proveedor, "id" | "activo">;
 export interface DatosRegistroMovimiento extends DatosMovimiento {
   motivo: string;
   referencia?: string | null;
+  /**
+   * Costo por unidad de lo que entra (recepción de una orden, compra al
+   * contado). Sin él, la entrada se valora al costo actual del artículo.
+   */
+  costoUnitario?: number;
 }
+
+/** Una partida de unidades al mismo costo. La valoración PEPS consume la más antigua primero. */
+export interface CapaCosto {
+  cantidad: number;
+  costo: number;
+}
+
+/** Algo que el equipo debería ver en la campana de notificaciones. */
+export interface AlertaInventario {
+  id: string;
+  tono: "alerta" | "aviso" | "info";
+  titulo: string;
+  detalle: string;
+  ruta: string;
+}
+
+/** Ventana con la que se mide el consumo diario de cada artículo. */
+export const DIAS_CONSUMO = 30;
 
 export interface DatosOrdenCompra {
   proveedorId: string;
@@ -80,6 +103,11 @@ export class InventarioStore {
   ordenes: OrdenCompra[] = [];
   conteos: Conteo[] = [];
   config: ConfigInventario = clonar(CONFIG_SEED);
+  /**
+   * Capas de costo por artículo. Se crean al primer movimiento que cambia el
+   * total: hasta entonces el artículo vale su stock por su costo unitario.
+   */
+  capas: Record<string, CapaCosto[]> = {};
 
   /**
    * @param responsable Nombre de quien opera, para el libro de movimientos. Se
@@ -99,6 +127,7 @@ export class InventarioStore {
     this.ordenes = clonar(ORDENES_SEED);
     this.conteos = clonar(CONTEOS_SEED);
     this.config = clonar(CONFIG_SEED);
+    this.capas = {};
   }
 
   // ── Búsquedas ───────────────────────────────────────────────────────────
@@ -150,11 +179,100 @@ export class InventarioStore {
     return [...this.movimientos].sort((a, b) => b.fecha.localeCompare(a.fecha));
   }
 
+  /** Unidades que salen por día de cada artículo, según las salidas de los últimos 30 días. */
+  get consumoDiario(): Record<string, number> {
+    const desde = Date.now() - DIAS_CONSUMO * 86_400_000;
+    const total: Record<string, number> = {};
+    for (const m of this.movimientos) {
+      if (m.tipo !== "salida" || new Date(m.fecha).getTime() < desde) continue;
+      total[m.articuloId] = (total[m.articuloId] ?? 0) + m.cantidad;
+    }
+    for (const id of Object.keys(total)) total[id] = total[id] / DIAS_CONSUMO;
+    return total;
+  }
+
   get colaReorden(): ItemReorden[] {
     return colaReorden(this.articulos, this.ordenes, {
       descontarEnTransito: this.config.descontarEnTransito,
       multiplo: this.config.multiploPedido,
+      consumoDiario: this.consumoDiario,
+      diasCobertura: this.config.diasCobertura,
     });
+  }
+
+  /**
+   * Lo que la campana de notificaciones muestra del inventario. Las alertas de
+   * stock dependen de «Aviso en pantalla»; el resumen del día aparece a partir
+   * de la hora configurada.
+   */
+  alertas(ahora: Date = new Date()): AlertaInventario[] {
+    const lista: AlertaInventario[] = [];
+    const r = this.resumen;
+    const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+    if (this.config.alertaStockBajo) {
+      const agotados = this.articulosActivos.filter((a) => estadoStock(a) === "agotado");
+      if (agotados.length > 0) {
+        lista.push({
+          id: `agotados-${agotados.map((a) => a.id).join(",")}`,
+          tono: "alerta",
+          titulo: plural(agotados.length, "artículo agotado", "artículos agotados"),
+          detalle: agotados.slice(0, 3).map((a) => a.nombre).join(", ") + (agotados.length > 3 ? ` y ${agotados.length - 3} más` : ""),
+          ruta: "/inventarios/reorden",
+        });
+      }
+      if (r.bajos > 0) {
+        lista.push({
+          id: `bajos-${r.bajos}`,
+          tono: "aviso",
+          titulo: plural(r.bajos, "artículo bajo su mínimo", "artículos bajo su mínimo"),
+          detalle: "Revisa la cola de reorden para pedirlos a tiempo.",
+          ruta: "/inventarios/reorden",
+        });
+      }
+    }
+    const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
+    for (const oc of this.ordenes) {
+      if (ordenAbierta(oc) && oc.fechaEsperada && new Date(oc.fechaEsperada).getTime() < hoy) {
+        lista.push({
+          id: `atrasada-${oc.id}`,
+          tono: "alerta",
+          titulo: `${oc.numero} está atrasada`,
+          detalle: `${this.nombreProveedor(oc.proveedorId)} no ha entregado todo.`,
+          ruta: `/inventarios/ordenes-compra?oc=${oc.id}`,
+        });
+      }
+    }
+    for (const c of this.conteos) {
+      if (c.estado === "en_revision") {
+        lista.push({
+          id: `revision-${c.id}`,
+          tono: "info",
+          titulo: `Toma de ${this.nombreUbicacion(c.ubicacionId)} lista para revisar`,
+          detalle: `${c.numero} · contada por ${c.responsable}`,
+          ruta: `/inventarios/conteos?conteo=${c.id}`,
+        });
+      }
+    }
+    if (this.config.resumenDiario) {
+      const [h, m] = this.config.horaResumen.split(":").map(Number);
+      const hora = new Date(ahora);
+      hora.setHours(h, m, 0, 0);
+      if (ahora.getTime() >= hora.getTime()) {
+        const ayer = hoy - 86_400_000;
+        const movAyer = this.movimientos.filter((x) => {
+          const t = new Date(x.fecha).getTime();
+          return t >= ayer && t < hoy;
+        }).length;
+        lista.push({
+          id: `resumen-${new Date(hoy).toISOString().slice(0, 10)}`,
+          tono: "info",
+          titulo: "Resumen de inventario de hoy",
+          detalle: `${plural(r.agotados, "agotado", "agotados")} · ${plural(r.bajos, "bajo mínimo", "bajo mínimo")} · ${plural(r.ordenesAbiertas, "orden en camino", "órdenes en camino")} · ${plural(movAyer, "movimiento ayer", "movimientos ayer")}`,
+          ruta: "/inventarios",
+        });
+      }
+    }
+    return lista;
   }
 
   /** Último conteo aplicado de cada ubicación activa; `null` = nunca se ha contado. */
@@ -236,10 +354,78 @@ export class InventarioStore {
       .sort((x, y) => y.valor - x.valor);
   }
 
+  // ── Valoración ──────────────────────────────────────────────────────────
+
+  /** Las capas del artículo; si aún no tiene, una sola con su stock a su costo actual. */
+  private capasDe(a: Articulo): CapaCosto[] {
+    const stock = stockTotal(a);
+    return this.capas[a.id] ?? (stock > 0 ? [{ cantidad: stock, costo: a.costoUnitario }] : []);
+  }
+
+  /**
+   * Actualiza la valoración tras un movimiento que cambia el total. `delta` es
+   * lo que sumó (+) o restó (−) al artículo; `costo`, el de las unidades que
+   * entran. Con promedio ponderado las capas se funden en una; con PEPS las
+   * salidas consumen la capa más antigua. El costo unitario del artículo queda
+   * como el valor restante entre las unidades restantes, así todo lo que valora
+   * «stock × costo unitario» sigue cuadrando.
+   */
+  private valorar(a: Articulo, delta: number, costo: number) {
+    let capas = this.capasDe(a).map((c) => ({ ...c }));
+    // `capasDe` ya refleja el stock posterior si el artículo no tenía capas.
+    if (!this.capas[a.id]) {
+      const previo = stockTotal(a) - delta;
+      capas = previo > 0 ? [{ cantidad: previo, costo: a.costoUnitario }] : [];
+    }
+    if (delta > 0) {
+      capas.push({ cantidad: delta, costo });
+    } else {
+      let porSacar = -delta;
+      while (porSacar > 0 && capas.length > 0) {
+        const tomar = Math.min(capas[0].cantidad, porSacar);
+        capas[0].cantidad -= tomar;
+        porSacar -= tomar;
+        if (capas[0].cantidad === 0) capas.shift();
+      }
+    }
+    const unidades = capas.reduce((t, c) => t + c.cantidad, 0);
+    const valor = capas.reduce((t, c) => t + c.cantidad * c.costo, 0);
+    if (this.config.metodoValoracion === "promedio" && unidades > 0) {
+      capas = [{ cantidad: unidades, costo: valor / unidades }];
+    }
+    this.capas[a.id] = capas;
+    if (unidades > 0) a.costoUnitario = Math.round(valor / unidades);
+    else if (delta > 0) a.costoUnitario = costo;
+  }
+
+  /** Capas con las que se valora hoy cada artículo (para mostrar el detalle). */
+  capasDeArticulo(id: string): CapaCosto[] {
+    const a = this.articulo(id);
+    return a ? this.capasDe(a) : [];
+  }
+
   // ── Artículos ───────────────────────────────────────────────────────────
 
+  /**
+   * El siguiente código para un artículo de esa categoría: usa el prefijo que
+   * ya tienen sus artículos («OFI-1007») o, si es nueva, sus tres primeras
+   * letras («BEB-1001»).
+   */
+  siguienteSku(categoria: string): string {
+    const deCategoria = this.articulos.filter((a) => a.categoria === categoria).map((a) => a.sku);
+    const prefijo =
+      deCategoria.map((sku) => sku.split("-")[0]).find(Boolean) ??
+      (categoria.normalize("NFD").replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "ART");
+    const usados = this.articulos
+      .map((a) => a.sku)
+      .filter((sku) => sku.startsWith(`${prefijo}-`))
+      .map((sku) => Number(sku.slice(prefijo.length + 1)))
+      .filter(Number.isFinite);
+    return `${prefijo}-${usados.length ? Math.max(...usados) + 1 : 1001}`;
+  }
+
   private validarArticulo(d: DatosArticulo, idActual?: string): string | null {
-    if (!d.sku.trim()) return "El SKU es obligatorio.";
+    if (!d.sku.trim()) return "El código (SKU) es obligatorio.";
     if (!d.nombre.trim()) return "El nombre es obligatorio.";
     const sku = d.sku.trim().toUpperCase();
     if (this.articulos.some((a) => a.sku === sku && a.id !== idActual)) return `Ya existe un artículo con el SKU ${sku}.`;
@@ -249,7 +435,8 @@ export class InventarioStore {
     return null;
   }
 
-  crearArticulo(d: DatosArticulo): Resultado<Articulo> {
+  crearArticulo(datos: DatosArticulo): Resultado<Articulo> {
+    const d = !datos.sku.trim() && this.config.skuAutomatico ? { ...datos, sku: this.siguienteSku(datos.categoria) } : datos;
     const error = this.validarArticulo(d);
     if (error) return fallo(error);
     const articulo: Articulo = { ...d, sku: d.sku.trim().toUpperCase(), nombre: d.nombre.trim(), id: nuevoId("art"), existencias: {}, activo: true };
@@ -262,7 +449,10 @@ export class InventarioStore {
     if (!a) return fallo("El artículo ya no existe.");
     const error = this.validarArticulo(d, id);
     if (error) return fallo(error);
+    const costoCambio = d.costoUnitario !== a.costoUnitario;
     Object.assign(a, d, { sku: d.sku.trim().toUpperCase(), nombre: d.nombre.trim() });
+    // Un costo escrito a mano reemplaza la historia: todo el stock pasa a valer eso.
+    if (costoCambio) delete this.capas[a.id];
     return ok(a);
   }
 
@@ -284,9 +474,13 @@ export class InventarioStore {
     if (d.tipo === "salida" && this.config.referenciaObligatoriaSalidas && !d.referencia?.trim()) {
       return fallo("Las salidas necesitan un documento de referencia (pedido o remisión).");
     }
+    if (d.costoUnitario !== undefined && !(d.costoUnitario >= 0)) return fallo("El costo por unidad no puede ser negativo.");
     const r = aplicarMovimiento(a.existencias, d);
     if (!r.ok) return r;
     a.existencias = r.existencias;
+    const delta = d.tipo === "entrada" ? d.cantidad : d.tipo === "salida" ? -d.cantidad : d.tipo === "ajuste" ? d.cantidad : 0;
+    const costoEntrada = d.tipo === "entrada" && d.costoUnitario !== undefined ? d.costoUnitario : a.costoUnitario;
+    if (delta !== 0) this.valorar(a, delta, costoEntrada);
     const m: Movimiento = {
       id: nuevoId("mv"),
       fecha: new Date().toISOString(),
@@ -298,6 +492,7 @@ export class InventarioStore {
       motivo: d.motivo.trim(),
       referencia: d.referencia?.trim() || null,
       responsable: this.responsable(),
+      ...(d.tipo === "entrada" && d.costoUnitario !== undefined ? { costoUnitario: d.costoUnitario } : {}),
     };
     this.movimientos.push(m);
     return ok(m);
@@ -395,8 +590,14 @@ export class InventarioStore {
       if (n === 0) continue;
       if (!Number.isInteger(n) || n < 0) return fallo("Las cantidades recibidas deben ser enteros positivos.");
       const art = this.articulo(linea.articuloId);
-      if (n > unidadesPendientes(linea)) {
-        return fallo(`Se reciben más unidades de las pendientes en ${art?.nombre ?? "un artículo"}.`);
+      const margen = Math.floor((linea.cantidad * this.config.toleranciaRecepcionPct) / 100);
+      const maximo = Math.max(0, linea.cantidad + margen - linea.recibida);
+      if (n > maximo) {
+        return fallo(
+          margen > 0
+            ? `En ${art?.nombre ?? "un artículo"} se aceptan hasta ${maximo} unidades (lo pendiente más ${this.config.toleranciaRecepcionPct} % de tolerancia).`
+            : `Se reciben más unidades de las pendientes en ${art?.nombre ?? "un artículo"}.`,
+        );
       }
       // Se comprueba antes de mover nada: si una entrada fallara a mitad del
       // bucle, la orden quedaría con unas líneas recibidas y otras no.
@@ -414,6 +615,7 @@ export class InventarioStore {
         destinoId: oc.destinoId,
         motivo: "Recepción de orden de compra",
         referencia: oc.numero,
+        costoUnitario: linea.costoUnitario,
       });
       if (!r.ok) return r;
       linea.recibida += n;
@@ -581,6 +783,17 @@ export class InventarioStore {
     for (const [tipo, lista] of Object.entries(c.motivos)) {
       if (lista.length === 0) return fallo(`Deja al menos un motivo para «${tipo}».`);
     }
+    if (!entero(c.toleranciaRecepcionPct) || c.toleranciaRecepcionPct < 0 || c.toleranciaRecepcionPct > 100) {
+      return fallo("La tolerancia al recibir va de 0 a 100 %.");
+    }
+    if (c.metodoValoracion === "promedio" && this.config.metodoValoracion !== "promedio") {
+      for (const id of Object.keys(this.capas)) {
+        const capas = this.capas[id];
+        const unidades = capas.reduce((t, x) => t + x.cantidad, 0);
+        const valor = capas.reduce((t, x) => t + x.cantidad * x.costo, 0);
+        this.capas[id] = unidades > 0 ? [{ cantidad: unidades, costo: valor / unidades }] : [];
+      }
+    }
     this.config = { ...c, whatsappDestino: c.whatsappDestino.trim() };
     return ok(undefined);
   }
@@ -635,7 +848,7 @@ export class InventarioStore {
     const u = this.ubicacion(id);
     if (!u) return fallo("La ubicación ya no existe.");
     if (u.activa && this.config.ubicacionRecepcionId === id) {
-      return fallo("Es la ubicación de recepción; elige otra en Configuración › General antes de desactivarla.");
+      return fallo("Es la ubicación de recepción; elige otra como recepción antes de desactivarla.");
     }
     if (u.activa && this.articulos.some((a) => (a.existencias[id] ?? 0) > 0)) {
       return fallo("La ubicación tiene stock; transfiérelo antes de desactivarla.");

@@ -1,78 +1,65 @@
 import { useState } from "react";
 import { ShellDropdown } from "@/shell/header/ShellDropdown";
-import {
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
-interface NotificationItem {
-  id: string;
-  name: string;
-  action: string;
-  target: string;
-  category: string;
-  time: string;
-  avatar: string;
-  statusColor: "green" | "red";
+import { observer } from "mobx-react-lite";
+import { useNavigate } from "react-router";
+import { inventarioStore, sessionStore, type AlertaInventario } from "@/stores";
+
+/**
+ * Notificaciones reales: hoy las genera Inventario (stock agotado o bajo,
+ * órdenes atrasadas, tomas por revisar y el resumen del día). Antes esta lista
+ * eran datos de ejemplo de la plantilla.
+ *
+ * «Visto» se guarda por id en el navegador: una alerta nueva (otro artículo
+ * agotado, otra orden atrasada) vuelve a encender el punto.
+ */
+const CLAVE_VISTAS = "necto.notificaciones.vistas";
+
+function leerVistas(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(CLAVE_VISTAS) ?? "[]") as string[]);
+  } catch {
+    return new Set();
+  }
 }
 
-const NOTIFICATIONS_DATA: NotificationItem[] = [
-  {
-    id: "1",
-    name: "Terry Franci",
-    action: "requests permission to change",
-    target: "Project - Nganter App",
-    category: "Project",
-    time: "5 min ago",
-    avatar: "/images/user/user-02.jpg",
-    statusColor: "green",
-  },
-  {
-    id: "2",
-    name: "Alena Franci",
-    action: "requests permission to change",
-    target: "Project - Nganter App",
-    category: "Project",
-    time: "8 min ago",
-    avatar: "/images/user/user-03.jpg",
-    statusColor: "green",
-  },
-  {
-    id: "3",
-    name: "Jocelyn Kenter",
-    action: "requests permission to change",
-    target: "Project - Nganter App",
-    category: "Project",
-    time: "15 min ago",
-    avatar: "/images/user/user-04.jpg",
-    statusColor: "green",
-  },
-  {
-    id: "4",
-    name: "Brandon Philips",
-    action: "requests permission to change",
-    target: "Project - Nganter App",
-    category: "Project",
-    time: "1 hr ago",
-    avatar: "/images/user/user-05.jpg",
-    statusColor: "red",
-  },
-];
-
-export default function NotificationDropdown() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [notifying, setNotifying] = useState(true);
-
-  function toggleDropdown() {
-    setIsOpen(!isOpen);
+function guardarVistas(ids: string[]) {
+  try {
+    localStorage.setItem(CLAVE_VISTAS, JSON.stringify(ids));
+  } catch {
+    // Sin almacenamiento: el punto se vuelve a encender al recargar.
   }
+}
+
+const TONO: Record<AlertaInventario["tono"], string> = {
+  alerta: "bg-brand-500",
+  aviso: "bg-warning-500",
+  info: "bg-accent-300",
+};
+
+const NotificationDropdown = observer(function NotificationDropdown() {
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+  const [vistas, setVistas] = useState<Set<string>>(leerVistas);
+
+  const alertas = sessionStore.modulos.includes("inventarios") ? inventarioStore.alertas() : [];
+  const notifying = alertas.some((a) => !vistas.has(a.id));
 
   function closeDropdown() {
     setIsOpen(false);
   }
 
   const handleClick = () => {
-    toggleDropdown();
-    setNotifying(false);
+    setIsOpen((v) => !v);
+    const ids = alertas.map((a) => a.id);
+    guardarVistas(ids);
+    setVistas(new Set(ids));
+  };
+
+  const ir = (ruta: string) => {
+    closeDropdown();
+    navigate(ruta);
   };
 
   return (
@@ -109,7 +96,7 @@ export default function NotificationDropdown() {
       >
         {/* Cabecera del panel */}
         <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 dark:border-gray-800">
-          <h3 className="text-xl font-bold tracking-tight text-ink-title dark:text-white">
+          <h3 className="text-[16px] font-bold text-ink-title dark:text-white">
             Notificaciones
           </h3>
           <button
@@ -123,58 +110,42 @@ export default function NotificationDropdown() {
         </div>
 
         {/* Lista de notificaciones */}
-        <ul className="flex flex-col max-h-[380px] overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800/80 custom-scrollbar pr-1">
-          {NOTIFICATIONS_DATA.map((item) => (
-            <li key={item.id} className="py-4 first:pt-4 last:pb-2">
-              <div className="flex items-start gap-3.5">
-                {/* Avatar con punto de estado verde o rojo */}
-                <div className="relative flex-shrink-0">
-                  <img
-                    src={item.avatar}
-                    alt={item.name}
-                    className="size-12 rounded-full object-cover"
-                  />
-                  <span
-                    className={`absolute bottom-0.5 right-0.5 size-3 rounded-full border-2 border-white dark:border-gray-900 ${
-                      item.statusColor === "green" ? "bg-accent-500" : "bg-error-500"
-                    }`}
-                  />
-                </div>
+        {alertas.length === 0 ? (
+          <p className="py-8 text-center text-[14px] text-gray-600 dark:text-gray-400">
+            Todo en orden: no hay nada que requiera tu atención.
+          </p>
+        ) : (
+          <ul className="flex max-h-[380px] flex-col divide-y divide-gray-100 overflow-y-auto pr-1 custom-scrollbar dark:divide-gray-800/80">
+            {alertas.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => ir(item.ruta)}
+                  className="flex w-full items-start gap-3 rounded-xl px-2 py-3 text-left transition-colors hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-brand-500 dark:hover:bg-white/5"
+                >
+                  <span className={`mt-1.5 size-2 shrink-0 rounded-full ${TONO[item.tono]}`} aria-hidden />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[14px] font-bold text-ink-body dark:text-white">{item.titulo}</span>
+                    <span className="mt-0.5 block text-[12px] text-gray-600 dark:text-gray-400">{item.detalle}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
 
-                {/* Texto descriptivo */}
-                <div className="min-w-0 flex-1 leading-snug pt-0.5">
-                  <p className="text-[13px] sm:text-sm text-gray-500 dark:text-gray-400">
-                    <strong className="font-semibold text-gray-900 dark:text-white">
-                      {item.name}
-                    </strong>{" "}
-                    {item.action}{" "}
-                    <strong className="font-semibold text-gray-900 dark:text-white">
-                      {item.target}
-                    </strong>
-                  </p>
-
-                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 font-normal">
-                    <span>{item.category}</span>
-                    <span>•</span>
-                    <span>{item.time}</span>
-                  </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-
-        {/* Botón inferior: Ver todas las notificaciones */}
-        <div className="pt-4 border-t border-gray-100 dark:border-gray-800 mt-2">
+        <div className="mt-2 border-t border-gray-100 pt-3 dark:border-gray-800">
           <button
             type="button"
-            onClick={closeDropdown}
-            className="w-full rounded-xl border border-gray-200/90 bg-white py-3 text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-750 transition-colors cursor-pointer text-center"
+            onClick={() => ir("/inventarios/config?seccion=reorden")}
+            className="w-full rounded-xl py-2.5 text-center text-[14px] font-bold text-ink-title transition-colors hover:bg-gray-50 dark:text-white dark:hover:bg-gray-800"
           >
-            Ver todas las notificaciones
+            Configurar avisos
           </button>
         </div>
       </ShellDropdown>
     </div>
   );
-}
+});
+
+export default NotificationDropdown;

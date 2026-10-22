@@ -338,6 +338,19 @@
   --animate-aterrizaje: aterrizaje-tarjeta 380ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
   --animate-flyout-lateral: flyout-lateral 220ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 
+  /* Cajón que entra desde el borde derecho (paneles de detalle y formularios).
+     Recorre su propio ancho: dice de dónde viene y por dónde se va. Curva de
+     cajón —rápida al salir del borde, larga al asentarse—, como iOS. La salida
+     va por el mismo borde y es más corta: cerrar no se espera. */
+  --animate-entrada-cajon: entrada-cajon 300ms cubic-bezier(0.32, 0.72, 0, 1) backwards;
+  --animate-salida-cajon: salida-cajon 200ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+
+  /* Aviso que sube desde el borde inferior (confirmaciones breves, barra de
+     cambios sin guardar). Entra y sale por el mismo borde. */
+  --animate-entrada-aviso: entrada-aviso 300ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-salida-aviso: salida-aviso 200ms ease-in forwards;
+  --animate-salida-aparecer: salida-aparecer 200ms ease-in forwards;
+
   /* Barrido de un esqueleto de carga.
      Es el ÚNICO movimiento del proyecto que se repite sin fin, y por eso es
      `linear` y lento (1600 ms): una curva con frenada, en bucle, produce un
@@ -431,6 +444,55 @@
   }
 
   /* Aterrizaje elástico suave para tarjetas soltadas en columna Kanban */
+  @keyframes entrada-cajon {
+    from {
+      transform: translate3d(100%, 0, 0);
+    }
+    to {
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes salida-cajon {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(100%, 0, 0);
+    }
+  }
+
+  @keyframes entrada-aviso {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 100%, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes salida-aviso {
+    from {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      opacity: 0;
+      transform: translate3d(0, 100%, 0);
+    }
+  }
+
+  @keyframes salida-aparecer {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
   @keyframes aterrizaje-tarjeta {
     0% {
       opacity: 0.3;

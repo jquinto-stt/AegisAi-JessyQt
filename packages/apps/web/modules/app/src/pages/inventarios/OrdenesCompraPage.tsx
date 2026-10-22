@@ -45,6 +45,7 @@ import {
   Subtitulo,
   TABLA,
   useAviso,
+  useUltimo,
   Vacio,
 } from "./inventario.ui";
 
@@ -145,12 +146,12 @@ const PanelDetalle = observer(function PanelDetalle({
   onCerrar,
   mostrar,
 }: {
-  orden: OrdenCompra;
+  orden: OrdenCompra | null;
   onCerrar: () => void;
   mostrar: (t: string) => void;
 }) {
   const s = inventarioStore;
-  const oc = orden;
+  const { valor: ultima, abierto } = useUltimo(orden);
   const [recibiendo, setRecibiendo] = useState(false);
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -160,7 +161,10 @@ const PanelDetalle = observer(function PanelDetalle({
   useEffect(() => {
     setRecibiendo(false);
     setError(null);
-  }, [oc.id]);
+  }, [ultima?.id]);
+
+  if (!ultima) return null;
+  const oc = ultima;
 
   const empezarRecepcion = () => {
     setCantidades(Object.fromEntries(oc.lineas.map((l) => [l.articuloId, String(unidadesPendientes(l))])));
@@ -230,7 +234,7 @@ const PanelDetalle = observer(function PanelDetalle({
 
   return (
     <PanelLateral
-      abierto
+      abierto={abierto}
       onCerrar={onCerrar}
       titulo={oc.numero}
       subtitulo={
@@ -803,7 +807,7 @@ export const OrdenesCompraPage = observer(function OrdenesCompraPage() {
         </>
       )}
 
-      {detalle && !nueva && <PanelDetalle orden={detalle} onCerrar={() => cambiarParams({ oc: null })} mostrar={mostrar} />}
+      <PanelDetalle orden={detalle && !nueva ? detalle : null} onCerrar={() => cambiarParams({ oc: null })} mostrar={mostrar} />
 
       <PanelNuevaOrden
         abierto={nueva}

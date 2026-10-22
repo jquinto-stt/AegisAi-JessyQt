@@ -217,7 +217,10 @@ export function NivelStock({
       role="img"
       aria-label={`${stock} en existencia; punto de reorden ${puntoReorden}; máximo ${stockMaximo}`}
     >
-      <span className={cx("absolute inset-y-0 left-0 rounded-full", relleno)} style={{ width: `${lleno}%` }} />
+      <span
+        className={cx("absolute inset-0 origin-left rounded-full transition-transform duration-300 ease-out motion-reduce:transition-none", relleno)}
+        style={{ transform: `scaleX(${lleno / 100})` }}
+      />
     </span>
   );
 }
@@ -227,7 +230,10 @@ export function BarraAvance({ valor, total, ancho = "w-24" }: { valor: number; t
   const pct = total > 0 ? Math.min(100, (valor / total) * 100) : 0;
   return (
     <span className={cx("relative inline-block h-1.5 shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-white/10", ancho)}>
-      <span className="absolute inset-y-0 left-0 rounded-full bg-ink-title/80 dark:bg-white/80" style={{ width: `${pct}%` }} />
+      <span
+        className="absolute inset-0 origin-left rounded-full bg-ink-title/80 transition-transform duration-300 ease-out motion-reduce:transition-none dark:bg-white/80"
+        style={{ transform: `scaleX(${pct / 100})` }}
+      />
     </span>
   );
 }
@@ -513,7 +519,9 @@ export function Boton({
       type="button"
       {...props}
       className={cx(
-        "inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] px-3.5 text-theme-sm font-bold transition-colors",
+        // Al presionar baja a 0.97: confirma el toque sin llamar la atención.
+        "presion-suave inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] px-3.5 text-theme-sm font-bold",
+        "transition-[color,background-color,border-color,transform] duration-150 ease-out enabled:active:scale-[0.97]",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed",
         BOTON[variante],
         className,
@@ -570,8 +578,8 @@ export function MenuBoton({
         <div
           role="menu"
           className={cx(
-            "absolute z-50 mt-1.5 w-72 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-theme-lg dark:border-white/10 dark:bg-gray-900",
-            alinear === "derecha" ? "right-0" : "left-0",
+            "absolute z-50 mt-1.5 w-72 animate-entrada-menu overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-theme-lg dark:border-white/10 dark:bg-gray-900",
+            alinear === "derecha" ? "right-0 origin-top-right" : "left-0 origin-top-left",
           )}
         >
           {opciones.map((o) => (
@@ -598,6 +606,35 @@ export function MenuBoton({
 // ═══════════════════════════════════════════════════════════════════════════
 // PANEL LATERAL Y DIÁLOGO
 // ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Mantiene montado un elemento mientras corre su animación de salida.
+ * `montado` dice si se pinta; `saliendo`, si debe usar la clase de salida.
+ */
+export function useSalida(visible: boolean, ms: number) {
+  const [montado, setMontado] = useState(visible);
+  useEffect(() => {
+    if (visible) {
+      setMontado(true);
+      return;
+    }
+    const t = setTimeout(() => setMontado(false), ms);
+    return () => clearTimeout(t);
+  }, [visible, ms]);
+  return { montado: visible || montado, saliendo: !visible && montado };
+}
+
+/**
+ * El último valor no vacío. Un panel de detalle lo usa para seguir mostrando su
+ * contenido mientras sale, cuando la página ya dejó de pasarle el objeto.
+ */
+export function useUltimo<T>(valor: T | null | undefined): { valor: T | null; abierto: boolean } {
+  const [ultimo, setUltimo] = useState<T | null>(valor ?? null);
+  useEffect(() => {
+    if (valor) setUltimo(valor);
+  }, [valor]);
+  return { valor: valor ?? ultimo, abierto: Boolean(valor) };
+}
 
 function useBloqueoScroll(activo: boolean, onCerrar: () => void) {
   useEffect(() => {
@@ -637,15 +674,24 @@ export function PanelLateral({
 }) {
   const id = useId();
   useBloqueoScroll(abierto, onCerrar);
-  if (!abierto) return null;
+  const { montado, saliendo } = useSalida(abierto, 200);
+  if (!montado) return null;
   return createPortal(
-    <div className="fixed inset-0 z-[99999] flex justify-end font-sans">
-      <div className="absolute inset-0 bg-gray-950/30" onClick={onCerrar} aria-hidden />
+    <div className={cx("fixed inset-0 z-[99999] flex justify-end font-sans", saliendo && "pointer-events-none")}>
+      <div
+        className={cx("absolute inset-0 bg-gray-950/30", saliendo ? "animate-salida-aparecer" : "animate-aparecer")}
+        onClick={onCerrar}
+        aria-hidden
+      />
       <aside
         role="dialog"
         aria-modal="true"
         aria-labelledby={id}
-        className={cx("relative flex h-full w-full flex-col bg-white shadow-theme-xl dark:bg-gray-900", ancho)}
+        className={cx(
+          "relative flex h-full w-full flex-col bg-white shadow-theme-xl dark:bg-gray-900",
+          saliendo ? "animate-salida-cajon" : "animate-entrada-cajon",
+          ancho,
+        )}
       >
         <header className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5 dark:border-white/10">
           <div className="min-w-0">
@@ -694,8 +740,8 @@ export function Confirmar({
   if (!abierto) return null;
   return createPortal(
     <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 font-sans">
-      <div className="absolute inset-0 bg-gray-950/40" onClick={onCancelar} aria-hidden />
-      <div role="alertdialog" aria-modal="true" aria-labelledby={id} className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-theme-xl dark:bg-gray-900">
+      <div className="absolute inset-0 animate-aparecer bg-gray-950/40" onClick={onCancelar} aria-hidden />
+      <div role="alertdialog" aria-modal="true" aria-labelledby={id} className="relative w-full max-w-md animate-entrada-panel rounded-2xl bg-white p-6 shadow-theme-xl dark:bg-gray-900">
         <h2 id={id} className="text-theme-md font-bold text-ink-title dark:text-white">{titulo}</h2>
         {children && <div className="mt-2 text-theme-sm text-gray-600 dark:text-gray-400">{children}</div>}
         <div className="mt-6 flex justify-end gap-2">
@@ -938,13 +984,26 @@ export function useAviso() {
 }
 
 export function Aviso({ texto }: { texto: string | null }) {
-  if (!texto) return null;
+  // El último texto se conserva para que el aviso salga con su contenido.
+  const [ultimo, setUltimo] = useState(texto);
+  useEffect(() => {
+    if (texto) setUltimo(texto);
+  }, [texto]);
+  const { montado, saliendo } = useSalida(Boolean(texto), 200);
+  if (!montado) return null;
+  // El centrado va en un contenedor aparte: la animación usa `transform` y
+  // pisaría el `-translate-x-1/2`.
   return createPortal(
-    <div
-      role="status"
-      className="fixed bottom-6 left-1/2 z-[100001] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-gray-900 px-4 py-3 font-sans text-theme-sm text-white shadow-theme-lg dark:bg-white dark:text-gray-900"
-    >
-      {texto}
+    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[100001] flex justify-center px-4">
+      <div
+        role="status"
+        className={cx(
+          "max-w-full rounded-xl bg-gray-900 px-4 py-3 font-sans text-theme-sm text-white shadow-theme-lg dark:bg-white dark:text-gray-900",
+          saliendo ? "animate-salida-aviso" : "animate-entrada-aviso",
+        )}
+      >
+        {texto ?? ultimo}
+      </div>
     </div>,
     document.body,
   );

@@ -357,6 +357,8 @@ export const CONFIG_SEED: ConfigInventario = {
   whatsappDestino: "",
   resumenDiario: true,
   horaResumen: "07:00",
+  skuAutomatico: true,
+  toleranciaRecepcionPct: 0,
 
   categorias: CATEGORIAS_SEED,
 };

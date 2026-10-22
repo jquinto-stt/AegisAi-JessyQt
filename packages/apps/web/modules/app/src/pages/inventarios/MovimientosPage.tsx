@@ -17,6 +17,7 @@ import {
   formatearEntero,
   formatearFechaHora,
   formatearHora,
+  formatearMoneda,
   stockTotal,
   ETIQUETA_TIPO_MOVIMIENTO,
   ETIQUETA_UNIDAD,
@@ -43,6 +44,7 @@ import {
   PaginaInventario,
   PanelLateral,
   useAviso,
+  useUltimo,
   Vacio,
   OPCIONES_MOVIMIENTO,
 } from "./inventario.ui";
@@ -119,6 +121,8 @@ interface Borrador {
   destinoId: string;
   motivo: string;
   referencia: string;
+  /** Solo entradas: costo por unidad de lo que llega. Vacío = el costo actual del artículo. */
+  costo: string;
 }
 
 function borradorNuevo(tipo: TipoMovimiento, articuloId = ""): Borrador {
@@ -133,6 +137,7 @@ function borradorNuevo(tipo: TipoMovimiento, articuloId = ""): Borrador {
     destinoId: tipo === "entrada" ? recepcion : "",
     motivo: s.config.motivos[tipo][0] ?? "",
     referencia: "",
+    costo: "",
   };
 }
 
@@ -206,6 +211,8 @@ const PanelRegistro = observer(function PanelRegistro({
     if (!articulo) return setError("Elige el artículo.");
     if (!cantidadValida) return setError("La cantidad debe ser un número entero mayor que cero.");
     const conSigno = b.tipo === "ajuste" && b.sentido === "restar" ? -cantidad : cantidad;
+    const costo = b.costo.trim() === "" ? undefined : Number(b.costo);
+    if (costo !== undefined && !(Number.isFinite(costo) && costo >= 0)) return setError("El costo por unidad debe ser un número de cero o más.");
     const r = s.registrarMovimiento({
       tipo: b.tipo,
       articuloId: articulo.id,
@@ -214,6 +221,7 @@ const PanelRegistro = observer(function PanelRegistro({
       destinoId: b.tipo === "salida" ? null : b.destinoId || null,
       motivo: b.motivo,
       referencia: b.referencia,
+      ...(b.tipo === "entrada" && costo !== undefined ? { costoUnitario: costo } : {}),
     });
     if (!r.ok) return setError(r.error);
     onRegistrado(`${ETIQUETA_TIPO_MOVIMIENTO[b.tipo]} de ${formatearEntero(cantidad)} ${articulo.nombre} ${b.tipo === "ajuste" ? "registrado" : "registrada"}`);
@@ -342,6 +350,26 @@ const PanelRegistro = observer(function PanelRegistro({
           {b.tipo === "entrada" && (
             <Campo etiqueta="Entra a">{selectUbicacion(b.destinoId, (v) => cambiar("destinoId", v), false)}</Campo>
           )}
+          {b.tipo === "entrada" && (
+            <Campo
+              etiqueta="Costo por unidad (opcional)"
+              ayuda={
+                articulo
+                  ? `Hoy cuesta ${formatearMoneda(articulo.costoUnitario)}. Si llega a otro precio, escríbelo: el costo del artículo se recalcula con el método de valoración.`
+                  : "Si llega a otro precio, escríbelo para recalcular el costo."
+              }
+            >
+              <input
+                className={CONTROL}
+                type="number"
+                inputMode="numeric"
+                min={0}
+                value={b.costo}
+                onChange={(e) => cambiar("costo", e.target.value)}
+                placeholder={articulo ? String(articulo.costoUnitario) : "0"}
+              />
+            </Campo>
+          )}
           {b.tipo === "ajuste" && (
             <Campo etiqueta="Ubicación">{selectUbicacion(b.destinoId, (v) => cambiar("destinoId", v), false)}</Campo>
           )}
@@ -465,8 +493,8 @@ const PanelDetalle = observer(function PanelDetalle({
   onAbrirOrden: (id: string) => void;
 }) {
   const s = inventarioStore;
-  if (!movimiento) return null;
-  const m = movimiento;
+  const { valor: m, abierto } = useUltimo(movimiento);
+  if (!m) return null;
   const a = s.articulo(m.articuloId);
   const Icono = ICONO_TIPO[m.tipo];
   const cifra = m.tipo === "transferencia" ? m.cantidad : deltaTotal(m);
@@ -479,13 +507,14 @@ const PanelDetalle = observer(function PanelDetalle({
     ...(de ? [{ etiqueta: m.tipo === "transferencia" ? "Desde" : "Sale de", valor: de }] : []),
     ...(hacia ? [{ etiqueta: m.tipo === "transferencia" ? "Hacia" : m.tipo === "ajuste" ? "Ubicación" : "Entra a", valor: hacia }] : []),
     { etiqueta: "Motivo", valor: m.motivo || <Falta /> },
+    ...(m.costoUnitario !== undefined ? [{ etiqueta: "Costo por unidad", valor: formatearMoneda(m.costoUnitario) }] : []),
     { etiqueta: "Referencia", valor: <Referencia m={m} onAbrirOrden={onAbrirOrden} /> },
     { etiqueta: "Responsable", valor: m.responsable },
   ];
 
   return (
     <PanelLateral
-      abierto
+      abierto={abierto}
       onCerrar={onCerrar}
       ancho="sm:max-w-md"
       titulo={

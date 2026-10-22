@@ -102,7 +102,7 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
     { id: "movimientos", label: "Entradas y salidas", path: "/inventarios/movimientos", capacidad: "settings.read" },
     { id: "ordenes_compra", label: "Órdenes de compra", path: "/inventarios/ordenes-compra", capacidad: "settings.read" },
     { id: "reorden", label: "Cola de reorden", path: "/inventarios/reorden", capacidad: "settings.read" },
-    { id: "conteos", label: "Conteos y ajustes", path: "/inventarios/conteos", capacidad: "settings.read" },
+    { id: "conteos", label: "Toma de inventario", path: "/inventarios/conteos", capacidad: "settings.read" },
     { id: "proveedores", label: "Proveedores", path: "/inventarios/proveedores", capacidad: "settings.read" },
     { id: "admin", label: "Configuración", path: "/inventarios/config", capacidad: "settings.read" },
   ],

@@ -144,7 +144,7 @@ export const InventarioDashboardPage = observer(function InventarioDashboardPage
     {
       etiqueta: "Artículos activos",
       valor: formatearEntero(r.skus),
-      nota: r.conteosAbiertos > 0 ? `${plural(r.conteosAbiertos, "conteo abierto", "conteos abiertos")}` : "Sin conteos abiertos",
+      nota: r.conteosAbiertos > 0 ? `${plural(r.conteosAbiertos, "toma de inventario abierta", "tomas de inventario abiertas")}` : "Sin tomas de inventario abiertas",
       destino: r.conteosAbiertos > 0 ? "/inventarios/conteos" : "/inventarios/articulos",
     },
   ];

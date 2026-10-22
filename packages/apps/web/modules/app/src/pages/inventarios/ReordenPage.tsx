@@ -384,6 +384,8 @@ export const ReordenPage = observer(function ReordenPage() {
                               <DistintivoStock estado={i.estado} />
                               <span className="rq-meta__text">
                                 {i.articulo.sku} · {i.articulo.categoria} · máx {formatearEntero(i.articulo.stockMaximo)}
+                                {i.consumoDiario > 0 &&
+                                  ` · sale ${i.consumoDiario >= 1 ? formatearEntero(Math.round(i.consumoDiario)) : i.consumoDiario.toLocaleString("es-CO", { maximumFractionDigits: 1 })} por día`}
                               </span>
                             </p>
                             {bloqueo && <p className="rq-blocked">{TEXTO_MOTIVO[bloqueo]}</p>}

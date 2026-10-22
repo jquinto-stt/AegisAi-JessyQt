@@ -294,3 +294,94 @@ describe("generarOrdenesDesdeReorden con cantidades editadas", () => {
     expect(r.ok).toBe(false);
   });
 });
+
+describe("valoración del inventario", () => {
+  function articuloLimpio() {
+    const r = s.crearArticulo({
+      sku: "VAL-1",
+      nombre: "Prueba de costo",
+      categoria: "Repuestos",
+      unidad: "unidad",
+      costoUnitario: 100,
+      proveedorId: null,
+      puntoReorden: 1,
+      stockMaximo: 50,
+    });
+    if (!r.ok) throw new Error(r.error);
+    return r.valor;
+  }
+  const entrada = (id: string, cantidad: number, costoUnitario: number) =>
+    s.registrarMovimiento({ tipo: "entrada", articuloId: id, cantidad, origenId: null, destinoId: "ub-principal", motivo: "Compra", costoUnitario });
+  const salida = (id: string, cantidad: number) =>
+    s.registrarMovimiento({ tipo: "salida", articuloId: id, cantidad, origenId: "ub-principal", destinoId: null, motivo: "Prueba" });
+
+  it("con promedio ponderado, una compra a otro precio promedia el costo", () => {
+    const a = articuloLimpio();
+    entrada(a.id, 10, 100);
+    entrada(a.id, 10, 200);
+    expect(s.articulo(a.id)!.costoUnitario).toBe(150);
+    salida(a.id, 5);
+    expect(s.articulo(a.id)!.costoUnitario).toBe(150);
+  });
+
+  it("con PEPS, lo que sale se lleva primero lo más antiguo", () => {
+    s.guardarConfig({ metodoValoracion: "fifo" });
+    const a = articuloLimpio();
+    entrada(a.id, 10, 100);
+    entrada(a.id, 10, 200);
+    salida(a.id, 10);
+    // Quedan las 10 de 200.
+    expect(s.articulo(a.id)!.costoUnitario).toBe(200);
+    expect(s.capasDeArticulo(a.id)).toEqual([{ cantidad: 10, costo: 200 }]);
+  });
+
+  it("recibir una orden usa el costo de la línea", () => {
+    const a = articuloLimpio();
+    entrada(a.id, 10, 100);
+    const oc = s.crearOrdenCompra({ proveedorId: "pv-papeleria", destinoId: "ub-principal", fechaEsperada: null, lineas: [{ articuloId: a.id, cantidad: 10, costoUnitario: 300 }], notas: "" });
+    if (!oc.ok) throw new Error(oc.error);
+    expect(s.enviarOrden(oc.valor.id).ok).toBe(true);
+    expect(s.recibirOrden(oc.valor.id, { [a.id]: 10 }).ok).toBe(true);
+    expect(s.articulo(a.id)!.costoUnitario).toBe(200);
+  });
+});
+
+describe("ajustes que antes no tenían efecto", () => {
+  it("genera el SKU si se deja vacío", () => {
+    const r = s.crearArticulo({ sku: "", nombre: "Nuevo", categoria: "Suministros de oficina", unidad: "unidad", costoUnitario: 1, proveedorId: null, puntoReorden: 1, stockMaximo: 5 });
+    if (!r.ok) throw new Error(r.error);
+    expect(r.valor.sku).toMatch(/^OFI-\d{4}$/);
+  });
+
+  it("sin SKU automático, el código es obligatorio", () => {
+    s.guardarConfig({ skuAutomatico: false });
+    const r = s.crearArticulo({ sku: "", nombre: "Nuevo", categoria: "Repuestos", unidad: "unidad", costoUnitario: 1, proveedorId: null, puntoReorden: 1, stockMaximo: 5 });
+    expect(r.ok).toBe(false);
+  });
+
+  it("la tolerancia deja recibir un poco más de lo pedido", () => {
+    s.guardarConfig({ toleranciaRecepcionPct: 10 });
+    const oc = s.crearOrdenCompra({ proveedorId: "pv-papeleria", destinoId: "ub-principal", fechaEsperada: null, lineas: [{ articuloId: PAPEL, cantidad: 10, costoUnitario: 14500 }], notas: "" });
+    if (!oc.ok) throw new Error(oc.error);
+    s.enviarOrden(oc.valor.id);
+    expect(s.recibirOrden(oc.valor.id, { [PAPEL]: 12 }).ok).toBe(false);
+    expect(s.recibirOrden(oc.valor.id, { [PAPEL]: 11 }).ok).toBe(true);
+  });
+
+  it("los días de cobertura suben la sugerencia si el consumo lo pide", () => {
+    const item = s.colaReorden.find((i) => i.consumoDiario > 0);
+    if (!item) return;
+    const antes = item.sugerido;
+    s.guardarConfig({ diasCobertura: 365 });
+    const despues = s.colaReorden.find((i) => i.articulo.id === item.articulo.id)!.sugerido;
+    expect(despues).toBeGreaterThanOrEqual(antes);
+    expect(despues).toBeGreaterThanOrEqual(Math.ceil(item.consumoDiario * 365) - item.stock - item.enTransito);
+  });
+
+  it("el aviso en pantalla se apaga desde la configuración", () => {
+    const conAviso = s.alertas().filter((a) => a.id.startsWith("agotados") || a.id.startsWith("bajos"));
+    expect(conAviso.length).toBeGreaterThan(0);
+    s.guardarConfig({ alertaStockBajo: false });
+    expect(s.alertas().some((a) => a.id.startsWith("agotados") || a.id.startsWith("bajos"))).toBe(false);
+  });
+});

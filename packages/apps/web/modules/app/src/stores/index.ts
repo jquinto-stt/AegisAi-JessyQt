@@ -136,5 +136,7 @@ export type {
   DatosProveedor,
   DatosRegistroMovimiento,
   DatosOrdenCompra,
+  AlertaInventario,
+  CapaCosto,
 } from '@/stores/inventario.store';
 export * from '@/domain/inventario/inventario.domain';

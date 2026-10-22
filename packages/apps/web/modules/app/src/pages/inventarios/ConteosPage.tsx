@@ -1,5 +1,5 @@
 /**
- * Conteos y ajustes.
+ * Toma de inventario (conteo físico por ubicación).
  *
  * Pregunta de la pantalla: «¿qué ubicación toca contar y qué diferencias hay
  * que resolver?». La lista de conteos va junto a las ubicaciones con la fecha de
@@ -11,6 +11,7 @@ import { useSearchParams } from "react-router";
 import { ArrowLeft, Check, Plus } from "lucide-react";
 import {
   inventarioStore,
+  ETIQUETA_TIPO_UBICACION,
   diferenciaLinea,
   fechaRelativa,
   formatearDelta,
@@ -31,7 +32,7 @@ import {
   CONTROL,
   cx,
   DistintivoConteo,
-  EnlaceTexto,
+  Falta,
   FilaMovil,
   MensajeError,
   OpcionesTarjeta,
@@ -39,7 +40,6 @@ import {
   PanelLateral,
   Pestanas,
   TABLA,
-  Tarjeta,
   useAviso,
   Vacio,
 } from "./inventario.ui";
@@ -51,6 +51,13 @@ const abierto = (c: Conteo) =>
 function monedaConSigno(v: number): string {
   if (v === 0) return formatearMoneda(0);
   return `${v > 0 ? "+" : "−"}${formatearMoneda(Math.abs(v))}`;
+}
+
+/** «Sin diferencias» o «3 ajustes»: lo que dejó una toma cerrada. */
+function resultadoToma(c: Conteo): string {
+  if (c.estado === "anulado") return "Anulada, sin ajustes";
+  const n = lineasConDiferencia(c).length;
+  return n === 0 ? "Sin diferencias" : `${n} ${n === 1 ? "ajuste" : "ajustes"}`;
 }
 
 function valorDiferencias(c: Conteo): number {
@@ -106,15 +113,15 @@ const PanelNuevoConteo = observer(function PanelNuevoConteo({
     <PanelLateral
       abierto={estaAbierto}
       onCerrar={onCerrar}
-      titulo="Nuevo conteo"
-      subtitulo="Un recorrido físico por una ubicación para comparar lo que hay con lo que dice el sistema."
+      titulo="Nueva toma de inventario"
+      subtitulo="Cuenta lo que hay en una ubicación para compararlo con lo que dice el sistema."
       pie={
         <>
           <Boton variante="texto" onClick={onCerrar}>
             Cancelar
           </Boton>
           <Boton variante="principal" onClick={crear} disabled={!ubicacionId}>
-            Empezar conteo
+            Empezar toma
           </Boton>
         </>
       }
@@ -134,7 +141,7 @@ const PanelNuevoConteo = observer(function PanelNuevoConteo({
               valor: ubicacion.id,
               etiqueta: ubicacion.nombre,
               descripcion: enCurso
-                ? "Ya tiene un conteo en curso"
+                ? "Ya tiene una toma en curso"
                 : ultimo
                   ? `Contada ${fechaRelativa(ultimo.fecha)}`
                   : "Nunca contada",
@@ -364,10 +371,10 @@ const VistaConteo = observer(function VistaConteo({
 
   return (
     <PaginaInventario
-      titulo={`Conteo ${c.numero} · ${nombreUbicacion}`}
+      titulo={`Toma de inventario · ${nombreUbicacion}`}
       resumen={
         <>
-          {formatearEntero(contadas)} de {formatearEntero(total)} contados
+          {c.numero} · {formatearEntero(contadas)} de {formatearEntero(total)} contados
           {!ciego &&
             conDiferencia.length > 0 &&
             ` · ${conDiferencia.length} con diferencia (${monedaConSigno(valorDiferencias(c))})`}
@@ -382,7 +389,7 @@ const VistaConteo = observer(function VistaConteo({
             icono={<ArrowLeft className="h-4 w-4" />}
             onClick={onVolver}
           >
-            Conteos
+            Todas las tomas
           </Boton>
         </>
       }
@@ -588,7 +595,7 @@ const VistaConteo = observer(function VistaConteo({
               </span>
             )}
             <Boton variante="texto" onClick={() => setConfirmar("anular")}>
-              Anular conteo
+              Anular toma
             </Boton>
             {enProgreso && !puedeAplicarDirecto && (
               <Boton
@@ -616,13 +623,13 @@ const VistaConteo = observer(function VistaConteo({
         abierto={confirmar === "aplicar"}
         titulo={`¿Aplicar los ajustes de ${c.numero}?`}
         textoConfirmar={
-          ajustes.length === 0 ? "Cerrar conteo" : "Aplicar ajustes"
+          ajustes.length === 0 ? "Cerrar toma" : "Aplicar ajustes"
         }
         onConfirmar={aplicar}
         onCancelar={() => setConfirmar(null)}
       >
         {ajustes.length === 0 ? (
-          "No hay diferencias con la existencia actual; el conteo se cerrará sin registrar ajustes."
+          "No hay diferencias con la existencia actual; la toma se cerrará sin registrar ajustes."
         ) : (
           <>
             <p>
@@ -651,13 +658,13 @@ const VistaConteo = observer(function VistaConteo({
       <Confirmar
         abierto={confirmar === "anular"}
         titulo={`¿Anular ${c.numero}?`}
-        textoConfirmar="Anular conteo"
+        textoConfirmar="Anular toma"
         peligro
         onConfirmar={anular}
         onCancelar={() => setConfirmar(null)}
       >
         Se descarta lo contado y no se registra ningún ajuste. {nombreUbicacion}{" "}
-        quedará libre para un conteo nuevo.
+        quedará libre para una toma nueva.
       </Confirmar>
 
       <Aviso texto={aviso} />
@@ -669,13 +676,10 @@ const VistaConteo = observer(function VistaConteo({
 // LISTA
 // ═══════════════════════════════════════════════════════════════════════════
 
-type PestanaLista = "abiertos" | "cerrados";
-
 export const ConteosPage = observer(function ConteosPage() {
   const s = inventarioStore;
   const [params, setParams] = useSearchParams();
   const { aviso, mostrar } = useAviso();
-  const [pestana, setPestana] = useState<PestanaLista>("abiertos");
   const [nuevo, setNuevo] = useState<{ abierto: boolean; ubicacionId: string }>(
     { abierto: false, ubicacionId: "" },
   );
@@ -709,202 +713,205 @@ export const ConteosPage = observer(function ConteosPage() {
     );
 
   // Sin `useMemo`: `s.conteos` conserva su referencia al hacer `push`.
-  const ordenados = [...s.conteos].sort((a, b) =>
-    b.fecha.localeCompare(a.fecha),
-  );
+  const ordenados = [...s.conteos].sort((a, b) => b.fecha.localeCompare(a.fecha));
   const abiertos = ordenados.filter(abierto);
   const cerrados = ordenados.filter((c) => !abierto(c));
-  const visibles = pestana === "abiertos" ? abiertos : cerrados;
 
-  const ubicaciones = s.ultimoConteoPorUbicacion;
+  // Una tarjeta por ubicación, de lo más urgente a lo menos: lo que espera
+  // revisión, lo que está en curso, lo que nunca se ha contado y, al final, lo
+  // contado hace más tiempo primero.
+  const stockDe = new Map(s.stockPorUbicacion.map((x) => [x.ubicacion.id, x]));
+  const prioridad = (u: (typeof s.ultimoConteoPorUbicacion)[number]) =>
+    u.abierto?.estado === "en_revision" ? 0 : u.abierto ? 1 : !u.ultimo ? 2 : 3;
+  const ubicaciones = [...s.ultimoConteoPorUbicacion].sort(
+    (x, y) =>
+      prioridad(x) - prioridad(y) ||
+      (x.ultimo?.fecha ?? "").localeCompare(y.ultimo?.fecha ?? ""),
+  );
+
   const enCurso = abiertos.filter((c) => c.estado === "en_progreso").length;
   const enRevision = abiertos.filter((c) => c.estado === "en_revision").length;
-  const nunca = ubicaciones.filter((u) => !u.ultimo && !u.abierto);
+  const nunca = ubicaciones.filter((u) => !u.ultimo && !u.abierto).length;
   const partes = [
-    enCurso > 0 &&
-      `${enCurso} ${enCurso === 1 ? "conteo en curso" : "conteos en curso"}`,
     enRevision > 0 && `${enRevision} esperando revisión`,
-    nunca.length === 1 && `${nunca[0].ubicacion.nombre} nunca se ha contado`,
-    nunca.length > 1 && `${nunca.length} ubicaciones nunca se han contado`,
+    enCurso > 0 && `${enCurso} en curso`,
+    nunca > 0 && `${nunca} ${nunca === 1 ? "ubicación nunca contada" : "ubicaciones nunca contadas"}`,
   ].filter(Boolean);
+
+  const iniciar = (ubicacionId: string) => setNuevo({ abierto: true, ubicacionId });
 
   return (
     <PaginaInventario
-      titulo="Conteos y ajustes"
-      resumen={
-        partes.length
-          ? partes.join(" · ")
-          : "Todo al día: no hay conteos abiertos."
-      }
+      titulo="Toma de inventario"
+      resumen={partes.length ? partes.join(" · ") : "Todo al día: no hay tomas abiertas."}
       acciones={
-        <Boton
-          variante="principal"
-          icono={<Plus className="h-4 w-4" />}
-          onClick={() => setNuevo({ abierto: true, ubicacionId: "" })}
-        >
-          Nuevo conteo
+        <Boton variante="principal" icono={<Plus className="h-4 w-4" />} onClick={() => iniciar("")}>
+          Nueva toma
         </Boton>
       }
     >
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-5">
-        <div className="space-y-4 lg:col-span-3">
-          <Pestanas<PestanaLista>
-            valor={pestana}
-            onCambio={setPestana}
-            opciones={[
-              {
-                valor: "abiertos",
-                etiqueta: "Abiertos",
-                cuenta: abiertos.length,
-              },
-              {
-                valor: "cerrados",
-                etiqueta: "Cerrados",
-                cuenta: cerrados.length,
-              },
-            ]}
-          />
-          {visibles.length === 0 ? (
-            <Vacio>
-              {pestana === "abiertos"
-                ? "No hay conteos abiertos. Elige una ubicación para empezar uno."
-                : "Todavía no se ha cerrado ningún conteo."}
-            </Vacio>
-          ) : (
-            <>
-              <table className={cx(TABLA.tabla, "hidden sm:table")}>
-                <thead>
-                  <tr>
-                    <th className={TABLA.th}>Conteo</th>
-                    <th className={TABLA.th}>Estado</th>
-                    <th className={TABLA.th}>Avance</th>
-                    <th className={TABLA.thNum}>Diferencias</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibles.map((c) => {
-                    const { contadas, total } = progresoConteo(c);
-                    const dif = lineasConDiferencia(c).length;
-                    return (
-                      <tr
-                        key={c.id}
-                        className={TABLA.filaClic}
-                        tabIndex={0}
-                        onClick={() => irA(c.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            irA(c.id);
-                          }
-                        }}
-                      >
-                        <td className={TABLA.td}>
-                          <CeldaDoble
-                            principal={s.nombreUbicacion(c.ubicacionId)}
-                            secundaria={`${c.numero} · ${c.responsable} · ${fechaRelativa(c.fecha)}`}
-                          />
-                        </td>
-                        <td className={TABLA.td}>
-                          <DistintivoConteo estado={c.estado} />
-                        </td>
-                        <td className={TABLA.td}>
-                          <div className="flex items-center gap-2.5">
-                            <BarraAvance
-                              valor={contadas}
-                              total={total}
-                              ancho="w-16"
-                            />
-                            <span className="whitespace-nowrap tabular-nums text-gray-600 dark:text-gray-400">
-                              {contadas} de {total}
-                            </span>
-                          </div>
-                        </td>
-                        <td className={TABLA.tdNum}>
-                          {dif === 0 ? (
-                            <span className="text-gray-500">0</span>
-                          ) : (
-                            <>
-                              <span className="font-bold text-ink-body dark:text-white">
-                                {dif}
-                              </span>
-                              <span className="block text-theme-xs text-gray-600 dark:text-gray-400">
-                                {monedaConSigno(valorDiferencias(c))}
-                              </span>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <div className="sm:hidden">
-                {visibles.map((c) => {
-                  const { contadas, total } = progresoConteo(c);
-                  return (
-                    <FilaMovil
-                      key={c.id}
-                      onClick={() => irA(c.id)}
-                      titulo={s.nombreUbicacion(c.ubicacionId)}
-                      detalle={`${c.numero} · ${contadas} de ${total} contados · ${fechaRelativa(c.fecha)}`}
-                      cifra={<DistintivoConteo estado={c.estado} />}
-                    />
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
+      <p className="-mt-2 max-w-3xl text-theme-sm text-gray-600 dark:text-gray-400">
+        Cuenta físicamente lo que hay en una ubicación y compáralo con el sistema. Las diferencias se
+        registran como ajustes solo cuando apruebas la toma.
+      </p>
 
-        <Tarjeta
-          titulo="Ubicaciones"
-          detalle="Cuándo se contó cada una por última vez"
-          className="lg:col-span-2"
-          sinRelleno
-        >
-          <ul className="px-5 pb-2">
-            {ubicaciones.map(({ ubicacion, ultimo, abierto: enCursoAqui }) => (
+      <section aria-labelledby="toma-ubicaciones">
+        <h2 id="toma-ubicaciones" className="mb-3 text-theme-md font-bold text-ink-title dark:text-white">
+          Ubicaciones
+        </h2>
+        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {ubicaciones.map(({ ubicacion, ultimo, abierto: toma }) => {
+            const stock = stockDe.get(ubicacion.id);
+            const progreso = toma ? progresoConteo(toma) : null;
+            const difs = toma ? lineasConDiferencia(toma).length : 0;
+            const nuncaContada = !toma && !ultimo;
+            return (
               <li
                 key={ubicacion.id}
-                className="flex items-center justify-between gap-3 border-t border-gray-100 py-3 first:border-t-0 dark:border-white/5"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-ink-body dark:text-white">
-                    {ubicacion.nombre}
-                  </p>
-                  <p
-                    className={cx(
-                      "mt-0.5 text-theme-xs",
-                      !ultimo && !enCursoAqui
-                        ? "text-brand-700 dark:text-brand-400"
-                        : "text-gray-600 dark:text-gray-400",
-                    )}
-                  >
-                    {enCursoAqui
-                      ? `Conteo ${enCursoAqui.numero} en curso`
-                      : ultimo
-                        ? `Contada ${fechaRelativa(ultimo.fecha)}`
-                        : "Nunca contada"}
-                  </p>
-                </div>
-                {enCursoAqui ? (
-                  <EnlaceTexto onClick={() => irA(enCursoAqui.id)}>
-                    Abrir
-                  </EnlaceTexto>
-                ) : (
-                  <EnlaceTexto
-                    onClick={() =>
-                      setNuevo({ abierto: true, ubicacionId: ubicacion.id })
-                    }
-                  >
-                    Contar
-                  </EnlaceTexto>
+                className={cx(
+                  "flex flex-col rounded-2xl border bg-white p-5 dark:bg-white/[0.02]",
+                  toma?.estado === "en_revision"
+                    ? "border-brand-300 dark:border-brand-500/50"
+                    : "border-gray-200 dark:border-white/10",
                 )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-theme-md font-bold text-ink-body dark:text-white">{ubicacion.nombre}</h3>
+                    <p className="text-theme-xs text-gray-600 dark:text-gray-400">
+                      {ETIQUETA_TIPO_UBICACION[ubicacion.tipo]}
+                      {stock && stock.skus > 0
+                        ? ` · ${formatearEntero(stock.skus)} ${stock.skus === 1 ? "artículo" : "artículos"} · ${formatearMoneda(stock.valor)}`
+                        : " · sin existencias"}
+                    </p>
+                  </div>
+                  {toma && <DistintivoConteo estado={toma.estado} />}
+                </div>
+
+                <div className="mt-4 flex-1">
+                  {toma && progreso ? (
+                    toma.estado === "en_revision" ? (
+                      <p className="text-theme-sm text-ink-body dark:text-gray-200">
+                        {difs === 0 ? (
+                          "Contada completa, sin diferencias."
+                        ) : (
+                          <>
+                            <span className="font-bold">
+                              {difs} {difs === 1 ? "diferencia" : "diferencias"}
+                            </span>{" "}
+                            por {monedaConSigno(valorDiferencias(toma))}
+                          </>
+                        )}
+                        <span className="block text-theme-xs text-gray-600 dark:text-gray-400">
+                          {toma.responsable} · {fechaRelativa(toma.fecha)}
+                        </span>
+                      </p>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <BarraAvance valor={progreso.contadas} total={progreso.total} ancho="flex-1" />
+                          <span className="shrink-0 text-theme-xs tabular-nums text-gray-600 dark:text-gray-400">
+                            {progreso.contadas} de {progreso.total}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 text-theme-xs text-gray-600 dark:text-gray-400">
+                          {toma.responsable} · empezó {fechaRelativa(toma.fecha)}
+                        </p>
+                      </>
+                    )
+                  ) : nuncaContada ? (
+                    <p className="text-theme-sm font-bold text-brand-700 dark:text-brand-400">Nunca se ha contado</p>
+                  ) : (
+                    <p className="text-theme-sm text-ink-body dark:text-gray-200">
+                      Última toma {fechaRelativa(ultimo!.fecha)}
+                      <span className="block text-theme-xs text-gray-600 dark:text-gray-400">
+                        {resultadoToma(ultimo!)}
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-4">
+                  {toma ? (
+                    <Boton variante={toma.estado === "en_revision" ? "principal" : "secundario"} onClick={() => irA(toma.id)}>
+                      {toma.estado === "en_revision" ? "Revisar y aplicar" : "Continuar toma"}
+                    </Boton>
+                  ) : (
+                    <Boton variante={nuncaContada ? "secundario" : "texto"} onClick={() => iniciar(ubicacion.id)}>
+                      Iniciar toma
+                    </Boton>
+                  )}
+                </div>
               </li>
-            ))}
-          </ul>
-        </Tarjeta>
-      </div>
+            );
+          })}
+        </ul>
+      </section>
+
+      <section aria-labelledby="toma-historial">
+        <h2 id="toma-historial" className="mb-1 text-theme-md font-bold text-ink-title dark:text-white">
+          Historial
+        </h2>
+        <p className="mb-3 text-theme-xs text-gray-600 dark:text-gray-400">Tomas cerradas y lo que se ajustó en cada una.</p>
+        {cerrados.length === 0 ? (
+          <Vacio>Todavía no se ha cerrado ninguna toma.</Vacio>
+        ) : (
+          <>
+            <table className={cx(TABLA.tabla, "hidden sm:table")}>
+              <thead>
+                <tr>
+                  <th className={TABLA.th}>Ubicación</th>
+                  <th className={TABLA.th}>Fecha</th>
+                  <th className={cx(TABLA.th, "hidden md:table-cell")}>Responsable</th>
+                  <th className={TABLA.th}>Resultado</th>
+                  <th className={TABLA.thNum}>Valor ajustado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cerrados.map((c) => {
+                  const anulada = c.estado === "anulado";
+                  return (
+                    <tr
+                      key={c.id}
+                      className={TABLA.filaClic}
+                      tabIndex={0}
+                      onClick={() => irA(c.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          irA(c.id);
+                        }
+                      }}
+                    >
+                      <td className={TABLA.td}>
+                        <CeldaDoble principal={s.nombreUbicacion(c.ubicacionId)} secundaria={c.numero} />
+                      </td>
+                      <td className={cx(TABLA.td, "whitespace-nowrap")}>{fechaRelativa(c.fecha)}</td>
+                      <td className={cx(TABLA.td, "hidden whitespace-nowrap text-gray-600 md:table-cell dark:text-gray-400")}>{c.responsable}</td>
+                      <td className={TABLA.td}>
+                        {anulada ? <DistintivoConteo estado={c.estado} /> : resultadoToma(c)}
+                      </td>
+                      <td className={TABLA.tdNum}>
+                        {anulada || lineasConDiferencia(c).length === 0 ? <Falta /> : monedaConSigno(valorDiferencias(c))}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="sm:hidden">
+              {cerrados.map((c) => (
+                <FilaMovil
+                  key={c.id}
+                  onClick={() => irA(c.id)}
+                  titulo={s.nombreUbicacion(c.ubicacionId)}
+                  detalle={`${c.numero} · ${fechaRelativa(c.fecha)} · ${c.estado === "anulado" ? "Anulada" : resultadoToma(c)}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </section>
 
       <PanelNuevoConteo
         abierto={nuevo.abierto}
@@ -912,9 +919,7 @@ export const ConteosPage = observer(function ConteosPage() {
         onCerrar={() => setNuevo({ abierto: false, ubicacionId: "" })}
         onCreado={(c) => {
           setNuevo({ abierto: false, ubicacionId: "" });
-          mostrar(
-            `Conteo ${c.numero} abierto en ${s.nombreUbicacion(c.ubicacionId)}`,
-          );
+          mostrar(`Toma ${c.numero} abierta en ${s.nombreUbicacion(c.ubicacionId)}`);
           irA(c.id);
         }}
       />

@@ -49,6 +49,7 @@ import {
   Subtitulo,
   TABLA,
   useAviso,
+  useUltimo,
   Vacio,
 } from "./inventario.ui";
 import { FOTOS_PRODUCTO, fotoDeProducto } from "./productos.fotos";
@@ -259,8 +260,16 @@ const PanelFormulario = observer(function PanelFormulario({
             <input className={CONTROL} value={b.nombre} onChange={(e) => cambiar("nombre", e.target.value)} placeholder="Papel bond carta 75 g" autoFocus />
           </Campo>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Campo etiqueta="Código" ayuda="El código con el que lo buscas y lo etiquetas.">
-              <input className={CONTROL} value={b.sku} onChange={(e) => cambiar("sku", e.target.value)} placeholder="OFI-1007" />
+            <Campo
+              etiqueta={!articulo && s.config.skuAutomatico ? "Código (opcional)" : "Código"}
+              ayuda={!articulo && s.config.skuAutomatico ? "Déjalo vacío y se genera solo con el prefijo de la categoría." : "El código con el que lo buscas y lo etiquetas."}
+            >
+              <input
+                className={CONTROL}
+                value={b.sku}
+                onChange={(e) => cambiar("sku", e.target.value)}
+                placeholder={!articulo && s.config.skuAutomatico ? s.siguienteSku(b.categoria) : "OFI-1007"}
+              />
             </Campo>
             <Campo etiqueta="Unidad de medida">
               <select className={CONTROL} value={b.unidad} onChange={(e) => cambiar("unidad", e.target.value as UnidadMedida)}>
@@ -346,8 +355,8 @@ const PanelDetalle = observer(function PanelDetalle({
 }) {
   const navigate = useNavigate();
   const s = inventarioStore;
-  if (!articulo) return null;
-  const a = articulo;
+  const { valor: a, abierto } = useUltimo(articulo);
+  if (!a) return null;
   const total = stockTotal(a);
   const estado = estadoStock(a);
   const unidad = ETIQUETA_UNIDAD[a.unidad].toLowerCase();
@@ -360,7 +369,7 @@ const PanelDetalle = observer(function PanelDetalle({
 
   return (
     <PanelLateral
-      abierto
+      abierto={abierto}
       onCerrar={onCerrar}
       titulo={a.nombre}
       subtitulo={`${a.sku} · ${a.categoria}${a.activo ? "" : " · Archivado"}`}

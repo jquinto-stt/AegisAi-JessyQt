@@ -43,6 +43,7 @@ import {
   Subtitulo,
   TABLA,
   useAviso,
+  useUltimo,
   Vacio,
 } from "./inventario.ui";
 
@@ -230,14 +231,15 @@ const PanelDetalle = observer(function PanelDetalle({
   onEditar,
   onAlternar,
 }: {
-  proveedor: Proveedor;
+  proveedor: Proveedor | null;
   onCerrar: () => void;
   onEditar: () => void;
   onAlternar: () => void;
 }) {
   const s = inventarioStore;
   const navigate = useNavigate();
-  const p = proveedor;
+  const { valor: p, abierto } = useUltimo(proveedor);
+  if (!p) return null;
   const c = cifrasDe(p);
   const articulos = s.articulos.filter((a) => a.activo && a.proveedorId === p.id).sort((a, b) => a.nombre.localeCompare(b.nombre));
   const porReponer = s.colaReorden.filter((i) => i.articulo.proveedorId === p.id && i.sugerido > 0);
@@ -249,7 +251,7 @@ const PanelDetalle = observer(function PanelDetalle({
 
   return (
     <PanelLateral
-      abierto
+      abierto={abierto}
       onCerrar={onCerrar}
       titulo={p.nombre}
       subtitulo={[p.ciudad, p.nit && `NIT ${p.nit}`, !p.activo && "Desactivado"].filter(Boolean).join(" · ")}
@@ -519,14 +521,12 @@ export const ProveedoresPage = observer(function ProveedoresPage() {
         </>
       )}
 
-      {detalle && !formulario.abierto && (
-        <PanelDetalle
-          proveedor={detalle}
-          onCerrar={() => abrirDetalle(null)}
-          onEditar={() => setFormulario({ abierto: true, proveedor: detalle })}
-          onAlternar={() => (detalle.activo ? setPorDesactivar(detalle) : alternar(detalle))}
-        />
-      )}
+      <PanelDetalle
+        proveedor={detalle && !formulario.abierto ? detalle : null}
+        onCerrar={() => abrirDetalle(null)}
+        onEditar={() => detalle && setFormulario({ abierto: true, proveedor: detalle })}
+        onAlternar={() => detalle && (detalle.activo ? setPorDesactivar(detalle) : alternar(detalle))}
+      />
 
       <PanelFormulario
         abierto={formulario.abierto}

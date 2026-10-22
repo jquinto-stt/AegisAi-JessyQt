@@ -118,3 +118,20 @@
     animation: none;
   }
 }
+
+/* Cajón y aviso: con movimiento reducido no se desplazan, pero tampoco
+   aparecen de golpe —un fundido breve sigue diciendo «esto llegó»—. La
+   respuesta al presionar (escala) se quita: es adorno. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-entrada-cajon,
+  .animate-entrada-aviso {
+    animation: aparecer 160ms ease-out backwards;
+  }
+  .animate-salida-cajon,
+  .animate-salida-aviso {
+    animation: salida-aparecer 120ms ease-in forwards;
+  }
+  .presion-suave:active {
+    transform: none !important;
+  }
+}

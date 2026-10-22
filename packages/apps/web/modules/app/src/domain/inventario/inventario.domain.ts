@@ -84,6 +84,8 @@ export interface Movimiento {
   /** Documento que lo originó: «OC-0004», «CNT-0002»… */
   referencia: string | null;
   responsable: string;
+  /** Costo por unidad con el que entró la mercancía. Solo en entradas que lo declaran. */
+  costoUnitario?: number;
 }
 
 export type EstadoOrdenCompra = "borrador" | "enviada" | "parcial" | "recibida" | "cancelada";
@@ -179,6 +181,12 @@ export interface ConfigInventario {
   horaResumen: string;
 
   categorias: string[];
+
+  // ── Catálogo y recepción ──
+  /** Si el código (SKU) se deja vacío al crear un artículo, se genera solo. */
+  skuAutomatico: boolean;
+  /** Cuánto más de lo pedido se acepta al recibir una orden (% de la línea). */
+  toleranciaRecepcionPct: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -391,16 +399,21 @@ export interface ItemReorden {
   estado: EstadoStock;
   stock: number;
   enTransito: number;
-  /** Lo que falta para llegar al stock máximo, descontando lo que ya viene. */
+  /** Lo que falta para llegar al objetivo, descontando lo que ya viene. */
   sugerido: number;
+  /** Unidades que salen por día en promedio (últimos 30 días). 0 = sin salidas. */
+  consumoDiario: number;
 }
 
 /**
- * Cuánto pedir: hasta el máximo, contando lo que ya está en camino. Si lo que
- * viene ya alcanza, no se sugiere nada aunque hoy el stock esté bajo.
+ * Cuánto pedir: hasta el objetivo, contando lo que ya está en camino. El
+ * objetivo es el stock máximo o, si el consumo real lo supera, lo que se gasta
+ * en `diasCobertura` días. Si lo que viene ya alcanza, no se sugiere nada
+ * aunque hoy el stock esté bajo.
  */
-export function cantidadSugerida(a: Articulo, enTransito: number, multiplo = 1): number {
-  const objetivo = Math.max(a.stockMaximo, a.puntoReorden + 1);
+export function cantidadSugerida(a: Articulo, enTransito: number, multiplo = 1, consumoDiario = 0, diasCobertura = 0): number {
+  const porConsumo = Math.ceil(consumoDiario * diasCobertura);
+  const objetivo = Math.max(a.stockMaximo, a.puntoReorden + 1, porConsumo);
   const falta = Math.max(0, objetivo - stockTotal(a) - enTransito);
   if (falta === 0 || multiplo <= 1) return falta;
   return Math.ceil(falta / multiplo) * multiplo;
@@ -410,6 +423,10 @@ export interface OpcionesReorden {
   /** `false` = sugerir como si no viniera nada en camino. */
   descontarEnTransito?: boolean;
   multiplo?: number;
+  /** Unidades por día que sale cada artículo (id → consumo). */
+  consumoDiario?: Record<string, number>;
+  /** Días de consumo que debe cubrir la reposición. 0 = solo el stock máximo. */
+  diasCobertura?: number;
 }
 
 /**
@@ -417,15 +434,16 @@ export interface OpcionesReorden {
  * dentro de cada grupo, los más lejos de su punto (en proporción) arriba.
  */
 export function colaReorden(articulos: Articulo[], ordenes: OrdenCompra[], opciones: OpcionesReorden = {}): ItemReorden[] {
-  const { descontarEnTransito = true, multiplo = 1 } = opciones;
+  const { descontarEnTransito = true, multiplo = 1, consumoDiario = {}, diasCobertura = 0 } = opciones;
   const items: ItemReorden[] = [];
   for (const a of articulos) {
     if (!a.activo) continue;
     const estado = estadoStock(a);
     if (estado !== "agotado" && estado !== "bajo") continue;
     const enTransito = unidadesEnTransito(a.id, ordenes);
-    const sugerido = cantidadSugerida(a, descontarEnTransito ? enTransito : 0, multiplo);
-    items.push({ articulo: a, estado, stock: stockTotal(a), enTransito, sugerido });
+    const consumo = consumoDiario[a.id] ?? 0;
+    const sugerido = cantidadSugerida(a, descontarEnTransito ? enTransito : 0, multiplo, consumo, diasCobertura);
+    items.push({ articulo: a, estado, stock: stockTotal(a), enTransito, sugerido, consumoDiario: consumo });
   }
   const cobertura = (i: ItemReorden) => (i.articulo.puntoReorden > 0 ? i.stock / i.articulo.puntoReorden : 0);
   return items.sort((x, y) => {
