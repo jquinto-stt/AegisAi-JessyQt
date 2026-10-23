@@ -6,12 +6,12 @@ import {
   ToggleAppSidebar,
 } from "@/shell";
 import { ThemeToggleButton } from "@/shell";
-import ModuleSwitcher from "@/shell/header/ModuleSwitcher";
 import NotificationDropdown from "@/shell/header/NotificationDropdown";
 import UserDropdown from "@/shell/header/UserDropdown";
-import { OperadorSelector } from "@/shell/header/OperadorSelector";
+import { SupportDropdown } from "@/shell/header/SupportDropdown";
+import { NegocioSelector } from "@/shell/header/NegocioSelector";
 import { AppSidebar } from "@/app/AppSidebar";
-import { sessionStore, organizacionStore } from "@/stores";
+import { sessionStore } from "@/stores";
 import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils";
 import { inicialesDe } from "@/utils";
 
@@ -101,19 +101,15 @@ const OperadorChip = observer(() => {
 const AppHeader = observer(() => (
   <BaseAppHeader
     leftContent={
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <ToggleAppSidebar />
-        {/* Selector rápido de módulo, alineado a la izquierda. Se monta AQUÍ y
-            no dentro de `BaseAppHeader`: ese componente también lo usa
-            `ModulosPage`, la pantalla que ES el lanzador, donde "cambiar de
-            módulo" no significaría nada. */}
-        <ModuleSwitcher />
-        {organizacionStore.modulosActivos.length > 0 && <OperadorSelector />}
+        <NegocioSelector />
       </div>
     }
   >
     <div className="flex items-center gap-2.5 sm:gap-3">
       <ThemeToggleButton />
+      <SupportDropdown />
       <NotificationDropdown />
       <UserDropdown />
     </div>
@@ -175,11 +171,17 @@ export const AppShell = () => {
 
   const esPantallaFija = esChatConversaciones || esTableroKanban || esChatAsistente;
 
+  const esSinMarco =
+    esChatAsistente ||
+    location.pathname === "/sugerencias" ||
+    location.pathname === "/tutoriales" ||
+    location.pathname === "/novedades";
+
   return (
     <BaseAppShell
       sidebar={<AppSidebar />}
       header={<AppHeader />}
-      noCard={esChatAsistente}
+      noCard={esSinMarco}
       pantallaFija={esPantallaFija}
     >
       <Outlet />

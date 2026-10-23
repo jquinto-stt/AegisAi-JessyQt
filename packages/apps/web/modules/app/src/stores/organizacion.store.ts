@@ -90,6 +90,8 @@ export interface OrganizacionWorkspace {
   tipoEmpresa?: string;
   tamanoEquipo?: string;
   logoUrl?: string;
+  nombrePublico?: string;
+  telefono?: string;
   fechaCreacion: string;
 }
 
@@ -121,6 +123,11 @@ export const PAISES_CONFIG: Record<
     moneda: "PEN",
     zonaHoraria: "America/Lima",
     label: "Perú",
+  },
+  Ecuador: {
+    moneda: "USD",
+    zonaHoraria: "America/Guayaquil",
+    label: "Ecuador",
   },
   España: {
     moneda: "EUR",
@@ -190,6 +197,7 @@ const STORAGE_KEY = "necto.organizacion.v1";
 interface OrganizacionStorage {
   usuario: UsuarioPerfil | null;
   organizacion: OrganizacionWorkspace | null;
+  organizaciones: OrganizacionWorkspace[];
   /** Pertenencia de módulos de esta organización. Es nivel 2. */
   modulos: Record<IdModuloNegocio, EstadoModuloNegocio>;
 }
@@ -271,6 +279,7 @@ function loadStorage(): OrganizacionStorage {
   const vacio = (): OrganizacionStorage => ({
     usuario: null,
     organizacion: null,
+    organizaciones: [],
     modulos: modulosIniciales(),
   });
 
@@ -283,9 +292,15 @@ function loadStorage(): OrganizacionStorage {
     if (typeof parsed !== "object" || parsed === null) return vacio();
 
     const datos = parsed as Partial<OrganizacionStorage>;
+    const org = datos.organizacion ?? null;
+    const orgs = Array.isArray(datos.organizaciones) && datos.organizaciones.length > 0
+      ? datos.organizaciones
+      : (org ? [org] : []);
+
     return {
       usuario: datos.usuario ?? null,
-      organizacion: datos.organizacion ?? null,
+      organizacion: org,
+      organizaciones: orgs,
       modulos: normalizarModulos(datos.modulos),
     };
   } catch {
@@ -349,6 +364,7 @@ export function slugDe(nombre: string): string {
 export class OrganizacionStore {
   usuario: UsuarioPerfil | null = null;
   organizacion: OrganizacionWorkspace | null = null;
+  organizaciones: OrganizacionWorkspace[] = [];
 
   /**
    * Pertenencia de módulos de esta organización. **Nivel 2 — fuente de verdad.**
@@ -366,6 +382,7 @@ export class OrganizacionStore {
     const saved = loadStorage();
     this.usuario = saved.usuario;
     this.organizacion = saved.organizacion;
+    this.organizaciones = saved.organizaciones ?? [];
     this.modulos = saved.modulos;
     makeAutoObservable(this);
   }
@@ -374,6 +391,7 @@ export class OrganizacionStore {
     persistStorage({
       usuario: this.usuario,
       organizacion: this.organizacion,
+      organizaciones: this.organizaciones,
       modulos: this.modulos,
     });
   }
@@ -566,6 +584,10 @@ export class OrganizacionStore {
       tamanoEquipo: datos.tamanoEquipo?.trim() ?? this.organizacion.tamanoEquipo,
       logoUrl: datos.logoUrl?.trim() ?? this.organizacion.logoUrl,
     };
+    const idx = this.organizaciones.findIndex((o) => o.id === this.organizacion?.id);
+    if (idx >= 0 && this.organizacion) {
+      this.organizaciones[idx] = this.organizacion;
+    }
     this.persist();
   }
 
@@ -585,17 +607,13 @@ export class OrganizacionStore {
     const configuracionPais = PAISES_CONFIG[pais] || PAISES_CONFIG["Colombia"];
     const moneda = (datos.moneda ?? configuracionPais.moneda).trim().toUpperCase();
     const zonaHoraria = (datos.zonaHoraria ?? configuracionPais.zonaHoraria).trim();
-    // Los defaults salen de las listas compartidas, no de un literal. Antes eran
-    // «Retail & Comercio», que no es ninguna de las opciones que el `<select>`
-    // ofrece: una organización creada sin elegir rubro nacía con un valor que la
-    // propia pantalla no podía volver a pintar.
     const tipoEmpresa =
       datos.tipoEmpresa ?? this.organizacion?.tipoEmpresa ?? TIPO_EMPRESA_POR_DEFECTO;
     const tamanoEquipo =
       datos.tamanoEquipo ?? this.organizacion?.tamanoEquipo ?? TAMANO_EQUIPO_POR_DEFECTO;
     const logoUrl = datos.logoUrl ?? this.organizacion?.logoUrl;
 
-    this.organizacion = {
+    const nuevaOrg: OrganizacionWorkspace = {
       id: this.organizacion?.id ?? `org_${Date.now()}`,
       nombre,
       slug,
@@ -605,12 +623,58 @@ export class OrganizacionStore {
       tipoEmpresa,
       tamanoEquipo,
       logoUrl,
-      // Sin `modulosInstalados`: la pertenencia vive en `this.modulos`, que es un
-      // `Record` con conectores. Tenerla también aquí era la duplicación que hacía
-      // que la organización y la plataforma pudieran dar respuestas distintas.
       fechaCreacion: this.organizacion?.fechaCreacion ?? new Date().toISOString(),
     };
+    this.organizacion = nuevaOrg;
+    const idx = this.organizaciones.findIndex((o) => o.id === nuevaOrg.id);
+    if (idx >= 0) {
+      this.organizaciones[idx] = nuevaOrg;
+    } else {
+      this.organizaciones.push(nuevaOrg);
+    }
     this.persist();
+  }
+
+  /**
+   * Cambia el negocio u organización activa seleccionada.
+   */
+  seleccionarOrganizacion(id: string) {
+    const org = this.organizaciones.find((o) => o.id === id);
+    if (org) {
+      this.organizacion = org;
+      this.persist();
+    }
+  }
+
+  /**
+   * Crea un nuevo negocio en el selector rápido y lo selecciona.
+   */
+  agregarOrganizacion(datos: {
+    nombre: string;
+    nombrePublico?: string;
+    telefono?: string;
+    pais?: string;
+  }): OrganizacionWorkspace {
+    const nombre = datos.nombre.trim() || "Mi Negocio";
+    const pais = datos.pais?.trim() || "Colombia";
+    const configuracionPais = PAISES_CONFIG[pais] || PAISES_CONFIG["Colombia"];
+    const nuevaOrg: OrganizacionWorkspace = {
+      id: `org_${Date.now()}`,
+      nombre,
+      slug: slugDe(nombre),
+      nombrePublico: datos.nombrePublico?.trim() || nombre,
+      telefono: datos.telefono?.trim(),
+      pais,
+      moneda: configuracionPais.moneda,
+      zonaHoraria: configuracionPais.zonaHoraria,
+      tipoEmpresa: TIPO_EMPRESA_POR_DEFECTO,
+      tamanoEquipo: TAMANO_EQUIPO_POR_DEFECTO,
+      fechaCreacion: new Date().toISOString(),
+    };
+    this.organizaciones.push(nuevaOrg);
+    this.organizacion = nuevaOrg;
+    this.persist();
+    return nuevaOrg;
   }
 
   // ── Pertenencia de módulos (nivel 2) ──────────────────────────────────────

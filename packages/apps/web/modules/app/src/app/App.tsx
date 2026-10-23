@@ -38,6 +38,8 @@ import Register from "@/pages/Register";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import SupportPage from "@/pages/SupportPage";
 import HelpPage from "@/pages/HelpPage";
+import { SugerenciasPage } from "@/pages/support/SugerenciasPage";
+import { ProximamentePage } from "@/pages/common/ProximamentePage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import CookiesPage from "@/pages/CookiesPage";
@@ -204,6 +206,27 @@ export default function App() {
         <Route path="/whatsapp" element={<Navigate to="/conversaciones" replace />} />
         <Route path="/pedidos/chats" element={<Navigate to="/conversaciones" replace />} />
         <Route path="/dashboard" element={<InicioDashboardPage />} />
+        <Route path="/sugerencias" element={<SugerenciasPage />} />
+        <Route
+          path="/tutoriales"
+          element={
+            <ProximamentePage
+              titulo="Tutoriales Necto"
+              subtitulo="Estamos preparando una serie de video-tutoriales guiados para que le saques el máximo provecho a Necto."
+              categoria="Tutoriales"
+            />
+          }
+        />
+        <Route
+          path="/novedades"
+          element={
+            <ProximamentePage
+              titulo="Novedades de la Plataforma"
+              subtitulo="Muy pronto podrás consultar aquí las últimas actualizaciones, mejoras y nuevas funciones de Necto."
+              categoria="Changelog"
+            />
+          }
+        />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/perfil" element={<ProfilePage />} />
       </Route>

@@ -4,9 +4,7 @@ import { ShellDropdown, ShellDropdownItem } from "@/shell/header/ShellDropdown";
 import { useNavigate } from "react-router";
 import {
   ArrowLeftOnRectangleIcon,
-  Cog6ToothIcon,
   GlobeAltIcon,
-  InformationCircleIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
 import { sessionStore, organizacionStore } from "@/stores";
@@ -145,34 +143,7 @@ const UserDropdown = observer(() => {
             </ShellDropdownItem>
           </li>
 
-          {/* Configuración de la organización — módulos y conectores.
-              Decía «Configuración de la cuenta» y llevaba a la configuración de la
-              ORGANIZACIÓN: cuenta y organización no son lo mismo, y «Editar perfil»
-              ya cubre lo de la cuenta. Se corrigió la etiqueta, no el destino. */}
-          <li>
-            <ShellDropdownItem
-              onItemClick={closeDropdown}
-              tag="a"
-              to="/configuracion"
-              className="flex items-center gap-3 px-2.5 py-2 font-medium text-gray-700 rounded-xl group text-sm hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white transition-colors"
-            >
-              <Cog6ToothIcon className="size-4.5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200" />
-              <span>Ajustes Generales</span>
-            </ShellDropdownItem>
-          </li>
 
-          {/* Soporte */}
-          <li>
-            <ShellDropdownItem
-              onItemClick={closeDropdown}
-              tag="a"
-              to="/soporte"
-              className="flex items-center gap-3 px-2.5 py-2 font-medium text-gray-700 rounded-xl group text-sm hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white transition-colors"
-            >
-              <InformationCircleIcon className="size-4.5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200" />
-              <span>Soporte</span>
-            </ShellDropdownItem>
-          </li>
 
           {/* Idioma — informativo, no un control: no hay i18n. Decía «English 🇺🇸»
               mientras toda la interfaz está en español. */}

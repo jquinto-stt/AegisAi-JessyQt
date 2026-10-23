@@ -6,3 +6,5 @@ export { default as NotificationDropdown } from "./NotificationDropdown";
 export { default as UserDropdown } from "./UserDropdown";
 export { default as ModuleSwitcher } from "./ModuleSwitcher";
 export { OperadorSelector } from "./OperadorSelector";
+export { NegocioSelector } from "./NegocioSelector";
+export { SupportDropdown } from "./SupportDropdown";

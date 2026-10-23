@@ -26,6 +26,7 @@ import { uiStore } from "@/stores";
 interface BannerItem {
   id: string;
   imageUrl: string;
+  imageUrlDark: string;
   title: string;
   alt: string;
   ctaLink: string;
@@ -36,6 +37,7 @@ const BANNERS: BannerItem[] = [
   {
     id: "operacion-conectada",
     imageUrl: "/images/Banners/banner-operacion.png",
+    imageUrlDark: "/images/Banners/banner-operacion-dark.png",
     title: "Toda tu operación, más conectada",
     alt: "Necto - Pedidos, inventario y atención en un mismo entorno",
     ctaLink: "/configuracion?tab=modulos",
@@ -43,6 +45,7 @@ const BANNERS: BannerItem[] = [
   {
     id: "pedidos-inventario",
     imageUrl: "/images/Banners/banner-pedidos.png",
+    imageUrlDark: "/images/Banners/banner-pedidos-dark.png",
     title: "Pedidos e inventario, en un solo lugar",
     alt: "Necto - Gestiona tus pedidos y controla tu stock",
     ctaLink: "/pedidos",
@@ -50,6 +53,7 @@ const BANNERS: BannerItem[] = [
   {
     id: "conversaciones-whatsapp",
     imageUrl: "/images/Banners/banner-conversaciones.png",
+    imageUrlDark: "/images/Banners/banner-conversaciones-dark.png",
     title: "Gestiona tus conversaciones, sin salir de Necto",
     alt: "Necto - Centraliza la atención por WhatsApp y conecta con tus procesos",
     ctaLink: "/conversaciones",
@@ -77,11 +81,21 @@ const MS_ROTACION = 7000;
  * banner cambia solo y cuánto falta. Al pasar el mouse o enfocar el carrusel se
  * pausa, y navegar a mano reinicia la cuenta.
  */
-function BannerCarrusel({ onIr, visible }: { onIr: (ruta: string) => void; visible: boolean }) {
+const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onIr: (ruta: string) => void; visible: boolean }) {
   const [activo, setActivo] = useState(0);
   const [anterior, setAnterior] = useState<number | null>(null);
   const [direccion, setDireccion] = useState<1 | -1>(1);
   const [pausado, setPausado] = useState(false);
+
+  // Precarga de banners light y dark para transición inmediata sin parpadeo
+  useEffect(() => {
+    BANNERS.forEach((b) => {
+      const imgL = new Image();
+      imgL.src = b.imageUrl;
+      const imgD = new Image();
+      imgD.src = b.imageUrlDark;
+    });
+  }, []);
 
   const ir = (destino: number, dir: 1 | -1) => {
     if (destino === activo) return;
@@ -105,6 +119,7 @@ function BannerCarrusel({ onIr, visible }: { onIr: (ruta: string) => void; visib
   }, [activo, detenido]);
 
   const actual = BANNERS[activo];
+  const esDark = uiStore.theme === "dark";
 
   return (
     <div
@@ -127,10 +142,11 @@ function BannerCarrusel({ onIr, visible }: { onIr: (ruta: string) => void; visib
         {BANNERS.map((b, idx) => {
           // Al cargar, el primero ya está ahí: solo se anima cuando el banner cambia.
           const estado = idx === activo ? (anterior === null ? "fijo" : "entra") : idx === anterior ? "sale" : "oculto";
+          const srcImagen = esDark ? b.imageUrlDark : b.imageUrl;
           return (
             <img
               key={b.id}
-              src={b.imageUrl}
+              src={srcImagen}
               alt={idx === activo ? b.alt : ""}
               aria-hidden={idx !== activo}
               loading="eager"
@@ -192,7 +208,7 @@ function BannerCarrusel({ onIr, visible }: { onIr: (ruta: string) => void; visib
       </div>
     </div>
   );
-}
+});
 
 export const InicioDashboardPage = observer(() => {
   const navigate = useNavigate();
