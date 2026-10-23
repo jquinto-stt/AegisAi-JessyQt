@@ -29,6 +29,7 @@ interface BannerItem {
   title: string;
   alt: string;
   ctaLink: string;
+  objectPosition?: string;
 }
 
 const BANNERS: BannerItem[] = [
@@ -52,6 +53,8 @@ const BANNERS: BannerItem[] = [
     title: "Gestiona tus conversaciones, sin salir de Necto",
     alt: "Necto - Centraliza la atención por WhatsApp y conecta con tus procesos",
     ctaLink: "/conversaciones",
+    // Ajuste fino: suficiente para que 'Gestiona tus' no se corte sin dejar espacio vacío arriba
+    objectPosition: "center 38%",
   },
 ];
 
@@ -132,6 +135,7 @@ function BannerCarrusel({ onIr, visible }: { onIr: (ruta: string) => void; visib
               aria-hidden={idx !== activo}
               loading="eager"
               draggable={false}
+              style={{ objectPosition: b.objectPosition ?? "center center" }}
               className={`h-auto max-h-[300px] w-full object-cover sm:max-h-[320px] banner-carrusel__imagen banner-carrusel__imagen--${estado} ${
                 direccion === 1 ? "desde-derecha" : "desde-izquierda"
               }`}

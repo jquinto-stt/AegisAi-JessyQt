@@ -77,7 +77,6 @@ export const CATALOGO_MODULOS: Record<IdModuloNegocio, InfoModuloNegocio> = {
     descripcion: "Tablero de pedidos, preparación y despacho, envíos, estados en tiempo real y analítica de ventas.",
     rutaPrincipal: "/pedidos/inicio",
     rutaConfig: "/pedidos/config",
-    rutaOnboarding: "/onboarding/pedidos",
     disponible: true,
     destacados: [
       "Tablero Kanban por estados",

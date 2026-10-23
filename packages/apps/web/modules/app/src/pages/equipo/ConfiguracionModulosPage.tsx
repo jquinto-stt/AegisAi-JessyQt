@@ -9,6 +9,8 @@ import { Switch } from "@/elements/form/switch";
 import {
   organizacionStore,
   plataformaStore,
+  sessionStore,
+  modulosOperablesDeSesion,
   CATALOGO_MODULOS,
   type IdModuloNegocio,
   type InfoModuloNegocio,
@@ -364,7 +366,16 @@ const ModuloMaestroCard = observer(({
           {disponible ? (
             <Switch
               checked={esActivo}
-              onChange={() => organizacionStore.toggleModulo(def.id)}
+              onChange={() => {
+                organizacionStore.toggleModulo(def.id);
+                const tipoActual = sessionStore.accessContext.tipoSesion;
+                if (tipoActual !== null && sessionStore.operadorSimuladoId === null) {
+                  sessionStore.configurar(
+                    modulosOperablesDeSesion(organizacionStore.modulosActivos),
+                    tipoActual,
+                  );
+                }
+              }}
               label=""
             />
           ) : (
@@ -711,6 +722,13 @@ export const ModulosTab = observer(() => {
                           navigate(ruta);
                         } else {
                           organizacionStore.instalarModulo(mod.id);
+                          const tipoActual = sessionStore.accessContext.tipoSesion;
+                          if (tipoActual !== null && sessionStore.operadorSimuladoId === null) {
+                            sessionStore.configurar(
+                              modulosOperablesDeSesion(organizacionStore.modulosActivos),
+                              tipoActual,
+                            );
+                          }
                           setModalAgregarAbierto(false);
                         }
                       }}

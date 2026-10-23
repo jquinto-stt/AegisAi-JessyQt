@@ -242,6 +242,14 @@ function normalizarModulos(valor: unknown): Record<IdModuloNegocio, EstadoModulo
       (acc, c) => ({ ...acc, [c]: conectoresLeidos?.[c] === true }),
       {} as Record<IdConector, boolean>,
     );
+
+    // Si pedidos está instalado y activo pero sus conectores estaban apagados por defecto
+    if (id === "pedidos" && base[id].instalado && base[id].activo) {
+      if (!conectoresLeidos || (!conectoresLeidos.whatsapp && !conectoresLeidos.necto_ia)) {
+        base[id].conectores.whatsapp = true;
+        base[id].conectores.necto_ia = true;
+      }
+    }
   });
 
   return base;
@@ -645,6 +653,16 @@ export class OrganizacionStore {
     if (!this.modulos[id]) return;
     this.modulos[id].instalado = true;
     this.modulos[id].activo = true;
+    if (id === "pedidos") {
+      this.modulos[id].conectores.whatsapp = true;
+      this.modulos[id].conectores.necto_ia = true;
+      try {
+        localStorage.setItem(
+          "pedidos_canales_integraciones",
+          JSON.stringify({ whatsapp: true, instagram: false, facebook: false }),
+        );
+      } catch {}
+    }
     this.sincronizarConectores(id);
     this.persist();
   }
