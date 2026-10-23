@@ -173,6 +173,7 @@ export const AppShell = () => {
 
   const esSinMarco =
     esChatAsistente ||
+    esChatConversaciones ||
     location.pathname === "/sugerencias" ||
     location.pathname === "/tutoriales" ||
     location.pathname === "/novedades";

@@ -72,3 +72,30 @@ export const ultimoTexto = (convId: string): string => {
   const t = last.clase === "mensaje" ? last.data.contenido.texto : last.data.texto;
   return (t || "").replace(/<[^>]+>/g, "").replace(/\n/g, " ").trim();
 };
+
+/** Formatea una fecha para el listado de chats al estilo WhatsApp/MasterShop (ej: "11:30", "martes", "1/7/2025") */
+export const formatearFechaListaChat = (iso: string): string => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+
+  const ahora = new Date();
+  const esMismoDia =
+    d.getDate() === ahora.getDate() &&
+    d.getMonth() === ahora.getMonth() &&
+    d.getFullYear() === ahora.getFullYear();
+
+  if (esMismoDia) {
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  const diffMs = ahora.getTime() - d.getTime();
+  const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDias < 7 && diffDias >= 0) {
+    const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+    return dias[d.getDay()] || "";
+  }
+
+  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+};
+

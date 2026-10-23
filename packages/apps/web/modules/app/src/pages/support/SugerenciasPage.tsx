@@ -113,7 +113,7 @@ export const SugerenciasPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setPaso(1)}
-                className="cursor-pointer bg-[#00e575] hover:bg-[#00c853] active:scale-95 text-white font-bold text-xs uppercase tracking-wider px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all"
+                className="cursor-pointer bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-bold text-xs uppercase tracking-wider px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all"
               >
                 COMENZAR
               </button>
@@ -141,7 +141,7 @@ export const SugerenciasPage: React.FC = () => {
 
             {/* Número y Pregunta Principal */}
             <div className="flex items-start gap-3">
-              <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-bold shrink-0 mt-1 shadow-xs">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-brand-500 text-white text-xs font-bold shrink-0 mt-1 shadow-xs">
                 1
               </span>
               <div>
@@ -166,7 +166,7 @@ export const SugerenciasPage: React.FC = () => {
                     onClick={() => setCategoria(cat.id)}
                     className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
                       seleccionada
-                        ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900 font-semibold border-transparent shadow-xs"
+                        ? "bg-brand-500 text-white dark:bg-brand-500 dark:text-white font-semibold border-transparent shadow-xs"
                         : "bg-white/80 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-white/20"
                     }`}
                   >
@@ -185,7 +185,7 @@ export const SugerenciasPage: React.FC = () => {
                 onChange={(e) => setMensaje(e.target.value)}
                 placeholder="Escribe aquí tu respuesta..."
                 rows={3}
-                className="w-full text-base sm:text-lg text-gray-900 dark:text-white placeholder:text-gray-400 bg-transparent border-b-2 border-gray-300 dark:border-white/20 focus:border-gray-900 dark:focus:border-white focus:outline-none py-2 resize-none transition-colors"
+                className="w-full text-base sm:text-lg text-gray-900 dark:text-white placeholder:text-gray-400 bg-transparent border-b-2 border-gray-300 dark:border-white/20 focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none py-2 resize-none transition-colors"
               />
               <span className="text-[11px] text-gray-600 dark:text-gray-300">
                 Pulsa <span className="font-medium text-gray-800 dark:text-gray-200">Shift ⇧ + Enter ↵</span> para añadir un párrafo
@@ -197,7 +197,7 @@ export const SugerenciasPage: React.FC = () => {
                   type="button"
                   onClick={() => handleSubmit()}
                   disabled={!mensaje.trim() || enviando}
-                  className="cursor-pointer bg-[#00e575] hover:bg-[#00c853] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs uppercase tracking-wider px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2"
+                  className="cursor-pointer bg-brand-500 hover:bg-brand-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs uppercase tracking-wider px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2"
                 >
                   {enviando ? "Enviando..." : "Enviar"}
                 </button>
@@ -214,7 +214,7 @@ export const SugerenciasPage: React.FC = () => {
         {/* ═════════════════════════════════════════════════════════════════════ */}
         {paso === 2 && (
           <div className="relative z-10 max-w-lg w-full text-center flex flex-col items-center animate-aparecer">
-            <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 shadow-sm">
+            <div className="w-14 h-14 rounded-full bg-brand-50 dark:bg-brand-500/20 text-brand-500 dark:text-brand-400 border border-brand-500/20 flex items-center justify-center mb-4 shadow-sm">
               <CheckCircleIcon className="w-8 h-8 stroke-[2.5]" />
             </div>
 
@@ -240,7 +240,7 @@ export const SugerenciasPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate("/dashboard")}
-                className="cursor-pointer bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"
+                className="cursor-pointer bg-brand-500 hover:bg-brand-600 active:scale-95 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"
               >
                 Volver al Panel Principal
               </button>

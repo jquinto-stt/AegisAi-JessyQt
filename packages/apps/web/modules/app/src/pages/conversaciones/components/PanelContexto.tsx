@@ -118,6 +118,7 @@ interface PanelContextoProps {
   convId: string | null;
   /** Permite activar la pestaña de Historial de pedidos en el chat central */
   onVerHistorialPedidos?: () => void;
+  onCerrar?: () => void;
 }
 
 export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelContextoProps) => {
@@ -131,16 +132,6 @@ export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelC
     setNotasContacto(convId ? localStorage.getItem(`crm_notas_${convId}`) ?? "" : "");
   }, [convId]);
 
-  // `plantillaEnviada` vive AQUÍ, con los demás hooks, y no junto a
-  // `enviarPlantilla`, que es donde estaba. Un hook no puede declararse DESPUÉS
-  // de un `return` temprano: los dos `return` de abajo salían antes de llegar a
-  // él, así que el componente llamaba 5 hooks con conversación y 4 sin ella, y
-  // React abortaba con «Rendered fewer hooks than expected» en cuanto `conv`
-  // dejaba de resolverse —al cambiar de chat mientras la bandeja se recarga
-  // desde Supabase, o al seleccionar un id que aún no está—. El efecto era peor
-  // que un aviso de consola: el árbol entero se desmontaba y la consola de chats
-  // quedaba en blanco. Medido antes de moverlo: 3 excepciones y el panel de
-  // conversación desaparecido.
   const [plantillaEnviada, setPlantillaEnviada] = useState<string | null>(null);
 
   if (!convId) {
@@ -163,6 +154,9 @@ export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelC
 
   const { nombre, telefono } = conv.contacto;
   const pedidos = pedidosStore.porTelefono(telefono);
+  const pedidoActivo = pedidosStore.pedidoActivoDe(telefono) ?? pedidos[0];
+  const dirs = pedidosStore.direccionesDe(telefono);
+  const principal = dirs[0];
 
   const totalGastado = pedidos.reduce((acc, p) => {
     return (
@@ -177,8 +171,6 @@ export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelC
     if (telefono) params.set("telefono", telefono);
     params.set("modalidad", "domicilio");
     if (convId) params.set("chatId", convId);
-    const dirs = pedidosStore.direccionesDe(telefono);
-    const principal = dirs[0];
     if (principal?.calle) params.set("calle", principal.calle);
     if (principal?.barrio) params.set("barrio", principal.barrio);
     if (principal?.referencia) params.set("referencia", principal.referencia);
@@ -267,141 +259,114 @@ export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelC
   };
 
   return (
-    <div className="flex flex-col gap-3 pb-3 font-sans text-gray-800 dark:text-white/90">
-      {/* ── 1. Tarjeta de Perfil del Cliente ── */}
-      <div className="flex flex-col items-center rounded-2xl border border-gray-200 bg-white p-3.5 text-center dark:border-gray-800 dark:bg-white/[0.02]">
-        <CanalAvatar
-          canal={conv.canal}
-          nombre={nombre}
-          size="large"
-          status={statusDe(conv.estado)}
-        />
-        <h3 className="mt-2 text-base font-semibold text-gray-800 dark:text-white/90">
-          {nombre}
-        </h3>
-
-        {/* Teléfono y copiar */}
-        <button
-          type="button"
-          onClick={copiarTelefono}
-          title="Copiar número de teléfono"
-          className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs font-normal text-gray-700 transition-colors hover:border-brand-500 hover:text-brand-500 cursor-pointer dark:border-gray-700 dark:bg-white/5 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-white"
-        >
-          <span className="font-mono text-xs">{telefono}</span>
-          {copiado ? (
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-brand-500"
-            >
-              <polyline points="20 6 9 17 4 12" />
+    <div className="flex flex-col gap-0 font-sans text-gray-800 dark:text-white/90">
+      {/* 1. Estado del pedido: */}
+      <div>
+        <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+          Estado del pedido:
+        </span>
+        <div className="mt-2 flex items-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-[#bbf7d0] text-[#15803d] dark:bg-emerald-500/20 dark:text-emerald-300">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+              <line x1="12" y1="22.08" x2="12" y2="12" />
             </svg>
-          ) : (
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-gray-400"
-            >
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
-          )}
-        </button>
-
-        {conv.contacto.lid && (
-          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
-            <span className="font-semibold text-gray-400">LID:</span>
-            <span className="font-mono truncate max-w-[200px]" title={conv.contacto.lid}>
-              {conv.contacto.lid}
-            </span>
-          </div>
-        )}
-
-        {conv.contacto.email && (
-          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
-            <span className="font-semibold text-gray-400">Email:</span>
-            <span className="truncate max-w-[200px]">{conv.contacto.email}</span>
-          </div>
-        )}
-
-        {/* Dirección frecuente (Memoria CRM) */}
-        {(() => {
-          const dirs = pedidosStore.direccionesDe(telefono);
-          if (dirs.length === 0) return null;
-          const principal = dirs[0];
-          return (
-            <div className="mt-3 flex w-full items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-1.5 text-left text-xs font-normal text-gray-700 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="shrink-0 text-brand-500 dark:text-brand-400"
-              >
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              <span className="truncate">{principal.calle}</span>
-              {principal.barrio && (
-                <span className="shrink-0 text-gray-400">({principal.barrio})</span>
-              )}
-            </div>
-          );
-        })()}
-
-        {/* Métricas del Contacto */}
-        <div className="mt-3 grid w-full grid-cols-2 gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
-          <div className="rounded-xl bg-gray-50 p-2 text-center dark:bg-white/[0.02]">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Pedidos
-            </p>
-            <p className="text-base font-bold text-gray-800 dark:text-white">
-              {pedidos.length}
-            </p>
-          </div>
-          <div className="rounded-xl bg-gray-50 p-2 text-center dark:bg-white/[0.02]">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Total gastado
-            </p>
-            <p className="text-base font-bold text-gray-800 dark:text-white">
-              {money(totalGastado)}
-            </p>
-          </div>
+            <span>{pedidoActivo ? pedidosStore.estadoLabel(pedidoActivo.estado) : "Sin pedidos activos"}</span>
+          </span>
         </div>
       </div>
 
-      {/* ── 2. Acciones Rápidas del Operador ── */}
-      <div className="flex flex-col gap-2">
-        <label className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-          Acciones rápidas
-        </label>
+      <hr className="my-4 border-gray-100 dark:border-gray-800" />
 
-        {/* Botón Crear Pedido Real (con SVG) */}
-        {puedeCrearPedido() && (
+      {/* 2. Destino */}
+      <div>
+        <div className="flex items-center gap-2 text-xs font-bold text-gray-800 dark:text-white">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-300">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          <span>Destino</span>
+        </div>
+        <div className="mt-2 text-xs leading-relaxed text-gray-700 dark:text-gray-300">
+          <p className="font-normal">
+            {pedidoActivo?.direccionEntrega?.calle || principal?.calle || "CL 33A # 71-10"}
+          </p>
+          <p className="font-normal text-gray-500 dark:text-gray-400">
+            {pedidoActivo?.direccionEntrega?.barrio || principal?.barrio || "Medellín - Antioquia - CO"}
+          </p>
+        </div>
+      </div>
+
+      <hr className="my-4 border-gray-100 dark:border-gray-800" />
+
+      {/* 3. Alertas */}
+      <div>
+        <div className="flex items-center gap-2 text-xs font-bold text-gray-800 dark:text-white">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-300">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <span>Alertas</span>
+        </div>
+        <div className="mt-2 text-xs text-gray-700 dark:text-gray-300">
+          <p className="flex items-center gap-1.5">
+            <span className="text-gray-400">•</span>
+            <span>{pedidos.length > 2 ? "Cliente Confiable" : "Cliente Riesgoso"}</span>
+          </p>
+        </div>
+      </div>
+
+      <hr className="my-4 border-gray-100 dark:border-gray-800" />
+
+      {/* 4. Productos */}
+      <div>
+        <div className="flex items-center gap-2 text-xs font-bold text-gray-800 dark:text-white mb-3">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 dark:text-gray-300">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+          </svg>
+          <span>Productos</span>
+        </div>
+
+        <div className="space-y-3">
+          {(pedidoActivo?.items && pedidoActivo.items.length > 0 ? pedidoActivo.items : [
+            { nombre: "Tenis Nike Air Jordan Low 1 Gris Dama - 36", cantidad: 1 },
+            { nombre: "Tenis Adidas Duramo Fresh Negro Naranja Caballero - 41", cantidad: 1 },
+          ]).map((item, idx) => (
+            <div key={idx} className="flex items-start gap-2.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-gray-100 border border-gray-200 text-gray-500 dark:bg-white/5 dark:border-gray-800 dark:text-gray-400 overflow-hidden">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <path d="M16 10a4 4 0 0 1-8 0" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-gray-800 dark:text-gray-200 leading-snug">
+                  {item.nombre}
+                </p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                  {item.cantidad} {item.cantidad === 1 ? "unidad." : "unidades."}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Botón Crear pedido */}
+      {puedeCrearPedido() && (
+        <div className="mt-6 pt-3 border-t border-gray-100 dark:border-gray-800">
           <button
             type="button"
             onClick={irACrearPedido}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-2.5 text-sm font-semibold text-white shadow-xs transition-all hover:bg-brand-600 active:scale-[0.99] cursor-pointer"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-2.5 text-xs font-semibold text-white shadow-xs transition-all hover:bg-brand-600 active:scale-[0.99] cursor-pointer"
           >
             <svg
-              width="15"
-              height="15"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -413,197 +378,10 @@ export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelC
               <circle cx="20" cy="21" r="1" />
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
             </svg>
-            <span>Crear pedido</span>
-          </button>
-        )}
-
-        {/* Botones de Plantillas al Chat con 1 Click (con SVG y feedback reactivo) */}
-        <div className="grid grid-cols-3 gap-1.5">
-          <button
-            type="button"
-            onClick={() => enviarPlantilla("menu")}
-            title={`Enviar link de ${pedidosStore.config.perfilComercial === "food" ? "menú" : pedidosStore.config.perfilComercial === "services" ? "servicios" : "catálogo"} al chat`}
-            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-all cursor-pointer ${
-              plantillaEnviada === "menu"
-                ? "border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-400"
-                : "border-gray-200 bg-white text-gray-700 hover:border-brand-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
-            }`}
-          >
-            {plantillaEnviada === "menu" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            ) : (
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-gray-400 group-hover:text-gray-600 dark:text-gray-400"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <polyline points="10 9 9 9 8 9" />
-              </svg>
-            )}
-            <span>
-              {plantillaEnviada === "menu"
-                ? "¡Enviado!"
-                : pedidosStore.config.perfilComercial === "food"
-                  ? "Menú"
-                  : pedidosStore.config.perfilComercial === "services"
-                    ? "Servicios"
-                    : "Catálogo"}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => enviarPlantilla("ubicacion")}
-            title="Solicitar dirección de entrega al cliente"
-            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-all cursor-pointer ${
-              plantillaEnviada === "ubicacion"
-                ? "border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-400"
-                : "border-gray-200 bg-white text-gray-700 hover:border-brand-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
-            }`}
-          >
-            {plantillaEnviada === "ubicacion" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            ) : (
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-gray-400 group-hover:text-gray-600 dark:text-gray-400"
-              >
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-            )}
-            <span>{plantillaEnviada === "ubicacion" ? "¡Enviado!" : "Dirección"}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => enviarPlantilla("pago")}
-            title="Enviar link de pago y datos bancarios al cliente"
-            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-all cursor-pointer ${
-              plantillaEnviada === "pago"
-                ? "border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-400"
-                : "border-gray-200 bg-white text-gray-700 hover:border-brand-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
-            }`}
-          >
-            {plantillaEnviada === "pago" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            ) : (
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-gray-400 group-hover:text-gray-600 dark:text-gray-400"
-              >
-                <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                <line x1="1" y1="10" x2="23" y2="10" />
-              </svg>
-            )}
-            <span>{plantillaEnviada === "pago" ? "¡Enviado!" : "Pago"}</span>
+            <span>Crear nuevo pedido</span>
           </button>
         </div>
-      </div>
-
-      {/* ── 4. Notas Internas del Cliente ── */}
-      <div>
-        <label className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-          Notas internas del cliente
-        </label>
-        <textarea
-          rows={2}
-          value={notasContacto}
-          onChange={(e) => guardarNotas(e.target.value)}
-          placeholder="Notas solo visibles para el equipo..."
-          className="mt-1 w-full rounded-xl border border-gray-300 bg-white p-2.5 text-xs font-normal text-gray-800 placeholder:text-gray-400 transition-colors focus:border-brand-500 focus:bg-white focus:outline-hidden dark:border-gray-800 dark:bg-gray-900 dark:text-white"
-        />
-      </div>
-
-      {/* ── 5. Resumen de Pedidos del Contacto (El historial completo vive en la pestaña principal del chat) ── */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <label className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            Pedidos del cliente
-          </label>
-          <span className="rounded-full bg-brand-50 text-brand-600 px-2 py-0.5 text-[11px] font-semibold dark:bg-brand-500/15 dark:text-brand-400">
-            {pedidos.length} {pedidos.length === 1 ? "pedido" : "pedidos"}
-          </span>
-        </div>
-
-        {pedidos.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 bg-white p-3 text-center dark:border-gray-800 dark:bg-white/[0.01]">
-            <p className="text-xs font-normal text-gray-500 dark:text-gray-400">
-              Sin pedidos registrados aún
-            </p>
-            {puedeCrearPedido() && (
-              <button
-                type="button"
-                onClick={irACrearPedido}
-                className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline cursor-pointer dark:text-brand-400"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                <span>Cargar primer pedido</span>
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-xs dark:border-gray-800 dark:bg-white/[0.02]">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-500 dark:text-gray-400">Total gastado:</span>
-              <span className="font-semibold text-gray-800 dark:text-white/90">
-                {money(totalGastado)}
-              </span>
-            </div>
-            {onVerHistorialPedidos && (
-              <button
-                type="button"
-                onClick={onVerHistorialPedidos}
-                className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-gray-100 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10 cursor-pointer"
-              >
-                <span>Ver historial en el chat →</span>
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 });

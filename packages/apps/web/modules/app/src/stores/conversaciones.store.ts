@@ -22,6 +22,7 @@ import type {
   EstadoConversacion,
   EventoSistema,
   FiltroBandeja,
+  FiltroFecha,
   ItemLineaTiempo,
   Mensaje,
   ModoAtencion,
@@ -364,6 +365,8 @@ export class ConversacionesStore {
   seleccionadaId: string | null = null;
   /** Filtro activo de la bandeja. */
   filtro: FiltroBandeja = "todas";
+  /** Filtro por fecha de la bandeja. */
+  filtroFecha: FiltroFecha = "todas";
   /** Texto del buscador de la bandeja. */
   busqueda = "";
 
@@ -750,6 +753,33 @@ export class ConversacionesStore {
       }
     };
 
+    const coincideFecha = (c: Conversacion): boolean => {
+      if (!this.filtroFecha || this.filtroFecha === "todas") return true;
+      const d = new Date(c.ultimaActividad);
+      if (Number.isNaN(d.getTime())) return true;
+      const ahora = new Date();
+      const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
+
+      switch (this.filtroFecha) {
+        case "hoy":
+          return d.getTime() >= inicioHoy;
+        case "ayer": {
+          const inicioAyer = inicioHoy - 24 * 60 * 60 * 1000;
+          return d.getTime() >= inicioAyer && d.getTime() < inicioHoy;
+        }
+        case "7dias":
+          return d.getTime() >= inicioHoy - 7 * 24 * 60 * 60 * 1000;
+        case "30dias":
+          return d.getTime() >= inicioHoy - 30 * 24 * 60 * 60 * 1000;
+        case "este_mes": {
+          const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1).getTime();
+          return d.getTime() >= inicioMes;
+        }
+        default:
+          return true;
+      }
+    };
+
     const coincideBusqueda = (c: Conversacion): boolean => {
       if (termino === "") return true;
       const nombre = (c.contacto.nombre || "").toLowerCase();
@@ -763,7 +793,7 @@ export class ConversacionesStore {
     };
 
     return this.conversaciones
-      .filter((c) => coincideFiltro(c) && coincideBusqueda(c))
+      .filter((c) => coincideFiltro(c) && coincideFecha(c) && coincideBusqueda(c))
       .slice()
       .sort((a, b) => {
         const porActividad = b.ultimaActividad.localeCompare(a.ultimaActividad);
@@ -1003,14 +1033,21 @@ export class ConversacionesStore {
    * Selecciona una conversación en la consola: fija `seleccionadaId` y la marca
    * como leída (Req 1.10/1.11). `marcarLeido` ya persiste el estado.
    */
-  seleccionar(convId: string): void {
+  seleccionar(convId: string | null): void {
     this.seleccionadaId = convId;
-    this.marcarLeido(convId);
+    if (convId) {
+      this.marcarLeido(convId);
+    }
   }
 
   /** Fija el filtro activo de la bandeja (Req 1.3–1.6). */
   setFiltro(f: FiltroBandeja): void {
     this.filtro = f;
+  }
+
+  /** Fija el filtro por fecha de la bandeja. */
+  setFiltroFecha(f: FiltroFecha): void {
+    this.filtroFecha = f;
   }
 
   /** Fija el texto del buscador de la bandeja (Req 1.7). */

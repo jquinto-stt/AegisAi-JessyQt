@@ -245,7 +245,11 @@ export type IntencionConversacion =
 /** Filtro por intención de la bandeja. Eje INDEPENDIENTE de `FiltroBandeja`. */
 export type FiltroIntencion = "todas" | IntencionConversacion;
 
+/** Filtro por rango de fecha de la última actividad en la bandeja. */
+export type FiltroFecha = "todas" | "hoy" | "ayer" | "7dias" | "30dias" | "este_mes";
+
 /** Item de la línea de tiempo unificada que consume el ChatView. */
 export type ItemLineaTiempo =
   | { clase: "mensaje"; data: Mensaje }
   | { clase: "evento"; data: EventoSistema };
+

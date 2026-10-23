@@ -302,6 +302,48 @@ function cuentaDeSeccion(modulo: Modulo, seccionId: string): number | undefined 
   return undefined;
 }
 
+const BANNER_MODULO_CONFIG: Record<
+  string,
+  {
+    titulo: string;
+    Icono: React.ComponentType<{ className?: string }>;
+    marcaAgua: React.ReactNode;
+  }
+> = {
+  pedidos: {
+    titulo: "Ventas",
+    Icono: CartIcon,
+    marcaAgua: (
+      <svg viewBox="0 0 100 80" fill="none" className="w-24 h-20 opacity-25 dark:opacity-10 stroke-current text-gray-400 dark:text-white">
+        <path d="M10 70 L50 20 L90 50" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="50" cy="20" r="8" strokeWidth="2" />
+        <circle cx="90" cy="50" r="5" strokeWidth="2" />
+      </svg>
+    ),
+  },
+  inventarios: {
+    titulo: "Inventario",
+    Icono: BoxCubeIcon,
+    marcaAgua: (
+      <svg viewBox="0 0 100 80" fill="none" className="w-24 h-20 opacity-25 dark:opacity-10 stroke-current text-gray-400 dark:text-white">
+        <path d="M50 15 L85 35 L50 55 L15 35 Z" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M15 35 L15 65 L50 85 L50 55" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M85 35 L85 65 L50 85" strokeWidth="2" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  organizacion: {
+    titulo: "Organización",
+    Icono: Cog6ToothIcon,
+    marcaAgua: (
+      <svg viewBox="0 0 100 80" fill="none" className="w-24 h-20 opacity-25 dark:opacity-10 stroke-current text-gray-400 dark:text-white">
+        <circle cx="65" cy="40" r="28" strokeWidth="2" strokeDasharray="4 3" />
+        <circle cx="65" cy="40" r="14" strokeWidth="2" />
+      </svg>
+    ),
+  },
+};
+
 const SidebarContent = observer(() => {
   const { pathname } = useLocation();
   const { isExpanded: showExpanded } = useSidebarContext();
@@ -392,6 +434,8 @@ const SidebarContent = observer(() => {
 
   const estaColapsado = (id: string) => showExpanded && Boolean(colapsados[id]);
 
+  const bannerConfig = flyoutModulo ? BANNER_MODULO_CONFIG[flyoutModulo] : null;
+
   return (
     <nav className={`flex flex-col ${showExpanded ? "flex-1" : "flex-initial"}`}>
       <SimulacionBanner />
@@ -400,154 +444,91 @@ const SidebarContent = observer(() => {
       {!showExpanded && flyoutModulo && (
         <div
           ref={flyoutRef}
-          className="fixed left-[72px] xl:left-[76px] top-1/2 -translate-y-1/2 z-50 w-64 rounded-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/90 dark:border-white/10 shadow-2xl p-2.5 flex flex-col gap-1.5 animate-flyout-lateral"
+          className="fixed left-[72px] xl:left-[76px] top-1/2 -translate-y-1/2 z-50 w-72 rounded-3xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/90 dark:border-gray-800 shadow-2xl p-3 flex flex-col gap-1.5 animate-flyout-lateral"
         >
-            {/* Cabecera del flyout */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-white/5">
-              <div className="flex items-center gap-2">
-                <span className="p-1 rounded-lg bg-[#190088]/10 dark:bg-white/10 text-[#190088] dark:text-[#97D6DF]">
-                  {flyoutModulo === "pedidos" ? (
-                    <CartIcon className="h-4 w-4" />
-                  ) : flyoutModulo === "inventarios" ? (
-                    <BoxCubeIcon className="h-4 w-4" />
-                  ) : flyoutModulo === "whatsapp" ? (
-                    <ChatIcon className="h-4 w-4" />
-                  ) : (
-                    <Cog6ToothIcon className="h-4 w-4" />
-                  )}
-                </span>
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-                  {flyoutModulo === "pedidos"
-                    ? CATALOGO_MODULOS.pedidos.nombreCorto
-                    : flyoutModulo === "inventarios"
-                    ? CATALOGO_MODULOS.inventarios.nombreCorto
-                    : flyoutModulo === "whatsapp"
-                    ? "WhatsApp"
-                    : "Organización"}
-                </span>
+          {/* Tarjeta Banner representativa del módulo */}
+          {bannerConfig && (
+            <div className="relative overflow-hidden rounded-2xl bg-[#F6F7F9] dark:bg-gray-800/70 border border-gray-200/60 dark:border-gray-700/60 p-4 mb-1">
+              {/* Gráfico decorativo de fondo */}
+              <div className="absolute right-0 bottom-0 pointer-events-none translate-x-2 translate-y-1">
+                {bannerConfig.marcaAgua}
               </div>
+
+              {/* Botón Cerrar */}
               <button
                 type="button"
                 onClick={() => setFlyoutModulo(null)}
-                className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer"
+                className="absolute top-2.5 right-2.5 p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors z-10 cursor-pointer"
                 title="Cerrar submenú"
               >
                 <CloseIcon className="h-4 w-4" />
               </button>
-            </div>
 
-            {/* Lista de opciones del flyout */}
-            <div className="max-h-[calc(100vh-160px)] overflow-y-auto no-scrollbar py-1 flex flex-col gap-0.5">
-              {flyoutModulo === "organizacion" ? (
-                <Link
-                  to="/configuracion"
-                  onClick={() => setFlyoutModulo(null)}
-                  className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
-                    esRutaConfiguracion("/configuracion")
-                      ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+              {/* Contenido del banner: Icono y Nombre */}
+              <div className="relative z-1 flex flex-col gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 shadow-2xs border border-black/5 dark:border-white/10 flex items-center justify-center text-gray-900 dark:text-white">
+                  <bannerConfig.Icono className="h-4.5 w-4.5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white tracking-tight leading-tight">
+                    {bannerConfig.titulo}
+                  </h3>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Lista de opciones del flyout */}
+          <div className="max-h-[calc(100vh-220px)] overflow-y-auto no-scrollbar py-1 flex flex-col gap-0.5">
+            {flyoutModulo === "organizacion" ? (
+              <Link
+                to="/configuracion"
+                onClick={() => setFlyoutModulo(null)}
+                className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                  esRutaConfiguracion("/configuracion")
+                    ? "bg-gray-100 dark:bg-white/10 font-bold text-gray-900 dark:text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
+                }`}
+              >
+                <span
+                  className={`text-base transition-transform duration-150 group-hover:scale-110 ${
+                    esRutaConfiguracion("/configuracion") ? "text-brand-500" : "text-gray-500 dark:text-gray-400"
                   }`}
                 >
-                  <span
-                    className={`text-base transition-transform duration-150 group-hover:scale-110 ${
-                      esRutaConfiguracion("/configuracion") ? "text-white" : "text-gray-500 dark:text-gray-400"
-                    }`}
-                  >
-                    <Cog6ToothIcon className="size-5" />
-                  </span>
-                  <span className="truncate">Ajustes Generales</span>
-                </Link>
-              ) : flyoutModulo === "whatsapp" ? (
-                <>
-                  <Link
-                    to="/conversaciones"
-                    onClick={() => setFlyoutModulo(null)}
-                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
-                      pathname === "/conversaciones" || pathname.startsWith("/conversaciones?")
-                        ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
-                    }`}
-                  >
-                    <span className="text-base text-gray-500 dark:text-gray-400 group-hover:scale-110">
-                      <ChatIcon className="size-5" />
-                    </span>
-                    <span className="truncate">Bandeja de conversaciones</span>
-                  </Link>
-                  <Link
-                    to="/conversaciones/historial"
-                    onClick={() => setFlyoutModulo(null)}
-                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
-                      pathname.startsWith("/conversaciones/historial")
-                        ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
-                    }`}
-                  >
-                    <span className="text-base text-gray-500 dark:text-gray-400 group-hover:scale-110">
-                      <TimeIcon className="size-5" />
-                    </span>
-                    <span className="truncate">Historial de atención</span>
-                  </Link>
-                  <Link
-                    to="/conversaciones/analitica"
-                    onClick={() => setFlyoutModulo(null)}
-                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
-                      pathname.startsWith("/conversaciones/analitica")
-                        ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
-                    }`}
-                  >
-                    <span className="text-base text-gray-500 dark:text-gray-400 group-hover:scale-110">
-                      <PieChartIcon className="size-5" />
-                    </span>
-                    <span className="truncate">Analítica</span>
-                  </Link>
-                  {puedeGestionarCanales && (
+                  <Cog6ToothIcon className="size-5" />
+                </span>
+                <span className="truncate">Ajustes Generales</span>
+              </Link>
+            ) : (
+              ITEMS_MODULO[flyoutModulo as Modulo]
+                ?.flatMap(({ seccionId, Icono }) => {
+                  const seccion = seccionDe(flyoutModulo as Modulo, seccionId);
+                  if (!seccion || !puedeVerSeccion(flyoutModulo as Modulo, seccionId)) return [];
+                  return [{ seccionId, Icono, seccion }];
+                })
+                .map(({ seccionId, Icono, seccion }) => {
+                  const active = isActive(seccion.path);
+                  return (
                     <Link
-                      to="/conversaciones/config"
+                      key={seccionId}
+                      to={seccion.path}
                       onClick={() => setFlyoutModulo(null)}
-                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
-                        pathname.startsWith("/conversaciones/config")
-                          ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+                      className={`group flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                        active
+                          ? "bg-gray-100 dark:bg-white/10 font-bold text-gray-900 dark:text-white"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
                       }`}
                     >
-                      <span className="text-base text-gray-500 dark:text-gray-400 group-hover:scale-110">
-                        <PlugInIcon className="size-5" />
+                      <span className={`text-base transition-transform duration-150 group-hover:scale-110 ${active ? "text-brand-500" : "text-gray-500 dark:text-gray-400"}`}>
+                        <Icono />
                       </span>
-                      <span className="truncate">Configuración</span>
+                      <span className="truncate">{seccion.label}</span>
                     </Link>
-                  )}
-                </>
-              ) : (
-                ITEMS_MODULO[flyoutModulo as Modulo]
-                  .flatMap(({ seccionId, Icono }) => {
-                    const seccion = seccionDe(flyoutModulo as Modulo, seccionId);
-                    if (!seccion || !puedeVerSeccion(flyoutModulo as Modulo, seccionId)) return [];
-                    return [{ seccionId, Icono, seccion }];
-                  })
-                  .map(({ seccionId, Icono, seccion }) => {
-                    const active = isActive(seccion.path);
-                    return (
-                      <Link
-                        key={seccionId}
-                        to={seccion.path}
-                        onClick={() => setFlyoutModulo(null)}
-                        className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:translate-x-1 ${
-                          active
-                            ? "bg-[#190088] text-white shadow-sm shadow-[#190088]/20 font-semibold"
-                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
-                        }`}
-                      >
-                        <span className={`text-base transition-transform duration-150 group-hover:scale-110 ${active ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>
-                          <Icono />
-                        </span>
-                        <span className="truncate">{seccion.label}</span>
-                      </Link>
-                    );
-                  })
-              )}
-            </div>
+                  );
+                })
+            )}
           </div>
+        </div>
       )}
 
       {showExpanded ? (
@@ -614,51 +595,7 @@ const SidebarContent = observer(() => {
             );
           })}
 
-          {/* Módulo WhatsApp — primer nivel */}
-          {puedeVerCanales && organizacionStore.tieneConectorActivo("whatsapp") && (
-            <div>
-              <MenuSectionHeader
-                title="WhatsApp"
-                collapsible
-                isCollapsed={estaColapsado("whatsapp")}
-                onToggle={() => toggleSeccion("whatsapp")}
-              />
-              <div
-                className={`transition-all duration-200 ease-in-out overflow-hidden ${
-                  estaColapsado("whatsapp") ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
-                }`}
-              >
-                <ul className="flex flex-col gap-1">
-                  <MenuItem
-                    icon={<ChatIcon className="size-5" />}
-                    name="Bandeja de conversaciones"
-                    path="/conversaciones"
-                    isActive={esRutaCanales}
-                  />
-                  <MenuItem
-                    icon={<TimeIcon className="size-5" />}
-                    name="Historial de atención"
-                    path="/conversaciones/historial"
-                    isActive={esRutaCanales}
-                  />
-                  <MenuItem
-                    icon={<PieChartIcon className="size-5" />}
-                    name="Analítica"
-                    path="/conversaciones/analitica"
-                    isActive={esRutaCanales}
-                  />
-                  {puedeGestionarCanales && (
-                    <MenuItem
-                      icon={<PlugInIcon className="size-5" />}
-                      name="Configuración"
-                      path="/conversaciones/config"
-                      isActive={esRutaCanales}
-                    />
-                  )}
-                </ul>
-              </div>
-            </div>
-          )}
+
 
           {/* Organización — modo barra expandida */}
           {puedeGestionarEquipo && (
@@ -696,8 +633,8 @@ const SidebarContent = observer(() => {
             aria-label="Inicio"
             className={`group relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ease-out hover:scale-110 active:scale-95 cursor-pointer ${
               isActive("/inicio")
-                ? "text-[#190088] dark:text-[#97D6DF] scale-105 bg-gray-100/80 dark:bg-white/10"
-                : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF] hover:bg-gray-100/70 dark:hover:bg-white/5"
+                ? "text-brand-500 bg-brand-50 dark:bg-brand-500/15 dark:text-brand-400 scale-105"
+                : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100/70 dark:hover:bg-white/5"
             }`}
           >
             <span className="h-5 w-5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
@@ -725,8 +662,8 @@ const SidebarContent = observer(() => {
                 onClick={() => setFlyoutModulo(isOpen ? null : modulo)}
                 className={`group flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ease-out hover:scale-110 active:scale-95 cursor-pointer ${
                   isActivo || isOpen
-                    ? "text-[#190088] dark:text-[#97D6DF] scale-105"
-                    : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF] hover:bg-gray-100/70 dark:hover:bg-white/5"
+                    ? "text-brand-500 bg-brand-50 dark:bg-brand-500/15 dark:text-brand-400 scale-105"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100/70 dark:hover:bg-white/5"
                 }`}
               >
                 <span className="h-5 w-5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
@@ -736,25 +673,6 @@ const SidebarContent = observer(() => {
             );
           })}
 
-          {/* Botón WhatsApp en Rail Mode */}
-          {puedeVerCanales && organizacionStore.tieneConectorActivo("whatsapp") && (
-            <button
-              type="button"
-              title="WhatsApp"
-              aria-label="WhatsApp"
-              onClick={() => setFlyoutModulo(flyoutModulo === "whatsapp" ? null : "whatsapp")}
-              className={`group flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ease-out hover:scale-110 active:scale-95 cursor-pointer ${
-                pathname.startsWith("/conversaciones") || flyoutModulo === "whatsapp"
-                  ? "text-[#190088] dark:text-[#97D6DF] scale-105"
-                  : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF] hover:bg-gray-100/70 dark:hover:bg-white/5"
-              }`}
-            >
-              <span className="h-5 w-5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
-                <ChatIcon className="h-5 w-5" />
-              </span>
-            </button>
-          )}
-
           {puedeGestionarEquipo && (
             <button
               type="button"
@@ -763,8 +681,8 @@ const SidebarContent = observer(() => {
               onClick={() => setFlyoutModulo(flyoutModulo === "organizacion" ? null : "organizacion")}
               className={`group flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ease-out hover:scale-110 active:scale-95 cursor-pointer ${
                 (pathname.startsWith("/configuracion") || pathname.startsWith("/equipo")) || flyoutModulo === "organizacion"
-                  ? "text-[#190088] dark:text-[#97D6DF] scale-105"
-                  : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF] hover:bg-gray-100/70 dark:hover:bg-white/5"
+                  ? "text-brand-500 bg-brand-50 dark:bg-brand-500/15 dark:text-brand-400 scale-105"
+                  : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100/70 dark:hover:bg-white/5"
               }`}
             >
               <span className="h-5 w-5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">

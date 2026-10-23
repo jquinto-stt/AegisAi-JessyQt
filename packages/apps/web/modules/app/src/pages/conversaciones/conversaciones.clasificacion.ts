@@ -190,6 +190,13 @@ export function intencionDe(convId: string): IntencionConversacion {
   if (hayHandoff) return "reclamar";
 
   // 2 y 3. COMPRAR vs SEGUIR_PEDIDO — el pedido contra el inicio del hilo.
+  const tienePedidoEnMensajes = items.some(
+    (it) => it.clase === "mensaje" && Boolean(it.data.payload?.pedidoId),
+  );
+  if (conv.estado === "cerrada" && !tienePedidoEnMensajes) {
+    return "consultar";
+  }
+
   const pedido = pedidoReferenciado(items, conv.contacto.telefono);
   const inicio = inicioDeHilo(items);
 
