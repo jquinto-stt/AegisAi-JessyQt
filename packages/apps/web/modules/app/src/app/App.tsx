@@ -24,6 +24,8 @@ import {
 } from "@/pages/inventarios";
 
 import { ConfiguracionPage } from "@/pages/configuracion";
+import { InicioChecklistPage } from "@/pages/inicio/InicioChecklistPage";
+import { InicioDashboardPage } from "@/pages/inicio/InicioDashboardPage";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
 import { ConversacionesPage, HistorialAtencionPage, AnaliticaConversacionesPage, ConversacionesConfigPage } from "@/pages/conversaciones";
 
@@ -41,11 +43,16 @@ import PrivacyPage from "@/pages/PrivacyPage";
 import CookiesPage from "@/pages/CookiesPage";
 import ModulosPage from "@/pages/ModulosPage";
 import {
+  BienvenidaOnboardingPage,
+  OnboardingTelefonoPage,
+  OnboardingPaisPage,
+  OnboardingModeloNegocioPage,
   PerfilOnboardingPage,
   OrganizacionOnboardingPage,
   OnboardingModulosPage,
   PedidosOnboardingPage,
   EncuestaOnboardingPage,
+  OnboardingCargandoPage,
 } from "@/pages/onboarding";
 import ProfilePage from "@/pages/ProfilePage";
 import { CheckoutGlobalPayPage } from "@/pages/checkout/CheckoutGlobalPayPage";
@@ -53,7 +60,7 @@ import { MenuCatalogoPage } from "@/pages/menu/MenuCatalogoPage";
 import { bootstrapAssistant } from "@/assistant/bootstrap";
 import { bootstrapConversaciones } from "@/lib/db.bootstrap";
 import { autoHidratarSesionSupabase } from "@/lib/auth.service";
-import { activarModoDemo, modoDemoActivo } from "@/lib/modo-demo";
+// Modos de acceso y bootstrap
 
 // Cablea el asistente ("Necto Intelligence") una sola vez al cargar el módulo de
 // rutas, antes de la primera pregunta. `bootstrapAssistant` es idempotente.
@@ -97,11 +104,8 @@ void bootstrapConversaciones();
 // operador concluía «el módulo no está» cuando nadie había escrito la fila
 // local. Ver `@/lib/modo-demo` para el razonamiento completo.
 //
-// Se siembra la pertenencia SOLO si no hay ninguna: en una organización con
-// módulos ya configurados no se toca nada.
-if (modoDemoActivo()) {
-  activarModoDemo();
-}
+// El modo demo no se auto-activa en el arranque general para no contaminar
+// cuentas reales ni flujos de nuevo usuario con módulos no solicitados.
 
 const RedireccionViendoComo = () => (
   <Navigate
@@ -135,11 +139,25 @@ const ModuloGuard = observer(({ modulo, children }: { modulo: string; children: 
   return <>{children}</>;
 });
 
+const RootRoute = observer(() => {
+  if (!sessionStore.accessContext.autenticado) {
+    return <Navigate to="/login" replace />;
+  }
+  // Si no ha completado el onboarding o no tiene organización creada, dirigir al onboarding
+  if (!organizacionStore.usuario?.perfilCompletado || !organizacionStore.tieneOrganizacion) {
+    return <Navigate to="/onboarding/bienvenida" replace />;
+  }
+  return <Navigate to="/inicio" replace />;
+});
+
 export default function App() {
   return (
     <Routes>
       {/* Rutas con Shell */}
       <Route element={<RequireSession><AppShell /></RequireSession>}>
+        {/* Pantalla principal sin módulos / Checklist de bienvenida */}
+        <Route path="/inicio" element={<InicioChecklistPage />} />
+
         {/* Módulo Pedidos (condicionado a que esté activo en plataforma) */}
         <Route path="/pedidos/inicio" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><PedidosInicioPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><TableroPage /></CapabilityGuard></ModuloGuard>} />
@@ -185,17 +203,25 @@ export default function App() {
         <Route path="/conversaciones/config" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.manage"><ConversacionesConfigPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/whatsapp" element={<Navigate to="/conversaciones" replace />} />
         <Route path="/pedidos/chats" element={<Navigate to="/conversaciones" replace />} />
-        <Route path="/dashboard" element={<Navigate to="/pedidos/inicio" replace />} />
+        <Route path="/dashboard" element={<InicioDashboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/perfil" element={<ProfilePage />} />
       </Route>
 
-      {/* Onboarding: Perfil -> Organización -> Módulos -> Encuesta final */}
+      {/* Onboarding: Bienvenida -> Teléfono -> País -> Perfil -> Organización -> Módulos -> Encuesta final */}
+      <Route path="/onboarding/bienvenida" element={<BienvenidaOnboardingPage />} />
+      <Route path="/onboarding/telefono" element={<OnboardingTelefonoPage />} />
+      <Route path="/onboarding/pais" element={<OnboardingPaisPage />} />
+      <Route path="/onboarding/modelo-negocio" element={<OnboardingModeloNegocioPage />} />
+      <Route path="/bienvenida" element={<Navigate to="/onboarding/bienvenida" replace />} />
+      <Route path="/onboarding" element={<Navigate to="/onboarding/bienvenida" replace />} />
       <Route path="/onboarding/perfil" element={<PerfilOnboardingPage />} />
       <Route path="/onboarding/organizacion" element={<OrganizacionOnboardingPage />} />
       <Route path="/onboarding/modulos" element={<OnboardingModulosPage />} />
       <Route path="/onboarding/pedidos" element={<PedidosOnboardingPage />} />
       <Route path="/onboarding/encuesta" element={<EncuestaOnboardingPage />} />
+      <Route path="/onboarding/cargando" element={<OnboardingCargandoPage />} />
+      <Route path="/onboarding/loading" element={<Navigate to="/onboarding/cargando" replace />} />
 
       {/* Módulos de la organización. `/modulos` es la canónica; las otras dos eran
           la misma pantalla con tres nombres distintos (`/workspaces`,
@@ -245,7 +271,6 @@ export default function App() {
       <Route path="/carta" element={<MenuCatalogoPage />} />
       <Route path="/catalogo" element={<MenuCatalogoPage />} />
       <Route path="/pedidos/menu" element={<MenuCatalogoPage />} />
-
       {/* Pantalla Display de Sala / Mostrador (Fullscreen TV) */}
       <Route path="/pedidos/display" element={<DisplayPedidosScreen />} />
       <Route path="/seleccionar" element={<Navigate to="/onboarding/organizacion" replace />} />
@@ -253,8 +278,8 @@ export default function App() {
       <Route path="/operador/registro" element={<OperadorRegistroPage />} />
       <Route path="/operador/login" element={<OperadorLoginPage />} />
       <Route path="/wa" element={<SimuladorWhatsApp />} />
-      <Route path="/" element={<Navigate to="/pedidos/inicio" replace />} />
-      <Route path="*" element={<Navigate to="/pedidos/inicio" replace />} />
+      <Route path="/" element={<RootRoute />} />
+      <Route path="*" element={<RootRoute />} />
     </Routes>
   );
 }

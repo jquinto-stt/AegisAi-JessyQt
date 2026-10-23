@@ -49,8 +49,12 @@ export const BaseAppShell: React.FC<BaseAppShellProps> = observer(({
     <div className={`necto-lienzo ${pantallaFija ? "h-screen overflow-hidden" : "min-h-screen"} xl:flex`}>
       {sidebar}
       <Backdrop />
+      {/* El margen viaja con la barra: misma curva y misma duración (340 ms al
+          expandir, 280 al contraer). Solo `margin-left`: `transition-all`
+          animaba también lo que no cambia. */}
       <div
-        className={`flex min-w-0 ${pantallaFija ? "h-screen overflow-hidden" : "min-h-screen"} flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        style={{ transitionDuration: uiStore.isSidebarVisible ? "340ms" : "280ms" }}
+        className={`flex min-w-0 ${pantallaFija ? "h-screen overflow-hidden" : "min-h-screen"} flex-1 flex-col transition-[margin-left] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
           uiStore.isSidebarVisible ? "xl:ml-[290px]" : "xl:ml-[72px]"
         }`}
       >

@@ -68,7 +68,7 @@ const STORAGE_KEY = 'webforge-ui-preferences';
 const DEFAULT_PREFERENCES: UIPreferences = {
   theme: 'light',
   themePreference: 'light',
-  sidebarExpanded: true,
+  sidebarExpanded: false,
   densidadBandeja: 'comoda',
   densidadAsistente: 'comoda',
 };
@@ -236,6 +236,15 @@ class UIStore {
       this.sidebarMobileOpen = !this.sidebarMobileOpen;
     } else {
       this.sidebarExpanded = !this.sidebarExpanded;
+      this.saveToStorage();
+    }
+  }
+
+  setSidebarExpanded(expanded: boolean): void {
+    if (this._isMobile) {
+      this.sidebarMobileOpen = expanded;
+    } else {
+      this.sidebarExpanded = expanded;
       this.saveToStorage();
     }
   }

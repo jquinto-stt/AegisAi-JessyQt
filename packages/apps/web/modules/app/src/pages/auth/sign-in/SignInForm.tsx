@@ -29,41 +29,42 @@ export default function SignInForm() {
   const navigate = useNavigate();
 
   const ejecutarLogin = async (credenciales: { email: string; password: string }) => {
+    const cleanEmail = credenciales.email.trim();
+    if (!cleanEmail) {
+      setErrorMensaje("Por favor ingresa tu correo electrónico.");
+      return;
+    }
+    if (!credenciales.password) {
+      setErrorMensaje("Por favor ingresa tu contraseña.");
+      return;
+    }
+
     setCargando(true);
     setErrorMensaje(null);
 
-    const email = credenciales.email.trim() || "equipo@necto.io";
-    const nombre = email.includes("@") ? email.split("@")[0] : "Admin";
+    try {
+      const res = await iniciarSesion({ email: cleanEmail, password: credenciales.password });
+      if (!res.ok) {
+        setErrorMensaje(res.motivo || "Credenciales incorrectas.");
+        return;
+      }
 
-    // 1. Restaurar datos reales y de prueba (pedidos, operadores)
-    pedidosStore.restaurarSeed();
-    operadoresStore.restaurarSeed();
+      if (res.requiereOnboarding) {
+        navigate("/onboarding/bienvenida");
+        return;
+      }
 
-    // 2. Asegurar perfil y organización activos
-    organizacionStore.actualizarPerfil({
-      nombre: nombre.charAt(0).toUpperCase() + nombre.slice(1),
-      apellido: "Necto",
-      email,
-      pais: "Colombia",
-      cargo: "Administrador de tienda",
-    });
+      const destino =
+        sessionStore.moduloEntryPath && sessionStore.moduloEntryPath !== "/seleccionar"
+          ? sessionStore.moduloEntryPath
+          : "/inicio";
 
-    if (!organizacionStore.tieneOrganizacion) {
-      organizacionStore.crearOrganizacion({
-        nombre: "Necto Operations",
-        pais: "Colombia",
-        moneda: "COP",
-        zonaHoraria: "America/Bogota",
-      });
+      navigate(destino);
+    } catch {
+      setErrorMensaje("Ocurrió un error inesperado al iniciar sesión.");
+    } finally {
+      setCargando(false);
     }
-
-    if (!organizacionStore.esModuloInstalado("pedidos")) {
-      organizacionStore.instalarModulo("pedidos");
-    }
-
-    sessionStore.configurar(["pedidos"], "administrador");
-
-    navigate("/pedidos/inicio");
   };
 
   const simularDesdeCero = () => {
@@ -79,7 +80,18 @@ export default function SignInForm() {
   };
 
   const handleGoogleLogin = async () => {
-    ejecutarLogin({ email: "google.tester@necto.io", password: "demo" });
+    setCargando(true);
+    setErrorMensaje(null);
+    try {
+      const res = await iniciarSesionConGoogle();
+      if (!res.ok) {
+        setErrorMensaje(res.motivo || "Error al iniciar sesión con Google.");
+      }
+    } catch {
+      setErrorMensaje("Error al iniciar sesión con Google.");
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (

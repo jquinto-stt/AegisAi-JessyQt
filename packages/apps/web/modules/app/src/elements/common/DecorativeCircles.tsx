@@ -28,7 +28,7 @@ import React from "react";
 
 export interface DecorativeCirclesProps {
   /** Esquema de color que corresponde al fondo del panel. */
-  variant?: "brand" | "indigo";
+  variant?: "brand" | "indigo" | "canvas";
   /** Clases extra en el contenedor. */
   className?: string;
 }
@@ -38,12 +38,16 @@ export function DecorativeCircles({
   className = "",
 }: DecorativeCirclesProps) {
   const isBrand = variant === "brand";
+  const isCanvas = variant === "canvas";
 
-  // Los dos aros claros: blancos en las dos variantes (ver la nota de arriba).
-  const claro = "rgba(255,255,255,0.55)";
-  // El aro de acento: naranja de marca sobre índigo; sobre naranja no se vería,
-  // así que ahí va en blanco rebajado.
-  const acento = isBrand ? "rgba(255,255,255,0.35)" : "#FF3F1A";
+  // Los dos aros claros
+  const claro = isCanvas ? "rgba(255,63,26,0.12)" : "rgba(255,255,255,0.55)";
+  // El aro de acento: naranja de marca sobre índigo; sobre naranja no se vería; sobre lienzo blanco va en índigo de marca
+  const acento = isCanvas
+    ? "rgba(25,0,136,0.15)"
+    : isBrand
+      ? "rgba(255,255,255,0.35)"
+      : "#FF3F1A";
 
   return (
     <div

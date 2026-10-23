@@ -1,6 +1,11 @@
 export { PerfilOnboardingPage } from "./PerfilOnboardingPage";
+export { BienvenidaOnboardingPage } from "./BienvenidaOnboardingPage";
+export { OnboardingTelefonoPage } from "./OnboardingTelefonoPage";
+export { OnboardingPaisPage } from "./OnboardingPaisPage";
+export { OnboardingModeloNegocioPage } from "./OnboardingModeloNegocioPage";
 export { OrganizacionOnboardingPage } from "./OrganizacionOnboardingPage";
 export { OnboardingModulosPage } from "./OnboardingModulosPage";
 export { PedidosOnboardingPage } from "./PedidosOnboardingPage";
 export { EncuestaOnboardingPage } from "./EncuestaOnboardingPage";
+export { OnboardingCargandoPage } from "./OnboardingCargandoPage";
 export { OnboardingLayout } from "./OnboardingLayout";

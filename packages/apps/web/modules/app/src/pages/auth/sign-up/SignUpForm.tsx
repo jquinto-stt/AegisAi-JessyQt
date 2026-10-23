@@ -1,19 +1,27 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
 import { Label } from "@/elements/form/label";
 import { Input } from "@/elements/form/input";
 import { Checkbox } from "@/elements/form/checkbox";
 import { Button } from "@/elements/ui/button";
 import { registrarUsuario, iniciarSesionConGoogle } from "@/lib/auth.service";
+import { VerificarCorreoOtp } from "./VerificarCorreoOtp";
 
 /**
  * @kgId e6a33b25bbfe
  */
 export default function SignUpForm() {
+  const [searchParams] = useSearchParams();
+  const emailParam = searchParams.get("email") || "";
+  const verifyParam = searchParams.get("verify") === "true";
+
+  const [paso, setPaso] = useState<"registro" | "verificar">(
+    verifyParam && emailParam ? "verificar" : "registro"
+  );
   const [fname, setFname] = useState("");
   const [lname, setLname] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(emailParam);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(true);
@@ -58,19 +66,32 @@ export default function SignUpForm() {
       }
 
       if (res.requiereConfirmacion) {
-        setMensajeExito(
-          `¡Cuenta creada exitosamente! Hemos enviado un correo de confirmación a ${finalEmail}. Por favor revisa tu bandeja de entrada para verificar tu cuenta e iniciar sesión.`
-        );
+        setPaso("verificar");
         return;
       }
 
-      navigate("/onboarding/perfil");
+      navigate("/onboarding/bienvenida");
     } catch {
       setErrorMensaje("Ocurrió un error inesperado al conectar con el servidor.");
     } finally {
       setCargando(false);
     }
   };
+
+  if (paso === "verificar") {
+    return (
+      <VerificarCorreoOtp
+        email={email.trim()}
+        onEditarCorreo={() => {
+          setPaso("registro");
+          setErrorMensaje(null);
+        }}
+        onVerificadoExitoso={() => {
+          navigate("/onboarding/bienvenida");
+        }}
+      />
+    );
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

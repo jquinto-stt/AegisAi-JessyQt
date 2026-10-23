@@ -58,12 +58,20 @@ export function NectoIsotype({
   style,
 }: NectoIsotypeProps) {
   return (
-    <img
-      src="/images/logo/necto-icon.svg"
-      alt="NECTO"
-      className={`${CAJAS_ISOTIPO[size]} block select-none flex-none ${className}`}
-      style={style}
-    />
+    <>
+      <img
+        src="/images/logo/necto-icon.svg"
+        alt="NECTO"
+        className={`${CAJAS_ISOTIPO[size]} block select-none flex-none dark:hidden ${className}`}
+        style={style}
+      />
+      <img
+        src="/images/logo/necto-icon-white.svg"
+        alt="NECTO"
+        className={`${CAJAS_ISOTIPO[size]} hidden select-none flex-none dark:block ${className}`}
+        style={style}
+      />
+    </>
   );
 }
 

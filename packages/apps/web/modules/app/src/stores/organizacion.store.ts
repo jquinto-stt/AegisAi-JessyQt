@@ -472,6 +472,7 @@ export class OrganizacionStore {
     ubicacion?: string;
     redes?: RedesSociales;
     direccion?: DireccionPerfil;
+    perfilCompletado?: boolean;
   }) {
     const nombre = (datos.nombre ?? this.usuario?.nombre ?? "Usuario").trim();
     const apellido = (datos.apellido ?? this.usuario?.apellido ?? "Necto").trim();
@@ -489,7 +490,7 @@ export class OrganizacionStore {
       email,
       pais,
       comoNosConociste,
-      perfilCompletado: true,
+      perfilCompletado: datos.perfilCompletado ?? (this.usuario?.perfilCompletado ?? true),
       // Opcionales: `undefined` significa «no tocar». Una cadena vacía sí se
       // escribe, porque vaciar el campo es una edición legítima.
       telefono: datos.telefono?.trim() ?? this.usuario?.telefono,

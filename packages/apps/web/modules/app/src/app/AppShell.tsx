@@ -11,7 +11,7 @@ import NotificationDropdown from "@/shell/header/NotificationDropdown";
 import UserDropdown from "@/shell/header/UserDropdown";
 import { OperadorSelector } from "@/shell/header/OperadorSelector";
 import { AppSidebar } from "@/app/AppSidebar";
-import { sessionStore } from "@/stores";
+import { sessionStore, organizacionStore } from "@/stores";
 import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils";
 import { inicialesDe } from "@/utils";
 
@@ -108,7 +108,7 @@ const AppHeader = observer(() => (
             `ModulosPage`, la pantalla que ES el lanzador, donde "cambiar de
             módulo" no significaría nada. */}
         <ModuleSwitcher />
-        <OperadorSelector />
+        {organizacionStore.modulosActivos.length > 0 && <OperadorSelector />}
       </div>
     }
   >

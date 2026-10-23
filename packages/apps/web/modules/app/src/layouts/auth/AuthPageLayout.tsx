@@ -3,6 +3,7 @@ import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
 import { DecorativeCircles } from "@/elements/common/DecorativeCircles";
 import { ThemeToggleButton } from "@/shell";
 import { cn } from "@/utils";
+import { AnimatedBrandMessages, type OnboardingBrandMessage } from "@/pages/onboarding/OnboardingLayout";
 
 export interface AuthPageLayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,12 @@ export interface AuthPageLayoutProps {
   panelHeadline?: string;
   /** Optional small line displayed under the headline. */
   panelTagline?: string;
+  /** Dynamic rotating brand messages matching onboarding */
+  brandMessages?: OnboardingBrandMessage[];
+  /** Option to hide the logo when it's already shown on the left form */
+  hideLogo?: boolean;
+  /** Custom card or content displayed on the right panel. */
+  rightPanelContent?: React.ReactNode;
 }
 
 /**
@@ -26,8 +33,12 @@ export default function AuthPageLayout({
   panelTone = "indigo",
   panelHeadline = "Plataforma de operaciones y gestión",
   panelTagline,
+  brandMessages,
+  hideLogo = false,
+  rightPanelContent,
 }: AuthPageLayoutProps) {
   const isBrand = panelTone === "brand";
+  const shouldShowLogo = !hideLogo && (!brandMessages || brandMessages.length === 0);
 
   return (
     <div className="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
@@ -36,12 +47,6 @@ export default function AuthPageLayout({
         <div
           className={cn(
             "relative items-center hidden w-full h-full lg:w-1/2 lg:flex lg:justify-center overflow-hidden border-l select-none transition-colors duration-300",
-            // El panel de marca va en NARANJA en los dos temas. La lamina de
-            // modo oscuro lo dice literal: «el naranja se mantiene como color
-            // predominante por su contraste». Antes se cambiaba a `secondary-600`
-            // en oscuro, que es el `#190088` — justo el color que la lamina
-            // prohíbe en modo oscuro («el azul oscuro no se usaría, ese es
-            // reemplazado por el azul más claro de la paleta»).
             "bg-brand-500 border-brand-500 dark:bg-secondary-600 dark:border-secondary-700"
           )}
         >
@@ -53,54 +58,60 @@ export default function AuthPageLayout({
             glowDistance={160}
           />
 
-          {/* Decorative circle ornaments (brand reference) */}
-          {/* Aros de marca. La variante va ATADA AL TEMA: en claro el panel es
-          naranja y los aros son blancos; en oscuro el panel es indigo y los aros
-          acompanan. No se elige a mano porque el fondo tampoco se elige. */}
-      <div className="dark:hidden">
-        <DecorativeCircles variant="brand" />
-      </div>
-      <div className="hidden dark:block">
-        <DecorativeCircles variant="indigo" />
-      </div>
-
-          <div className="relative z-10 flex flex-col items-center w-full max-w-2xl px-6 sm:px-10 text-center pointer-events-auto py-8">
-            <div className="inline-block mb-6">
-              {/* El lockup sigue al fondo del panel, no a un asset fijo:
-                  `necto-full-white.svg` tiene el WORDMARK en naranja —correcto
-                  sobre el sidebar blanco, invisible sobre este panel—, así que
-                  en claro se usa el arreglo «sobre color» del manual (wordmark
-                  claro + punto azul) y en oscuro el de siempre, que sobre el
-                  índigo sí se lee. */}
-              <img
-                src="/images/logo/necto-sobre-naranja.svg"
-                alt="Necto Logo"
-                className="h-16 sm:h-20 md:h-24 w-auto max-w-full drop-shadow-md dark:hidden"
-              />
-              <img
-                src="/images/logo/necto-full-white.svg"
-                alt="Necto Logo"
-                className="hidden h-12 sm:h-14 md:h-16 w-auto max-w-full drop-shadow-md dark:block"
-              />
-            </div>
-
-            <h2
-              className={cn(
-                "max-w-xl mx-auto text-white drop-shadow-xs font-bold tracking-tight",
-                isBrand
-                  ? "text-2xl sm:text-3xl md:text-4xl leading-[1.1]"
-                  : "text-xl sm:text-2xl md:text-3xl leading-normal pb-4"
-              )}
-            >
-              {panelHeadline}
-            </h2>
-
-            {panelTagline && (
-              <p className="mt-4 text-theme-xs font-bold uppercase tracking-[0.2em] text-white/70">
-                {panelTagline}
-              </p>
-            )}
+          <div className="dark:hidden">
+            <DecorativeCircles variant="brand" />
           </div>
+          <div className="hidden dark:block">
+            <DecorativeCircles variant="indigo" />
+          </div>
+
+          {rightPanelContent ? (
+            <div className="relative z-10 flex items-center justify-center w-full h-full p-6 sm:p-10 pointer-events-auto">
+              {rightPanelContent}
+            </div>
+          ) : (
+            <div className="relative z-10 flex flex-col items-center w-full max-w-2xl px-6 sm:px-10 text-center pointer-events-auto py-8">
+              {shouldShowLogo && (
+                <div className="inline-block mb-6">
+                  <img
+                    src="/images/logo/necto-sobre-naranja.svg"
+                    alt="Necto Logo"
+                    className="h-16 sm:h-20 md:h-24 w-auto max-w-full drop-shadow-md dark:hidden"
+                  />
+                  <img
+                    src="/images/logo/necto-full-white.svg"
+                    alt="Necto Logo"
+                    className="hidden h-12 sm:h-14 md:h-16 w-auto max-w-full drop-shadow-md dark:block"
+                  />
+                </div>
+              )}
+
+              {brandMessages && brandMessages.length > 0 ? (
+                <div className="w-full max-w-md mx-auto text-left">
+                  <AnimatedBrandMessages messages={brandMessages} />
+                </div>
+              ) : (
+                <>
+                  <h2
+                    className={cn(
+                      "max-w-xl mx-auto text-white drop-shadow-xs font-bold tracking-tight",
+                      isBrand
+                        ? "text-2xl sm:text-3xl md:text-4xl leading-[1.1]"
+                        : "text-xl sm:text-2xl md:text-3xl leading-normal pb-4"
+                    )}
+                  >
+                    {panelHeadline}
+                  </h2>
+
+                  {panelTagline && (
+                    <p className="mt-4 text-theme-xs font-bold uppercase tracking-[0.2em] text-white/70">
+                      {panelTagline}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
         <div className="fixed z-50 top-4 right-4 sm:top-6 sm:right-6">
           <ThemeToggleButton />

@@ -183,7 +183,12 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
               <img
                 src="/images/logo/necto-icon.svg"
                 alt="Necto"
-                className="h-8 w-8 select-none"
+                className="h-8 w-8 select-none dark:hidden"
+              />
+              <img
+                src="/images/logo/necto-icon-white.svg"
+                alt="Necto"
+                className="hidden h-8 w-8 select-none dark:block"
               />
             </div>
 

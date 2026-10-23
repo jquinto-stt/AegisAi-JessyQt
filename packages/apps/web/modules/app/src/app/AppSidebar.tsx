@@ -14,6 +14,7 @@ import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
 import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils";
 import {
   Cog6ToothIcon,
+  HomeIcon,
 } from "@heroicons/react/24/outline";
 import {
   GridIcon,
@@ -43,15 +44,9 @@ import {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Ruta del Lanzador de Módulos. Es la pantalla que responde «¿qué tiene
- * contratado esta organización?» y desde la que se entra a cada módulo.
- *
- * Estaba solo en `App.tsx`; los dos accesos de retorno que se añaden abajo la
- * necesitan, y escribir `/modulos` dos veces más es cómo se acaba con tres rutas
- * para la misma pantalla —que es exactamente lo que pasó con `/workspaces` y
- * `/workspace/modulos`, hoy reducidas a redirecciones—.
+ * Ruta del Lanzador / Inicio.
  */
-const RUTA_LANZADOR = "/dashboard";
+const RUTA_LANZADOR = "/inicio";
 
 /** Tooltip común a los dos logos: dicen lo MISMO porque hacen lo mismo. */
 const TOOLTIP_LANZADOR = "NECTO";
@@ -102,7 +97,13 @@ const LogoCollapsed = () => (
       src="/images/logo/necto-icon.svg"
       alt="NECTO"
       title={TOOLTIP_LANZADOR}
-      className="h-5 w-5 transition-transform duration-200 group-hover:rotate-6"
+      className="h-5 w-5 transition-transform duration-200 group-hover:rotate-6 dark:hidden"
+    />
+    <img
+      src="/images/logo/necto-icon-white.svg"
+      alt="NECTO"
+      title={TOOLTIP_LANZADOR}
+      className="hidden h-5 w-5 transition-transform duration-200 group-hover:rotate-6 dark:block"
     />
   </Link>
 );
@@ -305,6 +306,7 @@ const SidebarContent = observer(() => {
   const { pathname } = useLocation();
   const { isExpanded: showExpanded } = useSidebarContext();
   const isActive = (path: string) => pathname === path;
+  const hayTareasPendientes = organizacionStore.modulosActivos.length === 0;
 
   const puedeVerSeccion = (modulo: Modulo, seccionId: string) =>
     sessionStore.puedeVerSeccion(modulo, seccionId);
@@ -550,6 +552,27 @@ const SidebarContent = observer(() => {
 
       {showExpanded ? (
         <div className="flex flex-col gap-5">
+          {/* Opción Inicio / Tareas */}
+          <div>
+            <ul className="flex flex-col gap-1">
+              <MenuItem
+                icon={
+                  <div className="relative flex items-center justify-center">
+                    <HomeIcon className="h-5 w-5" />
+                    {hayTareasPendientes && (
+                      <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2" title="Tareas pendientes">
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FF3F1A] shadow-[0_0_8px_#FF3F1A] ring-1.5 ring-white dark:ring-gray-900" />
+                      </span>
+                    )}
+                  </div>
+                }
+                name="Inicio"
+                path="/inicio"
+                isActive={isActive}
+              />
+            </ul>
+          </div>
+
           {/* Módulos de negocio — modo barra expandida */}
           {modulosOperablesDeSesion(organizacionStore.modulosActivos).map((modulo) => {
             const visibles = ITEMS_MODULO[modulo].flatMap(({ seccionId, Icono }) => {
@@ -592,7 +615,7 @@ const SidebarContent = observer(() => {
           })}
 
           {/* Módulo WhatsApp — primer nivel */}
-          {puedeVerCanales && (
+          {puedeVerCanales && organizacionStore.tieneConectorActivo("whatsapp") && (
             <div>
               <MenuSectionHeader
                 title="WhatsApp"
@@ -666,6 +689,27 @@ const SidebarContent = observer(() => {
       ) : (
         /* RAIL MODE: En barra contraída, solo los iconos principales de cada módulo, centrados verticalmente */
         <div ref={railRef} className="flex flex-col items-center justify-center gap-2.5 w-full py-1">
+          {/* Botón Inicio en Rail Mode */}
+          <Link
+            to="/inicio"
+            title={hayTareasPendientes ? "Inicio · Tareas pendientes" : "Inicio"}
+            aria-label="Inicio"
+            className={`group relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ease-out hover:scale-110 active:scale-95 cursor-pointer ${
+              isActive("/inicio")
+                ? "text-[#190088] dark:text-[#97D6DF] scale-105 bg-gray-100/80 dark:bg-white/10"
+                : "text-gray-400 hover:text-[#190088] dark:text-gray-500 dark:hover:text-[#97D6DF] hover:bg-gray-100/70 dark:hover:bg-white/5"
+            }`}
+          >
+            <span className="h-5 w-5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
+              <HomeIcon className="h-5 w-5" />
+            </span>
+            {hayTareasPendientes && (
+              <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FF3F1A] shadow-[0_0_8px_#FF3F1A] ring-1.5 ring-white dark:ring-gray-900" />
+              </span>
+            )}
+          </Link>
+
           {modulosOperablesDeSesion(organizacionStore.modulosActivos).map((modulo) => {
             const info = CATALOGO_MODULOS[modulo];
             const isActivo = pathname.startsWith(`/${modulo}`);
@@ -693,7 +737,7 @@ const SidebarContent = observer(() => {
           })}
 
           {/* Botón WhatsApp en Rail Mode */}
-          {puedeVerCanales && (
+          {puedeVerCanales && organizacionStore.tieneConectorActivo("whatsapp") && (
             <button
               type="button"
               title="WhatsApp"

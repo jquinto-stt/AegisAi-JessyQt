@@ -135,3 +135,103 @@
     transform: none !important;
   }
 }
+
+
+/* ── Barra lateral: el contenido nuevo espera a que haya espacio ─────────────
+   Al expandir o contraer, el menú se reemplaza. Entra con un fundido que
+   arranca a los 120 ms, cuando la barra ya ganó buena parte del ancho; antes
+   aparecía de golpe dentro de una barra de 54 px y se desbordaba. */
+.barra-lateral__entrada {
+  animation: aparecer 180ms ease-out 120ms backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra-lateral__entrada {
+    animation: aparecer 120ms ease-out backwards;
+  }
+}
+
+
+/* ── Carrusel de novedades del inicio ───────────────────────────────────────
+   La imagen que entra se funde y llega desde el lado hacia el que se navega
+   (4 % del ancho, con un leve acercamiento que se asienta); la que sale se va
+   al lado contrario y más rápido. Las ocultas no se ven ni reciben clics. */
+.banner-carrusel__imagen {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.banner-carrusel__imagen--fijo {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.banner-carrusel__imagen--entra {
+  opacity: 1;
+  pointer-events: auto;
+  animation: banner-entra 700ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.banner-carrusel__imagen--sale {
+  animation: banner-sale 450ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.banner-carrusel__imagen--entra.desde-derecha { --banner-desde: 4%; }
+.banner-carrusel__imagen--entra.desde-izquierda { --banner-desde: -4%; }
+.banner-carrusel__imagen--sale.desde-derecha { --banner-hacia: -4%; }
+.banner-carrusel__imagen--sale.desde-izquierda { --banner-hacia: 4%; }
+
+@keyframes banner-entra {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--banner-desde, 4%), 0, 0) scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes banner-sale {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(var(--banner-hacia, -4%), 0, 0);
+  }
+}
+
+/* Píldora del banner activo: se llena durante la rotación. Lineal: es un reloj. */
+.banner-carrusel__progreso {
+  animation-name: banner-progreso;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+@keyframes banner-progreso {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* La pestaña «Mostrar novedades» aparece cuando el banner ya casi se plegó. */
+.banner-pestana {
+  animation: aparecer 200ms ease-out 180ms backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-carrusel__imagen--entra {
+    animation: aparecer 300ms ease-out backwards;
+  }
+  .banner-carrusel__imagen--sale {
+    animation: salida-aparecer 200ms ease-in forwards;
+  }
+  .banner-pestana {
+    animation: aparecer 150ms ease-out backwards;
+  }
+}

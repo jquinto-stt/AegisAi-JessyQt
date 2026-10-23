@@ -21,8 +21,11 @@ import {
   operadoresStore,
 } from "@/stores";
 import type { RedesSociales, DireccionPerfil } from "@/stores/organizacion.store";
+import { slugDe } from "@/stores/organizacion.store";
+import type { IdModuloNegocio } from "@/stores/plataforma.store";
+import type { TipoSesion } from "@/stores/session.store";
 import { bootstrapConversaciones } from "@/lib/db.bootstrap";
-import { activarModoDemo } from "@/lib/modo-demo";
+import { activarModoDemo, desactivarModoDemo } from "@/lib/modo-demo";
 
 export interface ResultadoAuth {
   ok: boolean;
@@ -301,6 +304,21 @@ export async function cerrarSesion(): Promise<void> {
   sessionStore.reset();
 }
 
+let hidratacionCompletada = false;
+let promesaHidratacion: Promise<boolean> | null = null;
+
+export function estaSesionInicializada(): boolean {
+  return hidratacionCompletada;
+}
+
+export async function esperarHidratacion(): Promise<boolean> {
+  if (hidratacionCompletada) return sessionStore.accessContext.autenticado;
+  if (!promesaHidratacion) {
+    promesaHidratacion = autoHidratarSesionSupabase();
+  }
+  return promesaHidratacion;
+}
+
 /**
  * Hidrata la sesión local si existe una sesión activa persistida en Supabase Auth.
  */
@@ -316,13 +334,23 @@ export async function autoHidratarSesionSupabase(): Promise<boolean> {
           session.user.email || "",
           session.user.user_metadata,
         );
+        hidratacionCompletada = true;
         return true;
       }
-    } catch {}
+    } catch (e) {
+      console.warn("[auth.service] Error al hidratar sesión:", e);
+    }
   }
 
-  asegurarSesionPruebas();
-  return true;
+  // Si no hay configuración de Supabase (modo local o pruebas), mantenemos fallback local
+  if (!hayConfiguracion()) {
+    asegurarSesionPruebas();
+    hidratacionCompletada = true;
+    return true;
+  }
+
+  hidratacionCompletada = true;
+  return false;
 }
 
 export interface DatosRegistro {
@@ -339,28 +367,262 @@ export interface ResultadoRegistro {
 }
 
 /**
- * Registra un nuevo usuario y asegura la sesión en modo de pruebas.
+ * Registra un nuevo usuario con Supabase Auth.
  */
 export async function registrarUsuario(datos: DatosRegistro): Promise<ResultadoRegistro> {
   const { email, password, nombre, apellido } = datos;
   const cleanEmail = email.trim();
+  const cleanNombre = nombre.trim();
+  const cleanApellido = apellido.trim();
 
+  if (!cleanNombre) {
+    return { ok: false, motivo: "Por favor ingresa tu nombre." };
+  }
   if (!cleanEmail) {
-    return { ok: false, motivo: "Ingresa un correo electrónico válido." };
+    return { ok: false, motivo: "Por favor ingresa un correo electrónico válido." };
   }
   if (!password || password.length < 6) {
     return { ok: false, motivo: "La contraseña debe tener al menos 6 caracteres." };
   }
 
-  asegurarSesionPruebas(cleanEmail);
+  const sb = getSupabase();
+  if (sb && hayConfiguracion()) {
+    // Asegurar estado limpio para el nuevo registro: sin módulos y sin modo demo
+    desactivarModoDemo();
+    organizacionStore.desinstalarModulo("pedidos");
+    organizacionStore.desinstalarModulo("inventarios");
+    organizacionStore.setConectorActivo("pedidos", "whatsapp", false);
+    sessionStore.configurar([], "administrador");
+    sessionStore.setModulos([]);
+    try {
+      localStorage.removeItem("necto_onboarding_modulo_instalado");
+    } catch {
+      // no-op
+    }
+
+    const { data, error } = await sb.auth.signUp({
+      email: cleanEmail,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/onboarding/bienvenida`,
+        data: {
+          first_name: cleanNombre,
+          last_name: cleanApellido,
+        },
+      },
+    });
+
+    if (error) {
+      return { ok: false, motivo: traducirErrorAuth(error) };
+    }
+
+    organizacionStore.actualizarPerfil({
+      nombre: cleanNombre,
+      apellido: cleanApellido,
+      email: cleanEmail,
+      pais: "Colombia",
+      perfilCompletado: false,
+    });
+
+    // Supabase Auth: si devuelve usuario pero no session, requiere confirmación de email
+    if (data.user && !data.session) {
+      // Si el usuario ya existe y está confirmado, Supabase devuelve identities vacío y no manda correo
+      if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        return { ok: false, motivo: "Ya existe una cuenta registrada con este correo electrónico. Por favor inicia sesión." };
+      }
+      return { ok: true, requiereConfirmacion: true };
+    }
+
+    if (data.user && data.session) {
+      await sincronizarIdentidadNecto(
+        data.user.id,
+        data.user.email || cleanEmail,
+        data.user.user_metadata,
+      );
+      return { ok: true, requiereConfirmacion: false };
+    }
+  }
+
+  // Fallback sin Supabase
+  desactivarModoDemo();
+  organizacionStore.desinstalarModulo("pedidos");
+  organizacionStore.desinstalarModulo("inventarios");
+  organizacionStore.setConectorActivo("pedidos", "whatsapp", false);
+  sessionStore.configurar([], "administrador");
+  sessionStore.setModulos([]);
   organizacionStore.actualizarPerfil({
-    nombre: nombre.trim() || "Usuario",
-    apellido: apellido.trim() || "Necto",
+    nombre: cleanNombre,
+    apellido: cleanApellido,
     email: cleanEmail,
     pais: "Colombia",
+    perfilCompletado: false,
+  });
+  return { ok: true, requiereConfirmacion: false };
+}
+
+/**
+ * Verifica el código OTP de 6 dígitos enviado por correo para confirmar la cuenta.
+ */
+export async function verificarCodigoOtp(
+  email: string,
+  token: string
+): Promise<ResultadoAuth> {
+  const cleanEmail = email.trim();
+  const cleanToken = token.trim();
+
+  if (!cleanEmail) {
+    return { ok: false, motivo: "Correo electrónico no especificado." };
+  }
+  if (!cleanToken || cleanToken.length < 6) {
+    return { ok: false, motivo: "Por favor ingresa el código completo de verificación." };
+  }
+
+  const sb = getSupabase();
+  if (sb && hayConfiguracion()) {
+    const { data, error } = await sb.auth.verifyOtp({
+      email: cleanEmail,
+      token: cleanToken,
+      type: "signup",
+    });
+
+    if (error) {
+      return { ok: false, motivo: traducirErrorAuth(error) };
+    }
+
+    if (data.user) {
+      const syncRes = await sincronizarIdentidadNecto(
+        data.user.id,
+        data.user.email || cleanEmail,
+        data.user.user_metadata
+      );
+      return { ok: true, requiereOnboarding: syncRes.requiereOnboarding };
+    }
+  }
+
+  return { ok: true, requiereOnboarding: true };
+}
+
+/**
+ * Reenvía el código OTP de verificación de registro al correo indicado.
+ */
+export async function reenviarCodigoOtp(
+  email: string
+): Promise<{ ok: boolean; motivo?: string }> {
+  const cleanEmail = email.trim();
+  if (!cleanEmail) {
+    return { ok: false, motivo: "Correo electrónico inválido." };
+  }
+
+  const sb = getSupabase();
+  if (sb && hayConfiguracion()) {
+    const { error } = await sb.auth.resend({
+      type: "signup",
+      email: cleanEmail,
+    });
+    if (error) {
+      return { ok: false, motivo: traducirErrorAuth(error) };
+    }
+    return { ok: true };
+  }
+  return { ok: true };
+}
+
+export interface DatosAltaOrganizacion {
+  nombreOrg: string;
+  pais?: string;
+  moneda?: string;
+  zonaHoraria?: string;
+  tipoEmpresa?: string;
+  tamanoEquipo?: string;
+  modulos?: IdModuloNegocio[];
+  rol?: TipoSesion;
+}
+
+/**
+ * Da de alta la organización y vincula al usuario en PostgreSQL mediante la RPC atómica.
+ */
+export async function completarAltaOrganizacion(
+  datos: DatosAltaOrganizacion,
+): Promise<{ ok: boolean; motivo?: string }> {
+  const nombreOrg = (datos.nombreOrg || "Mi Empresa").trim();
+  const pais = (datos.pais || organizacionStore.usuario?.pais || "Colombia").trim();
+  const modulos = datos.modulos && datos.modulos.length > 0 ? datos.modulos : (["pedidos"] as IdModuloNegocio[]);
+  const tipoSesion = datos.rol || "administrador";
+
+  // Actualizar store local inmediatamente
+  organizacionStore.crearOrganizacion({
+    nombre: nombreOrg,
+    pais,
+    moneda: datos.moneda,
+    zonaHoraria: datos.zonaHoraria,
+    tipoEmpresa: datos.tipoEmpresa,
+    tamanoEquipo: datos.tamanoEquipo,
   });
 
-  return { ok: true, requiereConfirmacion: false };
+  for (const m of modulos) {
+    organizacionStore.instalarModulo(m);
+  }
+
+  sessionStore.configurar(
+    modulosOperablesDeSesion(organizacionStore.modulosActivos),
+    tipoSesion,
+  );
+
+  const sb = getSupabase();
+  if (!sb || !hayConfiguracion()) {
+    return { ok: true };
+  }
+
+  try {
+    const { data: sessionData } = await sb.auth.getSession();
+    const user = sessionData?.session?.user;
+    if (!user) {
+      return { ok: true };
+    }
+
+    const paisDb = pais === "Colombia" ? "CO" : pais;
+    const uNom = organizacionStore.usuario?.nombre || (user.user_metadata?.first_name as string) || "Usuario";
+    const uApe = organizacionStore.usuario?.apellido || (user.user_metadata?.last_name as string) || "Necto";
+
+    // Llamar a la RPC atómica (prueba en public y fallback en necto)
+    let rpcRes = await sb.rpc("alta_organizacion_inicial", {
+      p_nombre_org: nombreOrg,
+      p_pais: paisDb,
+      p_moneda: datos.moneda || "COP",
+      p_zona_horaria: datos.zonaHoraria || "America/Bogota",
+      p_tipo_empresa: datos.tipoEmpresa || null,
+      p_tamano_equipo: datos.tamanoEquipo || null,
+      p_modulos: modulos,
+      p_nombre_usuario: uNom,
+      p_apellido_usuario: uApe,
+    });
+
+    if (rpcRes.error) {
+      rpcRes = await sb.schema("necto").rpc("alta_organizacion_inicial", {
+        p_nombre_org: nombreOrg,
+        p_pais: paisDb,
+        p_moneda: datos.moneda || "COP",
+        p_zona_horaria: datos.zonaHoraria || "America/Bogota",
+        p_tipo_empresa: datos.tipoEmpresa || null,
+        p_tamano_equipo: datos.tamanoEquipo || null,
+        p_modulos: modulos,
+        p_nombre_usuario: uNom,
+        p_apellido_usuario: uApe,
+      });
+    }
+
+    if (rpcRes.error) {
+      console.error("[auth.service] Error en alta_organizacion_inicial:", rpcRes.error);
+      return { ok: false, motivo: rpcRes.error.message };
+    }
+
+    await sincronizarIdentidadNecto(user.id, user.email || "", user.user_metadata);
+    void bootstrapConversaciones();
+    return { ok: true };
+  } catch (err) {
+    console.error("[auth.service] Excepción en alta_organizacion_inicial:", err);
+    return { ok: false, motivo: (err as Error).message };
+  }
 }
 
 /**
@@ -375,6 +637,7 @@ export async function actualizarPerfilRemoto(datos: {
   bio?: string;
   ubicacion?: string;
   pais?: string;
+  comoNosConociste?: string;
   redes?: RedesSociales;
   direccion?: DireccionPerfil;
 }): Promise<{ ok: boolean; motivo?: string }> {

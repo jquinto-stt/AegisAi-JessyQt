@@ -63,23 +63,10 @@ export async function asegurarSesion(): Promise<
 
   if (await haySesion()) return { ok: true };
 
-  const { error } = await sb.auth.signInWithPassword({
-    email: DEMO_EMAIL,
-    password: DEMO_PASSWORD,
-  });
-
-  if (error) {
-    // El caso que más veces muerde aquí es `mailer_autoconfirm: false`: el
-    // usuario existe pero no está confirmado, y el mensaje de Supabase
-    // («Email not confirmed») suena a problema del correo cuando lo que hay es
-    // una configuración de proyecto.
-    return {
-      ok: false,
-      motivo: `No se pudo iniciar sesión como ${DEMO_EMAIL}: ${error.message}`,
-    };
-  }
-
-  return { ok: true };
+  return {
+    ok: false,
+    motivo: "No hay una sesión activa de Supabase.",
+  };
 }
 
 /**

@@ -5,6 +5,8 @@ import { PageMeta } from "@/shell/meta";
 import { Button } from "@/elements/ui/button";
 import { Card, CardTitle, CardDescription } from "@/elements/ui/card";
 import { sessionStore, type Modulo, type TipoSesion } from "@/stores/session.store";
+import { organizacionStore } from "@/stores/organizacion.store";
+import { completarAltaOrganizacion } from "@/lib/auth.service";
 import { OnboardingLayout } from "./OnboardingLayout";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -123,6 +125,8 @@ const BRAND_MESSAGES_ROL = [
 export const OrganizacionOnboardingPage = observer(() => {
   const navigate = useNavigate();
   const [rol, setRol] = useState<TipoSesion | null>(sessionStore.tipoSesion || "administrador");
+  const [guardando, setGuardando] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const esOperador = rol === "operador";
   const modulos: Modulo[] = sessionStore.modulos.length > 0 ? sessionStore.modulos : ["pedidos"];
@@ -133,23 +137,47 @@ export const OrganizacionOnboardingPage = observer(() => {
       ? "Pedidos"
       : "Inventario & Stock";
 
-  const handleConfirmar = () => {
+  const handleConfirmar = async () => {
     if (!rol) return;
 
-    sessionStore.configurar(modulos, rol);
-
     if (rol === "operador") {
+      sessionStore.configurar(modulos, rol);
       navigate("/operador/registro");
       return;
     }
 
-    // Administrador: entra directo y limpio al módulo que escogió
-    const destino =
-      sessionStore.moduloEntryPath && sessionStore.moduloEntryPath !== "/seleccionar"
-        ? sessionStore.moduloEntryPath
-        : "/pedidos/inicio";
+    setGuardando(true);
+    setErrorMsg(null);
 
-    navigate(destino);
+    try {
+      const nombreOrg = organizacionStore.organizacion?.nombre || "Mi Empresa";
+      const res = await completarAltaOrganizacion({
+        nombreOrg,
+        pais: organizacionStore.usuario?.pais || "Colombia",
+        moneda: organizacionStore.organizacion?.moneda || "COP",
+        zonaHoraria: organizacionStore.organizacion?.zonaHoraria || "America/Bogota",
+        modulos,
+        rol,
+      });
+
+      if (!res.ok) {
+        setErrorMsg(res.motivo || "No se pudo completar el registro de la organización.");
+        setGuardando(false);
+        return;
+      }
+
+      // Administrador: entra directo y limpio al módulo que escogió
+      const destino =
+        sessionStore.moduloEntryPath && sessionStore.moduloEntryPath !== "/seleccionar"
+          ? sessionStore.moduloEntryPath
+          : "/pedidos/inicio";
+
+      navigate(destino);
+    } catch (e) {
+      setErrorMsg((e as Error).message);
+    } finally {
+      setGuardando(false);
+    }
   };
 
   return (
@@ -202,10 +230,23 @@ export const OrganizacionOnboardingPage = observer(() => {
             ))}
           </div>
 
+          {errorMsg && (
+            <div
+              role="alert"
+              className="p-3 my-4 text-sm text-error-700 bg-error-50 border border-error-200 rounded-xl dark:bg-error-950/40 dark:text-error-300 dark:border-error-800 flex items-start gap-2.5"
+            >
+              <svg className="w-5 h-5 shrink-0 mt-0.5 text-error-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span className="flex-1 text-xs leading-relaxed">{errorMsg}</span>
+            </div>
+          )}
+
           <div className="pt-8 mt-6 flex items-center justify-between border-t border-gray-100 dark:border-gray-800">
             <Button
               type="button"
               variant="outline"
+              disabled={guardando}
               onClick={() => navigate("/onboarding/perfil")}
               className="rounded-full px-6 text-xs font-semibold cursor-pointer"
             >
@@ -217,6 +258,7 @@ export const OrganizacionOnboardingPage = observer(() => {
                 <Button
                   type="button"
                   variant="outline"
+                  disabled={guardando}
                   onClick={() => navigate("/operador/login")}
                   className="rounded-full px-6 text-xs font-semibold cursor-pointer"
                 >
@@ -226,23 +268,32 @@ export const OrganizacionOnboardingPage = observer(() => {
 
               <Button
                 type="button"
-                disabled={!rol}
+                disabled={!rol || guardando}
                 onClick={handleConfirmar}
-                className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
               >
-                {esOperador ? "Solicitar acceso" : "Entrar"}
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4 ml-1.5 inline"
-                >
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
+                {guardando ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    {esOperador ? "Solicitar acceso" : "Entrar"}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4 ml-1.5 inline"
+                    >
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                  </>
+                )}
               </Button>
             </div>
           </div>
