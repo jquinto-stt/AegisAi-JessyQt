@@ -265,7 +265,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
             to="/configuracion?tab=canales"
             className="font-bold text-[#190088] underline underline-offset-2 hover:text-[#FF3F1A] dark:text-amber-300 shrink-0"
           >
-            Conectar en Ajustes Generales →
+            Conectar en Configuraciones →
           </Link>
         </div>
       ) : !puedeResponder ? (

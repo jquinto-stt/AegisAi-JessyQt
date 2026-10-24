@@ -1,6 +1,7 @@
 export { TableroPage } from "./TableroPage";
 export { CrearPedidoPage } from "./CrearPedidoPage";
 export { InicioPage } from "./InicioPage";
+export { ResumenPedidosVista } from "./ResumenPedidosVista";
 export { HistorialPage } from "./HistorialPage";
 export { AnaliticaPage } from "./AnaliticaPage";
 export { ConfigPage } from "./ConfigPage";

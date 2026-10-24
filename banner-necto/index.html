@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>NECTO — Banner Publicitario Motion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --color-brand: #FF3F1A;
+        --color-deep-blue: #190088;
+        --color-cyan: #97D6DF;
+        --color-cream: #EFE6D3;
+        --color-gray: #ECECEC;
+        --color-dark: #212121;
+        --font-dm: "DM Sans", -apple-system, sans-serif;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background-color: #0E0A22;
+        font-family: var(--font-dm);
+        color: #ffffff;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: radial-gradient(circle at 18% 18%, rgba(255, 63, 26, 0.22) 0%, transparent 45%),
+                    radial-gradient(circle at 82% 82%, rgba(25, 0, 136, 0.45) 0%, transparent 55%),
+                    #0E0A22;
+      }
+
+      /* Ambient motion glow */
+      .glow-orb {
+        position: absolute;
+        width: 700px;
+        height: 700px;
+        border-radius: 50%;
+        filter: blur(120px);
+        pointer-events: none;
+        opacity: 0.28;
+      }
+
+      .glow-orb-1 {
+        top: -150px;
+        left: -100px;
+        background: #FF3F1A;
+      }
+
+      .glow-orb-2 {
+        bottom: -200px;
+        right: -100px;
+        background: #190088;
+      }
+
+      /* Background grid subtle */
+      .grid-lines {
+        position: absolute;
+        inset: 0;
+        background-size: 80px 80px;
+        background-image: 
+          linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+        mask-image: radial-gradient(circle at 50% 50%, black 45%, transparent 85%);
+      }
+
+      .clip {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        pointer-events: none;
+      }
+
+      .scene-inner {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 120px;
+      }
+
+      .glass-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(20px);
+        border-radius: 28px;
+        padding: 38px;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      }
+
+      .btn-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+        padding: 22px 52px;
+        border-radius: 9999px;
+        background: #FF3F1A;
+        color: #ffffff;
+        font-size: 28px;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: 0 14px 40px rgba(255, 63, 26, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="16"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div class="grid-lines"></div>
+      <div id="orb1" class="glow-orb glow-orb-1"></div>
+      <div id="orb2" class="glow-orb glow-orb-2"></div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           ESCENA 1: REVELACIÓN DE MARCA CON LOGO OFICIAL (0.0s – 4.2s)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div id="scene1" class="clip" data-start="0" data-duration="4.2" data-track-index="0">
+        <div id="scene1-inner" class="scene-inner">
+          <div id="s1-logo-container" style="display: flex; flex-direction: column; align-items: center; opacity: 0; transform: scale(0.92);">
+            <img
+              src="assets/logo/necto-full-white.svg"
+              alt="NECTO grow together"
+              style="width: 580px; height: auto; filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.5));"
+            />
+          </div>
+
+          <h1
+            id="s1-heading"
+            style="margin-top: 65px; font-size: 72px; font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; text-align: center; max-width: 1300px; opacity: 0; transform: translateY(30px);"
+          >
+            Toda tu operación, <span style="color: #FF3F1A;">más conectada.</span>
+          </h1>
+
+          <p
+            id="s1-sub"
+            style="margin-top: 22px; font-size: 30px; font-weight: 400; color: #ECECEC; opacity: 0; transform: translateY(20px);"
+          >
+            Conversaciones y gestión con inteligencia contextual.
+          </p>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           ESCENA 2: CONEXIÓN EN TIEMPO REAL (3.8s – 8.2s)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div id="scene2" class="clip" data-start="3.8" data-duration="4.4" data-track-index="0" style="opacity: 0;">
+        <div id="scene2-inner" class="scene-inner" style="justify-content: flex-start; padding-top: 130px;">
+          <div id="s2-header" style="text-align: center; max-width: 1200px; opacity: 0; transform: translateY(20px);">
+            <h2 style="font-size: 64px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15;">
+              Tus conversaciones, pedidos e inventario.
+            </h2>
+            <p style="margin-top: 16px; font-size: 28px; font-weight: 400; color: #ECECEC; line-height: 1.4;">
+              Automatiza conversaciones y transforma la manera en que conectas con tus clientes.
+            </p>
+          </div>
+
+          <!-- Módulos conectados -->
+          <div id="s2-cards-container" style="display: flex; align-items: center; justify-content: center; gap: 40px; margin-top: 65px; width: 100%; max-width: 1540px;">
+            <!-- Tarjeta WhatsApp -->
+            <div id="s2-card-1" class="glass-card" style="flex: 1; opacity: 0; transform: translateX(-40px);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px;">
+                <span style="font-size: 15px; font-weight: 700; color: #25D366; text-transform: uppercase; letter-spacing: 0.06em;">● WhatsApp en vivo</span>
+                <span style="font-size: 14px; color: #A3A1B8;">Mensaje entrante</span>
+              </div>
+              <h3 style="font-size: 26px; font-weight: 700; margin-bottom: 12px;">Atención Centralizada</h3>
+              <p style="font-size: 18px; color: #E2E8F0; line-height: 1.5;">
+                «Hola, quiero confirmar el pedido de 2 unidades para entregar hoy en Calle 45»
+              </p>
+              <div style="margin-top: 24px; padding: 14px 20px; border-radius: 14px; background: rgba(37, 211, 102, 0.14); border: 1px solid rgba(37, 211, 102, 0.35); font-size: 15px; font-weight: 600; color: #4ADE80;">
+                ✓ Respuesta contextual por IA
+              </div>
+            </div>
+
+            <!-- Conector Central con Símbolo N Geométrico Oficial de Necto -->
+            <div id="s2-connector" style="display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.7);">
+              <div style="width: 84px; height: 84px; border-radius: 24px; background: rgba(255, 63, 26, 0.15); border: 2px solid #FF3F1A; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 45px rgba(255, 63, 26, 0.45); backdrop-filter: blur(12px);">
+                <img
+                  src="assets/logo/necto-symbol-n.svg"
+                  alt="Necto"
+                  style="width: 48px; height: 48px;"
+                />
+              </div>
+              <span style="font-size: 13px; font-weight: 700; color: #97D6DF; margin-top: 12px; letter-spacing: 0.1em; text-transform: uppercase;">
+                ENLACE DIRECTO
+              </span>
+            </div>
+
+            <!-- Tarjeta Módulos de Negocio -->
+            <div id="s2-card-2" class="glass-card" style="flex: 1; opacity: 0; transform: translateX(40px);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px;">
+                <span style="font-size: 15px; font-weight: 700; color: #FF3F1A; text-transform: uppercase; letter-spacing: 0.06em;">● Sincronizado</span>
+                <span style="font-size: 14px; color: #A3A1B8;">Inventario & Órdenes</span>
+              </div>
+              <h3 style="font-size: 26px; font-weight: 700; margin-bottom: 12px;">Módulos de Negocio</h3>
+              <p style="font-size: 18px; color: #E2E8F0; line-height: 1.5;">
+                Se conecta con tus módulos de negocio, inventario o pedidos en un mismo flujo.
+              </p>
+              <div style="margin-top: 24px; padding: 14px 20px; border-radius: 14px; background: rgba(255, 63, 26, 0.14); border: 1px solid rgba(255, 63, 26, 0.35); font-size: 15px; font-weight: 600; color: #FFA08C;">
+                ✓ Stock y pedidos actualizados al instante
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           ESCENA 3: MENSAJE CENTRAL Y CRECIMIENTO (7.8s – 12.4s)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div id="scene3" class="clip" data-start="7.8" data-duration="4.6" data-track-index="0" style="opacity: 0;">
+        <div id="scene3-inner" class="scene-inner" style="flex-direction: row; justify-content: space-between; align-items: center; padding: 0 150px;">
+          <div style="max-width: 860px;">
+            <div id="s3-line-1" style="font-size: 78px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; opacity: 0; transform: translateX(-40px);">
+              Más conexiones<span style="color: #FF3F1A;">.</span>
+            </div>
+            <div id="s3-line-2" style="font-size: 78px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-top: 14px; opacity: 0; transform: translateX(-40px);">
+              Más oportunidades<span style="color: #97D6DF;">.</span>
+            </div>
+            <div id="s3-line-3" style="font-size: 78px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-top: 14px; color: #FF3F1A; opacity: 0; transform: translateX(-40px);">
+              Crezcamos juntos<span style="color: #ffffff;">.</span>
+            </div>
+
+            <p id="s3-desc" style="margin-top: 36px; font-size: 28px; line-height: 1.45; color: #ECECEC; max-width: 720px; opacity: 0; transform: translateY(20px);">
+              Necto reúne en una sola plataforma tus conversaciones, el despacho ágil de órdenes y el control total de existencias.
+            </p>
+          </div>
+
+          <!-- UI Card Necto Operaciones con isotipo N oficial -->
+          <div id="s3-card" style="width: 530px; opacity: 0; transform: translateY(40px) scale(0.95);">
+            <div class="glass-card" style="background: rgba(25, 0, 136, 0.35); border: 1.5px solid rgba(151, 214, 223, 0.35); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.65);">
+              <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 26px;">
+                <div style="width: 52px; height: 52px; border-radius: 16px; background: rgba(255, 63, 26, 0.2); border: 1.5px solid #FF3F1A; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(255, 63, 26, 0.35);">
+                  <img src="assets/logo/necto-symbol-n.svg" alt="Necto" style="width: 32px; height: 32px;" />
+                </div>
+                <div>
+                  <h4 style="font-size: 22px; font-weight: 700;">Necto Operaciones</h4>
+                  <p style="font-size: 14px; color: #97D6DF;">Sincronización en tiempo real</p>
+                </div>
+              </div>
+
+              <div style="background: rgba(255, 255, 255, 0.07); border-radius: 20px; padding: 22px; margin-bottom: 18px;">
+                <div style="font-size: 14px; color: #CBD5E1; text-transform: uppercase; font-weight: 600;">Ventas del día</div>
+                <div style="font-size: 42px; font-weight: 700; color: #ffffff; margin-top: 6px;">
+                  $1.280.000 <span style="font-size: 18px; color: #97D6DF; font-weight: 500;">COP</span>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 14px;">
+                <div style="flex: 1; background: rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 16px;">
+                  <span style="font-size: 13px; color: #A3A1B8;">Pedidos activos</span>
+                  <div style="font-size: 24px; font-weight: 700; color: #FF3F1A; margin-top: 4px;">19 órdenes</div>
+                </div>
+                <div style="flex: 1; background: rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 16px;">
+                  <span style="font-size: 13px; color: #A3A1B8;">Canal WhatsApp</span>
+                  <div style="font-size: 24px; font-weight: 700; color: #4ADE80; margin-top: 4px;">98% atendido</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           ESCENA 4: CIERRE DE MARCA Y CTA OFICIAL (12.0s – 16.0s)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <div id="scene4" class="clip" data-start="12.0" data-duration="4.0" data-track-index="0" style="opacity: 0;">
+        <div id="scene4-inner" class="scene-inner">
+          <div id="s4-logo" style="opacity: 0; transform: scale(0.92);">
+            <img
+              src="assets/logo/necto-full-white.svg"
+              alt="NECTO grow together"
+              style="width: 650px; height: auto; filter: drop-shadow(0 20px 45px rgba(0, 0, 0, 0.6));"
+            />
+          </div>
+
+          <h2
+            id="s4-headline"
+            style="margin-top: 55px; font-size: 50px; font-weight: 700; text-align: center; max-width: 1100px; opacity: 0; transform: translateY(20px);"
+          >
+            Tu negocio conectado. Tu crecimiento asegurado.
+          </h2>
+
+          <div id="s4-cta" style="margin-top: 45px; opacity: 0; transform: translateY(20px);">
+            <div class="btn-cta">
+              <span>Conoce Necto</span>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════════════
+         GSAP TIMELINE: TRANSICIONES CRUZADAS FLUIDAS (CROSSFADE CONTINUO)
+         ════════════════════════════════════════════════════════════════════════ -->
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // Animación continua de fondo (glow orbs)
+      tl.to("#orb1", { x: 80, y: 60, scale: 1.15, duration: 8, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
+      tl.to("#orb2", { x: -60, y: -40, scale: 1.1, duration: 8, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
+
+      // ── ESCENA 1 (0.0s – 4.2s) ──────────────────────────────────────────
+      tl.fromTo("#s1-logo-container", { opacity: 0, scale: 0.88, filter: "blur(10px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.8, ease: "power3.out" }, 0.2);
+      tl.fromTo("#s1-heading", { opacity: 0, y: 35, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power3.out" }, 0.6);
+      tl.fromTo("#s1-sub", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 0.9);
+
+      // Transición cruzada fluida 1 → 2 (overlap continuo en 3.6s - 4.2s)
+      tl.to("#scene1", { opacity: 0, y: -30, filter: "blur(8px)", duration: 0.7, ease: "power2.inOut" }, 3.5);
+      tl.to("#scene2", { opacity: 1, duration: 0.7, ease: "power2.inOut" }, 3.7);
+
+      // ── ESCENA 2 (3.8s – 8.2s) ──────────────────────────────────────────
+      tl.fromTo("#s2-header", { opacity: 0, y: 25, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.6, ease: "power3.out" }, 3.9);
+      tl.fromTo("#s2-card-1", { opacity: 0, x: -50, scale: 0.95 }, { opacity: 1, x: 0, scale: 1, duration: 0.65, ease: "power3.out" }, 4.3);
+      tl.fromTo("#s2-connector", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.55, ease: "back.out(1.5)" }, 4.6);
+      tl.fromTo("#s2-card-2", { opacity: 0, x: 50, scale: 0.95 }, { opacity: 1, x: 0, scale: 1, duration: 0.65, ease: "power3.out" }, 4.9);
+
+      // Transición cruzada fluida 2 → 3 (overlap continuo en 7.5s - 8.2s)
+      tl.to("#scene2", { opacity: 0, scale: 0.95, filter: "blur(8px)", duration: 0.7, ease: "power2.inOut" }, 7.5);
+      tl.to("#scene3", { opacity: 1, duration: 0.7, ease: "power2.inOut" }, 7.7);
+
+      // ── ESCENA 3 (7.8s – 12.4s) ─────────────────────────────────────────
+      tl.fromTo("#s3-line-1", { opacity: 0, x: -45, filter: "blur(6px)" }, { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.5, ease: "power3.out" }, 7.9);
+      tl.fromTo("#s3-line-2", { opacity: 0, x: -45, filter: "blur(6px)" }, { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.5, ease: "power3.out" }, 8.4);
+      tl.fromTo("#s3-line-3", { opacity: 0, x: -45, filter: "blur(6px)" }, { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.5, ease: "power3.out" }, 8.9);
+      tl.fromTo("#s3-desc", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 9.4);
+      tl.fromTo("#s3-card", { opacity: 0, y: 50, scale: 0.92, filter: "blur(8px)" }, { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.75, ease: "power3.out" }, 8.2);
+
+      // Transición cruzada fluida 3 → 4 (overlap continuo en 11.6s - 12.3s)
+      tl.to("#scene3", { opacity: 0, y: -30, filter: "blur(8px)", duration: 0.7, ease: "power2.inOut" }, 11.6);
+      tl.to("#scene4", { opacity: 1, duration: 0.7, ease: "power2.inOut" }, 11.8);
+
+      // ── ESCENA 4 (12.0s – 16.0s) ────────────────────────────────────────
+      tl.fromTo("#s4-logo", { opacity: 0, scale: 0.9, filter: "blur(10px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.8, ease: "power3.out" }, 12.1);
+      tl.fromTo("#s4-headline", { opacity: 0, y: 25, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.65, ease: "power3.out" }, 12.6);
+      tl.fromTo("#s4-cta", { opacity: 0, y: 25, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.65, ease: "back.out(1.4)" }, 13.0);
+
+      // Suave disolución final
+      tl.to("#scene4-inner", { opacity: 0, duration: 0.4, ease: "power2.in" }, 15.6);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

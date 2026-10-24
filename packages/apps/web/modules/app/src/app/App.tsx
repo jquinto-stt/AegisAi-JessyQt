@@ -231,11 +231,11 @@ export default function App() {
         <Route path="/perfil" element={<ProfilePage />} />
       </Route>
 
-      {/* Onboarding: Bienvenida -> Teléfono -> País -> Perfil -> Organización -> Módulos -> Encuesta final */}
+      {/* Onboarding simplificado: Bienvenida -> Teléfono/Ubicación/WhatsApp -> Encuesta -> Cargando */}
       <Route path="/onboarding/bienvenida" element={<BienvenidaOnboardingPage />} />
       <Route path="/onboarding/telefono" element={<OnboardingTelefonoPage />} />
       <Route path="/onboarding/pais" element={<OnboardingPaisPage />} />
-      <Route path="/onboarding/modelo-negocio" element={<OnboardingModeloNegocioPage />} />
+      <Route path="/onboarding/modelo-negocio" element={<Navigate to="/onboarding/encuesta" replace />} />
       <Route path="/bienvenida" element={<Navigate to="/onboarding/bienvenida" replace />} />
       <Route path="/onboarding" element={<Navigate to="/onboarding/bienvenida" replace />} />
       <Route path="/onboarding/perfil" element={<PerfilOnboardingPage />} />

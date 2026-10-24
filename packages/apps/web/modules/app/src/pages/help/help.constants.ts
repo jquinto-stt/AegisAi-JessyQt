@@ -107,7 +107,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "cambiar-pais-moneda",
     question: "¿Puedo cambiar el país o la moneda de mi organización?",
     answer:
-      "Sí, desde Ajustes Generales puedes ajustar la moneda base y la zona horaria de tu organización.",
+      "Sí, desde Configuraciones puedes ajustar la moneda base y la zona horaria de tu organización.",
   },
   {
     id: "recuperar-password",

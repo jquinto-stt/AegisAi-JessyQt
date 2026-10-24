@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import {
@@ -22,11 +22,14 @@ import {
 import { PageMeta } from "@/shell/meta";
 import { organizacionStore } from "@/stores/organizacion.store";
 import { uiStore } from "@/stores";
+import { tareasDeInicio } from "./tareas-inicio";
 
 interface BannerItem {
   id: string;
-  imageUrl: string;
-  imageUrlDark: string;
+  type?: "video" | "image";
+  videoUrl?: string;
+  imageUrl?: string;
+  imageUrlDark?: string;
   title: string;
   alt: string;
   ctaLink: string;
@@ -35,7 +38,16 @@ interface BannerItem {
 
 const BANNERS: BannerItem[] = [
   {
+    id: "motion-necto-oficial",
+    type: "video",
+    videoUrl: "/images/Banners/banner-motion-necto.mp4",
+    title: "Más conexiones. Más oportunidades. Crezcamos juntos.",
+    alt: "Necto - Presentación Motion Graphics",
+    ctaLink: "/conversaciones",
+  },
+  {
     id: "operacion-conectada",
+    type: "image",
     imageUrl: "/images/Banners/banner-operacion.png",
     imageUrlDark: "/images/Banners/banner-operacion-dark.png",
     title: "Toda tu operación, más conectada",
@@ -44,6 +56,7 @@ const BANNERS: BannerItem[] = [
   },
   {
     id: "pedidos-inventario",
+    type: "image",
     imageUrl: "/images/Banners/banner-pedidos.png",
     imageUrlDark: "/images/Banners/banner-pedidos-dark.png",
     title: "Pedidos e inventario, en un solo lugar",
@@ -52,78 +65,146 @@ const BANNERS: BannerItem[] = [
   },
   {
     id: "conversaciones-whatsapp",
+    type: "image",
     imageUrl: "/images/Banners/banner-conversaciones.png",
     imageUrlDark: "/images/Banners/banner-conversaciones-dark.png",
     title: "Gestiona tus conversaciones, sin salir de Necto",
     alt: "Necto - Centraliza la atención por WhatsApp y conecta con tus procesos",
     ctaLink: "/conversaciones",
-    // Ajuste fino: suficiente para que 'Gestiona tus' no se corte sin dejar espacio vacío arriba
     objectPosition: "center 38%",
   },
 ];
 
-/** Cada cuánto cambia el banner solo. */
-const MS_ROTACION = 7000;
+/** Cada cuánto cambia el banner solo cuando no es video interactivo. */
+const MS_ROTACION = 8000;
 
 /**
- * Carrusel de novedades del inicio.
- *
- * ── Por qué así ──────────────────────────────────────────────────────────
- *
- * Antes era una sola `<img>` a la que se le cambiaba el `src`: el
- * `transition-opacity` nunca corría (no hay dos estados que interpolar) y el
- * cambio era un corte seco, con parpadeo si la imagen siguiente no estaba en
- * caché. Ahora las tres imágenes están apiladas en la misma celda —precargadas,
- * con el mismo alto— y la que entra se funde con un leve desplazamiento en la
- * dirección de la navegación mientras la que sale se va al lado contrario.
- *
- * El indicador activo es una píldora que se llena durante los 7 s: dice que el
- * banner cambia solo y cuánto falta. Al pasar el mouse o enfocar el carrusel se
- * pausa, y navegar a mano reinicia la cuenta.
+ * Carrusel interactivo y ampliado de novedades de Necto.
+ * Soporta banners animados (Motion Graphics a 60fps) y banners estáticos con transición fluida.
  */
 const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onIr: (ruta: string) => void; visible: boolean }) {
   const [activo, setActivo] = useState(0);
   const [anterior, setAnterior] = useState<number | null>(null);
   const [direccion, setDireccion] = useState<1 | -1>(1);
   const [pausado, setPausado] = useState(false);
+  const [progreso, setProgreso] = useState(0);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [docVisible, setDocVisible] = useState(typeof document !== "undefined" ? document.visibilityState === "visible" : true);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Precarga de banners light y dark para transición inmediata sin parpadeo
+  // Escuchar visibilidad de la pestaña para no desfasar animaciones
+  useEffect(() => {
+    const handleVis = () => setDocVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", handleVis);
+    return () => document.removeEventListener("visibilitychange", handleVis);
+  }, []);
+
+  // Precarga de banners estáticos light y dark
   useEffect(() => {
     BANNERS.forEach((b) => {
-      const imgL = new Image();
-      imgL.src = b.imageUrl;
-      const imgD = new Image();
-      imgD.src = b.imageUrlDark;
+      if (b.type !== "video") {
+        if (b.imageUrl) {
+          const imgL = new Image();
+          imgL.src = b.imageUrl;
+        }
+        if (b.imageUrlDark) {
+          const imgD = new Image();
+          imgD.src = b.imageUrlDark;
+        }
+      }
     });
   }, []);
 
-  const ir = (destino: number, dir: 1 | -1) => {
-    if (destino === activo) return;
-    setDireccion(dir);
-    setAnterior(activo);
-    setActivo(destino);
-  };
-  const siguiente = () => ir((activo + 1) % BANNERS.length, 1);
-  const previo = () => ir((activo - 1 + BANNERS.length) % BANNERS.length, -1);
+  const ir = useCallback((destino: number, dir: 1 | -1) => {
+    setActivo((prevActivo) => {
+      if (destino === prevActivo) return prevActivo;
+      setProgreso(0);
+      setDireccion(dir);
+      setAnterior(prevActivo);
+      return destino;
+    });
+  }, []);
 
-  // Plegado no rota: nadie lo está viendo.
-  const detenido = pausado || !visible;
+  const siguiente = useCallback(() => {
+    setActivo((prevActivo) => {
+      const next = (prevActivo + 1) % BANNERS.length;
+      setProgreso(0);
+      setDireccion(1);
+      setAnterior(prevActivo);
+      return next;
+    });
+  }, []);
 
-  // Un temporizador por banner: navegar a mano reinicia la cuenta y pausar la congela.
-  useEffect(() => {
-    if (detenido) return;
-    const t = setTimeout(siguiente, MS_ROTACION);
-    return () => clearTimeout(t);
-    // `siguiente` depende de `activo`, que ya está en las dependencias.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activo, detenido]);
+  const previo = useCallback(() => {
+    setActivo((prevActivo) => {
+      const prev = (prevActivo - 1 + BANNERS.length) % BANNERS.length;
+      setProgreso(0);
+      setDireccion(-1);
+      setAnterior(prevActivo);
+      return prev;
+    });
+  }, []);
 
   const actual = BANNERS[activo];
   const esDark = uiStore.theme === "dark";
+  const esVideo = actual.type === "video";
+  const detenido = pausado || !visible || !docVisible || (esVideo && !isVideoPlaying);
+
+  // Progreso y rotación automática para banners de imagen (resumible en tiempo real)
+  useEffect(() => {
+    if (esVideo || detenido) return;
+
+    const intervalMs = 50;
+    const step = (intervalMs / MS_ROTACION) * 100;
+
+    const timer = setInterval(() => {
+      setProgreso((prev) => {
+        if (prev + step >= 100) {
+          siguiente();
+          return 0;
+        }
+        return prev + step;
+      });
+    }, intervalMs);
+
+    return () => clearInterval(timer);
+  }, [esVideo, detenido, siguiente]);
+
+  // Manejo de pausa y reanudación del video cuando se coloca o quita el cursor
+  useEffect(() => {
+    if (!videoRef.current || !esVideo) return;
+    if (detenido) {
+      videoRef.current.pause();
+    } else {
+      videoRef.current.play().catch(() => {});
+    }
+  }, [detenido, esVideo]);
+
+  // Al cambiar de banner a uno de tipo video, reiniciar posición
+  useEffect(() => {
+    setProgreso(0);
+    if (!videoRef.current || !esVideo) return;
+    videoRef.current.currentTime = 0;
+    if (!detenido) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, [activo, esVideo]);
+
+  const toggleVideoPlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(() => {});
+      setIsVideoPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+  };
 
   return (
     <div
-      className="banner-carrusel relative w-full overflow-hidden rounded-3xl border border-[#ECECEC] bg-[#FAF7F2] shadow-lg dark:border-white/10 dark:bg-[#1E1C2E]"
+      className="banner-carrusel relative w-full overflow-hidden rounded-3xl border border-[#ECECEC] bg-[#190088] shadow-xl dark:border-white/10 dark:bg-[#0c004a] group"
       onMouseEnter={() => setPausado(true)}
       onMouseLeave={() => setPausado(false)}
       onFocus={() => setPausado(true)}
@@ -131,17 +212,77 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
       aria-roledescription="carrusel"
       aria-label="Novedades de Necto"
     >
-      {/* Las tres imágenes en la misma celda: el alto lo pone la primera y nada salta. */}
-      <button
-        type="button"
+      <div
         onClick={() => onIr(actual.ctaLink)}
-        className="grid w-full cursor-pointer text-left [&>*]:col-start-1 [&>*]:row-start-1"
+        className="relative block w-full aspect-[21/9] sm:aspect-[24/9] md:aspect-[32/10] max-h-[420px] sm:max-h-[440px] cursor-pointer overflow-hidden text-left"
         title={actual.title}
-        aria-label={actual.title}
+        role="button"
+        tabIndex={0}
       >
         {BANNERS.map((b, idx) => {
-          // Al cargar, el primero ya está ahí: solo se anima cuando el banner cambia.
           const estado = idx === activo ? (anterior === null ? "fijo" : "entra") : idx === anterior ? "sale" : "oculto";
+          if (b.type === "video") {
+            return (
+              <div
+                key={b.id}
+                className={`absolute inset-0 h-full w-full banner-carrusel__imagen banner-carrusel__imagen--${estado} ${
+                  direccion === 1 ? "desde-derecha" : "desde-izquierda"
+                }`}
+              >
+                <video
+                  ref={idx === activo ? videoRef : undefined}
+                  src={b.videoUrl}
+                  autoPlay={!detenido}
+                  muted
+                  playsInline
+                  onLoadedMetadata={(e) => {
+                    if (idx === activo && !detenido) {
+                      e.currentTarget.play().catch(() => {});
+                    }
+                  }}
+                  onTimeUpdate={(e) => {
+                    if (idx === activo) {
+                      const v = e.currentTarget;
+                      if (v.duration && !Number.isNaN(v.duration)) {
+                        setProgreso((v.currentTime / v.duration) * 100);
+                      }
+                    }
+                  }}
+                  onEnded={() => {
+                    if (idx === activo) {
+                      siguiente();
+                    }
+                  }}
+                  onError={() => {
+                    if (idx === activo) {
+                      siguiente();
+                    }
+                  }}
+                  className="h-full w-full object-cover object-center"
+                />
+
+                {/* Control de pausa/play para el video */}
+                <div className="absolute top-4 right-4 z-10">
+                  <button
+                    type="button"
+                    onClick={toggleVideoPlay}
+                    aria-label={isVideoPlaying ? "Pausar animación" : "Reanudar animación"}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white/80 backdrop-blur-md transition-all hover:bg-black/70 hover:text-white border border-white/15 cursor-pointer"
+                  >
+                    {isVideoPlaying ? (
+                      <span className="h-3 w-3 flex gap-0.5 justify-center items-center">
+                        <span className="w-1 h-3 bg-white rounded-xs" />
+                        <span className="w-1 h-3 bg-white rounded-xs" />
+                      </span>
+                    ) : (
+                      <span className="w-0 h-0 ml-0.5 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[8px] border-l-white" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
           const srcImagen = esDark ? b.imageUrlDark : b.imageUrl;
           return (
             <img
@@ -152,16 +293,33 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
               loading="eager"
               draggable={false}
               style={{ objectPosition: b.objectPosition ?? "center center" }}
-              className={`h-auto max-h-[300px] w-full object-cover sm:max-h-[320px] banner-carrusel__imagen banner-carrusel__imagen--${estado} ${
+              className={`absolute inset-0 h-full w-full object-cover banner-carrusel__imagen banner-carrusel__imagen--${estado} ${
                 direccion === 1 ? "desde-derecha" : "desde-izquierda"
               }`}
             />
           );
         })}
-      </button>
 
-      {/* Paginador */}
-      <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-xs dark:bg-black/60">
+        {/* Gradiente sutil y llamada a la acción */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10" />
+
+        <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onIr(actual.ctaLink);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#FF3F1A] px-4 py-1.5 text-[12px] font-bold text-white shadow-lg transition-all hover:bg-[#e03413] hover:shadow-[#FF3F1A]/30 active:scale-95 cursor-pointer"
+          >
+            <span>Conoce Necto</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Paginador flotante con miniaturas/píldoras */}
+      <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/15">
         <button
           type="button"
           onClick={previo}
@@ -169,7 +327,7 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
           aria-label="Banner anterior"
           title="Anterior"
         >
-          <ChevronLeft className="h-3.5 w-3.5" />
+          <ChevronLeft className="h-4 w-4" />
         </button>
 
         {BANNERS.map((b, idx) => {
@@ -179,17 +337,23 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
               key={b.id}
               type="button"
               onClick={() => ir(idx, idx > activo ? 1 : -1)}
-              aria-label={`Ir al banner ${idx + 1}`}
+              aria-label={`Ir al banner ${idx + 1}: ${b.title}`}
               aria-current={esActivo ? "true" : undefined}
-              className={`relative h-2 cursor-pointer overflow-hidden rounded-full transition-[width,background-color] duration-300 ease-out ${
-                esActivo ? "w-6 bg-white/35" : "w-2 bg-white/70 hover:bg-white"
+              className={`relative h-2.5 cursor-pointer overflow-hidden rounded-full transition-[width,background-color] duration-300 ease-out ${
+                esActivo ? "w-8 bg-white/35" : "w-2.5 bg-white/70 hover:bg-white"
               }`}
             >
               {esActivo && (
                 <span
-                  key={activo}
-                  className="banner-carrusel__progreso absolute inset-0 origin-left rounded-full bg-[#FF3F1A]"
-                  style={{ animationDuration: `${MS_ROTACION}ms`, animationPlayState: detenido ? "paused" : "running" }}
+                  className="absolute inset-y-0 left-0 rounded-full bg-[#FF3F1A]"
+                  style={{
+                    width: `${Math.min(100, Math.max(0, progreso))}%`,
+                    transition: detenido
+                      ? "none"
+                      : esVideo
+                      ? "width 200ms linear"
+                      : "width 50ms linear",
+                  }}
                 />
               )}
             </button>
@@ -203,7 +367,7 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
           aria-label="Banner siguiente"
           title="Siguiente"
         >
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="h-4 w-4" />
         </button>
       </div>
     </div>
@@ -221,9 +385,7 @@ export const InicioDashboardPage = observer(() => {
   const usuarioNombre =
     organizacionStore.usuario?.nombre || "Empresario";
 
-  // Comprobar si faltan tareas iniciales
-  const tareasPendientes = organizacionStore.modulosActivos.length === 0;
-
+  const tareasPendientes = tareasDeInicio().filter((t) => !t.completada);
 
   return (
     <>
@@ -233,48 +395,17 @@ export const InicioDashboardPage = observer(() => {
       />
 
       <div className="flex-1 w-full min-h-[calc(100vh-140px)] p-4 sm:p-6 lg:p-8 space-y-6 font-sans select-none animate-in fade-in duration-200">
-        {/* Banner de alerta si la persona saltó el checklist inicial */}
-        {tareasPendientes && (
-          <div className="w-full p-4 rounded-2xl bg-[#EFE6D3]/60 dark:bg-[#1E1C2E] border border-[#FF3F1A]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center shrink-0">
-                <AlertCircle className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[13px] font-bold text-[#190088] dark:text-white">
-                  Tienes tareas de inicio pendientes
-                </p>
-                <p className="text-[12px] text-[#212121]/70 dark:text-[#ECECEC]/70">
-                  Saltaste la configuración inicial. Instala tus módulos para activar ventas, cocina y delivery.
-                </p>
-              </div>
-            </div>
-
-            <Link
-              to="/inicio"
-              className="shrink-0 px-4 py-2 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-[12px] font-bold tracking-wide transition-all shadow-sm flex items-center gap-2 cursor-pointer"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Volver al formulario de inicio</span>
-            </Link>
-          </div>
-        )}
-
         {/* ══════════════════════════════════════════════════════════════════
-            1. BANNER CAROUSEL SUPERIOR (Colapsable con flecha abajo fuera)
+            1. BANNER SUPERIOR EXPANDIDO (Motion Graphic + Banners Necto)
             ══════════════════════════════════════════════════════════════════ */}
-        {/* Se pliega y despliega con su alto (filas 1fr ↔ 0fr): lo de abajo sube
-            y baja acompañándolo en vez de saltar. Plegado, el carrusel se pausa. */}
         <section className="relative" aria-label="Novedades">
           <div
             className={`grid transition-[grid-template-rows,opacity] duration-[380ms] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
               bannerVisible ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
             }`}
             aria-hidden={!bannerVisible}
-            // Plegado no debe recibir foco ni clics.
             {...(!bannerVisible ? { inert: "" } : {})}
           >
-            {/* El relleno deja ver la sombra: el recorte del pliegue la cortaría. */}
             <div className="-mx-3 -mb-5 min-h-0 overflow-hidden px-3 pb-5">
               <BannerCarrusel onIr={navigate} visible={bannerVisible} />
             </div>
@@ -284,7 +415,7 @@ export const InicioDashboardPage = observer(() => {
             <button
               type="button"
               onClick={() => setBannerVisible(false)}
-              className="absolute -bottom-3 left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white text-[#212121] shadow-md transition-[color,transform] duration-150 ease-out hover:text-[#FF3F1A] active:scale-95 dark:border-white/20 dark:bg-[#1E1C2E] dark:text-white"
+              className="absolute -bottom-3 left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white text-[#212121] shadow-md transition-[color,transform] duration-150 ease-out hover:text-[#FF3F1A] active:scale-95 dark:border-white/10 dark:bg-gray-900 dark:text-white"
               title="Contraer banner"
               aria-label="Contraer banner"
             >
@@ -295,7 +426,7 @@ export const InicioDashboardPage = observer(() => {
               <button
                 type="button"
                 onClick={() => setBannerVisible(true)}
-                className="group inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-[12px] font-bold text-[#212121] shadow-sm transition-[color,transform] duration-150 ease-out hover:text-[#FF3F1A] active:scale-95 dark:border-white/20 dark:bg-[#1E1C2E] dark:text-white"
+                className="group inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-[12px] font-bold text-[#212121] shadow-sm transition-[color,transform] duration-150 ease-out hover:text-[#FF3F1A] active:scale-95 dark:border-white/10 dark:bg-gray-900 dark:text-white"
                 title="Mostrar banner"
               >
                 <span>Mostrar novedades</span>
@@ -316,7 +447,7 @@ export const InicioDashboardPage = observer(() => {
           {/* COLUMNA IZQUIERDA (7 Columnas): Saludo compacto + Filtro y Gráfica */}
           <div className="lg:col-span-7 space-y-5">
             {/* Tarjeta única y compacta: Saludo + Filtro de fecha (ampliada un 20%) */}
-            <div className="w-full max-w-[480px] p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#1E1C2E] border border-[#ECECEC] dark:border-white/10 shadow-lg space-y-3.5">
+            <div className="w-full max-w-[480px] p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-lg space-y-3.5">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-[20px] sm:text-[22px] font-bold text-[#190088] dark:text-white leading-tight">
@@ -391,7 +522,7 @@ export const InicioDashboardPage = observer(() => {
             </div>
 
             {/* Tarjeta con Gráfica Principal de Ventas y Utilidades */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#1E1C2E] border border-[#ECECEC] dark:border-white/10 shadow-xs space-y-6">
+            <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-xs space-y-6">
               {/* Leyenda de la gráfica */}
               <div className="flex items-center gap-6 text-[13px] font-bold">
                 <div className="flex items-center gap-2">
@@ -494,7 +625,7 @@ export const InicioDashboardPage = observer(() => {
           {/* COLUMNA DERECHA (5 Columnas): Notificaciones de Gestión ARRIBA + Cifras horizontales */}
           <div className="lg:col-span-5 space-y-5">
             {/* 1. Notificaciones de Gestión (SUPERIOR DERECHA, TAPA EL BANNER) */}
-            <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#1E1C2E] border border-[#ECECEC] dark:border-white/10 shadow-lg space-y-3">
+            <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-lg space-y-3">
               <div>
                 <h4 className="text-[15px] font-bold text-[#190088] dark:text-white">
                   Notificaciones de Gestión
@@ -525,7 +656,7 @@ export const InicioDashboardPage = observer(() => {
                 </button>
 
                 {acordeonNotifAbierto && (
-                  <div className="p-3 bg-white dark:bg-[#1E1C2E] border-t border-[#ECECEC] dark:border-white/10 text-[11px] text-[#212121]/70 dark:text-[#ECECEC]/70 space-y-2">
+                  <div className="p-3 bg-white dark:bg-gray-900 border-t border-[#ECECEC] dark:border-gray-800 text-[11px] text-[#212121]/70 dark:text-[#ECECEC]/70 space-y-2">
                     <p>Hay pedidos pendientes de despacho y cobro por validar en el sistema.</p>
                     <Link
                       to="/pedidos"
@@ -538,32 +669,38 @@ export const InicioDashboardPage = observer(() => {
                 )}
               </div>
 
-              {/* Notificación de Configuración: Instalar módulo pendiente */}
-              <div className="p-3 rounded-2xl bg-[#97D6DF]/15 dark:bg-[#97D6DF]/10 border border-[#97D6DF]/40 flex items-center justify-between gap-3">
-                <div className="space-y-0.5 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
-                    <p className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] truncate">
-                      Configuración: Instalar módulo
+              {/* Tareas de puesta en marcha pendientes: misma fuente que el checklist de
+                  Inicio, así que cada aviso se quita solo al completarse la tarea. */}
+              {tareasPendientes.map((tarea) => (
+                <div
+                  key={tarea.id}
+                  className="p-3 rounded-2xl bg-[#97D6DF]/15 dark:bg-[#97D6DF]/10 border border-[#97D6DF]/40 flex items-center justify-between gap-3"
+                >
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
+                      <p className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] truncate">
+                        {tarea.aviso.titulo}
+                      </p>
+                    </div>
+                    <p className="text-[11px] text-[#212121]/70 dark:text-[#ECECEC]/70 leading-snug">
+                      {tarea.aviso.texto}
                     </p>
                   </div>
-                  <p className="text-[11px] text-[#212121]/70 dark:text-[#ECECEC]/70 leading-snug">
-                    Saltaste este paso. Instala tus módulos (WhatsApp, Catálogo, etc.) para operar.
-                  </p>
+                  <Link
+                    to={tarea.ruta}
+                    className="shrink-0 px-3 py-1.5 rounded-xl bg-[#190088] hover:bg-[#190088]/90 text-white text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                  >
+                    <span>{tarea.aviso.accion}</span>
+                    <ChevronRight className="w-3 h-3" />
+                  </Link>
                 </div>
-                <Link
-                  to="/configuracion?tab=modulos"
-                  className="shrink-0 px-3 py-1.5 rounded-xl bg-[#190088] hover:bg-[#190088]/90 text-white text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                >
-                  <span>Instalar módulo</span>
-                  <ChevronRight className="w-3 h-3" />
-                </Link>
-              </div>
+              ))}
             </div>
 
             {/* 2. CIFRAS: Ventas y Utilidades en UNA SOLA LÍNEA HORIZONTAL (compactas) */}
-            <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#1E1C2E] border border-[#ECECEC] dark:border-white/10 shadow-xs">
-              <div className="grid grid-cols-2 gap-4 divide-x divide-[#ECECEC] dark:divide-white/10">
+            <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-xs">
+              <div className="grid grid-cols-2 gap-4 divide-x divide-[#ECECEC] dark:divide-gray-800">
                 {/* Columna Ventas */}
                 <div className="space-y-1.5 pr-2">
                   <div className="flex items-center justify-between">
@@ -647,7 +784,7 @@ export const InicioDashboardPage = observer(() => {
             </div>
 
             {/* 3. Totales: Productos Vendidos y Total de Pedidos en 2 columnas */}
-            <div className="p-4 rounded-3xl bg-white dark:bg-[#1E1C2E] border border-[#ECECEC] dark:border-white/10 shadow-xs grid grid-cols-2 gap-4">
+            <div className="p-4 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-xs grid grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center shrink-0">
                   <Package className="w-4 h-4" />

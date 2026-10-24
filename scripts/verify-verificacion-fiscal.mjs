@@ -1,0 +1,241 @@
+import { writeFileSync, mkdirSync } from "node:fs";
+
+const CDP_BASE = "http://127.0.0.1:9333";
+const APP = "http://127.0.0.1:5199";
+const OUT = "./artifacts-verify/";
+mkdirSync(OUT, { recursive: true });
+
+// Archivos de prueba: un PNG real y un PDF mínimo válido.
+writeFileSync(
+  OUT + "cedula.png",
+  Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAKklEQVR42u3OsQ0AIAwDMLf/0Z0YkHiA6mJbiuO4OwAAAPjVAAAAAAB8YwGx0QGx8wAAAABJRU5ErkJggg==",
+    "base64"
+  )
+);
+writeFileSync(
+  OUT + "selfie.png",
+  Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAKklEQVR42u3OsQ0AIAwDMLf/0Z0YkHiA6mJbiuO4OwAAAPjVAAAAAAB8YwGx0QGx8wAAAABJRU5ErkJggg==",
+    "base64"
+  )
+);
+writeFileSync(
+  OUT + "recibo.pdf",
+  Buffer.from(
+    "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n",
+    "utf8"
+  )
+);
+
+async function getPageTarget() {
+  for (let i = 0; i < 40; i++) {
+    try {
+      const res = await fetch(`${CDP_BASE}/json/list`);
+      const targets = await res.json();
+      const page = targets.find((t) => t.type === "page" && t.webSocketDebuggerUrl && !t.url.startsWith("devtools"));
+      if (page) return page;
+    } catch {}
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error("No CDP page target");
+}
+
+function connect(url) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(url);
+    let id = 0;
+    const pending = new Map();
+    const events = [];
+    ws.addEventListener("open", () =>
+      resolve({
+        events,
+        send(method, params = {}) {
+          return new Promise((res, rej) => {
+            const msgId = ++id;
+            pending.set(msgId, { res, rej });
+            ws.send(JSON.stringify({ id: msgId, method, params }));
+          });
+        },
+        close: () => ws.close(),
+      })
+    );
+    ws.addEventListener("error", reject);
+    ws.addEventListener("message", (ev) => {
+      const msg = JSON.parse(ev.data);
+      if (msg.method) events.push(msg);
+      if (msg.id && pending.has(msg.id)) {
+        const { res, rej } = pending.get(msg.id);
+        pending.delete(msg.id);
+        msg.error ? rej(new Error(JSON.stringify(msg.error))) : res(msg.result);
+      }
+    });
+  });
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const cdp = await connect((await getPageTarget()).webSocketDebuggerUrl);
+await cdp.send("Runtime.enable");
+await cdp.send("Page.enable");
+await cdp.send("DOM.enable");
+await cdp.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
+
+const evaluate = async (expression) => {
+  const r = await cdp.send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+  if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails));
+  return r.result.value;
+};
+
+const waitFor = async (expression, label, timeoutMs = 30000) => {
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeoutMs) {
+    try { if (await evaluate(expression)) return true; } catch {}
+    await sleep(300);
+  }
+  throw new Error(`Timeout: ${label}`);
+};
+
+const fallos = [];
+const check = (n, ok, d = "") => { console.log(`${ok ? "OK  " : "FAIL"} ${n}${d ? " · " + d : ""}`); if (!ok) fallos.push(n); };
+
+const clickTexto = (texto) =>
+  evaluate(`(() => { const b = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === ${JSON.stringify(texto)}); if (!b) return 'no-existe'; if (b.disabled) return 'disabled'; b.click(); return 'ok'; })()`);
+
+const setInput = (sel, valor) =>
+  evaluate(`(() => {
+    const el = document.querySelector(${JSON.stringify(sel)});
+    if (!el) return false;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(el, ${JSON.stringify(valor)});
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  })()`);
+
+const subirArchivo = async (selector, ruta) => {
+  const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
+  const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: root.nodeId, selector });
+  if (!nodeId) throw new Error(`No se encontró ${selector}`);
+  await cdp.send("DOM.setFileInputFiles", {
+    nodeId,
+    files: [process.cwd().split("\\").join("/") + "/artifacts-verify/" + ruta],
+  });
+};
+
+const ORG = {
+  id: "org_verify", nombre: "Boutique Roma", slug: "boutique-roma",
+  pais: "Colombia", moneda: "COP", zonaHoraria: "America/Bogota",
+  tipoEmpresa: "Retail & Comercio minorista", tamanoEquipo: "2 a 5 personas",
+  logoUrl: "", descripcion: "", sitioWeb: "", fechaCreacion: new Date().toISOString(),
+};
+
+await cdp.send("Page.navigate", { url: `${APP}/login` });
+await sleep(2500);
+await evaluate(`(() => {
+  localStorage.setItem("necto.session", JSON.stringify({ modulos: ["pedidos","inventarios"], tipoSesion: "administrador", operadorSimuladoId: null, preSimulacion: null }));
+  localStorage.setItem("necto.organizacion.v1", JSON.stringify({ usuario: null, organizacion: ${JSON.stringify(ORG)}, organizaciones: [${JSON.stringify(ORG)}] }));
+  const raw = localStorage.getItem("webforge-ui-preferences") || "{}";
+  let ui = {}; try { ui = JSON.parse(raw); } catch {}
+  ui.themePreference = "light"; localStorage.setItem("webforge-ui-preferences", JSON.stringify(ui));
+  return true;
+})()`);
+
+await cdp.send("Page.navigate", { url: `${APP}/configuracion?tab=general&seccion=fiscales` });
+await waitFor(`document.body.innerText.includes("Registrar documentos")`, "la tarjeta de entrada");
+await sleep(600);
+
+// ── 1. Entrada + términos ──────────────────────────────────────────────────
+check("la entrada explica la seriedad del proceso",
+  (await evaluate("document.body.innerText")).includes("Revisión manual"));
+
+check("el botón de entrada abre los términos", (await clickTexto("Registrar documentos")) === "ok");
+await waitFor(`document.body.innerText.includes("Tratamiento de tus datos")`, "términos");
+await sleep(400);
+
+check("sin aceptar, «Aceptar y continuar» está deshabilitado",
+  (await clickTexto("Aceptar y continuar")) === "disabled");
+
+await evaluate(`(() => { const c = document.querySelector('input[type=checkbox]'); c.click(); return c.checked; })()`);
+await sleep(300);
+check("al aceptar se habilita", (await clickTexto("Aceptar y continuar")) === "ok");
+
+// ── 2. Identidad ───────────────────────────────────────────────────────────
+await waitFor(`!!document.querySelector('input#ver-nombre')`, "paso identidad");
+await sleep(400);
+check("sin datos, «Siguiente» está deshabilitado", (await clickTexto("Siguiente")) === "disabled");
+await setInput("#ver-nombre", "Wiltrido Bilbao");
+await setInput("#ver-numero", "10005678909");
+await sleep(300);
+check("con nombre y documento avanza", (await clickTexto("Siguiente")) === "ok");
+
+// ── 3. Código ──────────────────────────────────────────────────────────────
+await waitFor(`!!document.querySelector('input#ver-codigo')`, "paso código");
+await sleep(500);
+const aviso = await evaluate(`document.body.innerText`);
+const match = aviso.match(/se muestra aquí: ([A-Z0-9]{6})/);
+check("el código se muestra con aviso de demostración", Boolean(match), match ? match[1] : "sin código");
+
+await setInput("#ver-codigo", "XXXXXX");
+await sleep(200);
+await clickTexto("Validar");
+await sleep(500);
+check("un código incorrecto no deja pasar",
+  (await evaluate(`document.body.innerText`)).includes("no coincide") &&
+  (await evaluate(`!!document.querySelector('input#ver-codigo')`)) === true);
+
+await setInput("#ver-codigo", match ? match[1] : "");
+await sleep(200);
+check("el código correcto avanza", (await clickTexto("Validar")) === "ok");
+
+// ── 4. Documentos ──────────────────────────────────────────────────────────
+await waitFor(`!!document.querySelector('input#ver-documento')`, "paso documentos");
+await sleep(500);
+check("sin archivos, «Siguiente» está deshabilitado", (await clickTexto("Siguiente")) === "disabled");
+await subirArchivo("input#ver-documento", "cedula.png");
+await sleep(600);
+await subirArchivo("input#ver-selfie", "selfie.png");
+await sleep(600);
+check("los dos adjuntos se previsualizan",
+  (await evaluate(`document.querySelectorAll('img[alt^="Vista previa"]').length`)) >= 2);
+check("con documento y selfie avanza", (await clickTexto("Siguiente")) === "ok");
+
+// ── 5. Comprobante ─────────────────────────────────────────────────────────
+await waitFor(`!!document.querySelector('input#ver-comprobante')`, "paso comprobante");
+await sleep(500);
+check("sin comprobante, «Finalizar» está deshabilitado", (await clickTexto("Finalizar")) === "disabled");
+await subirArchivo("input#ver-comprobante", "recibo.pdf");
+await sleep(700);
+check("un PDF también se adjunta",
+  (await evaluate(`document.body.innerText`)).includes("recibo.pdf"));
+check("finaliza", (await clickTexto("Finalizar")) === "ok");
+
+// ── 6. Estado final + persistencia ─────────────────────────────────────────
+await waitFor(`document.body.innerText.includes("Se enviaron los datos con éxito")`, "pantalla final");
+await sleep(500);
+check("muestra el estado en revisión",
+  (await evaluate("document.body.innerText")).includes("hasta 5 días hábiles"));
+check("avisa que no hay revisión real",
+  (await evaluate("document.body.innerText")).includes("no hay un equipo que revise"));
+
+const guardado = await evaluate(`(() => {
+  const d = JSON.parse(localStorage.getItem("necto.organizacion.v1"));
+  const v = d.organizacion.verificacion || {};
+  return { estado: v.estado, nombre: v.nombreCompleto, doc: Boolean(v.documento?.dataUrl), selfie: Boolean(v.selfie?.dataUrl), comp: Boolean(v.comprobante?.dataUrl) };
+})()`);
+check("todo quedó persistido",
+  guardado.estado === "en_revision" && guardado.nombre === "Wiltrido Bilbao" && guardado.doc && guardado.selfie && guardado.comp,
+  JSON.stringify(guardado));
+
+const { data: shot } = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
+writeFileSync(OUT + "verificacion-final.png", Buffer.from(shot, "base64"));
+
+// Recargar: debe seguir en revisión
+await cdp.send("Page.reload", { ignoreCache: false });
+await waitFor(`document.body.innerText.includes("Se enviaron los datos con éxito")`, "estado tras recargar");
+check("el estado sobrevive a la recarga", true);
+
+const errs = cdp.events.filter((e) => e.method === "Runtime.exceptionThrown");
+check("sin excepciones en runtime", errs.length === 0, String(errs.length));
+
+console.log(`\nRESULTADO: ${fallos.length === 0 ? "TODO OK" : fallos.length + " FALLOS"}`);
+cdp.close();
+process.exit(fallos.length === 0 ? 0 : 1);

@@ -1,0 +1,253 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   ONBOARDING — intro de Bienvenida y transición entre pasos
+   ══════════════════════════════════════════════════════════════════════════
+
+   Se ve una vez por cuenta: es el único lugar del producto donde el movimiento
+   puede ser protagonista. Por eso aquí las duraciones pasan de los 300 ms del
+   resto de la UI; el `prefers-reduced-motion` del final lo baja a un fundido.
+
+   Todo usa la curva compartida del proyecto (`theme.css`), salvo la barra de
+   progreso, que se MUEVE en pantalla y por eso va en ease-in-out. */
+
+
+/* ── 1. Intro de Bienvenida ─────────────────────────────────────────────────
+
+   Una sola frase de movimiento, en el orden en que se lee la marca:
+
+     0 ms     el cuerpo naranja del isotipo sube y se asienta
+     280 ms   el acento índigo llega desde su esquina y «conecta»
+     520 ms   la conexión emite una onda, una sola vez
+     360 ms+  el titular se revela palabra a palabra (60 ms de paso)
+     760 ms   subtítulo
+     880 ms   el botón, lo último: cuando aparece, ya se leyó por qué pulsarlo
+
+   El titular se revela con máscara (la palabra sube desde detrás de su propio
+   renglón) y no con un fundido: así se lee como tipografía en movimiento y no
+   como contenido cargando. */
+
+.bienvenida-cabecera {
+  animation: aparecer 400ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.bienvenida-pie {
+  animation: aparecer 400ms cubic-bezier(0.22, 1, 0.36, 1) 1000ms backwards;
+}
+
+/* `fill-box` hace que el origen se mida sobre cada trazo y no sobre el SVG. */
+.bienvenida-isotipo__cuerpo,
+.bienvenida-isotipo__acento {
+  transform-box: fill-box;
+}
+
+.bienvenida-isotipo__cuerpo {
+  transform-origin: 0% 100%;
+  animation: isotipo-cuerpo 560ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.bienvenida-isotipo__acento {
+  transform-origin: 100% 0%;
+  animation: isotipo-acento 480ms cubic-bezier(0.22, 1, 0.36, 1) 280ms backwards;
+}
+
+/* La onda no deja rastro: su opacidad base es 0 y la animación no tiene fill
+   mode, así que fuera de su ventana no existe. */
+.bienvenida-isotipo__onda {
+  opacity: 0;
+  animation: isotipo-onda 1100ms cubic-bezier(0.22, 1, 0.36, 1) 520ms;
+}
+
+/* El renglón recorta; la palabra sube. El relleno inferior evita cortar los
+   descendentes (la «j», la «g») y el margen negativo lo devuelve al flujo. */
+.bienvenida-palabra {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.bienvenida-palabra > span {
+  display: inline-block;
+  animation: palabra-revelar 620ms cubic-bezier(0.22, 1, 0.36, 1) var(--retardo, 0ms) backwards;
+}
+
+.bienvenida-subtitulo {
+  animation: bienvenida-subir 480ms cubic-bezier(0.22, 1, 0.36, 1) 760ms backwards;
+}
+
+.bienvenida-accion {
+  animation: bienvenida-accion 480ms cubic-bezier(0.22, 1, 0.36, 1) 880ms backwards;
+}
+
+@keyframes isotipo-cuerpo {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes isotipo-acento {
+  from {
+    opacity: 0;
+    transform: translate3d(8px, -8px, 0) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes isotipo-onda {
+  from {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@keyframes palabra-revelar {
+  from {
+    transform: translate3d(0, 105%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes bienvenida-subir {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes bienvenida-accion {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+
+/* ── 2. Transición entre pasos (View Transitions) ───────────────────────────
+
+   La dispara `useTransicionOnboarding`. Tres capas con nombre:
+
+     · raíz                  → fondo, cabecera y pie. Son iguales en todos los
+                               pasos, así que el fundido por defecto no se ve:
+                               el escenario queda quieto.
+     · onboarding-contenido  → el `<main>`. Sale hacia la izquierda y el nuevo
+                               entra desde la derecha, en la dirección del
+                               avance.
+     · onboarding-progreso   → el relleno de la barra superior. Crece de un paso
+                               al otro en vez de saltar: es la única pieza que
+                               dice «avanzaste».
+
+   La salida es corta y empieza ya; la entrada arranca 60 ms después, para que
+   las dos no se crucen a media opacidad sobre el mismo sitio. */
+
+::view-transition-old(onboarding-contenido) {
+  animation: paso-salida 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+::view-transition-new(onboarding-contenido) {
+  animation: paso-entrada 380ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
+}
+
+/* El `<main>` cambia de ancho entre pasos (max-w-lg → max-w-2xl). Si el grupo
+   interpolara ese tamaño, cada foto se estiraría con él y el contenido haría
+   zoom. El grupo salta a su caja final y las fotos se quedan a su tamaño
+   natural, centradas, como lo está el `<main>`. */
+::view-transition-group(onboarding-contenido) {
+  animation: none;
+}
+
+::view-transition-old(onboarding-contenido),
+::view-transition-new(onboarding-contenido) {
+  inset: 0;
+  margin: auto;
+  width: auto;
+  height: auto;
+}
+
+::view-transition-group(onboarding-progreso) {
+  animation-duration: 520ms;
+  animation-timing-function: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Sin esto la foto conserva su proporción y la barra engorda al ensancharse. */
+::view-transition-old(onboarding-progreso),
+::view-transition-new(onboarding-progreso) {
+  height: 100%;
+}
+
+/* Primer paso con barra (Bienvenida → Teléfono): no hay barra vieja de la que
+   crecer, así que se llena desde la izquierda. */
+::view-transition-new(onboarding-progreso):only-child {
+  transform-origin: left center;
+  animation: progreso-llenar 520ms cubic-bezier(0.77, 0, 0.175, 1) both;
+}
+
+@keyframes paso-salida {
+  to {
+    opacity: 0;
+    transform: translate3d(-24px, 0, 0);
+  }
+}
+
+@keyframes paso-entrada {
+  from {
+    opacity: 0;
+    transform: translate3d(24px, 0, 0);
+  }
+}
+
+@keyframes progreso-llenar {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+
+/* ── Movimiento reducido ────────────────────────────────────────────────────
+
+   Se va el desplazamiento y queda el fundido: la intro sigue «llegando» y el
+   cambio de paso sigue leyéndose como cambio. La onda es puro adorno y se
+   quita. La barra de progreso se conserva: dice cuánto falta. */
+@media (prefers-reduced-motion: reduce) {
+  .bienvenida-isotipo__cuerpo,
+  .bienvenida-isotipo__acento,
+  .bienvenida-palabra > span,
+  .bienvenida-subtitulo,
+  .bienvenida-accion,
+  .bienvenida-pie {
+    animation: aparecer 240ms ease-out backwards;
+  }
+
+  .bienvenida-isotipo__onda {
+    animation: none;
+  }
+
+  ::view-transition-old(onboarding-contenido) {
+    animation: salida-aparecer 160ms ease-out both;
+  }
+
+  ::view-transition-new(onboarding-contenido) {
+    animation: aparecer 200ms ease-out both;
+  }
+}

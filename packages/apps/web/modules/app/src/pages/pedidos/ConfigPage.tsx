@@ -205,7 +205,7 @@ const META_SECCION: Record<
   },
   integraciones: {
     label: "Integraciones y canales",
-    hint: "Canales de mensajería (WhatsApp, Telegram, etc.) administrados en Ajustes Generales.",
+    hint: "Canales de mensajería (WhatsApp, Telegram, etc.) administrados en Configuraciones.",
     icono: PlugInIcon,
   },
 };
@@ -235,7 +235,7 @@ const ACCION_SECCION: Record<ClaveSeccion, string> = {
   perfil: "Configurar",
   tiempos: "Configurar",
   sonidos: "Configurar",
-  integraciones: "Ir a Ajustes",
+  integraciones: "Ir a Configuraciones",
 };
 
 /**
@@ -967,7 +967,7 @@ export const ConfigPage = observer(() => {
         ? `Recordatorio cada ${cfg.alertaAtencion.cadaSegundos} s`
         : "Recordatorio sonoro apagado",
     },
-    integraciones: { texto: "Se administran en Ajustes generales" },
+    integraciones: { texto: "Se administran en Configuraciones" },
   };
 
   // Las tarjetas del hub salen de `ORDEN_SECCIONES` y `META_SECCION`, no de una
@@ -3016,17 +3016,17 @@ export const ConfigPage = observer(() => {
               <BloqueConfig
                 icono={PlugInIcon}
                 pregunta="Canales de mensajería e integraciones"
-                descripcion="Los canales de mensajería (WhatsApp, Telegram, Instagram y Facebook) ahora se administran a nivel de Organización en Ajustes Generales para nutrir a todos tus módulos de forma centralizada."
+                descripcion="Los canales de mensajería (WhatsApp, Telegram, Instagram y Facebook) ahora se administran a nivel de Organización en Configuraciones para nutrir a todos tus módulos de forma centralizada."
               >
                 <div className="rounded-3xl border border-secondary-100 bg-secondary-50/40 p-8 text-center dark:border-white/10 dark:bg-white/[0.02]">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary-600 text-white dark:bg-accent-300 dark:text-ink-body mb-4">
                     <PlugInIcon className="h-7 w-7" />
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                    Administración centralizada en Ajustes Generales
+                    Administración centralizada en Configuraciones
                   </h3>
                   <p className="mx-auto mt-2 max-w-lg text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                    La configuración de WhatsApp, Instagram, Telegram y conectores externos se trasladó a Ajustes Generales de la organización para que esté disponible en toda la plataforma.
+                    La configuración de WhatsApp, Instagram, Telegram y conectores externos se trasladó a Configuraciones de la organización para que esté disponible en toda la plataforma.
                   </p>
                   <div className="mt-6 flex justify-center">
                     <button
@@ -3034,7 +3034,7 @@ export const ConfigPage = observer(() => {
                       onClick={() => navigate("/configuracion?tab=canales")}
                       className="inline-flex items-center gap-2 rounded-xl bg-secondary-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-secondary-700 active:scale-95 cursor-pointer dark:bg-accent-300 dark:text-ink-body dark:hover:bg-accent-400"
                     >
-                      <span>Ir a Canales en Ajustes Generales</span>
+                      <span>Ir a Canales en Configuraciones</span>
                       <ArrowRightIcon className="h-4 w-4" />
                     </button>
                   </div>

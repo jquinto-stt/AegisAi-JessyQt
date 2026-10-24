@@ -5,10 +5,10 @@ import { PageMeta } from "@/shell/meta";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
 import { Modal } from "@/elements/ui/modal";
-import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
 import { SearchInput } from "@/elements";
 import {
   pedidosStore,
+  conversacionesStore,
   ETIQUETA_PAGO,
   puedeMoverA,
   puedeCancelarPedido,
@@ -25,6 +25,9 @@ import { useFlipLista } from "@/hooks/useFlipLista";
 import { useEntradaEscalonada } from "@/hooks/useEntradaEscalonada";
 import { ProgramarModal } from "./ProgramarModal";
 import { DetallePedidoModal } from "./DetallePedidoModal";
+import { ResumenPedidosVista } from "./ResumenPedidosVista";
+import { ChatEnVivoBoard, ETAPAS_CHAT, contarEtapaChat, type EtapaChat } from "./ChatEnVivoBoard";
+import { ETAPAS_INICIO, contarEtapa, type EtapaInicio } from "./ResumenPedidosVista";
 import {
   avanzarPedido,
   cancelarPedido,
@@ -34,6 +37,7 @@ import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
 import {
   ArrowDownTrayIcon,
   ArrowLeftIcon,
+  ArrowPathIcon,
   ArrowRightIcon,
   CalendarDaysIcon,
   EllipsisHorizontalIcon,
@@ -65,14 +69,22 @@ import {
 // PREFERENCIA DE VISTA (persistida en localStorage)
 // ═══════════════════════════════════════════════════════════════════════════
 
-type VistaTablero = "kanban" | "lista";
+type VistaTablero = "inicio" | "kanban";
 const VISTA_KEY = "necto.pedidosVista";
 
+/**
+ * Vista inicial: «Inicio».
+ *
+ * Es la que responde «¿cómo va el flujo?» sin abrir nada. «Tabla» (kanban)
+ * sigue ahí para operar por columnas, y la preferencia guardada manda.
+ */
 const loadVista = (): VistaTablero => {
   try {
-    return localStorage.getItem(VISTA_KEY) === "lista" ? "lista" : "kanban";
+    const guardada = localStorage.getItem(VISTA_KEY);
+    if (guardada === "inicio" || guardada === "kanban") return guardada;
+    return "inicio";
   } catch {
-    return "kanban";
+    return "inicio";
   }
 };
 const saveVista = (v: VistaTablero) => {
@@ -786,244 +798,20 @@ const ProgramadosModal = observer(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// VISTA LISTA (tabla) — misma data y acciones que el kanban
-// ═══════════════════════════════════════════════════════════════════════════
-
-/** Menú de acciones por fila (patrón DropdownTable): 3 puntos → acciones. */
-const AccionesMenu = observer(
-  ({
-    pedido,
-    onAvanzar,
-    onCancelar,
-    onChat,
-  }: {
-    pedido: Pedido;
-    onAvanzar: (p: Pedido) => void;
-    onCancelar: (id: string) => void;
-    /** Abre el chat rápido (slide-over) con el cliente del pedido. */
-    onChat: (id: string) => void;
-  }) => {
-    const [open, setOpen] = useState(false);
-    const siguiente = pedidosStore.siguienteEstado(pedido);
-
-    // Mismas reglas que el kanban: avance por capacidad del destino, WhatsApp
-    // por `channels.respond`, cancelar por `orders.cancel`.
-    const puedeAvanzar = puedeMoverA(siguiente);
-    const puedeEscribir = puedeEscribirCliente();
-    const puedeCancelar = puedeCancelarPedido();
-    const sinAcciones = !puedeAvanzar && !puedeEscribir && !puedeCancelar;
-
-    // Cierra el menú al hacer click fuera.
-    useEffect(() => {
-      if (!open) return;
-      const close = () => setOpen(false);
-      document.addEventListener("click", close);
-      return () => document.removeEventListener("click", close);
-    }, [open]);
-
-    const run = (fn: () => void) => (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setOpen(false);
-      fn();
-    };
-
-    // Sin acciones disponibles no se dibuja el menú (evita un botón que abre
-    // un desplegable vacío).
-    if (sinAcciones) return null;
-
-    return (
-      <div className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          aria-label="Acciones"
-          onClick={() => setOpen((v) => !v)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-            <circle cx="5" cy="5" r="1.6" /><circle cx="12" cy="5" r="1.6" /><circle cx="19" cy="5" r="1.6" />
-            <circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" />
-            <circle cx="5" cy="19" r="1.6" /><circle cx="12" cy="19" r="1.6" /><circle cx="19" cy="19" r="1.6" />
-          </svg>
-        </button>
-
-        {open && (
-          <div className="absolute right-0 z-40 mt-1 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900">
-            {siguiente && puedeAvanzar && (
-              <button
-                type="button"
-                onClick={run(() => onAvanzar(pedido))}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-secondary-50 hover:text-secondary-600 dark:text-gray-200 dark:hover:bg-brand-500/10"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 7l5 5-5 5" /></svg>
-                Avanzar a "{pedidosStore.estadoLabel(siguiente)}"
-              </button>
-            )}
-            {puedeEscribir && (
-              <button
-                type="button"
-                onClick={run(() => onChat(pedido.id))}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-[#25D366] hover:bg-[#25D366]/10"
-              >
-                <WhatsAppIcon />
-                Abrir WhatsApp
-              </button>
-            )}
-            {puedeCancelar && (
-              <>
-                <div className="my-1 border-t border-gray-100 dark:border-white/5" />
-                <button
-                  type="button"
-                  onClick={run(() => onCancelar(pedido.id))}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  Cancelar pedido
-                </button>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  },
-);
-
-const ListaView = observer(
-  ({
-    pedidos,
-    onDetalle,
-    onCancelar,
-    onConfirmarEntrega,
-    onChat,
-  }: {
-    pedidos: Pedido[];
-    onDetalle: (id: string) => void;
-    onCancelar: (id: string) => void;
-    onConfirmarEntrega: (id: string) => void;
-    /** Abre el chat rápido (slide-over) con el cliente del pedido. */
-    onChat: (id: string) => void;
-  }) => {
-    if (pedidos.length === 0) {
-      return (
-        <div className="animate-entrada-lista rounded-2xl border border-dashed border-gray-200 py-16 text-center text-sm text-gray-400 dark:border-gray-800">
-          No hay pedidos en curso.
-        </div>
-      );
-    }
-
-    const handleAvanzar = (p: Pedido) => {
-      if (pedidosStore.siguienteEstado(p) === "entregado") onConfirmarEntrega(p.id);
-      else avanzarPedido(p.id);
-    };
-
-    return (
-      // La clase de entrada va aquí y no se recibe por prop: `ListaView` solo existe
-      // en la rama `lista`, así que se monta exactamente al conmutar de vista y la
-      // entrada se dispara justo cuando debe. Añadir una prop `className` para esto
-      // sería ceremonia sin lector.
-      //
-      // `entrada-lista` y no `aparecer`: conmutar de vista es un cambio de
-      // superficie, y un fundido puro no lo cuenta. El desplazamiento de 10px sí,
-      // y sin escala —una tabla que se encoge al entrar se lee como un fallo—.
-      <div className="animate-entrada-lista overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableCell header>Pedido</TableCell>
-                <TableCell header>Estado</TableCell>
-                <TableCell header>Pago</TableCell>
-                <TableCell header>Modalidad</TableCell>
-                <TableCell header>En estado</TableCell>
-                <TableCell header className="text-right">Acciones</TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pedidos.map((p, i) => {
-                const urgente = pedidosStore.esUrgente(p);
-                return (
-                  // Fila entera clicable → abre el detalle (patrón DropdownTable).
-                  <TableRow
-                    key={p.id}
-                    onClick={() => onDetalle(p.id)}
-                    style={{ animationDelay: retardoEscalonado(i) }}
-                    className="animate-entrada-lista cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.03]"
-                  >
-                    <TableCell>
-                      <span className="block font-semibold text-gray-800 dark:text-white/90">{p.numero}</span>
-                      <span className="block text-xs text-gray-500 dark:text-gray-400">{p.cliente}</span>
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Badge color={pedidosStore.estadoBadgeColor(p.estado)} size="sm">
-                          {pedidosStore.estadoLabel(p.estado)}
-                        </Badge>
-                        {urgente && <Badge color="error" size="xs">Urgente</Badge>}
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
-                      {/* Registrar/deshacer un pago es la MISMA acción que el
-                          «Marcar como pagado» del detalle, así que la gobierna
-                          la misma capacidad (`orders.confirm`). Estaba sin
-                          guarda: la vista Lista era una segunda superficie que
-                          cobraba sin permiso mientras la del detalle sí lo
-                          comprobaba. Sin la capacidad queda como indicador de
-                          solo lectura, que informa sin prometer. */}
-                      {puedeConfirmarPedido() ? (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            pedidosStore.togglePagado(p.id);
-                          }}
-                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer select-none ${
-                            p.pagado
-                              ? "bg-accent-50 text-accent-700 hover:bg-accent-100 dark:bg-accent-950/40 dark:text-accent-300"
-                              : "bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-950/40 dark:text-brand-300 ring-1 ring-inset ring-brand-300/60 dark:ring-brand-800"
-                          }`}
-                          title={p.pagado ? "Pagado (clic para marcar como pendiente)" : "Pendiente de pago (clic para registrar pago)"}
-                        >
-                          <span className={`size-1.5 rounded-full ${p.pagado ? "bg-accent-500" : "bg-brand-500"}`} />
-                          {p.pagado ? "Pagado" : "Por cobrar"}
-                        </button>
-                      ) : (
-                        <Badge color={p.pagado ? "success" : "warning"} size="sm">
-                          {p.pagado ? "Pagado" : "Por cobrar"}
-                        </Badge>
-                      )}
-                    </TableCell>
-
-                    <TableCell>
-                      <span className="text-sm text-gray-600 dark:text-gray-300">{pedidosStore.modalidadLabel(p.modalidad)}</span>
-                    </TableCell>
-
-                    <TableCell>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">{pedidosStore.minutosEnEstado(p)} min</span>
-                    </TableCell>
-
-                    {/* Acciones agrupadas en menú de 3 puntos */}
-                    <TableCell className="text-right">
-                      <AccionesMenu pedido={p} onAvanzar={handleAvanzar} onCancelar={onCancelar} onChat={onChat} />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-    );
-  },
-);
-
-// ═══════════════════════════════════════════════════════════════════════════
-// TOGGLE DE VISTA (Kanban / Lista)
+// TOGGLE DE VISTA (Inicio / Tabla)
 // ═══════════════════════════════════════════════════════════════════════════
 
 const VistaToggle = ({ vista, onChange }: { vista: VistaTablero; onChange: (v: VistaTablero) => void }) => {
   const opciones: { id: VistaTablero; label: string; icon: React.ReactNode }[] = [
+    {
+      id: "inicio",
+      label: "Inicio",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5 12 3l9 7.5M5.5 9.5V21h13V9.5" />
+        </svg>
+      ),
+    },
     {
       id: "kanban",
       // El rótulo decía «Kanban», que es jerga de metodología: describe cómo está
@@ -1035,15 +823,6 @@ const VistaToggle = ({ vista, onChange }: { vista: VistaTablero; onChange: (v: V
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h5v14H4zM15 5h5v9h-5z" />
-        </svg>
-      ),
-    },
-    {
-      id: "lista",
-      label: "Lista",
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       ),
     },
@@ -1344,6 +1123,26 @@ export const TableroPage = observer(() => {
 
   const [focusId, setFocusId] = useState<string | null>(null);
   const [vista, setVista] = useState<VistaTablero>(loadVista);
+
+  /**
+   * Conmutador de SUPERFICIE de la página: «Operación» (el tablero de pedidos
+   * de siempre) o «Chat en vivo» (el flujo de conversaciones en columnas).
+   *
+   * Es un eje distinto del de `vista` (Inicio / Tabla / Lista), que solo tiene
+   * sentido dentro de «Operación». Por eso, al volver de «Chat en vivo», el
+   * usuario recupera exactamente la vista que tenía —no una por defecto— y sus
+   * filtros siguen intactos: cambiar de superficie no debe costar el trabajo
+   * hecho en la otra.
+   */
+  const [modo, setModo] = useState<"operacion" | "chat">("operacion");
+
+  /**
+   * Etapa activa en «Chat en vivo». Es el equivalente de `columnaFiltroActiva`
+   * en el tablero de pedidos: la barra siempre filtra algo, y al cambiar de
+   * superficie cambia el vocabulario del filtro, no su existencia.
+   */
+  const [filtroEtapaChat, setFiltroEtapaChat] = useState<EtapaChat | "todas">("todas");
+
   // Rastreo de arrastre activo y última tarjeta reubicada para animación de aterrizaje
   const [, setArrastrandoId] = useState<string | null>(null);
   const [recienMovidoId, setRecienMovidoId] = useState<string | null>(null);
@@ -1369,10 +1168,29 @@ export const TableroPage = observer(() => {
   // drawer resuelve el hilo con el resolutor canónico del store y no se duplica
   // la regla de normalización de teléfono en el call site.
   const [chatDrawerPedidoId, setChatDrawerPedidoId] = useState<string | null>(null);
+  /** Hilo abierto desde «Chat en vivo»: ahí el punto de partida es el contacto. */
+  const [chatDrawerConvId, setChatDrawerConvId] = useState<string | null>(null);
+
+  /**
+   * Etapa activa en la vista «Inicio».
+   *
+   * Arranca en «Por preparar» porque es donde hay trabajo pendiente: abrir en
+   * «Finalizadas» daría una tabla enorme de pedidos ya cerrados.
+   */
+  const [etapaInicio, setEtapaInicio] = useState<EtapaInicio>("por_preparar");
+
+  /** Chips de «Inicio». Viven aparte de los filtros del tablero a propósito:
+   *  encender uno aquí no debe dejar el tablero recortado al cambiar de vista. */
+  const [porConfirmarInicio, setPorConfirmarInicio] = useState(false);
+  const [pendienteInicio, setPendienteInicio] = useState(false);
 
   const cambiarVista = (v: VistaTablero) => {
     setVista(v);
     saveVista(v);
+    // «Chat en vivo» es una SUPERFICIE de la vista Tabla, no una vista más: si
+    // se sale de Tabla, se vuelve a Operación. Dejar el modo encendido sin sus
+    // botones a la vista sería una pantalla sin salida.
+    if (v !== "kanban") setModo("operacion");
   };
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1503,7 +1321,17 @@ export const TableroPage = observer(() => {
   // Estados filtrados según la pestaña activa superior ("All Tasks", o columna específica)
   const [columnaFiltroActiva, setColumnaFiltroActiva] = useState<string>("all");
 
-  const totalTareasGlobal = pedidosStore.totalEnCurso;
+  /**
+   * Etapa agregada que corresponde al filtro activo de Tabla/Lista.
+   *
+   * El filtro guarda la lista de estados (`"nuevo,confirmado"`), que es lo que
+   * consume `columnasVisibles`; la píldora, en cambio, se llama por el tramo
+   * del flujo. Esta es la traducción de una a otra, y existe para que la barra
+   * no tenga que saber el nombre de los estados.
+   */
+  const etapaTablaActiva = ETAPAS_INICIO.find(
+    (e) => e.estados.join(",") === columnaFiltroActiva,
+  );
 
   // ── «Modo Cocina / KDS» — RETIRADO el 09/10 ──────────────────────────────
   //
@@ -1576,19 +1404,95 @@ export const TableroPage = observer(() => {
       <PageMeta title="Tablero de pedidos" description="Flujo de pedidos en vivo, de nuevo a entregado" />
 
       {/* ── BARRA SUPERIOR DE FILTROS Y ACCIONES (Idéntica a la Maqueta) ── */}
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between min-w-0">
-        {/* Pestañas / Pills agrupadas con contador en badge suave */}
+      {/* `items-start` y no `items-center`: el bloque de la izquierda puede tener
+          DOS filas (filtros + conmutador de superficie), y centrar la columna
+          derecha contra las dos la dejaba más abajo que la fila de filtros —
+          justo la sensación de «esto está descuadrado». Alineado arriba, la
+          lupa y el conmutador de vista arrancan a la altura del filtro. */}
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between min-w-0">
+        <div className="flex min-w-0 flex-col gap-2">
+        {/* FILTROS DE LA BARRA — cambian con la superficie.
+            En «Operación» filtran PEDIDOS (etapas del pipeline de pedidos); en
+            «Chat en vivo», el pipeline de conversaciones. Un filtro que
+            desaparece al cambiar de superficie deja al usuario sin saber qué
+            está mirando, y aquí la barra es lo único que dice «esto es un
+            embudo y estás en tal tramo». */}
+        {modo === "chat" ? (
+          /* Las cinco etapas del chat se ENVUELVEN en vez de desplazarse: son
+             pocas y son el mapa de la pantalla — una etapa escondida tras un
+             scroll horizontal es una etapa que el usuario no sabe que existe. */
+          <div className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 min-w-0">
+            <button
+              type="button"
+              onClick={() => setFiltroEtapaChat("todas")}
+              aria-pressed={filtroEtapaChat === "todas"}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
+                filtroEtapaChat === "todas"
+                  ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
+                  : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              }`}
+            >
+              <span className="whitespace-nowrap">Todos</span>
+              <span
+                className={`flex size-5.5 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
+                  filtroEtapaChat === "todas"
+                    ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400"
+                    : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                }`}
+              >
+                {conversacionesStore.conversaciones.length}
+              </span>
+            </button>
+
+            {ETAPAS_CHAT.map((e) => {
+              const activa = filtroEtapaChat === e.clave;
+              return (
+                <button
+                  key={e.clave}
+                  type="button"
+                  onClick={() => setFiltroEtapaChat(activa ? "todas" : e.clave)}
+                  aria-pressed={activa}
+                  className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm transition-all whitespace-nowrap shrink-0 cursor-pointer select-none ${
+                    activa
+                      ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white font-semibold"
+                      : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium"
+                  }`}
+                >
+                  <span className={`size-1.5 shrink-0 rounded-full ${e.punto}`} />
+                  <span className="whitespace-nowrap">{e.label}</span>
+                  <span
+                    className={`flex size-5.5 items-center justify-center rounded-full text-xs shrink-0 ${
+                      activa
+                        ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400 font-bold"
+                        : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300 font-semibold"
+                    }`}
+                  >
+                    {contarEtapaChat(conversacionesStore.conversaciones, e.clave)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : vista === "inicio" ? (
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-ink-title dark:text-white">Pedidos</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Consulta y gestiona tus pedidos de acuerdo a la etapa o estado en el que se encuentren.
+            </p>
+          </div>
+        ) : (
         <div className="flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-gray-50 dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0">
           <button
             type="button"
             onClick={() => setColumnaFiltroActiva("all")}
+            aria-pressed={columnaFiltroActiva === "all"}
             className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
               columnaFiltroActiva === "all"
                 ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
                 : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             }`}
           >
-            <span className="whitespace-nowrap">Todas las tareas</span>
+            <span className="whitespace-nowrap">Todas</span>
             <span
               className={`flex size-5.5 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
                 columnaFiltroActiva === "all"
@@ -1596,44 +1500,98 @@ export const TableroPage = observer(() => {
                   : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
               }`}
             >
-              {totalTareasGlobal}
+              {/* Suma de las cuatro etapas, no de las tarjetas: la fila de
+                  píldoras resume el pipeline y sus números tienen que cuadrar
+                  entre sí. El tablero, en cambio, solo tiene columnas de
+                  pedidos en curso — por eso «Finalizadas» no dibuja columna. */}
+              {ETAPAS_INICIO.reduce(
+                (s, e) => s + contarEtapa(pedidosStore.pedidos, e.clave),
+                0,
+              )}
             </span>
           </button>
 
-          {columnas.map((estado) => {
-            const count = pedidosDeColumna(estado).length;
-            const activa =
-              columnaFiltroActiva === estado ||
-              (columnaFiltroActiva.includes(",") &&
-                columnaFiltroActiva.split(",").map((s) => s.trim()).includes(estado));
+          {/* Etapas AGREGADAS, las mismas de «Inicio»: un pedido se mira por
+              tramo del flujo (Por preparar, En preparación, En tránsito,
+              Finalizadas), no por el estado crudo del pipeline. Elegir una
+              etapa filtra el tablero a los estados que la componen
+              (`nuevo,confirmado`…), que es lo que ya entiende
+              `columnaFiltroActiva`. */}
+          {ETAPAS_INICIO.map((e) => {
+            const estados = e.estados.join(",");
+            const activa = columnaFiltroActiva === estados;
             return (
               <button
-                key={estado}
+                key={e.clave}
                 type="button"
-                onClick={() => setColumnaFiltroActiva(columnaFiltroActiva === estado ? "all" : estado)}
-                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap shrink-0 cursor-pointer select-none ${
+                onClick={() => setColumnaFiltroActiva(activa ? "all" : estados)}
+                aria-pressed={activa}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm transition-all whitespace-nowrap shrink-0 cursor-pointer select-none ${
                   activa
                     ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white font-semibold"
-                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium"
                 }`}
               >
-                <span className="whitespace-nowrap">{pedidosStore.estadoLabel(estado)}</span>
+                <span className="whitespace-nowrap">{e.label}</span>
                 <span
-                  className={`flex size-5.5 items-center justify-center rounded-full text-xs font-semibold shrink-0 ${
+                  className={`flex size-5.5 items-center justify-center rounded-full text-xs shrink-0 ${
                     activa
                       ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400 font-bold"
-                      : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                      : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300 font-semibold"
                   }`}
                 >
-                  {count}
+                  {contarEtapa(pedidosStore.pedidos, e.clave)}
                 </span>
               </button>
             );
           })}
         </div>
+          )}
+
+          {/* Conmutador de superficie: «Chat en vivo» / «Operación».
+              SOLO en la vista Tabla: es una forma de mirar el tablero, no una
+              pantalla del módulo. En Inicio y Lista no existe, y salir de Tabla
+              devuelve a Operación (ver `cambiarVista`).
+              Va DEBAJO de los filtros a propósito: primero se elige qué se mira
+              y los filtros son consecuencia —por eso cambian de contenido con
+              la superficie, no al revés. */}
+          {vista === "kanban" && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setModo("chat")}
+              aria-pressed={modo === "chat"}
+              className={`rounded-xl border px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                modo === "chat"
+                  ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+              }`}
+            >
+              Chat en vivo
+            </button>
+            <button
+              type="button"
+              onClick={() => setModo("operacion")}
+              aria-pressed={modo === "operacion"}
+              className={`rounded-xl border px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                modo === "operacion"
+                  ? "border-secondary-500 bg-secondary-50 text-secondary-700 dark:border-secondary-500 dark:bg-secondary-950/40 dark:text-secondary-300"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+              }`}
+            >
+              Operación
+            </button>
+          </div>
+          )}
+        </div>
 
         {/* Acciones derechas: Chips de filtros activos + Buscador (lupa) + VistaToggle + Crear pedido */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
+          {/* Los chips de filtro activo son de PEDIDOS: en «Chat en vivo» no
+              hay pago ni etapa de pedido que mostrar. El buscador y el botón de
+              restablecer SÍ se quedan — también filtran conversaciones. */}
+          {vista !== "inicio" && modo === "operacion" && (
+            <>
           {/* Chip de filtro activo de pago */}
           {filtroPago !== "todos" && (
             <span className="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-900 dark:bg-brand-950/60 dark:text-brand-300">
@@ -1650,7 +1608,7 @@ export const TableroPage = observer(() => {
           )}
 
           {/* Chip de filtro activo de etapa */}
-          {columnaFiltroActiva !== "all" && (
+          {columnaFiltroActiva !== "all" && !etapaTablaActiva && (
             <span className="inline-flex items-center gap-1.5 rounded-xl border border-secondary-200 bg-secondary-50 px-3 py-1.5 text-xs font-semibold text-secondary-700 dark:border-accent-900 dark:bg-accent-950/60 dark:text-accent-300">
               <span>
                 Etapa:{" "}
@@ -1671,61 +1629,68 @@ export const TableroPage = observer(() => {
               </button>
             </span>
           )}
+            </>
+          )}
 
-          {/* ── Buscador: se abre y se cierra con la lupa ────────────────────
-              Antes el buscador vivía dentro de un popover que abría el botón
-              «Filtrar y ordenar»; después pasó a estar en línea, y ahora se
-              muestra bajo demanda desde la lupa.
+          {vista !== "inicio" && (
+            <>
+              {buscadorAbierto ? (
+                <SearchInput
+                  autoFocus
+                  value={busquedaTablero}
+                  onChange={(e) => setBusquedaTablero(e.target.value)}
+                  onClear={() => setBusquedaTablero("")}
+                  placeholder={
+                    modo === "chat" ? "Nombre o teléfono del contacto…" : "Cliente, # pedido, producto…"
+                  }
+                  className="h-10 w-48 sm:w-64 shrink-0"
+                  aria-label={
+                    modo === "chat" ? "Buscar contactos en el flujo en vivo" : "Buscar pedidos en el tablero"
+                  }
+                />
+              ) : null}
 
-              Va a la IZQUIERDA del selector de vista: la lupa y el buscador son
-              el control de la izquierda del conmutador, que así queda pegado a
-              «Añadir pedido» —la acción de la barra— y no emparedado entre dos
-              controles.
+              <button
+                type="button"
+                onClick={() => {
+                  if (buscadorAbierto) setBusquedaTablero("");
+                  setBuscadorAbierto((v) => !v);
+                }}
+                aria-expanded={buscadorAbierto}
+                aria-label={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
+                title={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
+                className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
+                  buscadorAbierto
+                    ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300"
+                    : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                }`}
+              >
+                <MagnifyingGlassIcon className="size-4" />
+              </button>
 
-              Con él se retiraron el selector de estado de pago y el de orden
-              (09/10). El de PAGO sigue existiendo como filtro, pero su superficie
-              ya no está aquí: lo pone el donut de pagos navegando a
-              `/pedidos?pago=…`, y cuando está activo se ve y se quita con el chip
-              «Pago: …» de esta misma barra. El de ORDEN se retira entero —no
-              tenía otra superficie— y el tablero queda con un orden fijo: más
-              recientes primero, que era su valor por defecto.
+              <button
+                type="button"
+                onClick={() => {
+                  setBusquedaTablero("");
+                  setColumnaFiltroActiva("all");
+                  setFiltroPago("todos");
+                  setEtapaInicio("por_preparar");
+                  setPorConfirmarInicio(false);
+                  setPendienteInicio(false);
+                  setFiltroEtapaChat("todas");
+                }}
+                aria-label="Restablecer filtros"
+                title="Restablecer filtros"
+                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-gray-200/90 bg-white text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-50 cursor-pointer dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                <ArrowPathIcon className="size-4" />
+              </button>
+            </>
+          )}
 
-              Al cerrar el buscador se LIMPIA el término, y no es un detalle: un
-              campo escondido con un filtro vivo deja el tablero recortado sin que
-              se vea por qué — justo el control que miente que este proyecto no
-              acepta. */}
-          {buscadorAbierto ? (
-            <SearchInput
-              autoFocus
-              value={busquedaTablero}
-              onChange={(e) => setBusquedaTablero(e.target.value)}
-              onClear={() => setBusquedaTablero("")}
-              placeholder="Cliente, # pedido, producto…"
-              className="h-10 w-48 sm:w-64 shrink-0"
-              aria-label="Buscar pedidos en el tablero"
-            />
-          ) : null}
-
-          <button
-            type="button"
-            onClick={() => {
-              // Al cerrar se limpia: ver el docblock de arriba.
-              if (buscadorAbierto) setBusquedaTablero("");
-              setBuscadorAbierto((v) => !v);
-            }}
-            aria-expanded={buscadorAbierto}
-            aria-label={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
-            title={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
-            className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
-              buscadorAbierto
-                ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300"
-                : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-            }`}
-          >
-            <MagnifyingGlassIcon className="size-4" />
-          </button>
-
-          {/* Selector de vista: Tabla / Lista */}
+          {/* Selector de vista: Inicio / Tabla / Lista. Siempre visible: es la
+              salida de «Chat en vivo» —elegir otra vista devuelve a Operación
+              (ver `cambiarVista`)—. */}
           <VistaToggle vista={vista} onChange={cambiarVista} />
 
           {/* Botón "+ Añadir pedido" (Navega a /pedidos/crear).
@@ -1747,7 +1712,7 @@ export const TableroPage = observer(() => {
       </div>
 
       {/* PEDIDOS PROGRAMADOS PARA FECHAS FUTURAS */}
-      {verProgramados && (
+      {verProgramados && modo === "operacion" && (
         <ProgramadosSection
           onCancelar={(p) => abrirCancelar(p.id)}
           onReprogramar={(p) => abrirReprogramar(p.id)}
@@ -1757,8 +1722,46 @@ export const TableroPage = observer(() => {
         />
       )}
 
-      {/* Tablero — vista Kanban o Lista */}
-      {vista === "kanban" ? (
+      {/* Chat en vivo — el flujo de conversaciones, o el tablero de pedidos */}
+      {modo === "chat" ? (
+        <ChatEnVivoBoard
+          filtro={filtroEtapaChat}
+          busqueda={busquedaTablero}
+          onAbrirChat={(id) => setChatDrawerConvId(id)}
+        />
+      ) : vista === "inicio" ? (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <ResumenPedidosVista
+            etapa={etapaInicio}
+            onEtapaChange={setEtapaInicio}
+            busqueda={busquedaTablero}
+            porConfirmar={porConfirmarInicio}
+            pendiente={pendienteInicio}
+          />
+        </div>
+      ) : (
+        columnasVisibles.length === 0 ? (
+          /* Una etapa sin columnas en el tablero: «Finalizadas» (los entregados
+             no son columna) o una etapa cuyos estados están apagados en la
+             config. Se dice qué pasa y a dónde ir, en vez de dejar el área en
+             blanco como si el tablero se hubiera roto. */
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-gray-200/80 p-10 text-center dark:border-gray-800/80">
+            <p className="text-sm font-bold text-ink-title dark:text-white">
+              {etapaTablaActiva ? etapaTablaActiva.label : "Esta etapa"} no tiene columna en el tablero
+            </p>
+            <p className="max-w-md text-xs text-gray-500 dark:text-gray-400">
+              El tablero solo muestra pedidos en curso. Los entregados y los cancelados se consultan en
+              Analítica › Historial.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/pedidos/analitica?vista=historial")}
+              className="mt-1 rounded-xl bg-brand-500 px-4 py-2 text-xs font-semibold text-white shadow-theme-xs transition-colors hover:bg-brand-600 cursor-pointer"
+            >
+              Ver historial
+            </button>
+          </div>
+        ) : (
         <div
           ref={refTablero}
           className={`flex-1 min-h-0 h-full overflow-x-auto grid grid-cols-1 gap-6 ${
@@ -1797,14 +1800,7 @@ export const TableroPage = observer(() => {
             );
           })}
         </div>
-      ) : (
-        <ListaView
-          pedidos={columnasVisibles.flatMap((estado) => pedidosDeColumna(estado))}
-          onDetalle={(id) => setDetalleId(id)}
-          onCancelar={abrirCancelar}
-          onConfirmarEntrega={abrirEntrega}
-          onChat={(id) => setChatDrawerPedidoId(id)}
-        />
+        )
       )}
 
       {detalle && (
@@ -1958,7 +1954,11 @@ export const TableroPage = observer(() => {
           arrastre de tarjetas del Kanban. */}
       <ChatDrawer
         pedido={chatDrawerPedidoId ? pedidosStore.getPedido(chatDrawerPedidoId) ?? null : null}
-        onClose={() => setChatDrawerPedidoId(null)}
+        convId={chatDrawerPedidoId ? null : chatDrawerConvId}
+        onClose={() => {
+          setChatDrawerPedidoId(null);
+          setChatDrawerConvId(null);
+        }}
       />
     </>
   );

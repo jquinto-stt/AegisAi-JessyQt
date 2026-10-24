@@ -5,6 +5,8 @@ layer(base);
 @import "./css/theme.css";
 @import "./css/marca.css";
 @import "./css/base.css";
+@import "./css/onboarding.css";
+@import "./css/checklist.css";
 @import "./css/shell.css";
 @import "./css/scrollbar.css";
 @import "./css/legacy.css";

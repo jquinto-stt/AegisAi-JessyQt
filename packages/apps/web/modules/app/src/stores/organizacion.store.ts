@@ -76,6 +76,8 @@ export interface UsuarioPerfil {
   bio?: string;
   /** Ubicación declarada («Bogotá, Colombia»). Texto libre, no se geocodifica. */
   ubicacion?: string;
+  avatarUrl?: string;
+  customLink?: string;
   redes?: RedesSociales;
   direccion?: DireccionPerfil;
 }
@@ -92,7 +94,141 @@ export interface OrganizacionWorkspace {
   logoUrl?: string;
   nombrePublico?: string;
   telefono?: string;
+  /**
+   * Datos fiscales de la organización (`/configuracion?tab=general&seccion=fiscales`).
+   *
+   * **Nada los consume todavía**: no hay emisión de comprobantes ni facturas en
+   * Necto. Se guardan porque son datos de la empresa y su sitio es este; el día
+   * que exista facturación, los lee esa capa y no hay que migrar nada. La
+   * pantalla lo dice en vez de dejar creer que ya facturan.
+   */
+  datosFiscales?: DatosFiscales;
+  /**
+   * Cuenta bancaria de la organización, para recibir pagos y conciliar.
+   *
+   * OJO: no es lo mismo que `pedidosStore.config.cuentasBancarias`, que son las
+   * instrucciones que ve el CLIENTE al pagar (Bancolombia, Nequi, Daviplata…).
+   * Estas son los datos de la empresa; las otras, el texto de cobro del módulo.
+   * La pantalla enlaza a las del módulo para que nadie las confunda.
+   */
+  /**
+   * Cuentas bancarias registradas. **Fuente de verdad** de la sección
+   * `seccion=bancarios`: el flujo registra una o varias, cada una con su estado.
+   */
+  cuentasBancarias?: CuentaBancariaRegistrada[];
+  /**
+   * Verificación de identidad del negocio (KYC) — `?tab=general&seccion=fiscales`.
+   *
+   * Guarda el avance del proceso: términos aceptados, datos de identidad, el
+   * correo verificado y los tres archivos. **No hay servidor**: los archivos se
+   * guardan como data URL en `localStorage` y el estado no avanza solo, porque
+   * nadie revisa nada todavía. La UI lo dice en vez de prometer una aprobación.
+   */
+  verificacion?: VerificacionFiscal;
+  /**
+   * Descripción corta del negocio. La lee la vista previa de identidad en
+   * `/configuracion?tab=general`; no hay superficie pública que la consuma
+   * todavía, así que su único lector es esa vista previa.
+   */
+  descripcion?: string;
+  /** Sitio web del negocio. Se pinta como enlace en la vista previa. */
+  sitioWeb?: string;
+  /**
+   * Imagen de portada de la vista previa (URL o data URL pequeña).
+   *
+   * Admite data URL porque el mock no tiene servidor de archivos: la subida
+   * desde el equipo se guarda en `localStorage` con el resto de la organización,
+   * y por eso el selector impone un tope de tamaño real (ver `SelectorImagen`).
+   */
+  portadaUrl?: string;
   fechaCreacion: string;
+}
+
+/** Identificación tributaria de la organización. Todos los campos son opcionales. */
+export interface DatosFiscales {
+  razonSocial?: string;
+  /** NIT o equivalente del país. Texto libre: no se valida contra el dígito de control. */
+  nit?: string;
+  regimen?: string;
+  direccion?: string;
+  correoFacturacion?: string;
+}
+
+/** Estado de una cuenta registrada: recién creada o validada por el equipo. */
+export type EstadoCuentaBancaria = "sin_aprobacion" | "aprobada";
+
+/**
+ * Una cuenta bancaria registrada con el flujo de `seccion=bancarios`.
+ *
+ * Se guarda una LISTA porque un negocio puede cobrar en varias cuentas (una por
+ * moneda, una por sucursal). `principal` marca a cuál van los pagos por defecto
+ * y es excluyente: la marca `marcarCuentaPrincipal`, no la UI.
+ */
+export interface CuentaBancariaRegistrada {
+  id: string;
+  /** `local` (moneda del país) o `internacional`. */
+  ambito: "local" | "internacional";
+  banco: string;
+  tipoCuenta: string;
+  numero: string;
+  titular: string;
+  tipoDocumento?: string;
+  numeroDocumento?: string;
+  principal: boolean;
+  estado: EstadoCuentaBancaria;
+  certificado?: ArchivoVerificacion;
+  /** Autorización de pagos/retiros a esta cuenta. */
+  autorizacionPagos?: boolean;
+  creadaEn: string;
+}
+
+/** Persona natural (cédula) o jurídica (NIT). Cambia qué documento se pide. */
+export type TipoPersona = "natural" | "juridica";
+
+/**
+ * `sin_iniciar` mientras no se ha aceptado nada; `en_revision` al terminar el
+ * flujo; `aprobado` cuando los documentos quedan validados.
+ *
+ * En este mock no hay revisor: `aprobado` se marca desde un botón de
+ * demostración en la pantalla de revisión, y la UI lo dice. El día que exista
+ * backend, ese paso lo escribe el webhook de revisión.
+ */
+export type EstadoVerificacion = "sin_iniciar" | "en_revision" | "aprobado";
+
+/**
+ * Un archivo del proceso de verificación.
+ *
+ * `dataUrl` es el contenido. Va en `localStorage` con el resto de la
+ * organización porque el mock no tiene servidor de archivos; por eso el selector
+ * impone un tope real de tamaño (ver `CampoArchivo`).
+ */
+export interface ArchivoVerificacion {
+  nombre: string;
+  tipo: string;
+  tamano: number;
+  dataUrl?: string;
+}
+
+export interface VerificacionFiscal {
+  estado: EstadoVerificacion;
+  /** ISO de cuándo se aceptaron los términos de tratamiento de datos. */
+  terminosAceptadosEn?: string;
+  persona?: TipoPersona;
+  /** Nombre completo (natural) o razón social (jurídica). */
+  nombreCompleto?: string;
+  tipoDocumento?: string;
+  numeroDocumento?: string;
+  /** Correo al que se envió el código. Se guarda para mostrarlo en el paso. */
+  correo?: string;
+  /** ISO de la última vez que se generó un código. */
+  codigoEnviadoEn?: string;
+  verificadoEn?: string;
+  documento?: ArchivoVerificacion;
+  selfie?: ArchivoVerificacion;
+  comprobante?: ArchivoVerificacion;
+  enviadoEn?: string;
+  /** ISO de la aprobación. Solo lo escribe el paso de demostración. */
+  aprobadoEn?: string;
 }
 
 export const PAISES_CONFIG: Record<
@@ -496,6 +632,8 @@ export class OrganizacionStore {
     cargo?: string;
     bio?: string;
     ubicacion?: string;
+    avatarUrl?: string;
+    customLink?: string;
     redes?: RedesSociales;
     direccion?: DireccionPerfil;
     perfilCompletado?: boolean;
@@ -519,10 +657,12 @@ export class OrganizacionStore {
       perfilCompletado: datos.perfilCompletado ?? (this.usuario?.perfilCompletado ?? true),
       // Opcionales: `undefined` significa «no tocar». Una cadena vacía sí se
       // escribe, porque vaciar el campo es una edición legítima.
-      telefono: datos.telefono?.trim() ?? this.usuario?.telefono,
-      cargo: datos.cargo?.trim() ?? this.usuario?.cargo,
-      bio: datos.bio?.trim() ?? this.usuario?.bio,
-      ubicacion: datos.ubicacion?.trim() ?? this.usuario?.ubicacion,
+      telefono: datos.telefono !== undefined ? datos.telefono.trim() : this.usuario?.telefono,
+      cargo: datos.cargo !== undefined ? datos.cargo.trim() : this.usuario?.cargo,
+      bio: datos.bio !== undefined ? datos.bio.trim() : this.usuario?.bio,
+      ubicacion: datos.ubicacion !== undefined ? datos.ubicacion.trim() : this.usuario?.ubicacion,
+      avatarUrl: datos.avatarUrl !== undefined ? datos.avatarUrl.trim() : this.usuario?.avatarUrl,
+      customLink: datos.customLink !== undefined ? datos.customLink.trim() : this.usuario?.customLink,
       redes: datos.redes ?? this.usuario?.redes,
       direccion: datos.direccion ?? this.usuario?.direccion,
     };
@@ -557,16 +697,25 @@ export class OrganizacionStore {
    */
   actualizarOrganizacion(datos: {
     nombre?: string;
+    nombrePublico?: string;
+    telefono?: string;
     pais?: string;
     moneda?: string;
     zonaHoraria?: string;
     tipoEmpresa?: string;
     tamanoEquipo?: string;
     logoUrl?: string;
+    descripcion?: string;
+    sitioWeb?: string;
+    portadaUrl?: string;
+    datosFiscales?: DatosFiscales;
+    cuentasBancarias?: CuentaBancariaRegistrada[];
   }) {
     if (!this.organizacion) return;
 
     const nombre = (datos.nombre ?? this.organizacion.nombre).trim() || this.organizacion.nombre;
+    const nombrePublico = datos.nombrePublico !== undefined ? datos.nombrePublico.trim() : this.organizacion.nombrePublico;
+    const telefono = datos.telefono !== undefined ? datos.telefono.trim() : this.organizacion.telefono;
     const pais = (datos.pais ?? this.organizacion.pais).trim() || this.organizacion.pais;
     const moneda =
       (datos.moneda ?? this.organizacion.moneda).trim().toUpperCase() || this.organizacion.moneda;
@@ -577,13 +726,142 @@ export class OrganizacionStore {
       ...this.organizacion,
       nombre,
       slug: slugDe(nombre),
+      nombrePublico,
+      telefono,
       pais,
       moneda,
       zonaHoraria,
       tipoEmpresa: datos.tipoEmpresa?.trim() ?? this.organizacion.tipoEmpresa,
       tamanoEquipo: datos.tamanoEquipo?.trim() ?? this.organizacion.tamanoEquipo,
       logoUrl: datos.logoUrl?.trim() ?? this.organizacion.logoUrl,
+      descripcion: datos.descripcion?.trim() ?? this.organizacion.descripcion,
+      sitioWeb: datos.sitioWeb?.trim() ?? this.organizacion.sitioWeb,
+      portadaUrl: datos.portadaUrl?.trim() ?? this.organizacion.portadaUrl,
+      // Los dos bloques se REEMPLAZAN enteros: la pantalla manda el juego
+      // completo de campos, y un merge por campo dejaría vivos valores que el
+      // usuario acaba de borrar.
+      datosFiscales: datos.datosFiscales ?? this.organizacion.datosFiscales,
     };
+    const idx = this.organizaciones.findIndex((o) => o.id === this.organizacion?.id);
+    if (idx >= 0 && this.organizacion) {
+      this.organizaciones[idx] = this.organizacion;
+    }
+    this.persist();
+  }
+
+  /**
+   * Avanza la verificación de identidad del negocio.
+   *
+   * Es un MERGE y no un reemplazo porque el flujo escribe por pasos: aceptar
+   * términos no debe borrar los archivos ya cargados, y volver atrás a corregir
+   * el nombre no debe reiniciar el estado. `estado` arranca en `sin_iniciar`.
+   */
+  actualizarVerificacion(datos: Partial<VerificacionFiscal>) {
+    if (!this.organizacion) return;
+
+    this.organizacion = {
+      ...this.organizacion,
+      verificacion: {
+        ...(this.organizacion.verificacion ?? { estado: "sin_iniciar" as EstadoVerificacion }),
+        ...datos,
+      },
+    };
+
+    const idx = this.organizaciones.findIndex((o) => o.id === this.organizacion?.id);
+    if (idx >= 0 && this.organizacion) {
+      this.organizaciones[idx] = this.organizacion;
+    }
+    this.persist();
+  }
+
+  /** Vuelve la verificación a cero (botón «Reiniciar» del estado final). */
+  reiniciarVerificacion() {
+    if (!this.organizacion) return;
+    const { verificacion: _omitida, ...resto } = this.organizacion;
+    this.organizacion = resto;
+    const idx = this.organizaciones.findIndex((o) => o.id === this.organizacion?.id);
+    if (idx >= 0 && this.organizacion) {
+      this.organizaciones[idx] = this.organizacion;
+    }
+    this.persist();
+  }
+
+  // ── CUENTAS BANCARIAS ────────────────────────────────────────────────────
+
+  /**
+   * Registra una cuenta nueva.
+   *
+   * La PRIMERA cuenta queda como principal por definición: si hay una sola,
+   * preguntar cuál es la principal no tiene respuesta posible, y dejar todas en
+   * `principal: false` rompe la promesa de que los pagos van a alguna parte.
+   * Marcar una como principal desmarca las demás en la misma operación.
+   */
+  agregarCuentaBancaria(
+    datos: Omit<CuentaBancariaRegistrada, "id" | "creadaEn" | "estado">,
+  ) {
+    if (!this.organizacion) return;
+
+    const lista = this.organizacion.cuentasBancarias ?? [];
+    const esPrimera = lista.length === 0;
+    const nueva: CuentaBancariaRegistrada = {
+      ...datos,
+      id: `cta_${Date.now()}`,
+      creadaEn: new Date().toISOString(),
+      estado: "sin_aprobacion",
+      principal: datos.principal || esPrimera,
+    };
+
+    const previas = nueva.principal ? lista.map((c) => ({ ...c, principal: false })) : lista;
+
+    this.organizacion = { ...this.organizacion, cuentasBancarias: [...previas, nueva] };
+    this.sincronizarYGuardar();
+  }
+
+  /** Cambia la cuenta por defecto. Excluyente: solo una queda marcada. */
+  marcarCuentaPrincipal(id: string) {
+    if (!this.organizacion?.cuentasBancarias) return;
+    this.organizacion = {
+      ...this.organizacion,
+      cuentasBancarias: this.organizacion.cuentasBancarias.map((c) => ({
+        ...c,
+        principal: c.id === id,
+      })),
+    };
+    this.sincronizarYGuardar();
+  }
+
+  /**
+   * Aprueba una cuenta. **Paso de DEMOSTRACIÓN**: no hay equipo que valide.
+   * La UI lo rotula como tal; con backend lo escribiría el webhook de revisión.
+   */
+  aprobarCuentaBancaria(id: string) {
+    if (!this.organizacion?.cuentasBancarias) return;
+    this.organizacion = {
+      ...this.organizacion,
+      cuentasBancarias: this.organizacion.cuentasBancarias.map((c) =>
+        c.id === id ? { ...c, estado: "aprobada" as EstadoCuentaBancaria } : c,
+      ),
+    };
+    this.sincronizarYGuardar();
+  }
+
+  /**
+   * Quita una cuenta. Si era la principal, la primera que quede pasa a serlo:
+   * mientras haya cuentas, los pagos tienen que ir a alguna.
+   */
+  eliminarCuentaBancaria(id: string) {
+    if (!this.organizacion?.cuentasBancarias) return;
+    const quitada = this.organizacion.cuentasBancarias.find((c) => c.id === id);
+    const restantes = this.organizacion.cuentasBancarias.filter((c) => c.id !== id);
+    if (quitada?.principal && restantes.length > 0) {
+      restantes[0] = { ...restantes[0], principal: true };
+    }
+    this.organizacion = { ...this.organizacion, cuentasBancarias: restantes };
+    this.sincronizarYGuardar();
+  }
+
+  /** Espeja la organización activa en la lista y persiste. */
+  private sincronizarYGuardar() {
     const idx = this.organizaciones.findIndex((o) => o.id === this.organizacion?.id);
     if (idx >= 0 && this.organizacion) {
       this.organizaciones[idx] = this.organizacion;
@@ -675,6 +953,45 @@ export class OrganizacionStore {
     this.organizacion = nuevaOrg;
     this.persist();
     return nuevaOrg;
+  }
+
+  /**
+   * Actualiza los datos de un negocio específico por ID.
+   */
+  actualizarOrganizacionPorId(
+    id: string,
+    datos: {
+      nombre?: string;
+      nombrePublico?: string;
+      telefono?: string;
+      pais?: string;
+    },
+  ) {
+    const idx = this.organizaciones.findIndex((o) => o.id === id);
+    if (idx === -1) return;
+
+    const actual = this.organizaciones[idx];
+    const nombre = (datos.nombre ?? actual.nombre).trim() || actual.nombre;
+    const pais = (datos.pais ?? actual.pais).trim() || actual.pais;
+    const configuracionPais = PAISES_CONFIG[pais] || PAISES_CONFIG["Colombia"];
+
+    const actualizada: OrganizacionWorkspace = {
+      ...actual,
+      nombre,
+      slug: slugDe(nombre),
+      pais,
+      moneda: configuracionPais.moneda,
+      zonaHoraria: configuracionPais.zonaHoraria,
+      nombrePublico: datos.nombrePublico !== undefined ? (datos.nombrePublico.trim() || nombre) : actual.nombrePublico,
+      telefono: datos.telefono !== undefined ? datos.telefono.trim() : actual.telefono,
+    };
+
+    this.organizaciones[idx] = actualizada;
+    if (this.organizacion?.id === id) {
+      this.organizacion = actualizada;
+    }
+    this.persist();
+    return actualizada;
   }
 
   // ── Pertenencia de módulos (nivel 2) ──────────────────────────────────────

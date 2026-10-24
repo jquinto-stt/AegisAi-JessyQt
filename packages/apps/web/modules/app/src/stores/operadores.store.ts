@@ -87,7 +87,7 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
   // se gobiernan aparte con `hasPermission()`.
   pedidos: [
     { id: "inicio", label: "Inicio", path: "/pedidos/inicio", capacidad: "orders.create" },
-    { id: "tablero", label: "Tablero", path: "/pedidos", capacidad: "orders.read" },
+    { id: "tablero", label: "Pedidos", path: "/pedidos", capacidad: "orders.read" },
     { id: "catalogo", label: "Catálogo", path: "/pedidos/catalogo", capacidad: "orders.create" },
     { id: "crear", label: "Crear pedido", path: "/pedidos/crear", capacidad: "orders.create" },
     { id: "chats", label: "Conversaciones", path: "/conversaciones", capacidad: "channels.read" },

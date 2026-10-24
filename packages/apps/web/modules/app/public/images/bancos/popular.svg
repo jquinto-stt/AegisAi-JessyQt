@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <rect width="100" height="100" rx="22" fill="#00843D"/>
+  <!-- Banco Popular letter P with yellow swoosh -->
+  <path d="M36 28 H54 C64 28, 70 34, 70 44 C70 54, 64 60, 54 60 H46 V72 H36 Z" fill="#FFFFFF"/>
+  <path d="M46 38 V50 H53 C58 50, 60 48, 60 44 C60 40, 58 38, 53 38 Z" fill="#00843D"/>
+  <circle cx="56" cy="44" r="3.5" fill="#FDDA24"/>
+</svg>

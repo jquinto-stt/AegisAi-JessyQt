@@ -564,7 +564,7 @@ export const InventarioConfigPage = observer(() => {
         {seccion === "costeo" && (
           <>
           <Grupo titulo="Cómo se calcula hoy" descripcion="El valor del inventario que ves en el dashboard y en el catálogo.">
-            <Fila etiqueta="Moneda" ayuda={<>Se cambia en <Link to="/configuracion?tab=general" className="font-bold text-ink-title hover:underline dark:text-white">Ajustes generales</Link>, porque vale para toda la organización.</>}>
+            <Fila etiqueta="Moneda" ayuda={<>Se cambia en <Link to="/configuracion?tab=general" className="font-bold text-ink-title hover:underline dark:text-white">Configuraciones</Link>, porque vale para toda la organización.</>}>
               <span className="font-bold tabular-nums text-ink-body dark:text-white">{organizacionStore.organizacion?.moneda ?? "COP"}</span>
             </Fila>
             <Fila etiqueta="Costo de cada artículo" ayuda="Se recalcula con cada entrada que trae costo, según el método de abajo. Si lo cambias a mano en la ficha del artículo, todo su stock pasa a valer ese costo.">

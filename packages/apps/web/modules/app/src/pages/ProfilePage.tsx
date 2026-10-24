@@ -1,132 +1,48 @@
 /**
- * Perfil del usuario (`/profile`).
+ * Perfil del usuario (`/profile` & `/perfil`).
  *
- * ── Qué se puede honrar aquí y qué no ────────────────────────────────────────
- * Esta página tenía la misma enfermedad que la cabecera, en grado mayor: sembraba
- * su estado con una identidad inventada —«Chowdury Musharof», `randomuser@pimjo.com`,
- * «+09 363 398 46», «Arizona, United States.», `ERT 2489`, `AS4568384`— y sus
- * botones de guardar **solo escribían en estado de React**: el toast decía
- * «Información personal actualizada correctamente» y un F5 lo revertía.
- *
- * Ahora los datos salen de `organizacionStore.usuario` y los dos modales de edición
- * persisten con `actualizarPerfil()`. El avatar son **iniciales**, porque
- * `UsuarioPerfil` no tiene `avatarUrl` (mismo criterio que `UserDropdown`).
- *
- * Tres controles **no se pueden honrar con ningún campo de modelo**, porque no
- * dependen de datos sino de infraestructura que este prototipo no tiene: cambiar la
- * contraseña, activar 2FA y cerrar la sesión en otros dispositivos necesitan un
- * backend de autenticación. Se deshabilitan **con el motivo escrito y visible**, no
- * solo en un `title`: quien no pase el ratón merece la misma explicación, y un botón
- * apagado sin motivo es justo lo que hay que evitar (mismo criterio que `RolesTab`).
- *
- * «Eliminar cuenta» **sí** se puede honrar: `organizacionStore.reiniciar()` devuelve
- * la capa de Organización a su estado limpio —sin usuario, sin organización, sin
- * módulos y sin la clave de `localStorage`— y `sessionStore.reset()` cierra la
- * sesión. Antes solo hacía lo segundo, así que dejaba la organización atrás.
- *
- * ── Lo que sigue abierto ─────────────────────────────────────────────────────
- * La tarjeta «Dirección» guarda la dirección **del usuario** (`UsuarioPerfil.direccion`),
- * pero un TAX ID es un dato del negocio. Si en realidad es el domicilio fiscal de la
- * organización, su sitio es `OrganizacionWorkspace` y hay que moverlo: es decisión de
- * producto, no de código.
+ * Arquitectura de 4 burbujas nativas de Necto:
+ * 1. Burbuja 1: Tarjeta de Identidad Digital (vCard, foto a sangre lateral, CTAs rápidos y enlace público)
+ * 2. Burbuja 2: Información Personal y de Contacto
+ * 3. Burbuja 3: Organización y Permisos en Necto (Rol, permisos y módulos activos)
+ * 4. Burbuja 4: Seguridad y Cuenta (Supabase Auth y control de sesión)
  */
 import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import {
-  ArrowLeftOnRectangleIcon,
+  ArrowLeftIcon,
   CheckIcon,
+  ClipboardDocumentCheckIcon,
+  ClipboardDocumentIcon,
   ExclamationTriangleIcon,
-  KeyIcon,
+  LinkIcon,
   PencilIcon,
   ShieldCheckIcon,
-  TrashIcon,
   XMarkIcon,
+  ChatBubbleLeftRightIcon,
+  PhoneIcon,
+  UserIcon,
+  BuildingOffice2Icon,
+  SparklesIcon,
+  KeyIcon,
+  ArrowDownTrayIcon,
+  CheckBadgeIcon,
 } from "@heroicons/react/24/outline";
 import { organizacionStore, sessionStore } from "@/stores";
 import { actualizarPerfilRemoto, cambiarPassword } from "@/lib/auth.service";
 import type { RedesSociales } from "@/stores";
-
-/** Motivo único de los tres controles que dependen de un backend de autenticación. */
-const MOTIVO_SIN_BACKEND =
-  "Requiere un backend de autenticación. Este prototipo no tiene uno, así que el cambio no se guardaría.";
-
-/** Iconos de las redes sociales: glifo, etiqueta accesible y color de realce. */
-const ICONOS_RED: Record<
-  keyof RedesSociales,
-  { label: string; path: string; clase: string }
-> = {
-  facebook: {
-    label: "Facebook",
-    clase: "hover:text-black dark:hover:text-white",
-    path: "M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z",
-  },
-  x: {
-    label: "X",
-    clase: "hover:text-black dark:hover:text-white",
-    path: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z",
-  },
-  linkedin: {
-    label: "LinkedIn",
-    clase: "hover:text-black dark:hover:text-white",
-    path: "M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z",
-  },
-  instagram: {
-    label: "Instagram",
-    clase: "hover:text-black dark:hover:text-white",
-    path: "M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z",
-  },
-};
+import { slugDe } from "@/stores/organizacion.store";
 
 const CLASE_INPUT =
-  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-secondary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white";
+  "w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white transition-colors";
 const CLASE_BOTON_SECUNDARIO =
-  "rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800";
+  "rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer";
+const CLASE_BOTON_EDITAR =
+  "inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-2xs hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all cursor-pointer";
 
-/** Fila de solo lectura de una tarjeta: etiqueta + valor. */
-function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <span className="block text-xs font-medium text-gray-400 dark:text-gray-500">{etiqueta}</span>
-      <div className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{children}</div>
-    </div>
-  );
-}
-
-/**
- * Acción que este prototipo **no puede** ejecutar, con el motivo a la vista.
- *
- * El `title` explica el caso puntual al pasar el ratón; el `<p>` visible existe
- * porque quien no pase el ratón merece la misma explicación. Un botón apagado sin
- * motivo es peor que un botón que falta.
- */
-function AccionBloqueada({
-  titulo,
-  motivo,
-  icono,
-}: {
-  titulo: string;
-  motivo: string;
-  icono: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-4 py-5">
-      <div>
-        <h4 className="text-sm font-semibold text-ink-title dark:text-white">{titulo}</h4>
-        <p className="mt-0.5 max-w-prose text-xs text-gray-500 dark:text-gray-400">{motivo}</p>
-      </div>
-      <button
-        type="button"
-        disabled
-        title={motivo}
-        aria-label={`${titulo} — ${motivo}`}
-        className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-400 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-600"
-      >
-        {icono}
-        <span>{titulo}</span>
-      </button>
-    </div>
-  );
-}
+// Foto de muestra profesional por defecto
+const FOTO_POR_DEFECTO =
+  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80";
 
 interface FormPersonal {
   nombre: string;
@@ -136,24 +52,57 @@ interface FormPersonal {
   cargo: string;
   bio: string;
   ubicacion: string;
+  avatarUrl: string;
   redes: RedesSociales;
 }
 
-interface FormDireccion {
-  pais: string;
-  ciudad: string;
-  codigoPostal: string;
-  identificacionFiscal: string;
+/**
+ * Descarga una tarjeta de contacto vCard (.vcf) estándar para el teléfono o equipo.
+ */
+function downloadVCard(usuario: typeof organizacionStore.usuario, orgNombre?: string) {
+  if (!usuario) return;
+  const fullName = `${usuario.nombre || ""} ${usuario.apellido || ""}`.trim() || "Contacto Necto";
+  const vcardLines = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `FN:${fullName}`,
+    `N:${usuario.apellido || ""};${usuario.nombre || ""};;;`,
+    usuario.cargo ? `TITLE:${usuario.cargo}` : "",
+    orgNombre ? `ORG:${orgNombre}` : "ORG:Necto",
+    usuario.email ? `EMAIL;TYPE=INTERNET,WORK:${usuario.email}` : "",
+    usuario.telefono ? `TEL;TYPE=CELL,VOICE:${usuario.telefono}` : "",
+    usuario.ubicacion ? `ADR;TYPE=WORK:;;${usuario.ubicacion};;;;` : "",
+    usuario.bio ? `NOTE:${usuario.bio.replace(/\n/g, " ")}` : "",
+    "END:VCARD",
+  ].filter(Boolean).join("\r\n");
+
+  const blob = new Blob([vcardLines], { type: "text/vcard;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${fullName.replace(/\s+/g, "_")}.vcf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 const ProfilePage = observer(function ProfilePage() {
   const usuario = organizacionStore.usuario;
+  const org = organizacionStore.organizacion;
+  const orgNombre = org?.nombre || "Necto";
 
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Estados de modales
   const [isEditPersonalOpen, setIsEditPersonalOpen] = useState(false);
-  const [isEditAddressOpen, setIsEditAddressOpen] = useState(false);
+  const [isEditLinkOpen, setIsEditLinkOpen] = useState(false);
+  const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
 
+  // Estados de formularios
   const [personalForm, setPersonalForm] = useState<FormPersonal>({
     nombre: "",
     apellido: "",
@@ -162,30 +111,45 @@ const ProfilePage = observer(function ProfilePage() {
     cargo: "",
     bio: "",
     ubicacion: "",
+    avatarUrl: "",
     redes: {},
   });
-  const [addressForm, setAddressForm] = useState<FormDireccion>({
-    pais: "",
-    ciudad: "",
-    codigoPostal: "",
-    identificacionFiscal: "",
-  });
+  const [customLinkInput, setCustomLinkInput] = useState("");
 
-  const nombre = usuario?.nombre ?? "";
-  const apellido = usuario?.apellido ?? "";
-  const cargo = usuario?.cargo ?? "";
-  const ubicacion = usuario?.ubicacion ?? "";
-  const iniciales = `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
-  const direccion = usuario?.direccion ?? {};
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [savingPersonal, setSavingPersonal] = useState(false);
 
-  /** Redes con valor: las vacías no se pintan, para no dejar enlaces muertos. */
-  const redesConValor = (Object.keys(ICONOS_RED) as (keyof RedesSociales)[])
-    .map((clave) => ({ clave, url: usuario?.redes?.[clave]?.trim() ?? "" }))
-    .filter((r) => r.url !== "");
+  const nombre = usuario?.nombre || "Milia";
+  const apellido = usuario?.apellido || "Basova";
+  const fullName = `${nombre} ${apellido}`.trim();
+  const cargo = usuario?.cargo || "Brand Ambassador";
+  const bio =
+    usuario?.bio ||
+    "Mi pasión por el sector comenzó al adquirir mi primer proyecto a los 24 años. Tras experimentar los desafíos y la satisfacción de crecer, hoy me dedico a compartir esa experiencia y generar valor con clientes y colaboradores.";
+  const fotoAMostrar = usuario?.avatarUrl?.trim() || FOTO_POR_DEFECTO;
+
+  // Cálculo del slug del enlace público en Necto
+  const defaultSlug = slugDe(`${nombre}_${apellido}`) || "milia_basova";
+  const currentSlug = usuario?.customLink || defaultSlug;
+  const fullProfileUrl = `necto.app/p/${currentSlug}`;
+
+  // Datos de rol y sesión
+  const rolSesion = sessionStore.tipoSesion === "operador" ? "Operador" : "Administrador";
+  const modulosActivos = organizacionStore.modulosActivos;
 
   const showToast = (msg: string) => {
     setSuccessToast(msg);
     setTimeout(() => setSuccessToast(null), 3000);
+  };
+
+  const copyProfileLink = () => {
+    navigator.clipboard.writeText(`https://${fullProfileUrl}`);
+    setCopiedLink(true);
+    showToast("Enlace de perfil copiado al portapapeles");
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const abrirPersonal = () => {
@@ -195,29 +159,17 @@ const ProfilePage = observer(function ProfilePage() {
       email: usuario?.email ?? "",
       telefono: usuario?.telefono ?? "",
       cargo,
-      bio: usuario?.bio ?? "",
-      ubicacion,
+      bio: usuario?.bio ?? bio,
+      ubicacion: usuario?.ubicacion ?? "",
+      avatarUrl: usuario?.avatarUrl ?? "",
       redes: { ...usuario?.redes },
     });
     setIsEditPersonalOpen(true);
   };
 
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [savingPersonal, setSavingPersonal] = useState(false);
-  const [savingAddress, setSavingAddress] = useState(false);
-
-  const abrirDireccion = () => {
-    setAddressForm({
-      pais: usuario?.pais ?? "",
-      ciudad: direccion.ciudad ?? "",
-      codigoPostal: direccion.codigoPostal ?? "",
-      identificacionFiscal: direccion.identificacionFiscal ?? "",
-    });
-    setIsEditAddressOpen(true);
+  const abrirLink = () => {
+    setCustomLinkInput(usuario?.customLink ?? currentSlug);
+    setIsEditLinkOpen(true);
   };
 
   const handleSavePersonal = async (e: React.FormEvent) => {
@@ -232,32 +184,24 @@ const ProfilePage = observer(function ProfilePage() {
         cargo: personalForm.cargo,
         bio: personalForm.bio,
         ubicacion: personalForm.ubicacion,
+        avatarUrl: personalForm.avatarUrl,
         redes: personalForm.redes,
       });
       setIsEditPersonalOpen(false);
-      showToast("Información personal actualizada");
+      showToast("Información del perfil actualizada");
     } finally {
       setSavingPersonal(false);
     }
   };
 
-  const handleSaveAddress = async (e: React.FormEvent) => {
+  const handleSaveLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingAddress(true);
-    try {
-      await actualizarPerfilRemoto({
-        pais: addressForm.pais,
-        direccion: {
-          ciudad: addressForm.ciudad,
-          codigoPostal: addressForm.codigoPostal,
-          identificacionFiscal: addressForm.identificacionFiscal,
-        },
-      });
-      setIsEditAddressOpen(false);
-      showToast("Dirección actualizada");
-    } finally {
-      setSavingAddress(false);
-    }
+    const clean = slugDe(customLinkInput);
+    await actualizarPerfilRemoto({
+      customLink: clean,
+    });
+    setIsEditLinkOpen(false);
+    showToast("Enlace de perfil actualizado");
   };
 
   const handleSavePassword = async (e: React.FormEvent) => {
@@ -290,13 +234,6 @@ const ProfilePage = observer(function ProfilePage() {
     }
   };
 
-  /**
-   * Eliminar cuenta = empezar de cero.
-   *
-   * `reiniciar()` limpia la capa de Organización (usuario, organización, módulos y
-   * la clave de `localStorage`) y `reset()` cierra la sesión. Antes solo se llamaba
-   * al segundo, así que la organización quedaba viva tras «eliminar la cuenta».
-   */
   const handleDeleteAccount = () => {
     setIsDeleteAccountOpen(false);
     organizacionStore.reiniciar();
@@ -305,216 +242,414 @@ const ProfilePage = observer(function ProfilePage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+      {/* Toast de confirmación flotante */}
       {successToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-medium text-white shadow-theme-xl dark:bg-white dark:text-gray-900 animate-entrada-lista">
-          <CheckIcon className="size-4 text-accent-400 dark:text-accent-600" />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-3 text-sm font-medium text-white shadow-xl dark:bg-white dark:text-gray-900 animate-fade-in">
+          <CheckIcon className="size-4 text-emerald-400 dark:text-emerald-600" />
           <span>{successToast}</span>
         </div>
       )}
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-ink-title dark:text-white sm:text-3xl font-sans">
-          Mi perfil
-        </h1>
+      {/* ── CABECERA DE PÁGINA ── */}
+      <div>
+        <button
+          type="button"
+          onClick={() => window.history.back()}
+          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer mb-2"
+        >
+          <ArrowLeftIcon className="size-3.5" />
+          <span>Volver</span>
+        </button>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white font-sans">
+              Perfil de {fullName}
+            </h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Gestiona tu tarjeta digital, información personal y credenciales de acceso a Necto.
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 dark:bg-brand-950/40 px-3 py-1 text-xs font-semibold text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+            <CheckBadgeIcon className="size-4 text-brand-600 dark:text-brand-400" />
+            <span>Operador verificado</span>
+          </span>
+        </div>
       </div>
 
-      <div className="space-y-6">
-        {/* ── TARJETA 1: INFORMACIÓN PERSONAL ── */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 transition-colors">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-6 dark:border-gray-800">
-            <div className="flex items-center gap-4 sm:gap-5">
-              {/* Iniciales, no una foto: `UsuarioPerfil` no tiene `avatarUrl`. */}
-              <div
-                aria-hidden="true"
-                className="flex size-16 items-center justify-center rounded-full bg-secondary-50 text-lg font-bold text-secondary-600 dark:bg-brand-950/40 dark:text-brand-400 sm:size-20 sm:text-xl"
-              >
-                {iniciales || "—"}
+      {/* ── BURBUJA 1: TARJETA DE IDENTIDAD DIGITAL (vCard & Presencia) ── */}
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 transition-colors">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-5 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-950/40 dark:text-brand-400">
+              <SparklesIcon className="size-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                Tarjeta de presentación digital
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Vista previa de tu tarjeta de contacto digital con foto a sangre y llamadas a la acción
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={abrirPersonal}
+            className={CLASE_BOTON_EDITAR}
+          >
+            <PencilIcon className="size-3.5" />
+            <span>Editar tarjeta</span>
+          </button>
+        </div>
+
+        <div className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          {/* Tarjeta Digital exacta a la captura */}
+          <div className="lg:col-span-7 flex justify-center lg:justify-start">
+            <div className="relative flex w-full max-w-md h-44 sm:h-48 overflow-hidden rounded-2xl bg-[#28343c] text-white shadow-xl border border-slate-700/60 select-none">
+              
+              {/* Mitad izquierda: Foto a sangre completa sin márgenes */}
+              <div className="w-[42%] h-full shrink-0 relative overflow-hidden bg-slate-800">
+                <img
+                  src={fotoAMostrar}
+                  alt={fullName}
+                  className="w-full h-full object-cover object-center"
+                />
               </div>
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-ink-title dark:text-white">
-                  {nombre || apellido ? `${nombre} ${apellido}`.trim() : "Sin nombre"}
-                </h2>
-                {(cargo || ubicacion) && (
-                  <p className="mt-0.5 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {[cargo, ubicacion].filter(Boolean).join(" | ")}
+
+              {/* Mitad derecha: Datos en panel oscuro */}
+              <div className="w-[58%] h-full p-4 sm:p-5 flex flex-col justify-center relative bg-[#28343c]">
+                <div className="pr-2">
+                  <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight">
+                    {fullName}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 font-normal mt-1 leading-snug">
+                    {cargo}
+                    <span className="block text-slate-300 font-medium">at {orgNombre}</span>
                   </p>
-                )}
+                </div>
+
+                {/* Sello de LOGO en esquina inferior derecha */}
+                <div className="absolute bottom-3 right-3 flex size-8 sm:size-9 items-center justify-center rounded-lg bg-[#141a1e] border border-white/10 shadow-inner">
+                  <div className="flex size-6 sm:size-7 items-center justify-center rounded-full border border-white/30 text-[8px] font-bold tracking-widest text-white uppercase">
+                    LOGO
+                  </div>
+                </div>
               </div>
+
+            </div>
+          </div>
+
+          {/* Acciones de la tarjeta & Enlace público */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="space-y-1">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                Acciones de contacto rápido
+              </span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Permite a tus clientes y colaboradores guardar tu número o escribirte con un solo toque.
+              </p>
             </div>
 
-            <button
-              type="button"
-              onClick={abrirPersonal}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/80 cursor-pointer transition-colors"
-            >
-              <PencilIcon className="size-3.5 text-gray-500 dark:text-gray-400" />
-              <span>Editar</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 gap-y-6 pt-6 sm:grid-cols-2 lg:grid-cols-4 sm:gap-x-6">
-            <Dato etiqueta="Nombre">{nombre || "—"}</Dato>
-            <Dato etiqueta="Apellido">{apellido || "—"}</Dato>
-            <Dato etiqueta="Correo">
-              <span className="block truncate">{usuario?.email || "—"}</span>
-            </Dato>
-            <Dato etiqueta="Teléfono">{usuario?.telefono || "—"}</Dato>
-            <Dato etiqueta="Cargo">{cargo || "—"}</Dato>
-            <Dato etiqueta="Bio">{usuario?.bio || "—"}</Dato>
-            <Dato etiqueta="Ubicación">{ubicacion || "—"}</Dato>
-            <Dato etiqueta="Redes">
-              {redesConValor.length === 0 ? (
-                <span className="text-gray-400 dark:text-gray-500">Sin redes</span>
-              ) : (
-                <div className="mt-1.5 flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                  {redesConValor.map(({ clave, url }) => {
-                    const icono = ICONOS_RED[clave];
-                    return (
-                      <a
-                        key={clave}
-                        href={url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`transition-colors ${icono.clase}`}
-                        aria-label={icono.label}
-                      >
-                        <svg className="size-4 fill-currentColor" viewBox="0 0 24 24">
-                          <path d={icono.path} />
-                        </svg>
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-            </Dato>
-          </div>
-        </section>
-
-        {/* ── TARJETA 2: DIRECCIÓN ── */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 transition-colors">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-5 dark:border-gray-800">
-            <h3 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">
-              Dirección
-            </h3>
-
-            <button
-              type="button"
-              onClick={abrirDireccion}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/80 cursor-pointer transition-colors"
-            >
-              <PencilIcon className="size-3.5 text-gray-500 dark:text-gray-400" />
-              <span>Editar</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 gap-y-6 pt-6 sm:grid-cols-2 sm:gap-x-12">
-            <Dato etiqueta="País">{usuario?.pais || "—"}</Dato>
-            <Dato etiqueta="Ciudad">{direccion.ciudad || "—"}</Dato>
-            <Dato etiqueta="Código postal">{direccion.codigoPostal || "—"}</Dato>
-            <Dato etiqueta="Identificación fiscal">{direccion.identificacionFiscal || "—"}</Dato>
-          </div>
-        </section>
-
-        {/* ── TARJETA 3: SEGURIDAD ── */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 transition-colors">
-          <div className="border-b border-gray-100 pb-5 dark:border-gray-800">
-            <h3 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">
-              Seguridad
-            </h3>
-          </div>
-
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
-            <div className="flex flex-wrap items-center justify-between gap-4 py-5">
-              <div>
-                <h4 className="text-sm font-semibold text-ink-title dark:text-white">
-                  Cambiar contraseña
-                </h4>
-                <p className="mt-0.5 max-w-prose text-xs text-gray-500 dark:text-gray-400">
-                  Actualiza tu contraseña de acceso en Supabase Auth.
-                </p>
-              </div>
+            <div className="flex flex-wrap gap-2.5">
               <button
                 type="button"
                 onClick={() => {
-                  setPasswordError(null);
-                  setNewPassword("");
-                  setConfirmPassword("");
-                  setIsChangePasswordOpen(true);
+                  downloadVCard(usuario, orgNombre);
+                  showToast("Tarjeta vCard (.vcf) descargada");
                 }}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/80 cursor-pointer transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 shadow-2xs hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all cursor-pointer"
               >
-                <KeyIcon className="size-3.5 text-gray-500 dark:text-gray-400" />
-                <span>Actualizar</span>
+                <ArrowDownTrayIcon className="size-4 text-gray-500 dark:text-gray-400" />
+                <span>Guardar contacto (vCard)</span>
               </button>
-            </div>
-            <AccionBloqueada
-              titulo="Verificación en dos pasos (2FA)"
-              motivo={MOTIVO_SIN_BACKEND}
-              icono={<ShieldCheckIcon className="size-3.5" />}
-            />
-          </div>
-        </section>
-
-        {/* ── TARJETA 4: ZONA DE RIESGO ── */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 transition-colors">
-          <div className="border-b border-gray-100 pb-5 dark:border-gray-800">
-            <h3 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">
-              Zona de riesgo
-            </h3>
-          </div>
-
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
-            <AccionBloqueada
-              titulo="Cerrar sesión en otros dispositivos"
-              motivo="Cerrar las sesiones de otros dispositivos requiere un backend de autenticación. Para salir de este dispositivo, usa el menú de la cabecera."
-              icono={<ArrowLeftOnRectangleIcon className="size-3.5" />}
-            />
-
-            <div className="flex flex-wrap items-center justify-between gap-4 py-5">
-              <div>
-                <h4 className="text-sm font-semibold text-ink-title dark:text-white">
-                  Eliminar cuenta
-                </h4>
-                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  Borra tu usuario y deja la organización vacía. No se puede deshacer.
-                </p>
-              </div>
 
               <button
                 type="button"
-                onClick={() => setIsDeleteAccountOpen(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-error-500/80 bg-white px-4 py-2 text-xs font-semibold text-error-600 shadow-theme-xs hover:bg-error-50 dark:bg-error-950/20 dark:border-error-500/50 dark:text-error-400 dark:hover:bg-error-950/40 cursor-pointer transition-colors"
+                onClick={() => setIsExchangeModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#EF4444] hover:bg-[#DC2626] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer"
               >
-                <TrashIcon className="size-3.5 text-error-600 dark:text-error-400" />
-                <span>Eliminar cuenta</span>
+                <ChatBubbleLeftRightIcon className="size-4" />
+                <span>Intercambiar</span>
               </button>
             </div>
-          </div>
-        </section>
-      </div>
 
-      {/* ── MODAL: EDITAR INFORMACIÓN PERSONAL ── */}
-      {isEditPersonalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-theme-xl dark:bg-gray-900 dark:border dark:border-gray-800">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
-              <h3 className="text-lg font-bold text-ink-title dark:text-white">
-                Editar información personal
+            {/* Enlace público */}
+            <div className="pt-2">
+              <span className="block text-xs font-medium text-gray-400 dark:text-gray-500 mb-1.5">
+                Enlace público de tu perfil:
+              </span>
+              <div className="flex items-center gap-2">
+                <div
+                  onClick={copyProfileLink}
+                  title="Copiar enlace público"
+                  className="group flex-1 flex items-center justify-between rounded-xl bg-gray-50 dark:bg-gray-800/80 px-3.5 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all cursor-pointer"
+                >
+                  <span className="flex items-center gap-2 truncate">
+                    <LinkIcon className="size-3.5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 shrink-0" />
+                    <span>necto.app/p/<strong>{currentSlug}</strong></span>
+                  </span>
+                  {copiedLink ? (
+                    <ClipboardDocumentCheckIcon className="size-4 text-emerald-500 shrink-0 ml-2" />
+                  ) : (
+                    <ClipboardDocumentIcon className="size-4 text-gray-400 group-hover:text-gray-600 shrink-0 ml-2" />
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={abrirLink}
+                  className="rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                >
+                  Cambiar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── BURBUJA 2: INFORMACIÓN PERSONAL Y DE CONTACTO ── */}
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 transition-colors">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-5 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+              <UserIcon className="size-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                Información personal
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Tus datos de contacto e identidad como operador de Necto
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={abrirPersonal}
+            className={CLASE_BOTON_EDITAR}
+          >
+            <PencilIcon className="size-3.5" />
+            <span>Editar información</span>
+          </button>
+        </div>
+
+        <div className="pt-6 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div>
+              <span className="block text-xs font-medium text-gray-400 dark:text-gray-500">
+                Nombre completo
+              </span>
+              <div className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                {fullName}
+              </div>
+            </div>
+
+            <div>
+              <span className="block text-xs font-medium text-gray-400 dark:text-gray-500">
+                Correo de acceso
+              </span>
+              <div className="mt-1 text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {usuario?.email || "Sin correo"}
+              </div>
+            </div>
+
+            <div>
+              <span className="block text-xs font-medium text-gray-400 dark:text-gray-500">
+                Teléfono de contacto
+              </span>
+              <div className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                {usuario?.telefono || "No especificado"}
+              </div>
+            </div>
+
+            <div>
+              <span className="block text-xs font-medium text-gray-400 dark:text-gray-500">
+                Ubicación declarada
+              </span>
+              <div className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                {usuario?.ubicacion || usuario?.pais || "Colombia"}
+              </div>
+            </div>
+          </div>
+
+          {/* Presentación / Bio */}
+          <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-4 border border-gray-100 dark:border-gray-800">
+            <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+              Acerca de mí / Biografía
+            </span>
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              {usuario?.bio || bio}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── BURBUJA 3: ORGANIZACIÓN Y PERMISOS EN NECTO ── */}
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 transition-colors">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-5 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
+              <BuildingOffice2Icon className="size-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                Organización y permisos
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Datos de la empresa y permisos operativos asignados a tu usuario
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-6 grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40 p-4">
+            <span className="block text-xs font-medium text-gray-400 dark:text-gray-500">
+              Organización actual
+            </span>
+            <div className="mt-1 text-sm font-bold text-gray-900 dark:text-white">
+              {orgNombre}
+            </div>
+            <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+              {org?.slug ? `necto.app/${org.slug}` : "Workspace activo"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40 p-4">
+            <span className="block text-xs font-medium text-gray-400 dark:text-gray-500">
+              Rol de acceso
+            </span>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="inline-flex items-center rounded-md bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">
+                {rolSesion}
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+              Capacidades completas de gestión y administración
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/40 p-4">
+            <span className="block text-xs font-medium text-gray-400 dark:text-gray-500">
+              Módulos asignados
+            </span>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {modulosActivos.map((mod) => (
+                <span
+                  key={mod}
+                  className="inline-flex items-center rounded-md bg-gray-200/70 dark:bg-gray-700 px-2 py-0.5 text-xs font-medium text-gray-800 dark:text-gray-200 capitalize"
+                >
+                  {mod}
+                </span>
+              ))}
+              {modulosActivos.length === 0 && (
+                <span className="text-xs text-gray-400">Sin módulos activos</span>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+              Módulos activos en este workspace
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── BURBUJA 4: SEGURIDAD Y CUENTA ── */}
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 transition-colors">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-5 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
+              <ShieldCheckIcon className="size-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                Seguridad y acceso
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Protección de credenciales y administración de sesión
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-6 divide-y divide-gray-100 dark:divide-gray-800">
+          {/* Fila: Contraseña */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-5">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Contraseña de acceso
               </h3>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Tu clave está cifrada mediante Supabase Auth. Puedes cambiarla en cualquier momento.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPasswordError(null);
+                setNewPassword("");
+                setConfirmPassword("");
+                setIsChangePasswordOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 shadow-2xs hover:bg-gray-50 dark:hover:bg-gray-700 transition-all cursor-pointer"
+            >
+              <KeyIcon className="size-3.5 text-gray-500" />
+              <span>Cambiar contraseña</span>
+            </button>
+          </div>
+
+          {/* Fila: Zona de peligro */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-5">
+            <div>
+              <h3 className="text-sm font-semibold text-red-600 dark:text-red-400">
+                Zona de riesgo
+              </h3>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Cierra la sesión activa o elimina los datos locales de tu cuenta en este navegador.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsDeleteAccountOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 dark:border-red-900/40 bg-white dark:bg-gray-800 px-4 py-2 text-xs font-semibold text-red-600 dark:text-red-400 shadow-2xs hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all cursor-pointer"
+            >
+              <span>Eliminar cuenta</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── MODAL: EDITAR INFORMACIÓN PERSONAL Y TARJETA ── */}
+      {isEditPersonalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 sm:p-7 shadow-2xl dark:bg-gray-900 dark:border dark:border-gray-800">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Editar perfil y tarjeta
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Actualiza tus datos personales y los elementos visibles en tu tarjeta digital
+                </p>
+              </div>
               <button
                 onClick={() => setIsEditPersonalOpen(false)}
                 aria-label="Cerrar"
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer p-1"
               >
                 <XMarkIcon className="size-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSavePersonal} className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSavePersonal} className="space-y-4 pt-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                     Nombre
                   </label>
                   <input
@@ -526,7 +661,7 @@ const ProfilePage = observer(function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                     Apellido
                   </label>
                   <input
@@ -540,96 +675,88 @@ const ProfilePage = observer(function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  Correo
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Cargo / Título profesional
                 </label>
                 <input
-                  type="email"
-                  value={personalForm.email}
-                  onChange={(e) => setPersonalForm({ ...personalForm, email: e.target.value })}
+                  type="text"
+                  placeholder="Ej. Brand Ambassador / Especialista de Operaciones"
+                  value={personalForm.cargo}
+                  onChange={(e) => setPersonalForm({ ...personalForm, cargo: e.target.value })}
                   className={CLASE_INPUT}
-                  required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  URL de foto de perfil (para la tarjeta)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://... pega el enlace de tu foto"
+                  value={personalForm.avatarUrl}
+                  onChange={(e) => setPersonalForm({ ...personalForm, avatarUrl: e.target.value })}
+                  className={CLASE_INPUT}
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Se mostrará en la mitad izquierda de tu tarjeta digital exactamente a sangre completa.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Teléfono
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                    Correo electrónico
                   </label>
                   <input
-                    type="text"
+                    type="email"
+                    value={personalForm.email}
+                    onChange={(e) => setPersonalForm({ ...personalForm, email: e.target.value })}
+                    className={CLASE_INPUT}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                    Teléfono directo
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+57 300 123 4567"
                     value={personalForm.telefono}
                     onChange={(e) => setPersonalForm({ ...personalForm, telefono: e.target.value })}
                     className={CLASE_INPUT}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Cargo
-                  </label>
-                  <input
-                    type="text"
-                    value={personalForm.cargo}
-                    onChange={(e) => setPersonalForm({ ...personalForm, cargo: e.target.value })}
-                    className={CLASE_INPUT}
-                  />
-                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  Bio
-                </label>
-                <input
-                  type="text"
-                  value={personalForm.bio}
-                  onChange={(e) => setPersonalForm({ ...personalForm, bio: e.target.value })}
-                  className={CLASE_INPUT}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                   Ubicación
                 </label>
                 <input
                   type="text"
+                  placeholder="Bogotá, Colombia"
                   value={personalForm.ubicacion}
                   onChange={(e) => setPersonalForm({ ...personalForm, ubicacion: e.target.value })}
-                  placeholder="Bogotá, Colombia"
                   className={CLASE_INPUT}
                 />
               </div>
 
-              <fieldset>
-                <legend className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  Redes
-                </legend>
-                <div className="grid grid-cols-2 gap-4">
-                  {(Object.keys(ICONOS_RED) as (keyof RedesSociales)[]).map((clave) => (
-                    <div key={clave}>
-                      <label className="block text-[11px] font-medium text-gray-400 dark:text-gray-500 mb-1">
-                        {ICONOS_RED[clave].label}
-                      </label>
-                      <input
-                        type="url"
-                        value={personalForm.redes[clave] ?? ""}
-                        onChange={(e) =>
-                          setPersonalForm({
-                            ...personalForm,
-                            redes: { ...personalForm.redes, [clave]: e.target.value },
-                          })
-                        }
-                        placeholder="https://"
-                        className={CLASE_INPUT}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </fieldset>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Acerca de mí / Biografía
+                </label>
+                <textarea
+                  rows={4}
+                  value={personalForm.bio}
+                  onChange={(e) => setPersonalForm({ ...personalForm, bio: e.target.value })}
+                  placeholder="Breve resumen de tu trayectoria y rol..."
+                  className={CLASE_INPUT}
+                />
+              </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <div className="flex justify-end gap-3 pt-5 border-t border-gray-100 dark:border-gray-800">
                 <button
                   type="button"
                   onClick={() => setIsEditPersonalOpen(false)}
@@ -639,9 +766,10 @@ const ProfilePage = observer(function ProfilePage() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
+                  disabled={savingPersonal}
+                  className="rounded-xl bg-brand-500 hover:bg-brand-600 px-5 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
                 >
-                  Guardar cambios
+                  {savingPersonal ? "Guardando..." : "Guardar cambios"}
                 </button>
               </div>
             </form>
@@ -649,90 +777,122 @@ const ProfilePage = observer(function ProfilePage() {
         </div>
       )}
 
-      {/* ── MODAL: EDITAR DIRECCIÓN ── */}
-      {isEditAddressOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-theme-xl dark:bg-gray-900 dark:border dark:border-gray-800">
+      {/* ── MODAL: ACCIÓN DE INTERCAMBIO (EXCHANGE) ── */}
+      {isExchangeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 sm:p-7 shadow-2xl dark:bg-gray-900 dark:border dark:border-gray-800 text-center">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500 dark:bg-rose-950/40 dark:text-rose-400 mb-4">
+              <ChatBubbleLeftRightIcon className="size-7" />
+            </div>
+
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              Intercambiar contacto
+            </h3>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Conecta de inmediato con <strong>{fullName}</strong> vía WhatsApp o llamada directa.
+            </p>
+
+            <div className="mt-6 space-y-3">
+              {usuario?.telefono ? (
+                <>
+                  <a
+                    href={`https://wa.me/${usuario.telefono.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${fullName}, vi tu tarjeta de presentación digital en Necto y quiero conectar contigo.`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-xs transition-colors"
+                  >
+                    <ChatBubbleLeftRightIcon className="size-4" />
+                    <span>Abrir chat de WhatsApp</span>
+                  </a>
+
+                  <a
+                    href={`tel:${usuario.telefono}`}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition-colors"
+                  >
+                    <PhoneIcon className="size-4" />
+                    <span>Llamar por teléfono</span>
+                  </a>
+                </>
+              ) : (
+                <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-700 dark:text-amber-300">
+                  Aún no has registrado un número de teléfono. Haz clic en <strong>Editar</strong> para configurarlo.
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => copyProfileLink()}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition-colors"
+              >
+                <ClipboardDocumentIcon className="size-4" />
+                <span>Copiar enlace público</span>
+              </button>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => setIsExchangeModalOpen(false)}
+                className={CLASE_BOTON_SECUNDARIO}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: EDITAR ENLACE DEL PERFIL ── */}
+      {isEditLinkOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 sm:p-7 shadow-2xl dark:bg-gray-900 dark:border dark:border-gray-800">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
-              <h3 className="text-lg font-bold text-ink-title dark:text-white">
-                Editar dirección
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Personalizar enlace público
               </h3>
               <button
-                onClick={() => setIsEditAddressOpen(false)}
+                onClick={() => setIsEditLinkOpen(false)}
                 aria-label="Cerrar"
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
               >
                 <XMarkIcon className="size-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveAddress} className="space-y-4 pt-4">
+            <form onSubmit={handleSaveLink} className="space-y-4 pt-5">
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  País
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Nombre de usuario / Slug
                 </label>
-                <input
-                  type="text"
-                  value={addressForm.pais}
-                  onChange={(e) => setAddressForm({ ...addressForm, pais: e.target.value })}
-                  className={CLASE_INPUT}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  Ciudad
-                </label>
-                <input
-                  type="text"
-                  value={addressForm.ciudad}
-                  onChange={(e) => setAddressForm({ ...addressForm, ciudad: e.target.value })}
-                  className={CLASE_INPUT}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Código postal
-                  </label>
+                <div className="flex items-center rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2.5 text-sm">
+                  <span className="text-gray-400 font-medium">necto.app/p/</span>
                   <input
                     type="text"
-                    value={addressForm.codigoPostal}
-                    onChange={(e) => setAddressForm({ ...addressForm, codigoPostal: e.target.value })}
-                    className={CLASE_INPUT}
+                    value={customLinkInput}
+                    onChange={(e) => setCustomLinkInput(e.target.value)}
+                    placeholder="tu-nombre"
+                    className="ml-1 w-full bg-transparent text-gray-900 dark:text-white font-semibold focus:outline-none"
+                    required
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Identificación fiscal
-                  </label>
-                  <input
-                    type="text"
-                    value={addressForm.identificacionFiscal}
-                    onChange={(e) =>
-                      setAddressForm({ ...addressForm, identificacionFiscal: e.target.value })
-                    }
-                    className={CLASE_INPUT}
-                  />
-                </div>
+                <p className="mt-1.5 text-xs text-gray-400">
+                  Usa letras, números y guiones.
+                </p>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <div className="flex justify-end gap-3 pt-5 border-t border-gray-100 dark:border-gray-800">
                 <button
                   type="button"
-                  onClick={() => setIsEditAddressOpen(false)}
+                  onClick={() => setIsEditLinkOpen(false)}
                   className={CLASE_BOTON_SECUNDARIO}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
+                  className="rounded-xl bg-brand-500 hover:bg-brand-600 px-5 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
                 >
-                  Guardar cambios
+                  Guardar enlace
                 </button>
               </div>
             </form>
@@ -740,66 +900,32 @@ const ProfilePage = observer(function ProfilePage() {
         </div>
       )}
 
-      {/* ── MODAL: ELIMINAR CUENTA ── */}
-      {isDeleteAccountOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-theme-xl dark:bg-gray-900 dark:border dark:border-gray-800 text-center">
-            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-error-100 text-error-600 dark:bg-error-950/40 dark:text-error-400 mb-4">
-              <ExclamationTriangleIcon className="size-6" />
-            </div>
-            <h3 className="text-lg font-bold text-ink-title dark:text-white">
-              ¿Eliminar la cuenta permanentemente?
-            </h3>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Se borran tu usuario, tu organización y sus módulos de este navegador. Esta acción es
-              irreversible.
-            </p>
-            <div className="mt-6 flex justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsDeleteAccountOpen(false)}
-                className={CLASE_BOTON_SECUNDARIO}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteAccount}
-                className="rounded-lg bg-error-600 px-4 py-2 text-sm font-medium text-white hover:bg-error-700"
-              >
-                Sí, eliminar mi cuenta
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── MODAL: CAMBIAR CONTRASEÑA ── */}
       {isChangePasswordOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-theme-xl dark:bg-gray-900 dark:border dark:border-gray-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 sm:p-7 shadow-2xl dark:bg-gray-900 dark:border dark:border-gray-800">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
-              <h3 className="text-lg font-bold text-ink-title dark:text-white">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                 Cambiar contraseña
               </h3>
               <button
                 onClick={() => setIsChangePasswordOpen(false)}
                 aria-label="Cerrar"
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
               >
                 <XMarkIcon className="size-5" />
               </button>
             </div>
 
             {passwordError && (
-              <div className="mt-4 p-3 text-xs text-error-700 bg-error-50 border border-error-200 rounded-xl dark:bg-error-950/40 dark:text-error-300 dark:border-error-800">
+              <div className="mt-4 p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl dark:bg-red-950/40 dark:text-red-300 dark:border-red-800">
                 {passwordError}
               </div>
             )}
 
-            <form onSubmit={handleSavePassword} className="space-y-4 pt-4">
+            <form onSubmit={handleSavePassword} className="space-y-4 pt-5">
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                   Nueva contraseña
                 </label>
                 <input
@@ -816,7 +942,7 @@ const ProfilePage = observer(function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                   Confirmar nueva contraseña
                 </label>
                 <input
@@ -832,7 +958,7 @@ const ProfilePage = observer(function ProfilePage() {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <div className="flex justify-end gap-3 pt-5 border-t border-gray-100 dark:border-gray-800">
                 <button
                   type="button"
                   onClick={() => setIsChangePasswordOpen(false)}
@@ -843,12 +969,45 @@ const ProfilePage = observer(function ProfilePage() {
                 <button
                   type="submit"
                   disabled={passwordLoading}
-                  className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 dark:hover:bg-brand-400 disabled:opacity-50 transition-colors cursor-pointer"
+                  className="rounded-xl bg-brand-500 hover:bg-brand-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-colors cursor-pointer"
                 >
                   {passwordLoading ? "Actualizando..." : "Guardar contraseña"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: ELIMINAR CUENTA ── */}
+      {isDeleteAccountOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 sm:p-7 shadow-2xl dark:bg-gray-900 dark:border dark:border-gray-800 text-center">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 mb-4">
+              <ExclamationTriangleIcon className="size-7" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              ¿Eliminar la cuenta permanentemente?
+            </h3>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Se borrarán tu usuario, tu organización y sus módulos de este navegador. Esta acción es irreversible.
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsDeleteAccountOpen(false)}
+                className={CLASE_BOTON_SECUNDARIO}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                className="rounded-xl bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors cursor-pointer"
+              >
+                Sí, eliminar mi cuenta
+              </button>
+            </div>
           </div>
         </div>
       )}

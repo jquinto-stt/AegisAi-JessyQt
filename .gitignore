@@ -47,3 +47,13 @@ artifacts-conv/
 inspiracion_modulo_inventario/
 scratch/
 .taste-skill/
+
+# Preparación local y artefactos de Motion Graphics / HyperFrames
+PREPARACION.md
+artifacts-verify/
+.agents/skills/hyperframes/
+.agents/skills/hyperframes-cli/
+.agents/skills/hyperframes-registry/
+.agents/skills/media-use/
+.hyperframes/
+

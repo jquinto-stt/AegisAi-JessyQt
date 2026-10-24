@@ -1,0 +1,135 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   CHECKLIST DE INICIO — una tarea que se acaba de completar
+   ══════════════════════════════════════════════════════════════════════════
+
+   La tarea se completa en otra pantalla (instalar un módulo ocurre en
+   Configuración), así que el cambio se reproduce al volver a Inicio, una sola
+   vez por tarea. La tarjeta se muestra 250 ms como pendiente —para que se
+   vea qué cambió— y desde ahí se tacha:
+
+     250 ms   el círculo se rellena de cyan y el check se dibuja
+     450 ms   una línea tacha el nombre de izquierda a derecha
+     710 ms   texto y tarjeta pasan a gris: ya está hecha
+     810 ms   aparece la etiqueta «Completado»
+
+   Solo cambia la tarjeta completada. Las pendientes no se atenúan ni se
+   mueven: siguen siendo lo que hay que hacer.
+
+   Todas las capas usan `backwards`: durante el retardo inicial muestran el
+   estado de pendiente, y al terminar queda el estado final del propio
+   elemento, sin estilos de animación pegados. */
+
+.tarea-checklist {
+  --tarea-fondo-pendiente: #ffffff;
+  --tarea-texto-pendiente: #212121;
+}
+
+.dark .tarea-checklist {
+  --tarea-fondo-pendiente: rgb(33 33 33 / 0.6);
+  --tarea-texto-pendiente: #ffffff;
+}
+
+/* La línea de tachado es un elemento propio y no `line-through`: así se puede
+   dibujar. Su estado final es el tachado normal. */
+.tarea-checklist__tachado {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 55%;
+  height: 1.5px;
+  border-radius: 1px;
+  background-color: currentColor;
+  transform-origin: left center;
+}
+
+.tarea-checklist--recien-completada {
+  animation: tarea-fondo 400ms ease 710ms backwards;
+}
+
+.tarea-checklist--recien-completada .tarea-checklist__circulo {
+  animation: tarea-circulo 280ms cubic-bezier(0.22, 1, 0.36, 1) 250ms backwards;
+}
+
+/* El trazo del check de lucide mide ~18,4 unidades: 20 lo cubre entero. */
+.tarea-checklist--recien-completada .tarea-checklist__circulo path {
+  stroke-dasharray: 20;
+  animation: tarea-check 260ms cubic-bezier(0.22, 1, 0.36, 1) 370ms backwards;
+}
+
+.tarea-checklist--recien-completada .tarea-checklist__tachado {
+  animation: tarea-tachar 420ms cubic-bezier(0.77, 0, 0.175, 1) 450ms backwards;
+}
+
+.tarea-checklist--recien-completada .tarea-checklist__nombre {
+  animation: tarea-texto 300ms ease 710ms backwards;
+}
+
+.tarea-checklist--recien-completada .tarea-checklist__estado {
+  animation: tarea-estado 260ms cubic-bezier(0.22, 1, 0.36, 1) 810ms backwards;
+}
+
+/* Segmento de la barra de progreso de la tarea: se llena junto al tachado. */
+.progreso-checklist__segmento--recien-completado {
+  transform-origin: left center;
+  animation: tarea-segmento 480ms cubic-bezier(0.77, 0, 0.175, 1) 450ms backwards;
+}
+
+@keyframes tarea-circulo {
+  from {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 2px #ececec;
+    transform: scale(0.92);
+  }
+}
+
+@keyframes tarea-check {
+  from {
+    stroke-dashoffset: 20;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes tarea-tachar {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes tarea-texto {
+  from {
+    color: var(--tarea-texto-pendiente);
+  }
+}
+
+@keyframes tarea-fondo {
+  from {
+    background-color: var(--tarea-fondo-pendiente);
+  }
+}
+
+@keyframes tarea-estado {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes tarea-segmento {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Movimiento reducido: sin trazos ni escalas. El paso a gris se mantiene,
+   porque es lo que cuenta que la tarea cambió de estado. */
+@media (prefers-reduced-motion: reduce) {
+  .tarea-checklist--recien-completada .tarea-checklist__circulo,
+  .tarea-checklist--recien-completada .tarea-checklist__circulo path,
+  .tarea-checklist--recien-completada .tarea-checklist__tachado,
+  .tarea-checklist--recien-completada .tarea-checklist__estado,
+  .progreso-checklist__segmento--recien-completado {
+    animation: aparecer 240ms ease-out 250ms backwards;
+  }
+}

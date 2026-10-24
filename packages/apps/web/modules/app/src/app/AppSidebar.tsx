@@ -12,6 +12,10 @@ import { cerrarSesion } from "@/lib/auth.service";
 import type { Modulo, Seccion } from "@/stores";
 import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
 import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils";
+// Las cuatro tarjetas del hub de Configuraciones: el flyout de «Organización» en
+// modo rail las repite como accesos directos. Se importan del catálogo y no se
+// escriben aquí para que renombrar una tarjeta no deje el sidebar diciendo otra cosa.
+import { TARJETAS_CONFIG } from "@/pages/configuracion/configuracion.catalogo";
 import {
   Cog6ToothIcon,
   HomeIcon,
@@ -345,7 +349,7 @@ const BANNER_MODULO_CONFIG: Record<
 };
 
 const SidebarContent = observer(() => {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const { isExpanded: showExpanded } = useSidebarContext();
   const isActive = (path: string) => pathname === path;
   const hayTareasPendientes = organizacionStore.modulosActivos.length === 0;
@@ -369,6 +373,20 @@ const SidebarContent = observer(() => {
    */
   const esRutaConfiguracion = (path: string) => esRutaConHijas(path);
   const esRutaEquipo = (path: string) => esRutaConHijas(path);
+
+  /**
+   * Pestaña activa del hub de Configuraciones (`?tab=general|modulos|canales|apariencia`).
+   *
+   * El flyout de «Organización» en modo rail lista las cuatro tarjetas del hub
+   * como accesos directos: antes tenía un solo ítem, «Configuraciones», que abría
+   * el hub y devolvía al usuario al mismo nombre que acababa de pulsar, con las
+   * cuatro opciones un clic más adentro. Ahora cada ítem entra directo a su
+   * pestaña y se marca el que está abierto.
+   *
+   * `null` cuando se está en el hub sin pestaña: ahí no hay ninguna marcada,
+   * porque el hub es el índice de las cuatro.
+   */
+  const tabConfigActual = new URLSearchParams(search).get("tab");
 
 
 
@@ -481,24 +499,30 @@ const SidebarContent = observer(() => {
           {/* Lista de opciones del flyout */}
           <div className="max-h-[calc(100vh-220px)] overflow-y-auto no-scrollbar py-1 flex flex-col gap-0.5">
             {flyoutModulo === "organizacion" ? (
-              <Link
-                to="/configuracion"
-                onClick={() => setFlyoutModulo(null)}
-                className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  esRutaConfiguracion("/configuracion")
-                    ? "bg-gray-100 dark:bg-white/10 font-bold text-gray-900 dark:text-white"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
-                }`}
-              >
-                <span
-                  className={`text-base transition-transform duration-150 group-hover:scale-110 ${
-                    esRutaConfiguracion("/configuracion") ? "text-brand-500" : "text-gray-500 dark:text-gray-400"
-                  }`}
-                >
-                  <Cog6ToothIcon className="size-5" />
-                </span>
-                <span className="truncate">Ajustes Generales</span>
-              </Link>
+              TARJETAS_CONFIG.map(({ key, label, icono: Icono }) => {
+                const active = esRutaConfiguracion("/configuracion") && tabConfigActual === key;
+                return (
+                  <Link
+                    key={key}
+                    to={`/configuracion?tab=${key}`}
+                    onClick={() => setFlyoutModulo(null)}
+                    className={`group flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-gray-100 dark:bg-white/10 font-bold text-gray-900 dark:text-white"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    <span
+                      className={`text-base transition-transform duration-150 group-hover:scale-110 ${
+                        active ? "text-brand-500" : "text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      <Icono className="size-5" />
+                    </span>
+                    <span className="truncate">{label}</span>
+                  </Link>
+                );
+              })
             ) : (
               ITEMS_MODULO[flyoutModulo as Modulo]
                 ?.flatMap(({ seccionId, Icono }) => {
@@ -614,7 +638,7 @@ const SidebarContent = observer(() => {
                 <ul className="flex flex-col gap-1">
                   <MenuItem
                     icon={<Cog6ToothIcon className="size-5" />}
-                    name="Ajustes Generales"
+                    name="Configuraciones"
                     path="/configuracion"
                     isActive={esRutaConfiguracion}
                   />

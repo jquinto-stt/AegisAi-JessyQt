@@ -2,16 +2,26 @@ import { observer } from "mobx-react-lite";
 import { useSearchParams } from "react-router";
 
 import { PageMeta } from "@/shell/meta";
-import { BuildingOffice2Icon, ChatIcon, ChevronLeftIcon, EyeIcon, PlugInIcon } from "@/icons";
+import { ChevronLeftIcon } from "@/icons";
+import { BanknotesIcon, BuildingOffice2Icon, DocumentTextIcon } from "@heroicons/react/24/outline";
 import { organizacionStore } from "@/stores";
 import { ConfigHubPagina, ConfigShell, type TarjetaHub } from "@/pages/config-layout";
 import { uiStore } from "@/shell/stores";
 import type { ThemePreference } from "@/shell/stores/ui.store";
+import { TARJETAS_CONFIG, type ClaveConfig } from "./configuracion.catalogo";
+import { DatosFiscalesTab } from "./DatosFiscalesTab";
+import { DatosBancariosTab } from "./DatosBancariosTab";
+import { estaBancariosVerificadoEnSesion } from "./bancarios/VerificacionBancariaGate";
+
+/** Re-exportada: la clave de pestaña es contrato de la URL (`?tab=`). */
+export type { ClaveConfig };
 
 import { AparienciaTab } from "./AparienciaTab";
-import { GeneralOrgTab } from "./GeneralOrgTab";
+import GeneralOrgTab from "./GeneralOrgTab";
+import PersonalizacionTab from "./PersonalizacionTab";
 import { ModulosTab } from "@/pages/equipo";
 import { CanalesOrgTab, leerCanalesGuardados, type CanalesGuardados } from "./CanalesOrgTab";
+import { SparklesIcon } from "@heroicons/react/24/outline";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CENTRO DE CONFIGURACIÓN — /configuracion
@@ -19,16 +29,14 @@ import { CanalesOrgTab, leerCanalesGuardados, type CanalesGuardados } from "./Ca
 //
 // Al ingresar sin parámetro (`/configuracion`), muestra el selector inicial de
 // CUATRO tarjetas:
-//   1. «Información de la sede» (nombre comercial, logo, país, moneda y rubro)
+//   1. «Configuración del negocio» (nombre comercial, logo, país, moneda y rubro)
 //      — clave `general`, que es la que viaja en la URL
-//   2. «Módulos e integraciones» — clave `modulos`
-//   3. «Canales de mensajería» (WhatsApp, Telegram, Instagram, Facebook)
+//   2. «Integraciones» — clave `modulos`
+//   3. «Opciones de mensajería» (WhatsApp, Telegram, Instagram, Facebook)
 //      — clave `canales`
-//   4. «Apariencia» — clave `apariencia`
+//   4. «Preferencias» — clave `apariencia`
 //
 // ═══════════════════════════════════════════════════════════════════════════
-
-export type ClaveConfig = "general" | "modulos" | "canales" | "apariencia";
 
 /** Cabecera de una vista interna: el camino de vuelta al selector. */
 const VolverAlSelector = ({ onVolver }: { onVolver: () => void }) => (
@@ -39,57 +47,53 @@ const VolverAlSelector = ({ onVolver }: { onVolver: () => void }) => (
       className="group inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
     >
       <ChevronLeftIcon className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-      <span>Volver a Ajustes Generales</span>
+      <span>Volver a Configuraciones</span>
     </button>
   </div>
 );
 
-const TARJETAS_AJUSTES: {
-  key: ClaveConfig;
-  label: string;
-  hint: string;
-  icono: React.FC<React.SVGProps<SVGSVGElement>>;
-  accion: string;
-  ajustes: string[];
-  palabrasClave: string[];
-}[] = [
-  {
-    key: "general",
-    label: "Información de la sede",
-    hint: "Nombre comercial, logo, país, moneda base y rubro del negocio.",
-    icono: BuildingOffice2Icon,
-    accion: "Configurar",
-    ajustes: ["Nombre comercial", "Logo", "País y zona horaria", "Moneda", "Tipo de empresa"],
-    palabrasClave: ["sede", "nombre", "organizacion", "logo", "pais", "moneda", "rubro", "datos", "empresa", "identidad"],
+/** Vuelta del detalle de negocio a SU menú, no al hub general. */
+const VolverANegocio = ({ onVolver }: { onVolver: () => void }) => (
+  <div className="mb-6">
+    <button
+      type="button"
+      onClick={onVolver}
+      className="group inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+    >
+      <ChevronLeftIcon className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+      <span>Volver a Configuración del negocio</span>
+    </button>
+  </div>
+);
+
+/** Las cuatro partes de «Configuración del negocio», en el orden del submenú. */
+type SeccionNegocio = "organizacion" | "personalizacion" | "fiscales" | "bancarios";
+
+const SECCIONES_NEGOCIO: Record<
+  SeccionNegocio,
+  { titulo: string; hint: string; metaDescripcion: string }
+> = {
+  organizacion: {
+    titulo: "Datos generales de la organización",
+    hint: "Nombre comercial, remitente de guías, teléfono, país y moneda",
+    metaDescripcion: "Datos generales y operativos de la organización",
   },
-  {
-    key: "modulos",
-    label: "Módulos de la plataforma",
-    hint: "Herramientas activas, catálogo de extensiones y funciones del sistema.",
-    icono: PlugInIcon,
-    accion: "Configurar",
-    ajustes: ["Módulos activos", "Extensiones"],
-    palabrasClave: ["modulos", "extensiones", "servicios", "plataforma", "funciones"],
+  personalizacion: {
+    titulo: "Personalización del negocio",
+    hint: "Logo, imagen de portada, descripción y sitio web",
+    metaDescripcion: "Identidad visual, portada y enlaces públicos del negocio",
   },
-  {
-    key: "canales",
-    label: "Canales de mensajería",
-    hint: "Conexión centralizada de WhatsApp, Telegram, Instagram y Facebook.",
-    icono: ChatIcon,
-    accion: "Conectar",
-    ajustes: ["WhatsApp", "Telegram", "Instagram", "Facebook"],
-    palabrasClave: ["whatsapp", "telegram", "instagram", "facebook", "canales", "conectores", "mensajeria", "api", "webhooks", "chat"],
+  fiscales: {
+    titulo: "Datos fiscales",
+    hint: "Identificación tributaria de la organización",
+    metaDescripcion: "Razón social, NIT y régimen tributario de la organización",
   },
-  {
-    key: "apariencia",
-    label: "Apariencia",
-    hint: "Tema de la aplicación (claro, oscuro, sistema) y densidad de la interfaz.",
-    icono: EyeIcon,
-    accion: "Personalizar",
-    ajustes: ["Tema", "Densidad de conversaciones", "Densidad del asistente"],
-    palabrasClave: ["apariencia", "tema", "modo oscuro", "oscuro", "claro", "diseño", "densidad", "interfaz", "color"],
+  bancarios: {
+    titulo: "Datos bancarios",
+    hint: "Nequi, Daviplata o tu cuenta de banco",
+    metaDescripcion: "Dónde recibe los pagos el negocio: Nequi, Daviplata o cuenta de banco",
   },
-];
+};
 
 const NOMBRE_CANAL: Record<keyof CanalesGuardados, string> = {
   whatsapp: "WhatsApp",
@@ -107,6 +111,7 @@ const TEMA: Record<ThemePreference, string> = {
 export const ConfiguracionPage = observer(() => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") as ClaveConfig | null;
+  const seccion = searchParams.get("seccion") as SeccionNegocio | null;
 
   const nombreOrg = organizacionStore.organizacion?.nombre;
 
@@ -118,25 +123,137 @@ export const ConfiguracionPage = observer(() => {
     setSearchParams({});
   };
 
-  // ── VISTA INTERNA: INFORMACIÓN DE LA SEDE ────────────────────────────────
+  const irASeccion = (clave: SeccionNegocio) => {
+    setSearchParams({ tab: "general", seccion: clave });
+  };
+
+  const volverANegocio = () => {
+    setSearchParams({ tab: "general" });
+  };
+
+  // ── CONFIGURACIÓN DEL NEGOCIO ────────────────────────────────────────────
+  //
+  // Dos niveles: `?tab=general` es el submenú de las tres partes y
+  // `?tab=general&seccion=…` es el detalle. Sin el submenú, fiscales y
+  // bancarios no tenían dónde vivir y el formulario general cargaba con todo.
   if (tab === "general") {
+    if (!seccion || !SECCIONES_NEGOCIO[seccion]) {
+      const fiscal = organizacionStore.organizacion?.datosFiscales;
+      const verificacion = organizacionStore.organizacion?.verificacion;
+      const banco = organizacionStore.organizacion?.cuentasBancarias?.[0];
+      const totalCuentas = organizacionStore.organizacion?.cuentasBancarias?.length ?? 0;
+      const pais = organizacionStore.organizacion?.pais;
+      const moneda = organizacionStore.organizacion?.moneda;
+
+      const tarjetasNegocio: TarjetaHub[] = [
+        {
+          key: "organizacion",
+          label: "Datos generales de la organización",
+          hint: "Nombre comercial, remitente de guías, teléfono, país y moneda.",
+          ajustes: ["Nombre del negocio", "Nombre remitente", "Teléfono", "País y zona horaria", "Moneda"],
+          estado: [nombreOrg, pais, moneda].filter(Boolean).join(" · "),
+          icono: BuildingOffice2Icon,
+          palabrasClave: ["general", "nombre", "telefono", "remitente", "pais", "moneda", "zona", "rubro"],
+        },
+        {
+          key: "personalizacion",
+          label: "Personalización del negocio",
+          hint: "Logo, imagen de portada, descripción comercial y sitio web.",
+          ajustes: ["Logo de la tienda", "Portada / Banner", "Descripción", "Sitio web", "Vista previa"],
+          estado: [
+            organizacionStore.organizacion?.logoUrl ? "Logo activo" : undefined,
+            organizacionStore.organizacion?.portadaUrl ? "Portada activa" : undefined,
+          ].filter(Boolean).join(" · ") || "Sin personalizar",
+          icono: SparklesIcon,
+          palabrasClave: ["personalizacion", "logo", "portada", "banner", "descripcion", "sitio", "web", "marca"],
+        },
+        {
+          key: "fiscales",
+          label: "Datos fiscales",
+          hint: "Identificación tributaria para tus documentos. Opcional.",
+          ajustes: ["Razón social", "NIT", "Régimen", "Dirección fiscal", "Correo de facturación"],
+          // Opcional: vacío no es un aviso. Un vendedor ocasional sin NIT no
+          // tiene nada pendiente aquí.
+          estado:
+            verificacion?.estado === "aprobado"
+              ? "Documentos aprobados"
+              : verificacion?.estado === "en_revision"
+                ? "Documentos en revisión"
+                : fiscal?.nit
+                  ? `NIT ${fiscal.nit}`
+                  : "Sin registrar",
+          estadoTono: "neutro",
+          icono: DocumentTextIcon,
+          palabrasClave: ["fiscal", "nit", "rut", "razon social", "regimen", "iva", "impuestos", "facturacion"],
+        },
+        {
+          key: "bancarios",
+          label: "Datos bancarios",
+          hint: "Dónde recibes tus pagos: Nequi, Daviplata o tu banco. Opcional.",
+          ajustes: ["Nequi", "Daviplata", "Bancos de Colombia", "Titular"],
+          estado:
+            totalCuentas > 1
+              ? `${totalCuentas} cuentas · ${banco?.banco ?? ""}`.trim()
+              : banco
+                ? `${banco.banco} · ${banco.tipoCuenta}`
+                : "Sin registrar",
+          estadoTono: "neutro",
+          icono: BanknotesIcon,
+          palabrasClave: ["banco", "cuenta", "bancarios", "ahorros", "corriente", "transferencia", "titular", "nequi", "daviplata", "billetera"],
+        },
+      ];
+
+      return (
+        <div className="mx-auto max-w-5xl pb-12">
+          <PageMeta
+            title="Configuraciones · Configuración del negocio"
+            description="Datos generales, personalización, fiscales y bancarios de la organización"
+          />
+
+          <VolverAlSelector onVolver={volverAlHub} />
+
+          <div className="animate-aparecer">
+            <ConfigHubPagina
+              titulo={nombreOrg ? `Configuración del negocio · ${nombreOrg}` : "Configuración del negocio"}
+              descripcion="Los datos de la organización, personalización de marca, identificación fiscal y cuentas bancarias."
+              tarjetas={tarjetasNegocio}
+              onEntrar={(k) => irASeccion(k as SeccionNegocio)}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    const meta = SECCIONES_NEGOCIO[seccion];
+    const estaVerificadoBancario = estaBancariosVerificadoEnSesion(
+      organizacionStore.organizacion?.id,
+    );
+
     return (
       <div className="mx-auto max-w-5xl pb-12">
         <PageMeta
-          title="Ajustes Generales · Información de la sede"
-          description="Datos generales, identidad y región de la organización"
+          title={`Configuraciones · ${meta.titulo}`}
+          description={meta.metaDescripcion}
         />
 
-        <VolverAlSelector onVolver={volverAlHub} />
+        <VolverANegocio onVolver={volverANegocio} />
 
         <div className="animate-aparecer">
-          <ConfigShell
-            seccionKey="general"
-            titulo="Datos generales de la organización"
-            hint="Identidad de marca, ubicación y moneda de trabajo"
-          >
-            <GeneralOrgTab />
-          </ConfigShell>
+          {seccion === "bancarios" && estaVerificadoBancario ? (
+            <DatosBancariosTab />
+          ) : (
+            <ConfigShell seccionKey={`general-${seccion}`} titulo={meta.titulo} hint={meta.hint}>
+              {seccion === "bancarios" ? (
+                <DatosBancariosTab />
+              ) : seccion === "fiscales" ? (
+                <DatosFiscalesTab />
+              ) : seccion === "personalizacion" ? (
+                <PersonalizacionTab />
+              ) : (
+                <GeneralOrgTab />
+              )}
+            </ConfigShell>
+          )}
         </div>
       </div>
     );
@@ -147,7 +264,7 @@ export const ConfiguracionPage = observer(() => {
     return (
       <div className="mx-auto max-w-5xl pb-12">
         <PageMeta
-          title="Ajustes Generales · Módulos de la plataforma"
+          title="Configuraciones · Integraciones"
           description="Servicios y extensiones activas de la organización"
         />
 
@@ -156,7 +273,7 @@ export const ConfiguracionPage = observer(() => {
         <div className="animate-aparecer">
           <ConfigShell
             seccionKey="modulos"
-            titulo="Módulos de la plataforma"
+            titulo="Integraciones"
             hint="Activa o desactiva capacidades instaladas en tu organización"
           >
             <ModulosTab />
@@ -171,7 +288,7 @@ export const ConfiguracionPage = observer(() => {
     return (
       <div className="mx-auto max-w-5xl pb-12">
         <PageMeta
-          title="Ajustes Generales · Canales de mensajería"
+          title="Configuraciones · Opciones de mensajería"
           description="Conexión centralizada de WhatsApp, Telegram, Instagram y Facebook"
         />
 
@@ -180,7 +297,7 @@ export const ConfiguracionPage = observer(() => {
         <div className="animate-aparecer">
           <ConfigShell
             seccionKey="canales"
-            titulo="Canales de mensajería"
+            titulo="Opciones de mensajería"
             hint="Centraliza la recepción de mensajes, pedidos y atención omnicanal"
           >
             <CanalesOrgTab />
@@ -190,7 +307,7 @@ export const ConfiguracionPage = observer(() => {
     );
   }
 
-  // ── VISTA INTERNA: APARIENCIA ────────────────────────────────────────────
+  // ── VISTA INTERNA: PREFERENCIAS ──────────────────────────────────────────
   //
   // Es la administración de las preferencias de interfaz de la aplicación
   // entera: el tema y las dos densidades. Se aplican al instante y se persisten
@@ -199,7 +316,7 @@ export const ConfiguracionPage = observer(() => {
     return (
       <div className="mx-auto max-w-5xl pb-12">
         <PageMeta
-          title="Ajustes Generales · Apariencia"
+          title="Configuraciones · Preferencias"
           description="Tema y densidad de la interfaz"
         />
 
@@ -208,7 +325,7 @@ export const ConfiguracionPage = observer(() => {
         <div className="animate-aparecer">
           <ConfigShell
             seccionKey="apariencia"
-            titulo="Apariencia"
+            titulo="Preferencias"
             hint="Tema y densidad de la interfaz. Se aplican al instante"
           >
             <AparienciaTab />
@@ -240,7 +357,7 @@ export const ConfiguracionPage = observer(() => {
     apariencia: { texto: `Tema ${TEMA[uiStore.themePreference]}` },
   };
 
-  const tarjetas: TarjetaHub[] = TARJETAS_AJUSTES.map((t) => ({
+  const tarjetas: TarjetaHub[] = TARJETAS_CONFIG.map((t) => ({
     key: t.key,
     label: t.label,
     hint: t.hint,
@@ -255,12 +372,12 @@ export const ConfiguracionPage = observer(() => {
   return (
     <>
       <PageMeta
-        title="Ajustes Generales"
-        description="Centro de ajustes generales de la organización"
+        title="Configuraciones"
+        description="Centro de configuraciones de la organización"
       />
       <ConfigHubPagina
-        titulo={nombreOrg ? `Ajustes generales · ${nombreOrg}` : "Ajustes generales"}
-        descripcion="Lo que vale para toda la organización: sus datos, los módulos que usa, los canales de mensajería y la apariencia."
+        titulo={nombreOrg ? `Configuraciones · ${nombreOrg}` : "Configuraciones"}
+        descripcion="Lo que vale para toda la organización: sus datos, las integraciones, las opciones de mensajería y las preferencias."
         tarjetas={tarjetas}
         onEntrar={(k) => irA(k as ClaveConfig)}
       />

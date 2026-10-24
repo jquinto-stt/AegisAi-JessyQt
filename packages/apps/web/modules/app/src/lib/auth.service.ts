@@ -301,6 +301,13 @@ export async function cerrarSesion(): Promise<void> {
       // Ignorar error al cerrar sesión en red
     }
   }
+  if (typeof window !== "undefined") {
+    try {
+      sessionStorage.clear();
+    } catch {
+      // Fallback
+    }
+  }
   sessionStore.reset();
 }
 
@@ -546,7 +553,7 @@ export async function completarAltaOrganizacion(
 ): Promise<{ ok: boolean; motivo?: string }> {
   const nombreOrg = (datos.nombreOrg || "Mi Empresa").trim();
   const pais = (datos.pais || organizacionStore.usuario?.pais || "Colombia").trim();
-  const modulos = datos.modulos && datos.modulos.length > 0 ? datos.modulos : (["pedidos"] as IdModuloNegocio[]);
+  const modulos = datos.modulos !== undefined ? datos.modulos : (["pedidos"] as IdModuloNegocio[]);
   const tipoSesion = datos.rol || "administrador";
 
   // Actualizar store local inmediatamente
@@ -636,6 +643,8 @@ export async function actualizarPerfilRemoto(datos: {
   cargo?: string;
   bio?: string;
   ubicacion?: string;
+  avatarUrl?: string;
+  customLink?: string;
   pais?: string;
   comoNosConociste?: string;
   redes?: RedesSociales;
@@ -672,6 +681,13 @@ export async function actualizarPerfilRemoto(datos: {
     }
     if (datos.redes !== undefined) payload.redes = datos.redes;
     if (datos.direccion !== undefined) payload.direccion = datos.direccion;
+    if (datos.comoNosConociste !== undefined) payload.como_nos_conociste = datos.comoNosConociste.trim();
+    if (datos.ubicacion !== undefined) {
+      payload.direccion = {
+        ...(typeof payload.direccion === "object" && payload.direccion ? payload.direccion : {}),
+        ciudad: datos.ubicacion.trim(),
+      };
+    }
 
     if (Object.keys(payload).length > 0) {
       const { error: errU } = await sb
