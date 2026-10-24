@@ -16,12 +16,14 @@ import {
   Clock,
   ArrowRight,
   CheckCircle2,
+  RotateCcw,
 } from "lucide-react";
 
 import { Input } from "@/elements/form/input";
 import { organizacionStore } from "@/stores/organizacion.store";
 import type { CuentaBancariaRegistrada } from "@/stores/organizacion.store";
 import { BANCOS, BILLETERAS, medioPorNombre, type MedioPago } from "./medios-pago";
+import { reiniciarBancariosEnSesion } from "./VerificacionBancariaGate";
 
 const OTRO = "otro";
 const TIPOS_CUENTA = [
@@ -706,8 +708,21 @@ export const CuentasBancarias = observer(() => {
       {/* Espaciador para la solapa de tabs */}
       <div className="h-6" />
 
-      {/* Botón para añadir cuenta */}
-      <div className="flex justify-end">
+      {/* Acciones superiores: botón dev de reinicio y vincular cuenta */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            reiniciarBancariosEnSesion(organizacionStore.organizacion?.id);
+            organizacionStore.reiniciarVerificacion();
+          }}
+          title="Reiniciar proceso de verificación para pruebas de desarrollo"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-[#FF3F1A]/50 bg-[#FF3F1A]/5 hover:bg-[#FF3F1A] hover:text-white hover:border-transparent text-[12px] font-bold text-[#FF3F1A] transition-all cursor-pointer shadow-2xs"
+        >
+          <RotateCcw className="size-3.5" />
+          <span>Reiniciar verificación (dev)</span>
+        </button>
+
         <button
           type="button"
           onClick={() => setAgregando((prev) => !prev)}

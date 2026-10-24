@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router";
 
@@ -99,6 +99,25 @@ export const VerificacionFiscal = observer(({ children }: VerificacionFiscalProp
     organizacionStore.usuario?.email ??
     org?.datosFiscales?.correoFacturacion ??
     "";
+
+  useEffect(() => {
+    if (!guardada) {
+      setPantalla("entrada");
+      setAcepta(false);
+      setNombre("");
+      setNumero("");
+      setDocumento(undefined);
+      setSelfie(undefined);
+      setComprobante(undefined);
+      setCodigo("");
+      setCodigoEsperado(null);
+      setErrorCodigo(null);
+    } else if (guardada.estado === "aprobado") {
+      setPantalla("aprobado");
+    } else if (guardada.estado === "en_revision") {
+      setPantalla("listo");
+    }
+  }, [guardada]);
 
   const nombreValido = nombre.trim().length > 1;
   const numeroValido = numero.trim().length > 3;

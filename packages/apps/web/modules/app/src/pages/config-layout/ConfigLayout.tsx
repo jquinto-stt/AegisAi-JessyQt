@@ -3,6 +3,7 @@ import { useId, useState, type ReactNode } from "react";
 import { Card } from "@/elements/ui/card";
 import { Label } from "@/elements/form/label";
 import { ArrowRightIcon, CheckLineIcon, ChevronLeftIcon, MagnifyingGlassIcon as SearchIcon } from "@/icons";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import { cn } from "@/utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -651,6 +652,9 @@ export interface TarjetaHub {
   palabrasClave?: string[];
   /** Texto del enlace de esta tarjeta, si difiere del general («Ir a Ajustes»). */
   accion?: string;
+  /** Función opcional para reiniciar el proceso (útil para pruebas de desarrollo) */
+  onReset?: () => void;
+  resetLabel?: string;
 }
 
 export interface ConfigHubProps {
@@ -696,12 +700,19 @@ export function ConfigHub({ tarjetas, onEntrar, accion = "Configurar" }: ConfigH
         const Icono = t.icono;
         return (
           <li key={t.key} className="flex">
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => onEntrar(t.key)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onEntrar(t.key);
+                }
+              }}
               aria-label={`${t.accion ?? accion}: ${t.label}`}
               className={cn(
-                "group flex h-full w-full cursor-pointer flex-col rounded-2xl border border-gray-200 bg-white p-5 text-left transition-colors",
+                "group relative flex h-full w-full cursor-pointer flex-col rounded-2xl border border-gray-200 bg-white p-5 text-left transition-colors",
                 "hover:border-brand-500 hover:bg-gray-50",
                 "focus-visible:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30",
                 "dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-brand-500 dark:hover:bg-white/[0.04]",
@@ -727,26 +738,46 @@ export function ConfigHub({ tarjetas, onEntrar, accion = "Configurar" }: ConfigH
                 {t.ajustes && t.ajustes.length > 0 ? t.ajustes.join(" · ") : t.hint}
               </span>
 
-              {t.estado && (
-                <span
-                  className={cn(
-                    "mt-auto flex items-start gap-2 pl-8 pt-4 text-[12px] leading-[18px]",
-                    t.estadoTono === "aviso"
-                      ? "font-bold text-brand-700 dark:text-brand-400"
-                      : "text-ink-body dark:text-gray-300",
-                  )}
-                >
+              <div className="mt-auto flex items-center justify-between gap-3 pl-8 pt-4">
+                {t.estado ? (
                   <span
                     className={cn(
-                      "mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full",
-                      t.estadoTono === "aviso" ? "bg-brand-500" : "bg-accent-300",
+                      "flex items-center gap-2 text-[12px] leading-[18px]",
+                      t.estadoTono === "aviso"
+                        ? "font-bold text-brand-700 dark:text-brand-400"
+                        : "text-ink-body dark:text-gray-300",
                     )}
-                    aria-hidden="true"
-                  />
-                  {t.estado}
-                </span>
-              )}
-            </button>
+                  >
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 shrink-0 rounded-full",
+                        t.estadoTono === "aviso" ? "bg-brand-500" : "bg-accent-300",
+                      )}
+                      aria-hidden="true"
+                    />
+                    {t.estado}
+                  </span>
+                ) : (
+                  <span />
+                )}
+
+                {t.onReset && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      t.onReset?.();
+                    }}
+                    title="Reiniciar proceso de verificación (Pruebas de desarrollo)"
+                    className="z-10 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[#FF3F1A]/50 bg-[#FF3F1A]/5 px-2.5 py-1 text-[12px] font-bold text-[#FF3F1A] transition-all hover:bg-[#FF3F1A] hover:text-white hover:border-transparent active:scale-95 shadow-2xs dark:bg-[#FF3F1A]/10 dark:text-[#FF3F1A]"
+                  >
+                    <ArrowPathIcon className="h-3.5 w-3.5" />
+                    {t.resetLabel ?? "Reiniciar"}
+                  </button>
+                )}
+              </div>
+            </div>
           </li>
         );
       })}

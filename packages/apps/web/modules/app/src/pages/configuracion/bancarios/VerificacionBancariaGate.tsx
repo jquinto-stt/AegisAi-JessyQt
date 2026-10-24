@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router";
 import { ShieldCheck, FileText, CheckCircle2, AlertCircle, ArrowLeft, ArrowRight } from "lucide-react";
@@ -29,6 +29,16 @@ export function marcarBancariosVerificadoEnSesion(orgId?: string): void {
   }
 }
 
+export function reiniciarBancariosEnSesion(orgId?: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(CLAVE_SESSION(orgId));
+    window.dispatchEvent(new Event("necto-bancarios-reset"));
+  } catch {
+    // Fallback
+  }
+}
+
 export interface VerificacionBancariaGateProps {
   children: ReactNode;
 }
@@ -41,6 +51,23 @@ export const VerificacionBancariaGate = observer(({ children }: VerificacionBanc
   const [verificadoEnSesion, setVerificadoEnSesion] = useState(() =>
     estaBancariosVerificadoEnSesion(org?.id),
   );
+
+  useEffect(() => {
+    const sincronizar = () => {
+      setVerificadoEnSesion(estaBancariosVerificadoEnSesion(org?.id));
+      setPantalla("entrada");
+      setAceptaTerminos(false);
+      setCodigo("");
+      setCodigoEsperado(null);
+      setErrorCodigo(null);
+    };
+    window.addEventListener("necto-bancarios-reset", sincronizar);
+    window.addEventListener("storage", sincronizar);
+    return () => {
+      window.removeEventListener("necto-bancarios-reset", sincronizar);
+      window.removeEventListener("storage", sincronizar);
+    };
+  }, [org?.id]);
 
   const [pantalla, setPantalla] = useState<PantallaVerificacion>("entrada");
   const [aceptaTerminos, setAceptaTerminos] = useState(Boolean(guardada?.terminosAceptadosEn));

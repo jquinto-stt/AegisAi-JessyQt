@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { useSearchParams } from "react-router";
 
@@ -11,7 +12,10 @@ import type { ThemePreference } from "@/shell/stores/ui.store";
 import { TARJETAS_CONFIG, type ClaveConfig } from "./configuracion.catalogo";
 import { DatosFiscalesTab } from "./DatosFiscalesTab";
 import { DatosBancariosTab } from "./DatosBancariosTab";
-import { estaBancariosVerificadoEnSesion } from "./bancarios/VerificacionBancariaGate";
+import {
+  estaBancariosVerificadoEnSesion,
+  reiniciarBancariosEnSesion,
+} from "./bancarios/VerificacionBancariaGate";
 
 /** Re-exportada: la clave de pestaña es contrato de la URL (`?tab=`). */
 export type { ClaveConfig };
@@ -113,6 +117,13 @@ export const ConfiguracionPage = observer(() => {
   const tab = searchParams.get("tab") as ClaveConfig | null;
   const seccion = searchParams.get("seccion") as SeccionNegocio | null;
 
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const onReset = () => setTick((t) => t + 1);
+    window.addEventListener("necto-bancarios-reset", onReset);
+    return () => window.removeEventListener("necto-bancarios-reset", onReset);
+  }, []);
+
   const nombreOrg = organizacionStore.organizacion?.nombre;
 
   const irA = (clave: ClaveConfig) => {
@@ -144,6 +155,9 @@ export const ConfiguracionPage = observer(() => {
       const totalCuentas = organizacionStore.organizacion?.cuentasBancarias?.length ?? 0;
       const pais = organizacionStore.organizacion?.pais;
       const moneda = organizacionStore.organizacion?.moneda;
+      const estaVerificadoBancario = estaBancariosVerificadoEnSesion(
+        organizacionStore.organizacion?.id,
+      );
 
       const tarjetasNegocio: TarjetaHub[] = [
         {
@@ -185,6 +199,11 @@ export const ConfiguracionPage = observer(() => {
           estadoTono: "neutro",
           icono: DocumentTextIcon,
           palabrasClave: ["fiscal", "nit", "rut", "razon social", "regimen", "iva", "impuestos", "facturacion"],
+          onReset: () => {
+            organizacionStore.reiniciarVerificacion();
+            setTick((t) => t + 1);
+          },
+          resetLabel: "Reiniciar",
         },
         {
           key: "bancarios",
@@ -192,14 +211,22 @@ export const ConfiguracionPage = observer(() => {
           hint: "Dónde recibes tus pagos: Nequi, Daviplata o tu banco. Opcional.",
           ajustes: ["Nequi", "Daviplata", "Bancos de Colombia", "Titular"],
           estado:
-            totalCuentas > 1
-              ? `${totalCuentas} cuentas · ${banco?.banco ?? ""}`.trim()
-              : banco
-                ? `${banco.banco} · ${banco.tipoCuenta}`
-                : "Sin registrar",
-          estadoTono: "neutro",
+            !estaVerificadoBancario
+              ? "Verificación pendiente"
+              : totalCuentas > 1
+                ? `${totalCuentas} cuentas · ${banco?.banco ?? ""}`.trim()
+                : banco
+                  ? `${banco.banco} · ${banco.tipoCuenta}`
+                  : "Sin registrar",
+          estadoTono: !estaVerificadoBancario ? "aviso" : "neutro",
           icono: BanknotesIcon,
           palabrasClave: ["banco", "cuenta", "bancarios", "ahorros", "corriente", "transferencia", "titular", "nequi", "daviplata", "billetera"],
+          onReset: () => {
+            reiniciarBancariosEnSesion(organizacionStore.organizacion?.id);
+            organizacionStore.reiniciarVerificacion();
+            setTick((t) => t + 1);
+          },
+          resetLabel: "Reiniciar",
         },
       ];
 
