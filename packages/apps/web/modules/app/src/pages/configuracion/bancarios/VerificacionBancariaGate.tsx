@@ -1,10 +1,13 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import { Link } from "react-router";
-import { ShieldCheck, FileText, CheckCircle2, AlertCircle, ArrowLeft, ArrowRight } from "lucide-react";
+import { ShieldCheckIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 
 import { organizacionStore } from "@/stores/organizacion.store";
+import { Alert } from "@/elements/ui/alert";
+import { Button } from "@/elements/ui/button";
 import { Input } from "@/elements/form/input";
+import { BloqueConfig, CampoConfig, ConfigAcciones } from "@/pages/config-layout";
 import { nuevoCodigo } from "../verificacion/codigo";
 
 type PantallaVerificacion = "entrada" | "terminos" | "codigo";
@@ -120,238 +123,156 @@ export const VerificacionBancariaGate = observer(({ children }: VerificacionBanc
     });
   };
 
-  // ── 1. ENTRADA ────────────────────────────────────────────────────────────
+  // ── 1. ENTRADA (Mismo diseño y estilo exacto que datos fiscales) ───────────
   if (pantalla === "entrada") {
     return (
-      <div className="flex flex-col gap-8 w-full max-w-4xl font-['DM_Sans',sans-serif] pb-12">
-        <div className="bg-white dark:bg-[#16171d] rounded-3xl p-7 sm:p-10 border border-[#ECECEC] dark:border-white/10 shadow-sm flex flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <span className="flex size-12 items-center justify-center rounded-2xl bg-[#190088]/10 text-[#190088] dark:bg-white/10 dark:text-[#97D6DF]">
-              <ShieldCheck className="size-6" />
-            </span>
-            <div>
-              <h1 className="text-[24px] font-bold text-[#190088] dark:text-white leading-tight">
-                Registrar documentos del negocio
-              </h1>
-              <p className="text-[14px] font-light text-[#212121]/80 dark:text-gray-300 mt-0.5">
-                Antes de operar con datos fiscales y retiros, necesitamos conocerte. Pueden ser documentos de persona natural o jurídica.
-              </p>
-            </div>
-          </div>
+      <BloqueConfig
+        icono={ShieldCheckIcon}
+        pregunta="Registrar documentos del negocio"
+        descripcion="Antes de operar con datos fiscales y retiros, necesitamos conocerte. Pueden ser documentos de persona natural o jurídica."
+      >
+        <div className="rounded-2xl border border-[#ECECEC] bg-[#F6F7F9] p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <ul className="space-y-2 text-[13px] leading-5 text-[#212121]/80 dark:text-gray-300">
+            <li className="flex gap-2">
+              <span aria-hidden="true">•</span>
+              <span>Revisión manual: una persona del equipo revisa cada documento.</span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden="true">•</span>
+              <span>Los archivos se piden una sola vez y quedan asociados a tu organización.</span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden="true">•</span>
+              <span>El proceso suele tardar hasta 5 días hábiles.</span>
+            </li>
+          </ul>
 
-          <div className="rounded-2xl border border-[#ECECEC] bg-[#F6F7F9] dark:bg-white/5 dark:border-white/10 p-6">
-            <ul className="space-y-3 text-[14px] font-normal leading-relaxed text-[#212121]/80 dark:text-gray-300">
-              <li className="flex items-start gap-2.5">
-                <span className="text-[#190088] dark:text-[#97D6DF] font-bold">•</span>
-                <span><strong>Revisión manual:</strong> una persona del equipo revisa cada documento.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <span className="text-[#190088] dark:text-[#97D6DF] font-bold">•</span>
-                <span>Los archivos se piden una sola vez y quedan asociados a tu organización.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <span className="text-[#190088] dark:text-[#97D6DF] font-bold">•</span>
-                <span>El proceso suele tardar hasta 5 días hábiles.</span>
-              </li>
-            </ul>
-
-            <div className="mt-6 flex items-center justify-start">
-              <button
-                type="button"
-                onClick={iniciarVerificacion}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#190088] hover:bg-[#120066] text-white text-[14px] font-bold shadow-sm transition-all cursor-pointer active:scale-95"
-              >
-                <span>Registrar documentos</span>
-                <ArrowRight className="size-4" />
-              </button>
-            </div>
+          <div className="mt-4">
+            <Button size="sm" onClick={iniciarVerificacion}>
+              Registrar documentos
+            </Button>
           </div>
         </div>
-      </div>
+      </BloqueConfig>
     );
   }
 
-  // ── 2. TÉRMINOS ───────────────────────────────────────────────────────────
+  // ── 2. TÉRMINOS (Mismo diseño y estilo exacto que datos fiscales) ──────────
   if (pantalla === "terminos") {
     return (
-      <div className="flex flex-col gap-8 w-full max-w-4xl font-['DM_Sans',sans-serif] pb-12">
-        <div className="bg-white dark:bg-[#16171d] rounded-3xl p-7 sm:p-10 border border-[#ECECEC] dark:border-white/10 shadow-sm flex flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <span className="flex size-12 items-center justify-center rounded-2xl bg-[#190088]/10 text-[#190088] dark:bg-white/10 dark:text-[#97D6DF]">
-              <FileText className="size-6" />
-            </span>
-            <div>
-              <h2 className="text-[24px] font-bold text-[#190088] dark:text-white leading-tight">
-                Tratamiento de tus datos
-              </h2>
-              <p className="text-[14px] font-light text-[#212121]/80 dark:text-gray-300 mt-0.5">
-                Para verificar la identidad del negocio necesitamos tratar datos personales. Esto es lo que se pide y por qué.
-              </p>
-            </div>
-          </div>
+      <BloqueConfig
+        icono={DocumentTextIcon}
+        pregunta="Tratamiento de tus datos"
+        descripcion="Para verificar la identidad del negocio necesitamos tratar datos personales. Esto es lo que se pide y por qué."
+      >
+        <ul className="space-y-2 text-[13px] leading-5 text-[#212121]/80 dark:text-gray-300">
+          <li>
+            <strong className="font-semibold text-ink-title dark:text-white">Qué se recoge:</strong>{" "}
+            nombre o razón social, tipo y número de documento, correo electrónico, foto del rostro,
+            documento de identidad y comprobante de dirección.
+          </li>
+          <li>
+            <strong className="font-semibold text-ink-title dark:text-white">Para qué:</strong>{" "}
+            confirmar que el negocio existe y que quien lo registra es su titular. Sin esto no se
+            habilitan retiros ni datos fiscales.
+          </li>
+          <li>
+            <strong className="font-semibold text-ink-title dark:text-white">Cuánto se guarda:</strong>{" "}
+            mientras la organización esté activa. Puedes pedir la eliminación desde soporte.
+          </li>
+        </ul>
 
-          <div className="space-y-4 text-[14px] font-normal leading-relaxed text-[#212121]/80 dark:text-gray-300">
-            <div className="p-4 rounded-xl border border-[#ECECEC] dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02]">
-              <p className="font-bold text-[#190088] dark:text-[#97D6DF] text-[14px]">Qué se recoge:</p>
-              <p className="font-light mt-1 text-[14px]">
-                Nombre o razón social, tipo y número de documento, correo electrónico, foto del rostro, documento de identidad y comprobante de dirección.
-              </p>
-            </div>
+        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-[#ECECEC] p-4 text-[13px] leading-5 dark:border-gray-800">
+          <input
+            type="checkbox"
+            checked={aceptaTerminos}
+            onChange={(e) => setAceptaTerminos(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-brand-500"
+          />
+          <span className="text-[#212121] dark:text-gray-200">
+            He leído y acepto los{" "}
+            <Link to="/terminos" className="font-semibold text-brand-600 hover:underline dark:text-brand-400">
+              términos y condiciones
+            </Link>{" "}
+            y la{" "}
+            <Link to="/privacidad" className="font-semibold text-brand-600 hover:underline dark:text-brand-400">
+              política de tratamiento de datos
+            </Link>
+            .
+          </span>
+        </label>
 
-            <div className="p-4 rounded-xl border border-[#ECECEC] dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02]">
-              <p className="font-bold text-[#190088] dark:text-[#97D6DF] text-[14px]">Para qué:</p>
-              <p className="font-light mt-1 text-[14px]">
-                Confirmar que el negocio existe y que quien lo registra es su titular. Sin esto no se habilitan retiros ni datos fiscales.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl border border-[#ECECEC] dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02]">
-              <p className="font-bold text-[#190088] dark:text-[#97D6DF] text-[14px]">Cuánto se guarda:</p>
-              <p className="font-light mt-1 text-[14px]">
-                Mientras la organización esté activa. Puedes pedir la eliminación desde soporte.
-              </p>
-            </div>
-          </div>
-
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#ECECEC] dark:border-white/10 p-5 text-[14px] leading-relaxed bg-white dark:bg-white/5">
-            <input
-              type="checkbox"
-              checked={aceptaTerminos}
-              onChange={(e) => setAceptaTerminos(e.target.checked)}
-              className="mt-1 size-4 accent-[#190088] rounded cursor-pointer"
-            />
-            <span className="text-[#212121] dark:text-gray-200">
-              He leído y acepto los{" "}
-              <Link to="/terminos" className="font-bold text-[#190088] dark:text-[#97D6DF] hover:underline">
-                términos y condiciones
-              </Link>{" "}
-              y la{" "}
-              <Link to="/privacidad" className="font-bold text-[#190088] dark:text-[#97D6DF] hover:underline">
-                política de tratamiento de datos
-              </Link>
-              .
-            </span>
-          </label>
-
-          <div className="flex items-center justify-between pt-4 border-t border-[#ECECEC] dark:border-white/10">
-            <button
-              type="button"
-              onClick={() => setPantalla("entrada")}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#ECECEC] dark:border-white/15 text-[14px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all cursor-pointer"
-            >
-              <ArrowLeft className="size-4" />
-              <span>Cancelar</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={!aceptaTerminos}
-              onClick={aceptarTerminosYEnviarCodigo}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-bold transition-all ${
-                aceptaTerminos
-                  ? "bg-[#190088] hover:bg-[#120066] text-white shadow-sm cursor-pointer active:scale-95"
-                  : "bg-gray-200 dark:bg-white/10 text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              <span>Aceptar y continuar</span>
-              <ArrowRight className="size-4" />
-            </button>
-          </div>
+        <div className="mt-6">
+          <ConfigAcciones>
+            <Button size="sm" variant="outline" onClick={() => setPantalla("entrada")}>
+              Cancelar
+            </Button>
+            <Button size="sm" disabled={!aceptaTerminos} onClick={aceptarTerminosYEnviarCodigo}>
+              Aceptar y continuar
+            </Button>
+          </ConfigAcciones>
         </div>
-      </div>
+      </BloqueConfig>
     );
   }
 
-  // ── 3. CÓDIGO (OTP) ───────────────────────────────────────────────────────
+  // ── 3. CÓDIGO (OTP) (Mismo diseño y estilo que datos fiscales) ────────────
   return (
-    <div className="flex flex-col gap-8 w-full max-w-4xl font-['DM_Sans',sans-serif] pb-12">
-      <div className="bg-white dark:bg-[#16171d] rounded-3xl p-7 sm:p-10 border border-[#ECECEC] dark:border-white/10 shadow-sm flex flex-col gap-6">
-        <div className="flex items-center gap-3">
-          <span className="flex size-12 items-center justify-center rounded-2xl bg-[#190088]/10 text-[#190088] dark:bg-white/10 dark:text-[#97D6DF]">
-            <CheckCircle2 className="size-6" />
-          </span>
-          <div>
-            <h2 className="text-[24px] font-bold text-[#190088] dark:text-white leading-tight">
-              Verificación de seguridad
-            </h2>
-            <p className="text-[14px] font-light text-[#212121]/80 dark:text-gray-300 mt-0.5">
-              Para confirmar tu identidad, enviaremos un código de seguridad a <strong>{correo}</strong>.
-            </p>
-          </div>
-        </div>
+    <BloqueConfig
+      icono={ShieldCheckIcon}
+      pregunta="Verificación de seguridad"
+      descripcion={
+        correo
+          ? `Para confirmar tu identidad, enviaremos un código de seguridad a ${correo}.`
+          : "Para confirmar tu identidad, enviaremos un código de seguridad a tu correo."
+      }
+    >
+      <Alert
+        variant="info"
+        title="Modo demostración: no se envía correo"
+        message={`Necto todavía no tiene servidor de correo, así que tu código se muestra aquí: ${codigoEsperado ?? "——————"}`}
+      />
 
-        {/* Banner de Modo Demostración */}
-        <div className="rounded-2xl border border-[#97D6DF]/60 bg-[#97D6DF]/10 p-5 dark:bg-[#97D6DF]/5">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="size-5 text-[#190088] dark:text-[#97D6DF] shrink-0 mt-0.5" />
-            <div>
-              <p className="text-[14px] font-bold text-[#190088] dark:text-[#97D6DF]">
-                Modo demostración: no se envía correo
-              </p>
-              <p className="text-[14px] font-light text-[#212121]/80 dark:text-gray-300 mt-1">
-                Necto todavía no tiene servidor de correo, así que tu código se muestra aquí:{" "}
-                <span className="font-mono text-[16px] font-bold text-[#190088] dark:text-white bg-white dark:bg-white/10 px-2.5 py-1 rounded-md border border-[#ECECEC] dark:border-white/20">
-                  {codigoEsperado ?? "——————"}
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-md">
-          <label className="block text-[12px] font-bold text-[#212121] dark:text-white mb-1">
-            Código enviado al correo
-          </label>
-          <p className="text-[12px] font-light text-gray-500 mb-2">
-            Seis caracteres, sin espacios.
-          </p>
+      <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        <CampoConfig
+          etiqueta="Código enviado al correo"
+          ayuda="Seis caracteres, sin espacios."
+          htmlFor="ver-codigo-bancario"
+          ancho="max-w-none"
+        >
           <Input
+            id="ver-codigo-bancario"
             value={codigo}
             maxLength={6}
             placeholder="A1B2C3"
+            error={Boolean(errorCodigo)}
+            hint={errorCodigo ?? undefined}
             onChange={(e) => {
               setCodigo(e.target.value.toUpperCase());
               setErrorCodigo(null);
             }}
           />
-
-          {errorCodigo && (
-            <p className="text-[12px] font-bold text-red-600 mt-2">
-              {errorCodigo}
-            </p>
-          )}
-
-          <p className="text-[12px] font-light text-[#212121]/60 dark:text-gray-400 mt-3">
-            No pedimos contraseña: en Necto se entra con Google.
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between pt-4 border-t border-[#ECECEC] dark:border-white/10">
-          <button
-            type="button"
-            onClick={() => setPantalla("terminos")}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#ECECEC] dark:border-white/15 text-[14px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all cursor-pointer"
-          >
-            <ArrowLeft className="size-4" />
-            <span>Regresar</span>
-          </button>
-
-          <button
-            type="button"
-            disabled={codigo.trim().length !== 6}
-            onClick={confirmarCodigo}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-bold transition-all ${
-              codigo.trim().length === 6
-                ? "bg-[#190088] hover:bg-[#120066] text-white shadow-sm cursor-pointer active:scale-95"
-                : "bg-gray-200 dark:bg-white/10 text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            <span>Confirmar código</span>
-            <ArrowRight className="size-4" />
-          </button>
-        </div>
+        </CampoConfig>
       </div>
-    </div>
+
+      <p className="mt-3 text-[12px] text-gray-500 dark:text-gray-400">
+        No pedimos contraseña: en Necto se entra con Google.
+      </p>
+
+      <div className="mt-6">
+        <ConfigAcciones>
+          <Button size="sm" variant="outline" onClick={() => setPantalla("terminos")}>
+            Regresar
+          </Button>
+          <Button size="sm" variant="ghost" onClick={aceptarTerminosYEnviarCodigo}>
+            Reenviar código
+          </Button>
+          <Button size="sm" disabled={codigo.trim().length < 6} onClick={confirmarCodigo}>
+            Validar
+          </Button>
+        </ConfigAcciones>
+      </div>
+    </BloqueConfig>
   );
 });
 

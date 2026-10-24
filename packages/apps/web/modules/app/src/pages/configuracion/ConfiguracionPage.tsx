@@ -266,11 +266,13 @@ export const ConfiguracionPage = observer(() => {
         <VolverANegocio onVolver={volverANegocio} />
 
         <div className="animate-aparecer">
-          {seccion === "bancarios" ? (
+          {seccion === "bancarios" && estaVerificadoBancario ? (
             <DatosBancariosTab />
           ) : (
             <ConfigShell seccionKey={`general-${seccion}`} titulo={meta.titulo} hint={meta.hint}>
-              {seccion === "fiscales" ? (
+              {seccion === "bancarios" ? (
+                <DatosBancariosTab />
+              ) : seccion === "fiscales" ? (
                 <DatosFiscalesTab />
               ) : seccion === "personalizacion" ? (
                 <PersonalizacionTab />
