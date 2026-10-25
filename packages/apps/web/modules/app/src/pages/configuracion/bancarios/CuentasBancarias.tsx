@@ -84,7 +84,7 @@ const LogoMedio = ({
       <img
         src={medio.logo}
         alt={medio.nombre}
-        className={`${tamClases} shrink-0 object-contain bg-white ring-1 ring-black/5 shadow-xs`}
+        className={`${tamClases} shrink-0 object-contain bg-white p-1 ring-1 ring-black/5 shadow-xs`}
       />
     );
   }
@@ -520,9 +520,17 @@ export const CuentasBancarias = observer(() => {
       });
       organizacionStore.agregarCuentaBancaria({
         ambito: "local",
-        banco: "Banco de Bogotá",
+        banco: "Nu",
         tipoCuenta: "Cuenta de ahorros",
         numero: "18492019481",
+        titular: organizacionStore.organizacion?.nombre || "Empresa Titular",
+        principal: false,
+      });
+      organizacionStore.agregarCuentaBancaria({
+        ambito: "local",
+        banco: "Nequi",
+        tipoCuenta: "Billetera digital",
+        numero: "3001234567",
         titular: organizacionStore.organizacion?.nombre || "Empresa Titular",
         principal: false,
       });

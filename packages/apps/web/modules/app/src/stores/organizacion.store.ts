@@ -141,7 +141,43 @@ export interface OrganizacionWorkspace {
    * y por eso el selector impone un tope de tamaño real (ver `SelectorImagen`).
    */
   portadaUrl?: string;
+  /**
+   * Personalización del negocio (`seccion=personalizacion`). Como `descripcion`,
+   * hoy su único lector es la vista previa de identidad; se guardan aquí para
+   * que el perfil público, cuando exista, los lea sin migrar nada.
+   */
+  /** Color de marca en hex (`#RRGGBB`). Sin valor, se usa el naranja NECTO. */
+  colorMarca?: string;
+  /** Frase corta bajo el nombre. Máximo 60 caracteres en la pantalla. */
+  eslogan?: string;
+  redesNegocio?: RedesNegocio;
+  horario?: HorarioAtencion;
+  /** Dirección del local físico. Se ignora si `soloEnLinea`. */
+  direccion?: string;
+  /** El negocio no atiende en un local: vende solo por canales digitales. */
+  soloEnLinea?: boolean;
   fechaCreacion: string;
+}
+
+/**
+ * Redes del NEGOCIO. No confundir con `RedesSociales`, que son las del usuario
+ * en `/profile`. Se guarda el usuario o número, no la URL completa.
+ */
+export interface RedesNegocio {
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
+  /** Número de WhatsApp de ventas, con indicativo. */
+  whatsapp?: string;
+}
+
+/** Horario de atención. Mismo horario para todos los días marcados. */
+export interface HorarioAtencion {
+  /** Días abiertos con la numeración de `Date.getDay()`: 0 = domingo … 6 = sábado. */
+  dias: number[];
+  /** `HH:MM`, 24 h. */
+  abre: string;
+  cierra: string;
 }
 
 /** Identificación tributaria de la organización. Todos los campos son opcionales. */
@@ -708,6 +744,12 @@ export class OrganizacionStore {
     descripcion?: string;
     sitioWeb?: string;
     portadaUrl?: string;
+    colorMarca?: string;
+    eslogan?: string;
+    redesNegocio?: RedesNegocio;
+    horario?: HorarioAtencion;
+    direccion?: string;
+    soloEnLinea?: boolean;
     datosFiscales?: DatosFiscales;
     cuentasBancarias?: CuentaBancariaRegistrada[];
   }) {
@@ -737,6 +779,16 @@ export class OrganizacionStore {
       descripcion: datos.descripcion?.trim() ?? this.organizacion.descripcion,
       sitioWeb: datos.sitioWeb?.trim() ?? this.organizacion.sitioWeb,
       portadaUrl: datos.portadaUrl?.trim() ?? this.organizacion.portadaUrl,
+      colorMarca: datos.colorMarca?.trim() ?? this.organizacion.colorMarca,
+      eslogan: datos.eslogan?.trim() ?? this.organizacion.eslogan,
+      direccion: datos.direccion?.trim() ?? this.organizacion.direccion,
+      soloEnLinea: datos.soloEnLinea ?? this.organizacion.soloEnLinea,
+      // Redes y horario también se reemplazan enteros, por la misma razón que
+      // los datos fiscales: borrar una red tiene que borrarla. Se mira si la
+      // clave VINO y no si trae valor: `horario: undefined` es «quitar el
+      // horario», y con `??` se quedaría el anterior.
+      redesNegocio: "redesNegocio" in datos ? datos.redesNegocio : this.organizacion.redesNegocio,
+      horario: "horario" in datos ? datos.horario : this.organizacion.horario,
       // Los dos bloques se REEMPLAZAN enteros: la pantalla manda el juego
       // completo de campos, y un merge por campo dejaría vivos valores que el
       // usuario acaba de borrar.

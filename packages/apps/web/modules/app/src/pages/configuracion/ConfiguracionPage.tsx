@@ -84,8 +84,8 @@ const SECCIONES_NEGOCIO: Record<
   },
   personalizacion: {
     titulo: "Personalización del negocio",
-    hint: "Logo, imagen de portada, descripción y sitio web",
-    metaDescripcion: "Identidad visual, portada y enlaces públicos del negocio",
+    hint: "Logo, colores, eslogan, redes, horario y ubicación",
+    metaDescripcion: "Identidad visual, redes sociales, horario y ubicación del negocio",
   },
   fiscales: {
     titulo: "Datos fiscales",
@@ -172,14 +172,15 @@ export const ConfiguracionPage = observer(() => {
         {
           key: "personalizacion",
           label: "Personalización del negocio",
-          hint: "Logo, imagen de portada, descripción comercial y sitio web.",
-          ajustes: ["Logo de la tienda", "Portada / Banner", "Descripción", "Sitio web", "Vista previa"],
+          hint: "Logo, colores, eslogan, redes sociales, horario y ubicación.",
+          ajustes: ["Logo y portada", "Color de marca", "Eslogan", "Redes sociales", "Horario y ubicación"],
           estado: [
             organizacionStore.organizacion?.logoUrl ? "Logo activo" : undefined,
-            organizacionStore.organizacion?.portadaUrl ? "Portada activa" : undefined,
+            organizacionStore.organizacion?.redesNegocio ? "Redes enlazadas" : undefined,
+            organizacionStore.organizacion?.horario ? "Con horario" : undefined,
           ].filter(Boolean).join(" · ") || "Sin personalizar",
           icono: SparklesIcon,
-          palabrasClave: ["personalizacion", "logo", "portada", "banner", "descripcion", "sitio", "web", "marca"],
+          palabrasClave: ["personalizacion", "logo", "portada", "banner", "descripcion", "sitio", "web", "marca", "color", "eslogan", "redes", "instagram", "facebook", "tiktok", "whatsapp", "horario", "direccion", "ubicacion"],
         },
         {
           key: "fiscales",

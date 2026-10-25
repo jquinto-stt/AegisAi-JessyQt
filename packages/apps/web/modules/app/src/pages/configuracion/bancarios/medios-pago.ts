@@ -1,14 +1,12 @@
 /**
  * Medios donde un negocio colombiano recibe dinero: billeteras y bancos.
  *
- * Cada uno lleva el color de su marca para pintar su ficha (`LogoMedio`).
- * Para usar el logo oficial, deja el SVG en `public/images/bancos/` y pon su
- * ruta en `logo`: la ficha lo muestra en lugar de las iniciales.
+ * Mapeo exacto a los logos disponibles en `public/images/bancos/`.
  */
 export interface MedioPago {
   id: string;
   nombre: string;
-  /** Nequi y Daviplata se identifican con el celular; no tienen tipo de cuenta. */
+  /** Nequi, Daviplata y Bre-B se identifican con celular/llave; no tienen tipo de cuenta tradicional. */
   billetera?: boolean;
   /** Iniciales de la ficha cuando no hay logo. */
   sigla: string;
@@ -18,21 +16,72 @@ export interface MedioPago {
 }
 
 export const MEDIOS_PAGO: MedioPago[] = [
-  { id: "nequi", nombre: "Nequi", billetera: true, sigla: "N", fondo: "#200020", texto: "#DA0081", logo: "/images/bancos/nequi.svg" },
-  { id: "daviplata", nombre: "Daviplata", billetera: true, sigla: "D", fondo: "#E30613", texto: "#FFFFFF", logo: "/images/bancos/daviplata.svg" },
-  { id: "bancolombia", nombre: "Bancolombia", sigla: "B", fondo: "#FFFFFF", texto: "#2C2A29", logo: "/images/bancos/bancolombia.svg" },
-  { id: "davivienda", nombre: "Davivienda", sigla: "D", fondo: "#ED1C24", texto: "#FFFFFF", logo: "/images/bancos/davivienda.svg" },
-  { id: "bogota", nombre: "Banco de Bogotá", sigla: "BB", fondo: "#002D72", texto: "#FFFFFF", logo: "/images/bancos/bogota.svg" },
-  { id: "bbva", nombre: "BBVA", sigla: "BBVA", fondo: "#004481", texto: "#FFFFFF", logo: "/images/bancos/bbva.svg" },
-  { id: "nu", nombre: "Nu", sigla: "nu", fondo: "#820AD1", texto: "#FFFFFF", logo: "/images/bancos/nu.svg" },
-  { id: "occidente", nombre: "Banco de Occidente", sigla: "O", fondo: "#0055A5", texto: "#FFFFFF", logo: "/images/bancos/occidente.svg" },
-  { id: "popular", nombre: "Banco Popular", sigla: "P", fondo: "#00843D", texto: "#FFFFFF", logo: "/images/bancos/popular.svg" },
-  { id: "cajasocial", nombre: "Banco Caja Social", sigla: "CS", fondo: "#0033A0", texto: "#FFFFFF", logo: "/images/bancos/cajasocial.svg" },
-  { id: "colpatria", nombre: "Scotiabank Colpatria", sigla: "SC", fondo: "#EC111A", texto: "#FFFFFF", logo: "/images/bancos/colpatria.svg" },
+  {
+    id: "nequi",
+    nombre: "Nequi",
+    billetera: true,
+    sigla: "N",
+    fondo: "#231C46",
+    texto: "#E73B7B",
+    logo: "/images/bancos/nequi-2.svg",
+  },
+  {
+    id: "daviplata",
+    nombre: "Daviplata",
+    billetera: true,
+    sigla: "D",
+    fondo: "#E01A19",
+    texto: "#FFFFFF",
+    logo: "/images/bancos/daviplata.svg",
+  },
+  {
+    id: "bre-b",
+    nombre: "Bre-B",
+    billetera: true,
+    sigla: "BB",
+    fondo: "#FFFFFF",
+    texto: "#00B6ED",
+    logo: "/images/bancos/logo-bre-b.svg",
+  },
+  {
+    id: "bancolombia",
+    nombre: "Bancolombia",
+    sigla: "B",
+    fondo: "#FFFFFF",
+    texto: "#23307D",
+    logo: "/images/bancos/bancolombia.svg",
+  },
+  {
+    id: "nu",
+    nombre: "Nu",
+    sigla: "Nu",
+    fondo: "#820AD1",
+    texto: "#FFFFFF",
+    logo: "/images/bancos/nubank-logo.svg",
+  },
+  {
+    id: "mastercard",
+    nombre: "Mastercard",
+    sigla: "MC",
+    fondo: "#000000",
+    texto: "#FF5F01",
+    logo: "/images/bancos/mastercard-modern-design-.svg",
+  },
 ];
 
 export const BILLETERAS = MEDIOS_PAGO.filter((m) => m.billetera);
 export const BANCOS = MEDIOS_PAGO.filter((m) => !m.billetera);
 
-/** Busca por nombre: las cuentas guardadas solo conservan el nombre del banco. */
-export const medioPorNombre = (nombre: string) => MEDIOS_PAGO.find((m) => m.nombre === nombre);
+/** Busca por nombre o id: las cuentas guardadas conservan el nombre del banco o el id. */
+export const medioPorNombre = (nombre: string) =>
+  MEDIOS_PAGO.find(
+    (m) =>
+      m.nombre.toLowerCase() === nombre.toLowerCase() ||
+      m.id.toLowerCase() === nombre.toLowerCase() ||
+      (nombre.toLowerCase().includes("nu") && m.id === "nu") ||
+      (nombre.toLowerCase().includes("nequi") && m.id === "nequi") ||
+      (nombre.toLowerCase().includes("daviplata") && m.id === "daviplata") ||
+      (nombre.toLowerCase().includes("bancolombia") && m.id === "bancolombia") ||
+      (nombre.toLowerCase().includes("bre-b") && m.id === "bre-b") ||
+      (nombre.toLowerCase().includes("mastercard") && m.id === "mastercard"),
+  );

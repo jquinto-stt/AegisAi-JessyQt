@@ -1,6 +1,18 @@
-import type { FC } from "react";
+import type { CSSProperties, FC } from "react";
+import { Clock, Globe, MapPin, MessageCircle } from "lucide-react";
 
-import { slugDe } from "@/stores/organizacion.store";
+import { slugDe, type HorarioAtencion, type RedesNegocio } from "@/stores/organizacion.store";
+import { IconoRed, nombreDeRed } from "./IconoRed";
+import {
+  COLOR_MARCA_DEFECTO,
+  enlaceDeRed,
+  esHexValido,
+  estadoHorario,
+  horaLegible,
+  resumenDias,
+  textoSobre,
+  type RedNegocio,
+} from "./personalizacion";
 
 /**
  * Vista previa de la identidad del negocio.
@@ -38,7 +50,15 @@ export interface VistaPreviaNegocioProps {
   zonaHoraria: string;
   tipoEmpresa: string;
   tamanoEquipo: string;
+  colorMarca: string;
+  eslogan: string;
+  redes: RedesNegocio;
+  horario: HorarioAtencion | null;
+  direccion: string;
+  soloEnLinea: boolean;
 }
+
+const ORDEN_REDES: RedNegocio[] = ["whatsapp", "instagram", "facebook", "tiktok"];
 
 /** Iniciales del nombre, para cuando no hay logo. Nunca más de dos letras. */
 function inicialesDe(nombre: string): string {
@@ -72,8 +92,21 @@ export const VistaPreviaNegocio: FC<VistaPreviaNegocioProps> = ({
   zonaHoraria,
   tipoEmpresa,
   tamanoEquipo,
+  colorMarca,
+  eslogan,
+  redes,
+  horario,
+  direccion,
+  soloEnLinea,
 }) => {
   const rubro = tipoEmpresa || "Rubro sin definir";
+  const color = esHexValido(colorMarca) ? colorMarca : COLOR_MARCA_DEFECTO;
+  const textoBoton = textoSobre(color);
+  const estado = estadoHorario(horario ?? undefined, new Date());
+  const enlaces = ORDEN_REDES.map((red) => ({ red, url: enlaceDeRed(red, redes[red] ?? "") })).filter(
+    (e): e is { red: RedNegocio; url: string } => e.url !== null,
+  );
+  const whatsapp = enlaces.find((e) => e.red === "whatsapp");
 
   return (
     <section
@@ -81,15 +114,18 @@ export const VistaPreviaNegocio: FC<VistaPreviaNegocioProps> = ({
       className="overflow-hidden rounded-3xl border border-[#ECECEC] bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-900"
     >
       {/* ── PORTADA ─────────────────────────────────────────────────────── */}
+      {/* Sin imagen, la portada toma el color de marca: así se ve el efecto de
+          elegirlo sin tener que subir nada. */}
       <div className="relative h-36 bg-[#1F2023] sm:h-44">
         {portadaUrl.trim() ? (
           <img src={portadaUrl} alt="Portada del negocio" className="h-full w-full object-cover" />
         ) : (
           <div
-            className="h-full w-full"
+            className="h-full w-full transition-[background-color] duration-300"
             style={{
+              backgroundColor: color,
               backgroundImage:
-                "radial-gradient(120% 140% at 50% 0%, rgba(151,214,223,0.22) 0%, rgba(25,0,136,0.28) 45%, rgba(31,32,35,0) 78%)",
+                "radial-gradient(120% 140% at 85% 0%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 55%), linear-gradient(160deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.35) 100%)",
             }}
           />
         )}
@@ -116,15 +152,73 @@ export const VistaPreviaNegocio: FC<VistaPreviaNegocioProps> = ({
           )}
         </span>
 
-        <div className="min-w-0 pl-24 pt-1">
-          <h3 className="truncate text-[20px] font-bold leading-tight text-[#190088] dark:text-white sm:text-[24px]">
-            {nombre.trim() || "Nombre de tu negocio"}
-          </h3>
-          <p className="truncate text-[13px] text-[#212121]/70 dark:text-gray-400">
-            {rubro}
-            {tamanoEquipo ? ` · ${tamanoEquipo}` : ""}
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3 pl-24 pt-1">
+          <div className="min-w-0">
+            <h3 className="truncate text-[24px] font-bold leading-tight text-[#190088] dark:text-white">
+              {nombre.trim() || "Nombre de tu negocio"}
+            </h3>
+            {eslogan.trim() && (
+              // Un color de marca claro (cyan, mostaza) no se lee como texto sobre
+              // blanco: en ese caso el eslogan va en la tinta general.
+              <p
+                className="truncate text-[14px] font-bold text-[color:var(--color-eslogan)] dark:text-gray-200"
+                style={{ "--color-eslogan": textoBoton === "#FFFFFF" ? color : "#212121" } as CSSProperties}
+              >
+                {eslogan}
+              </p>
+            )}
+            <p className="truncate text-[12px] text-[#212121]/70 dark:text-gray-400">
+              {rubro}
+              {tamanoEquipo ? ` · ${tamanoEquipo}` : ""}
+            </p>
+          </div>
+
+          {whatsapp && (
+            <a
+              href={whatsapp.url}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-[14px] font-bold shadow-sm transition-[transform,filter] duration-150 hover:brightness-95 active:scale-[0.98]"
+              style={{ backgroundColor: color, color: textoBoton }}
+            >
+              <MessageCircle className="size-4" aria-hidden="true" />
+              Escríbenos
+            </a>
+          )}
         </div>
+
+        {(estado || soloEnLinea || direccion.trim()) && (
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px]">
+            {estado && horario && (
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  className={`size-2 rounded-full ${estado.abierto ? "bg-[#16A34A]" : "bg-gray-400"}`}
+                  aria-hidden="true"
+                />
+                <span className={`font-bold ${estado.abierto ? "text-[#16A34A]" : "text-[#212121]/70 dark:text-gray-400"}`}>
+                  {estado.texto}
+                </span>
+                <span className="inline-flex items-center gap-1 text-[#212121]/60 dark:text-gray-400">
+                  <Clock className="size-3.5" aria-hidden="true" />
+                  {resumenDias(horario.dias)} · {horaLegible(horario.abre)}–{horaLegible(horario.cierra)}
+                </span>
+              </span>
+            )}
+            {soloEnLinea ? (
+              <span className="inline-flex items-center gap-1 text-[#212121]/70 dark:text-gray-400">
+                <Globe className="size-3.5" aria-hidden="true" />
+                Vende solo en línea
+              </span>
+            ) : (
+              direccion.trim() && (
+                <span className="inline-flex min-w-0 items-center gap-1 text-[#212121]/70 dark:text-gray-400">
+                  <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{direccion}</span>
+                </span>
+              )
+            )}
+          </div>
+        )}
 
         {descripcion.trim() && (
           <p className="mt-4 line-clamp-3 text-[14px] text-[#212121]/80 dark:text-gray-300">
@@ -141,6 +235,25 @@ export const VistaPreviaNegocio: FC<VistaPreviaNegocioProps> = ({
           >
             {sitioWeb}
           </a>
+        )}
+
+        {enlaces.length > 0 && (
+          <ul className="mt-4 flex flex-wrap gap-2" aria-label="Redes sociales">
+            {enlaces.map(({ red, url }) => (
+              <li key={red}>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  title={nombreDeRed(red)}
+                  aria-label={nombreDeRed(red)}
+                  className="block transition-transform duration-150 hover:-translate-y-0.5"
+                >
+                  <IconoRed red={red} className="size-8 rounded-lg" />
+                </a>
+              </li>
+            ))}
+          </ul>
         )}
 
         <div className="mt-6 grid grid-cols-2 gap-4 border-t border-[#ECECEC] pt-5 dark:border-gray-800 sm:grid-cols-4">
