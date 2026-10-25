@@ -246,7 +246,7 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
     >
       <div
         onClick={() => onIr("/404")}
-        className="relative block w-full aspect-[21/9] sm:aspect-[24/9] md:aspect-[32/10] max-h-[420px] sm:max-h-[440px] cursor-pointer overflow-hidden text-left"
+        className="relative block w-full aspect-[16/9] sm:aspect-[21/9] lg:aspect-[5/2] min-h-[300px] sm:min-h-[380px] lg:min-h-[460px] max-h-[580px] xl:max-h-[620px] cursor-pointer overflow-hidden text-left"
         title={actual.title}
         role="button"
         tabIndex={0}
@@ -335,7 +335,7 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
         {/* Gradiente sutil y llamada a la acción */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10" />
 
-        <div className="absolute bottom-12 sm:bottom-16 md:bottom-20 right-4 sm:right-6 z-20 flex items-center gap-2">
+        <div className="absolute bottom-5 sm:bottom-6 md:bottom-8 right-4 sm:right-6 z-20 flex items-center gap-2">
           <button
             type="button"
             onClick={(e) => {
@@ -351,7 +351,7 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
       </div>
 
       {/* Paginador flotante con miniaturas/píldoras */}
-      <div className="absolute bottom-12 sm:bottom-16 md:bottom-20 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/15">
+      <div className="absolute bottom-5 sm:bottom-6 md:bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/15">
         <button
           type="button"
           onClick={previo}
@@ -689,7 +689,7 @@ export const InicioDashboardPage = observer(() => {
             ══════════════════════════════════════════════════════════════════ */}
         <div
           className={`grid grid-cols-1 lg:grid-cols-12 gap-5 items-start ${
-            bannerVisible ? "-mt-8 sm:-mt-12 lg:-mt-14 relative z-10 px-1 sm:px-2" : ""
+            bannerVisible ? "-mt-3 sm:-mt-5 lg:-mt-6 relative z-10 px-1 sm:px-2" : ""
           }`}
         >
           {/* COLUMNA IZQUIERDA (7 Columnas): Saludo compacto + Filtro y Gráfica */}
