@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   AlertHexaIcon,
   BoltIcon,
@@ -75,14 +75,17 @@ interface NotificationToastProps extends NotificationBaseProps {
   title: string;
   /** Optional description below the title */
   description?: string;
-  /** Time in ms before the toast reappears after dismissal. @default `3000` */
+  /** Time in ms the toast stays on screen before auto-dismissing. @default `4000` */
+  duration?: number;
+  /** Alias for duration in ms */
   hideDuration?: number;
+  /** Callback fired when the toast is closed or times out */
+  onClose?: () => void;
   // Toast doesn't use these
   icon?: never;
   message?: never;
   actions?: never;
   secondaryAction?: never;
-  onClose?: never;
 }
 
 /**
@@ -147,25 +150,25 @@ export type NotificationProps =
 
 // Mapeo semántico idéntico a la referencia de diseño:
 // Fondo de tarjeta oscura `#1F2633`, badge translúcido con tinte de estado,
-// tipografía blanca y línea de acento inferior de 2 px.
+// tipografía blanca y barra inferior de carga inversa (temporizador de permanencia).
 const variantStyles = {
   success: {
-    borderClass: "border-b-2 border-b-[#3CBB6D]",
+    barColor: "bg-[#3CBB6D]",
     iconBg: "bg-[#3CBB6D]/15 text-[#3CBB6D]",
     icon: <CheckCircleIcon className="size-5 stroke-[2.2]" />,
   },
   info: {
-    borderClass: "border-b-2 border-b-[#38BDF8]",
+    barColor: "bg-[#38BDF8]",
     iconBg: "bg-[#38BDF8]/15 text-[#38BDF8]",
     icon: <InfoIcon className="size-5 stroke-[2.2]" />,
   },
   warning: {
-    borderClass: "border-b-2 border-b-[#F97316]",
+    barColor: "bg-[#F97316]",
     iconBg: "bg-[#F97316]/15 text-[#F97316]",
     icon: <AlertHexaIcon className="size-5 stroke-[2.2]" />,
   },
   error: {
-    borderClass: "border-b-2 border-b-[#EF4444]",
+    barColor: "bg-[#EF4444]",
     iconBg: "bg-[#EF4444]/15 text-[#EF4444]",
     icon: <ErrorHexaIcon className="size-5 stroke-[2.2]" />,
   },
@@ -175,27 +178,53 @@ const ToastNotification: React.FC<NotificationToastProps> = ({
   variant,
   title,
   description,
-  hideDuration = 3000,
+  duration,
+  hideDuration,
+  onClose,
   className,
 }) => {
   const [isVisible, setIsVisible] = useState(true);
+  const totalDuration = duration ?? hideDuration ?? 4000;
+  const [isPaused, setIsPaused] = useState(false);
+  const tiempoRestanteRef = useRef(totalDuration);
+  const inicioRef = useRef(Date.now());
+  const timerRef = useRef<number | undefined>(undefined);
 
-  const { borderClass, iconBg, icon } = variantStyles[variant];
+  const { barColor, iconBg, icon } = variantStyles[variant];
 
   const handleClose = () => {
     setIsVisible(false);
-    setTimeout(() => {
-      setIsVisible(true);
-    }, hideDuration);
+    onClose?.();
   };
+
+  useEffect(() => {
+    if (!isVisible) return;
+
+    if (!isPaused) {
+      inicioRef.current = Date.now();
+      timerRef.current = window.setTimeout(() => {
+        setIsVisible(false);
+        onClose?.();
+      }, tiempoRestanteRef.current);
+    } else {
+      window.clearTimeout(timerRef.current);
+      const transcurrido = Date.now() - inicioRef.current;
+      tiempoRestanteRef.current = Math.max(0, tiempoRestanteRef.current - transcurrido);
+    }
+
+    return () => {
+      window.clearTimeout(timerRef.current);
+    };
+  }, [isPaused, isVisible, onClose]);
 
   if (!isVisible) return null;
 
   return (
     <div
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
       className={cn(
-        "flex items-center justify-between gap-4 w-full sm:max-w-[380px] rounded-2xl bg-[#1F2633] border border-white/5 p-3.5 shadow-xl transition-all duration-200 overflow-hidden",
-        borderClass,
+        "relative flex items-center justify-between gap-4 w-full sm:max-w-[380px] rounded-2xl bg-[#1F2633] border border-white/5 p-3.5 pb-4 shadow-xl transition-all duration-200 overflow-hidden",
         className,
       )}
     >
@@ -227,6 +256,28 @@ const ToastNotification: React.FC<NotificationToastProps> = ({
       >
         <CloseIcon className="size-4 stroke-[2.2]" />
       </button>
+
+      {/* ── Barra de carga inversa: tiempo de permanencia en pantalla ── */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-white/5 overflow-hidden">
+        <div
+          className={cn("h-full w-full origin-left", barColor)}
+          style={{
+            animation: `notif-barra-carga-inversa ${totalDuration}ms linear forwards`,
+            animationPlayState: isPaused ? "paused" : "running",
+          }}
+        />
+      </div>
+
+      <style>{`
+        @keyframes notif-barra-carga-inversa {
+          from {
+            transform: scaleX(1);
+          }
+          to {
+            transform: scaleX(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };
