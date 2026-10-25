@@ -174,20 +174,6 @@ const FormularioGeneral = observer(({ org }: { org: OrganizacionWorkspace }) => 
           </CampoConfig>
 
           <CampoConfig
-            etiqueta="Identificador web derivado y tarjeta QR de la tienda"
-            ayuda="Tu enlace directo en Necto con código QR listo para exhibir, compartir o imprimir."
-            ancho="max-w-none"
-          >
-            <TarjetaQrTienda
-              nombre={borrador.nombre}
-              slug={slugDe(borrador.nombre)}
-              className="mt-1"
-            />
-          </CampoConfig>
-        </div>
-
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          <CampoConfig
             etiqueta="Nombre público (remitente)"
             ayuda="Aparecerá impreso como remitente en las guías de transporte."
             htmlFor="org-nombre-publico"
@@ -202,7 +188,9 @@ const FormularioGeneral = observer(({ org }: { org: OrganizacionWorkspace }) => 
               />
             </div>
           </CampoConfig>
+        </div>
 
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <CampoConfig
             etiqueta="Teléfono del negocio"
             ayuda="Número de contacto para las guías de despacho y novedades."
@@ -215,6 +203,21 @@ const FormularioGeneral = observer(({ org }: { org: OrganizacionWorkspace }) => 
               value={borrador.telefono}
               placeholder="Ej. (+57) 300 123 4567"
               onChange={(e) => set("telefono", e.target.value)}
+            />
+          </CampoConfig>
+        </div>
+
+        {/* ── TARJETA QR DE LA TIENDA (ANCHO COMPLETO) ── */}
+        <div className="mt-6 pt-6 border-t border-gray-100 dark:border-white/5">
+          <CampoConfig
+            etiqueta="Identificador web y tarjeta QR de la tienda"
+            ayuda="Tu enlace directo en Necto con código QR listo para exhibir, compartir o imprimir."
+            ancho="max-w-none"
+          >
+            <TarjetaQrTienda
+              nombre={borrador.nombre}
+              slug={slugDe(borrador.nombre)}
+              className="mt-2"
             />
           </CampoConfig>
         </div>

@@ -351,7 +351,7 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
       </div>
 
       {/* Paginador flotante con miniaturas/píldoras */}
-      <div className="absolute bottom-[52px] sm:bottom-[84px] lg:bottom-[116px] left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/15">
+      <div className="absolute bottom-8 sm:bottom-12 lg:bottom-16 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/15">
         <button
           type="button"
           onClick={previo}
@@ -689,7 +689,7 @@ export const InicioDashboardPage = observer(() => {
             ══════════════════════════════════════════════════════════════════ */}
         <div
           className={`grid grid-cols-1 lg:grid-cols-12 gap-5 items-start ${
-            bannerVisible ? "-mt-16 sm:-mt-24 lg:-mt-32 relative z-10 px-3 sm:px-5" : ""
+            bannerVisible ? "-mt-12 sm:-mt-16 lg:-mt-20 relative z-10 px-3 sm:px-5" : ""
           }`}
         >
           {/* COLUMNA IZQUIERDA (7 Columnas): Saludo compacto + Filtro y Gráfica */}
