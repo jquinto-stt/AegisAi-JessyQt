@@ -4,6 +4,7 @@ import {
   BaseAppShell, 
   BaseAppHeader, 
   ToggleAppSidebar,
+  FloatingSupportWidget,
 } from "@/shell";
 import { ThemeToggleButton } from "@/shell";
 import NotificationDropdown from "@/shell/header/NotificationDropdown";
@@ -179,14 +180,17 @@ export const AppShell = () => {
     location.pathname === "/novedades";
 
   return (
-    <BaseAppShell
-      sidebar={<AppSidebar />}
-      header={<AppHeader />}
-      noCard={esSinMarco}
-      pantallaFija={esPantallaFija}
-    >
-      <Outlet />
-    </BaseAppShell>
+    <>
+      <BaseAppShell
+        sidebar={<AppSidebar />}
+        header={<AppHeader />}
+        noCard={esSinMarco}
+        pantallaFija={esPantallaFija}
+      >
+        <Outlet />
+      </BaseAppShell>
+      <FloatingSupportWidget />
+    </>
   );
 };
 

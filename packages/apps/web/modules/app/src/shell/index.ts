@@ -19,3 +19,6 @@ export {
   MenuSubmenuItem,
   MenuItem,
 } from "./menu";
+
+// Support Widget
+export { FloatingSupportWidget } from "./support-widget/FloatingSupportWidget";
