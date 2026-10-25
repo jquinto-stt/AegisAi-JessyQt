@@ -102,16 +102,33 @@ export const FloatingSupportWidget: React.FC = observer(() => {
              ══════════════════════════════════════════════════════════ */}
           {activeTab === "home" && !articuloAbierto && (
             <div className="flex flex-col overflow-hidden bg-white dark:bg-[#181818]">
-              {/* ── 1. Hero Card Superior (Azul profundo NECTO #190088 sin ruido de puntos) ── */}
-              <div className="relative shrink-0 bg-[#190088] px-6 pt-5 pb-5 text-white rounded-b-[30px] shadow-sm">
-                {/* Fila superior: Isotipo en blanco + Botón Cerrar */}
+              {/* ── 1. Hero Card Superior (Azul profundo NECTO #190088 con sutil textura de puntos estilo referencia) ── */}
+              <div className="relative shrink-0 bg-[#190088] bg-[radial-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:12px_12px] px-6 pt-5 pb-5 text-white rounded-b-[30px] shadow-sm">
+                {/* Fila superior: Cluster de avatares superpuestos + Botón Cerrar */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
+                  <div className="flex items-center -space-x-2">
                     <img
-                      src="/images/logo/necto-icon-white.svg"
-                      alt="Necto"
-                      className="h-7 w-7 object-contain"
+                      src="/images/user/user-01.jpg"
+                      alt="Agente"
+                      className="h-8 w-8 rounded-full object-cover ring-2 ring-[#190088] shadow-xs"
                     />
+                    <img
+                      src="/images/user/user-02.jpg"
+                      alt="Agente"
+                      className="h-8 w-8 rounded-full object-cover ring-2 ring-[#190088] shadow-xs"
+                    />
+                    <img
+                      src="/images/user/user-03.jpg"
+                      alt="Agente"
+                      className="h-8 w-8 rounded-full object-cover ring-2 ring-[#190088] shadow-xs"
+                    />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white ring-2 ring-[#190088] shadow-xs">
+                      <img
+                        src="/images/logo/necto-icon.svg"
+                        alt="Necto"
+                        className="h-4.5 w-4.5 object-contain"
+                      />
+                    </div>
                   </div>
 
                   <button
@@ -128,12 +145,23 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                   </button>
                 </div>
 
+                {/* Subcabecera: Plataforma de soporte Necto + Disponible 24/7 */}
+                <div className="mt-3">
+                  <div className="text-[14px] font-bold text-white tracking-tight leading-tight">
+                    Plataforma de soporte Necto
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5 text-[11px] font-medium text-[#97D6DF]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                    <span>Disponible 24/7</span>
+                  </div>
+                </div>
+
                 {/* Saludo / Greeting */}
                 <div className="mt-3.5">
-                  <h3 className="text-[24px] font-bold text-white tracking-tight leading-tight">
+                  <h3 className="text-[22px] font-bold text-white tracking-tight leading-tight">
                     ¡Hola!
                   </h3>
-                  <p className="mt-1 text-[15px] font-medium text-white/90">
+                  <p className="mt-1 text-[14px] font-medium text-white/90">
                     ¿Cómo podemos ayudarte hoy?
                   </p>
                 </div>
@@ -366,43 +394,72 @@ export const FloatingSupportWidget: React.FC = observer(() => {
              ══════════════════════════════════════════════════════════ */}
           {activeTab === "chat" && !articuloAbierto && (
             <div className="flex flex-1 min-h-0 flex-col bg-[#212121] text-[#ECECEC]">
-              {/* Cabecera del chat con botón Volver a Home */}
-              <div className="relative shrink-0 bg-[#190088] px-4 py-3.5 text-white flex items-center justify-between shadow-xs">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("home")}
-                  className="flex items-center gap-1.5 rounded-full bg-white/15 hover:bg-white/25 px-3 py-1 text-[12px] font-medium text-white transition-all cursor-pointer"
-                  title="Volver a inicio"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
-                  <span>Inicio</span>
-                </button>
+              {/* Cabecera del chat con botón Volver a Home y estilo idéntico a referencia */}
+              <div className="relative shrink-0 bg-[#190088] bg-[radial-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:12px_12px] px-5 pt-3.5 pb-4 text-white shadow-xs">
+                {/* Barra de navegación superior: Volver a inicio y Cerrar */}
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("home")}
+                    className="flex items-center gap-1.5 rounded-full bg-white/15 hover:bg-white/25 px-3 py-1 text-[12px] font-medium text-white transition-all cursor-pointer"
+                    title="Volver a inicio"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    <span>Inicio</span>
+                  </button>
 
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center gap-1.5">
-                    <img src="/images/logo/necto-icon-white.svg" alt="Necto" className="h-4 w-4 object-contain" />
-                    <span className="text-[14px] font-bold text-white">Soporte Necto</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-[10px] text-[#97D6DF]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#97D6DF] animate-pulse" />
-                    <span>En línea 24/7</span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-white/80 hover:bg-white/15 hover:text-white transition-colors cursor-pointer"
+                    title="Cerrar soporte"
+                    aria-label="Cerrar soporte"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-white/80 hover:bg-white/15 hover:text-white transition-colors cursor-pointer"
-                  title="Cerrar soporte"
-                  aria-label="Cerrar soporte"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
+                {/* Cluster de avatares superpuestos + Título + Disponible 24/7 */}
+                <div className="flex flex-col items-start">
+                  <div className="flex items-center -space-x-2 mb-2">
+                    <img
+                      src="/images/user/user-01.jpg"
+                      alt="Agente"
+                      className="h-8 w-8 rounded-full object-cover ring-2 ring-[#190088] shadow-xs"
+                    />
+                    <img
+                      src="/images/user/user-02.jpg"
+                      alt="Agente"
+                      className="h-8 w-8 rounded-full object-cover ring-2 ring-[#190088] shadow-xs"
+                    />
+                    <img
+                      src="/images/user/user-03.jpg"
+                      alt="Agente"
+                      className="h-8 w-8 rounded-full object-cover ring-2 ring-[#190088] shadow-xs"
+                    />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white ring-2 ring-[#190088] shadow-xs">
+                      <img
+                        src="/images/logo/necto-icon.svg"
+                        alt="Necto"
+                        className="h-4.5 w-4.5 object-contain"
+                      />
+                    </div>
+                  </div>
+
+                  <h3 className="text-[16px] font-bold text-white tracking-tight leading-snug">
+                    Plataforma de soporte Necto
+                  </h3>
+
+                  <div className="flex items-center gap-1.5 mt-0.5 text-[12px]">
+                    <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
+                    <span className="font-medium text-[#97D6DF]">Disponible 24/7</span>
+                  </div>
+                </div>
               </div>
 
               {/* Mensajes del chat */}
