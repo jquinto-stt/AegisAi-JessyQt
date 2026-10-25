@@ -157,18 +157,24 @@ export const AppShell = () => {
     location.pathname.startsWith("/asistente") &&
     !location.pathname.startsWith("/asistente/config");
 
+  const esVistaSeguimiento =
+    location.pathname.startsWith("/conversaciones/seguimiento") ||
+    (location.pathname === "/conversaciones" && location.search.includes("vista=seguimiento"));
+
   const esChatConversaciones =
-    (location.pathname === "/conversaciones" ||
+    ((location.pathname === "/conversaciones" && !location.search.includes("vista=seguimiento")) ||
       (location.pathname.startsWith("/conversaciones/") &&
         !location.pathname.startsWith("/conversaciones/config") &&
         !location.pathname.startsWith("/conversaciones/historial") &&
-        !location.pathname.startsWith("/conversaciones/analitica")) ||
+        !location.pathname.startsWith("/conversaciones/analitica") &&
+        !location.pathname.startsWith("/conversaciones/seguimiento")) ||
       location.pathname === "/pedidos/chats" ||
       location.pathname.startsWith("/pedidos/chats/"));
 
   const esTableroKanban =
     location.pathname === "/pedidos" ||
-    location.pathname === "/pedidos/";
+    location.pathname === "/pedidos/" ||
+    esVistaSeguimiento;
 
   const esPantallaFija = esChatConversaciones || esTableroKanban || esChatAsistente;
 

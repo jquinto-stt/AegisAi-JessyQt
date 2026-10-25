@@ -266,28 +266,23 @@ const ColumnaPipeline = observer(
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`flex h-full min-h-0 flex-1 ${
-          isSingleColumn ? "w-full max-w-md xl:max-w-xl" : "min-w-[280px] xl:min-w-[300px]"
-        } flex-col rounded-3xl border transition-all duration-200 ${
+        className={`flex h-full max-h-full min-h-0 w-full flex-col overflow-hidden rounded-3xl border transition-all duration-200 ${
           isOver
             ? "border-brand-500 bg-brand-50/30 ring-2 ring-brand-500/20 dark:border-brand-500 dark:bg-brand-950/20"
-            : "border-gray-100/90 bg-gray-50/90 dark:border-gray-800/60 dark:bg-white/[0.02]"
-        } p-3 overflow-hidden shadow-theme-xs`}
+            : "border-gray-100/80 bg-gray-50/90 dark:border-gray-800/60 dark:bg-white/[0.02]"
+        } p-3 shadow-theme-xs`}
       >
-        {/* Cabecera de la columna */}
-        <header className="mb-3 shrink-0 px-1 pt-1">
+        {/* Cabecera de la columna (Idéntica a Pedidos) */}
+        <header className="mb-3 shrink-0 px-1.5 pt-1">
           <div className="flex items-center gap-2">
-            <span
-              className="size-2.5 shrink-0 rounded-full shadow-2xs"
-              style={{ backgroundColor: config.dotColor }}
-            />
+            <span className={`size-2 shrink-0 rounded-full ${config.dotBg}`} />
             <h3 className="truncate text-sm font-bold text-ink-title dark:text-white">
               {config.label}
             </h3>
           </div>
-          <p className="mt-1 pl-4.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+          <p className="mt-1 pl-4 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
             {formatoMoneda(totalDinero)}{" "}
-            <span className="font-normal text-gray-400 dark:text-gray-500">
+            <span className="font-medium text-gray-400 dark:text-gray-500">
               · {convs.length}
             </span>
           </p>
@@ -306,8 +301,8 @@ const ColumnaPipeline = observer(
           ))}
 
           {convs.length === 0 && (
-            <div className="flex flex-1 items-center justify-center rounded-2xl border-2 border-dashed border-gray-200/80 py-12 text-center text-xs font-medium text-gray-400 dark:border-gray-800/80">
-              Sin prospectos en esta etapa
+            <div className="flex flex-1 items-center justify-center rounded-2xl border-2 border-dashed border-gray-200/80 py-10 text-center text-xs font-medium text-gray-400 dark:border-gray-800/80">
+              Sin chats
             </div>
           )}
         </div>
@@ -328,6 +323,7 @@ export const SeguimientoPipelineView = observer(
   ({ onCambiarAVistaChats }: SeguimientoPipelineViewProps) => {
     const navigate = useNavigate();
     const [busqueda, setBusqueda] = useState("");
+    const [buscadorAbierto, setBuscadorAbierto] = useState(false);
     const [recargando, setRecargando] = useState(false);
     const [filtroEtapa, setFiltroEtapa] = useState<EtapaSeguimiento | "todas">("todas");
     const [etapasMap, setEtapasMap] = useState<Record<string, EtapaSeguimiento>>(
@@ -417,12 +413,13 @@ export const SeguimientoPipelineView = observer(
     };
 
     return (
-      <div className="necto-panel animate-aparecer flex h-full min-h-0 flex-1 flex-col overflow-hidden p-3.5 sm:p-4.5 lg:p-5 shadow-theme-xs font-sans text-gray-900 dark:text-white/90">
-        {/* ── CABECERA NECTO INTEGRADA ── */}
-        <header className="shrink-0 pb-3.5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            {/* Píldoras de filtro por etapa Necto (reemplaza título previo) */}
-            <div className="flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-gray-50 dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0">
+      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden font-sans text-gray-900 dark:text-white/90">
+        {/* ── BARRA SUPERIOR DE FILTROS Y ACCIONES (Idéntica a Pedidos) ── */}
+        <header className="mb-4 sm:mb-6 shrink-0">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between min-w-0">
+            <div className="flex min-w-0 flex-col gap-2">
+              {/* Píldoras de filtro por etapa Necto */}
+              <div className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 min-w-0">
               <button
                 type="button"
                 onClick={() => setFiltroEtapa("todas")}
@@ -474,56 +471,60 @@ export const SeguimientoPipelineView = observer(
                   </button>
                 );
               })}
+              </div>
             </div>
 
-            {/* Acciones y Métricas */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Card Resumen de Pipeline con diseño Necto */}
-              <div className="inline-flex items-center gap-2.5 rounded-2xl border border-gray-200/80 bg-gray-50/80 px-3.5 py-2 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-                <div className="flex size-7 items-center justify-center rounded-xl bg-accent-50 text-accent-600 dark:bg-accent-950/40 dark:text-accent-400">
-                  <BanknotesIcon className="size-4" />
+            {/* Acciones derechas (Idénticas a Pedidos) */}
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
+              {/* Buscador expandible con botón lupa */}
+              {buscadorAbierto ? (
+                <div className="relative h-10 w-48 sm:w-64 shrink-0">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    placeholder="Buscar prospecto o teléfono…"
+                    className="h-full w-full rounded-xl border border-brand-500 bg-brand-50/40 py-2 pl-9 pr-8 text-xs text-gray-900 placeholder-gray-400 focus:outline-none dark:border-brand-500 dark:bg-brand-950/40 dark:text-white"
+                  />
+                  <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-500" />
+                  {busqueda && (
+                    <button
+                      type="button"
+                      onClick={() => setBusqueda("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                    >
+                      <XMarkIcon className="size-3.5" />
+                    </button>
+                  )}
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                    Total en Pipeline
-                  </span>
-                  <span className="text-xs font-bold text-gray-900 dark:text-white">
-                    {formatoMoneda(totalValorPipeline)}{" "}
-                    <span className="text-gray-400 dark:text-gray-500 font-medium">
-                      ({totalProspectos} leads)
-                    </span>
-                  </span>
-                </div>
-              </div>
+              ) : null}
 
-              {/* Buscador de contactos */}
-              <div className="relative w-44 sm:w-60">
-                <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar prospecto o teléfono..."
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50/80 py-2 pl-9 pr-8 text-xs text-gray-900 placeholder-gray-400 shadow-theme-xs focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white"
-                />
-                {busqueda && (
-                  <button
-                    type="button"
-                    onClick={() => setBusqueda("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-                  >
-                    <XMarkIcon className="size-3.5" />
-                  </button>
-                )}
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (buscadorAbierto) setBusqueda("");
+                  setBuscadorAbierto((v) => !v);
+                }}
+                aria-expanded={buscadorAbierto}
+                aria-label={buscadorAbierto ? "Ocultar el buscador" : "Buscar prospectos"}
+                title={buscadorAbierto ? "Ocultar el buscador" : "Buscar prospectos"}
+                className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
+                  buscadorAbierto
+                    ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300"
+                    : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                }`}
+              >
+                <MagnifyingGlassIcon className="size-4" />
+              </button>
 
               {/* Botón Refrescar */}
               <button
                 type="button"
                 onClick={handleRecargar}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-gray-50/80 text-gray-600 shadow-theme-xs transition-colors hover:bg-white hover:text-gray-900 active:scale-95 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white cursor-pointer"
-                title="Recargar pipeline"
                 aria-label="Recargar pipeline"
+                title="Recargar pipeline"
+                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-gray-200/90 bg-white text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-50 cursor-pointer dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
               >
                 <ArrowPathIcon
                   className={`size-4 text-gray-600 dark:text-gray-400 ${
@@ -533,7 +534,7 @@ export const SeguimientoPipelineView = observer(
               </button>
 
               {/* Segmented Control Necto (Chats / Seguimiento) */}
-              <div className="flex items-center rounded-xl bg-gray-100 p-1 dark:bg-white/[0.06] border border-gray-200/50 dark:border-gray-800 shadow-2xs">
+              <div className="flex h-10 items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 shadow-2xs">
                 {onCambiarAVistaChats ? (
                   <button
                     type="button"
@@ -541,7 +542,7 @@ export const SeguimientoPipelineView = observer(
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
                     title="Ir a consola de chats"
                   >
-                    <ChatBubbleLeftRightIcon className="size-3.5 text-brand-500" />
+                    <ChatBubbleLeftRightIcon className="size-4 text-brand-500" />
                     <span>Chats</span>
                   </button>
                 ) : (
@@ -551,7 +552,7 @@ export const SeguimientoPipelineView = observer(
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
                     title="Ir a consola de chats"
                   >
-                    <ChatBubbleLeftRightIcon className="size-3.5 text-brand-500" />
+                    <ChatBubbleLeftRightIcon className="size-4 text-brand-500" />
                     <span>Chats</span>
                   </button>
                 )}
@@ -560,7 +561,7 @@ export const SeguimientoPipelineView = observer(
                   type="button"
                   className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white cursor-default"
                 >
-                  <ViewColumnsIcon className="size-3.5 text-[#190088] dark:text-[#97D6DF]" />
+                  <ViewColumnsIcon className="size-4 text-secondary-600 dark:text-accent-400" />
                   <span>Seguimiento</span>
                 </button>
               </div>
@@ -571,15 +572,20 @@ export const SeguimientoPipelineView = observer(
         {/* ── CUERPO: COLUMNAS KANBAN HORIZONTALES CON ESTILO NECTO ── */}
         <main className="flex min-h-0 flex-1 gap-4 overflow-x-auto pb-1 [scrollbar-width:thin]">
           {columnasVisibles.map((config) => (
-            <ColumnaPipeline
+            <div
               key={config.clave}
-              config={config}
-              convs={conversacionesPorEtapa[config.clave]}
-              onAbrir={(id) => setChatSeleccionadoId(id)}
-              onDropConv={handleDropConv}
-              onDragStart={handleDragStart}
-              isSingleColumn={columnasVisibles.length === 1}
-            />
+              className={`flex min-h-0 ${
+                columnasVisibles.length === 1 ? "w-full max-w-md" : "min-w-[260px] max-w-[380px] flex-1"
+              }`}
+            >
+              <ColumnaPipeline
+                config={config}
+                convs={conversacionesPorEtapa[config.clave]}
+                onAbrir={(id) => setChatSeleccionadoId(id)}
+                onDropConv={handleDropConv}
+                onDragStart={handleDragStart}
+              />
+            </div>
           ))}
         </main>
 
