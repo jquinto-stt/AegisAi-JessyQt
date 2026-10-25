@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { observer } from "mobx-react-lite";
+import { ViewColumnsIcon } from "@heroicons/react/24/outline";
 import { CanalAvatar } from "./CanalAvatar";
 import { Badge } from "@/elements/ui/badge";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
@@ -201,6 +203,16 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
               </svg>
             </button>
+
+            {/* Acceso a Seguimiento (Pipeline Kanban) */}
+            <Link
+              to="/conversaciones/seguimiento"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-theme-xs transition-colors hover:bg-gray-50 hover:text-gray-900 active:scale-95 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white cursor-pointer"
+              title="Abrir vista de Seguimiento"
+              aria-label="Abrir vista de Seguimiento"
+            >
+              <ViewColumnsIcon className="h-4 w-4 text-[#190088] dark:text-[#97D6DF]" />
+            </Link>
           </div>
         </div>
 

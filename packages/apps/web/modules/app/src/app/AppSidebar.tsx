@@ -19,6 +19,7 @@ import { TARJETAS_CONFIG } from "@/pages/configuracion/configuracion.catalogo";
 import {
   Cog6ToothIcon,
   HomeIcon,
+  ViewColumnsIcon,
 } from "@heroicons/react/24/outline";
 import {
   GridIcon,
@@ -265,6 +266,7 @@ const ITEMS_MODULO: Record<Modulo, { seccionId: string; Icono: React.FC<React.SV
     { seccionId: "catalogo", Icono: TableIcon },
     { seccionId: "crear", Icono: PlusIcon },
     { seccionId: "chats", Icono: ChatIcon },
+    { seccionId: "seguimiento", Icono: ViewColumnsIcon },
     { seccionId: "analitica", Icono: PieChartIcon },
     { seccionId: "configuracion", Icono: PlugInIcon },
     { seccionId: "operadores", Icono: GroupIcon },

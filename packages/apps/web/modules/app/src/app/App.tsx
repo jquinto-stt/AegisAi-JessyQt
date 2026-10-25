@@ -26,8 +26,13 @@ import {
 import { ConfiguracionPage } from "@/pages/configuracion";
 import { InicioChecklistPage } from "@/pages/inicio/InicioChecklistPage";
 import { InicioDashboardPage } from "@/pages/inicio/InicioDashboardPage";
-import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
-import { ConversacionesPage, HistorialAtencionPage, AnaliticaConversacionesPage, ConversacionesConfigPage } from "@/pages/conversaciones";
+import {
+  ConversacionesPage,
+  SeguimientoPage,
+  HistorialAtencionPage,
+  AnaliticaConversacionesPage,
+  ConversacionesConfigPage,
+} from "@/pages/conversaciones";
 
 import { SimuladorWhatsApp } from "@/pages/simulador";
 import { OperadorRegistroPage, OperadorLoginPage } from "@/pages/operador";
@@ -200,6 +205,7 @@ export default function App() {
 
         {/* Módulo Canales WhatsApp / Conversaciones */}
         <Route path="/conversaciones" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/conversaciones/seguimiento" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><SeguimientoPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/conversaciones/historial" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><HistorialAtencionPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/conversaciones/analitica" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><AnaliticaConversacionesPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/conversaciones/config" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.manage"><ConversacionesConfigPage /></CapabilityGuard></ModuloGuard>} />

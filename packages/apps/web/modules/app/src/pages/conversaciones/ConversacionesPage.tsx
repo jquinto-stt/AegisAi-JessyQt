@@ -9,6 +9,7 @@ import { ChatView, type VistaChat } from "@/pages/conversaciones/components/Chat
 import { Composer } from "@/pages/conversaciones/components/Composer";
 import { PanelContexto } from "@/pages/conversaciones/components/PanelContexto";
 import { ConversacionVacia } from "@/pages/conversaciones/components/ConversacionVacia";
+import { SeguimientoPipelineView } from "@/pages/conversaciones/components/SeguimientoPipelineView";
 
 const obtenerEstadoCanales = () => {
   const waStore = organizacionStore.tieneConectorActivo("whatsapp");
@@ -67,7 +68,8 @@ export const ConversacionesPage = observer(() => {
     setBandejaExpandida(!bandejaExpandida);
   };
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const esSeguimiento = searchParams.get("vista") === "seguimiento";
 
   // Si viene un id o chatId en la URL explícitamente, seleccionar esa conversación
   useEffect(() => {
@@ -76,6 +78,24 @@ export const ConversacionesPage = observer(() => {
       conversacionesStore.seleccionar(focusId);
     }
   }, [searchParams]);
+
+  if (esSeguimiento) {
+    return (
+      <div className="flex flex-1 min-h-0 flex-col overflow-hidden font-sans text-gray-900 dark:text-white/90">
+        <PageMeta
+          title="Seguimiento · Pipeline de Conversaciones"
+          description="Tablero Kanban de seguimiento de prospectos y conversaciones de ventas"
+        />
+        <SeguimientoPipelineView
+          onCambiarAVistaChats={() => {
+            const next = new URLSearchParams(searchParams);
+            next.delete("vista");
+            setSearchParams(next);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden font-sans text-gray-900 dark:text-white/90">

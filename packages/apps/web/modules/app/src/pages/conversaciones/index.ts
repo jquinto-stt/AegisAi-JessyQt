@@ -1,5 +1,6 @@
-// Barrel de la página de Conversaciones (consola del operador).
 export { ConversacionesPage } from "./ConversacionesPage";
+export { SeguimientoPage } from "./SeguimientoPage";
+export { SeguimientoPipelineView } from "./components/SeguimientoPipelineView";
 export { HistorialAtencionPage } from "./HistorialAtencionPage";
 export { AnaliticaConversacionesPage } from "./AnaliticaConversacionesPage";
 export { ConfigPage as ConversacionesConfigPage } from "./ConfigPage";
