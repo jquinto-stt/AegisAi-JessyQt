@@ -4,7 +4,6 @@ import { useNavigate } from "react-router";
 import { Switch } from "@/elements/form/switch";
 import { organizacionStore } from "@/stores";
 import { WhatsAppIcon, TelegramIcon } from "@/pages/conversaciones/components/CanalAvatar";
-import { ReglasNotificaciones } from "./notificaciones/ReglasNotificaciones";
 
 function InstagramIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -380,10 +379,6 @@ export const CanalesOrgTab: React.FC = observer(() => {
           </div>
         </div>
       </div>
-
-      {/* Reglas de notificaciones: cuelgan de la mensajería porque son los
-          mensajes que salen por esos canales. */}
-      <ReglasNotificaciones />
     </div>
   );
 });

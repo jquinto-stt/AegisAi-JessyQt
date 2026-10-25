@@ -14,12 +14,13 @@ import type { FC, SVGProps } from "react";
 
 import {
   AdjustmentsHorizontalIcon,
+  BellIcon,
   BuildingOffice2Icon,
   ChatBubbleLeftRightIcon,
   PuzzlePieceIcon,
 } from "@heroicons/react/24/outline";
 
-export type ClaveConfig = "general" | "modulos" | "canales" | "apariencia";
+export type ClaveConfig = "general" | "modulos" | "canales" | "notificaciones" | "apariencia";
 
 export interface TarjetaConfig {
   key: ClaveConfig;
@@ -58,6 +59,15 @@ export const TARJETAS_CONFIG: TarjetaConfig[] = [
     accion: "Conectar",
     ajustes: ["WhatsApp", "Telegram", "Instagram", "Facebook"],
     palabrasClave: ["opciones", "whatsapp", "telegram", "instagram", "facebook", "canales", "conectores", "mensajeria", "api", "webhooks", "chat"],
+  },
+  {
+    key: "notificaciones",
+    label: "Notificaciones",
+    hint: "Reglas automáticas de pedidos por WhatsApp y correo, y avisos de la tienda.",
+    icono: BellIcon,
+    accion: "Configurar",
+    ajustes: ["Alertas de pedidos", "WhatsApp de servicio", "Plantillas de notificación"],
+    palabrasClave: ["notificaciones", "alertas", "avisos", "whatsapp", "correo", "email", "mensajes", "pedidos", "reglas", "automaticas"],
   },
   {
     key: "apariencia",

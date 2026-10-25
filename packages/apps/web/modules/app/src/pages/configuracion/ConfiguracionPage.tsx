@@ -25,6 +25,8 @@ import GeneralOrgTab from "./GeneralOrgTab";
 import PersonalizacionTab from "./PersonalizacionTab";
 import { ModulosTab } from "@/pages/equipo";
 import { CanalesOrgTab, leerCanalesGuardados, type CanalesGuardados } from "./CanalesOrgTab";
+import { NotificacionesTab } from "./NotificacionesTab";
+import { leerNotificaciones } from "./notificaciones/reglas";
 import { SparklesIcon } from "@heroicons/react/24/outline";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -335,6 +337,33 @@ export const ConfiguracionPage = observer(() => {
     );
   }
 
+  // ── VISTA INTERNA: NOTIFICACIONES ─────────────────────────────────────────
+  //
+  // Reglas automáticas de notificación por WhatsApp y correo electrónico
+  // para pedidos y avisos a clientes.
+  if (tab === "notificaciones") {
+    return (
+      <div className="mx-auto max-w-5xl pb-12">
+        <PageMeta
+          title="Configuraciones · Notificaciones"
+          description="Reglas automáticas de envío de alertas por WhatsApp y correo"
+        />
+
+        <VolverAlSelector onVolver={volverAlHub} />
+
+        <div className="animate-aparecer">
+          <ConfigShell
+            seccionKey="notificaciones"
+            titulo="Notificaciones y alertas"
+            hint="Configura las alertas automáticas de pedidos y avisos para clientes"
+          >
+            <NotificacionesTab />
+          </ConfigShell>
+        </div>
+      </div>
+    );
+  }
+
   // ── VISTA INTERNA: PREFERENCIAS ──────────────────────────────────────────
   //
   // Es la administración de las preferencias de interfaz de la aplicación
@@ -382,6 +411,13 @@ export const ConfiguracionPage = observer(() => {
       conectados.length > 0
         ? { texto: `Conectado: ${conectados.join(", ")}` }
         : { texto: "Ningún canal conectado", aviso: true },
+    notificaciones: (() => {
+      const { reglas } = leerNotificaciones();
+      const activas = reglas.filter((r) => r.activa).length;
+      return {
+        texto: `${activas} ${activas === 1 ? "regla activa" : "reglas activas"}`,
+      };
+    })(),
     apariencia: { texto: `Tema ${TEMA[uiStore.themePreference]}` },
   };
 
