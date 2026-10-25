@@ -5,6 +5,13 @@ import { FAQ_ITEMS, type FaqItem } from "@/pages/help/help.constants";
 
 type WidgetTab = "home" | "chat";
 
+/** Disparador global para abrir el widget de soporte desde cualquier botón de la app */
+export const openSupportWidget = (tab: WidgetTab = "home") => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("necto:open-support-widget", { detail: { tab } }));
+  }
+};
+
 const CATEGORIES = ["Envíos", "Suscripción", "Reembolsos"];
 
 export const FloatingSupportWidget: React.FC = observer(() => {
@@ -17,6 +24,21 @@ export const FloatingSupportWidget: React.FC = observer(() => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
+
+  // Escuchar evento global para abrir el widget (ej: desde Chatear en Vivo en el menú de Soporte)
+  useEffect(() => {
+    const handleOpenWidget = (e: Event) => {
+      const customEvent = e as CustomEvent<{ tab?: WidgetTab }>;
+      setIsOpen(true);
+      if (customEvent.detail?.tab) {
+        setActiveTab(customEvent.detail.tab);
+      }
+      setArticuloAbierto(null);
+    };
+
+    window.addEventListener("necto:open-support-widget", handleOpenWidget);
+    return () => window.removeEventListener("necto:open-support-widget", handleOpenWidget);
+  }, []);
 
   // Auto-scroll al final del chat cuando se agregan mensajes
   useEffect(() => {
@@ -167,7 +189,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
 
                     {/* Canal WhatsApp */}
                     <a
-                      href="https://wa.me/573000000000?text=Hola,%20necesito%20soporte%20en%20Necto"
+                      href="https://api.whatsapp.com/send?phone=573145793333&text=Hola!%20Necesito%20ayuda%20con%20Necto"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white dark:bg-[#252525] shadow-xs border border-gray-100/90 dark:border-white/10 hover:shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
@@ -552,18 +574,18 @@ export const FloatingSupportWidget: React.FC = observer(() => {
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         ) : (
-          <div className="relative flex items-center justify-center">
-            {/* Logo Isotipo de Necto en blanco */}
+          <>
+            {/* Logo Isotipo de Necto en blanco centrado y despejado */}
             <img
               src="/images/logo/necto-icon-white.svg"
               alt="Necto"
               className="h-7 w-7 object-contain"
             />
-            {/* Badge Naranja NECTO (#FF3F1A) */}
-            <span className="absolute -top-2 -right-2 flex h-5 min-w-[20px] px-1 items-center justify-center rounded-full bg-[#FF3F1A] text-white text-[12px] font-bold shadow-xs">
+            {/* Badge Naranja NECTO (#FF3F1A) en el perímetro superior derecho exterior */}
+            <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-[#FF3F1A] text-white text-[11px] font-bold shadow-md border-2 border-white dark:border-[#181818] pointer-events-none">
               3
             </span>
-          </div>
+          </>
         )}
       </button>
     </div>

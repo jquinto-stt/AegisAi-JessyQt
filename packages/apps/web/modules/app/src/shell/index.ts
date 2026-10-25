@@ -21,4 +21,4 @@ export {
 } from "./menu";
 
 // Support Widget
-export { FloatingSupportWidget } from "./support-widget/FloatingSupportWidget";
+export { FloatingSupportWidget, openSupportWidget } from "./support-widget/FloatingSupportWidget";

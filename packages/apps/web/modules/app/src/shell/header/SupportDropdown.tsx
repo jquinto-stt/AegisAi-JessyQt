@@ -8,6 +8,7 @@ import {
   PlayIcon,
   QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
+import { openSupportWidget } from "../support-widget/FloatingSupportWidget";
 
 export const SupportDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -289,7 +290,10 @@ export const SupportDropdown = () => {
             {/* 5. Chatear en Vivo */}
             <button
               type="button"
-              onClick={() => handleNavigate("/asistente")}
+              onClick={() => {
+                setIsOpen(false);
+                openSupportWidget("chat");
+              }}
               className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors text-left group"
             >
               <div className="flex items-center gap-3">
