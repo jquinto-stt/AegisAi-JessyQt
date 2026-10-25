@@ -151,8 +151,8 @@ export const ROL_ADMIN = "admin_tienda";
 export const ROLES_SEED: Rol[] = [
   {
     id: ROL_ADMIN,
-    nombre: "Administrador de tienda",
-    descripcion: "Control total de la tienda y de su equipo.",
+    nombre: "Administrador del negocio",
+    descripcion: "Control total del negocio y de su equipo.",
     capacidades: [...CAPACIDADES],
     sistema: true,
   },

@@ -615,14 +615,14 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
               <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.03]">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-theme-sm font-semibold text-gray-900 dark:text-white">
-                    {rolesStore.nombreDe(op.rolId) || "Administrador de tienda"}
+                    {rolesStore.nombreDe(op.rolId) || "Administrador del negocio"}
                   </span>
                   <Badge color="dark" size="xs">
                     Rol de sistema
                   </Badge>
                 </div>
                 <p className="mt-1 text-theme-xs leading-snug text-gray-500 dark:text-gray-400">
-                  El rol de administrador es único por tienda y no se puede reasignar desde el perfil.
+                  El rol de administrador es único por negocio y no se puede reasignar desde el perfil.
                 </p>
               </div>
             ) : (

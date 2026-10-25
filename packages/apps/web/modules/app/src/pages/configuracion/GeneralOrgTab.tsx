@@ -158,7 +158,7 @@ const FormularioGeneral = observer(({ org }: { org: OrganizacionWorkspace }) => 
         <div className="grid gap-5 sm:grid-cols-2">
           <CampoConfig
             etiqueta="Nombre del negocio (interno)"
-            ayuda="Nombre con el que lo reconoces en tu selector de tiendas."
+            ayuda="Nombre con el que lo reconoces en tu selector de negocios."
             htmlFor="org-nombre"
             ancho="max-w-none"
           >

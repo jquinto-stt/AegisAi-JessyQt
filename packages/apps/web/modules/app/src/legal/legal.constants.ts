@@ -99,7 +99,7 @@ const TERMS: LegalDocument = {
           items: [
             "Usar la plataforma para actividades ilegales o para vender productos prohibidos por la ley.",
             "Enviar mensajes no solicitados a personas que no dieron su consentimiento.",
-            "Intentar acceder a datos de otras tiendas, cuentas o personas.",
+            "Intentar acceder a datos de otros negocios, cuentas o personas.",
             "Interferir con el funcionamiento del servicio o sobrecargarlo deliberadamente.",
             "Suplantar la identidad de otra persona o de otra empresa.",
           ],

@@ -63,7 +63,7 @@ export const TARJETAS_CONFIG: TarjetaConfig[] = [
   {
     key: "notificaciones",
     label: "Notificaciones",
-    hint: "Reglas automáticas de pedidos por WhatsApp y correo, y avisos de la tienda.",
+    hint: "Reglas automáticas de pedidos por WhatsApp y correo, y avisos del negocio.",
     icono: BellIcon,
     accion: "Configurar",
     ajustes: ["Alertas de pedidos", "WhatsApp de servicio", "Plantillas de notificación"],

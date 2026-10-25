@@ -1084,8 +1084,8 @@ export const ConfigPage = observer(() => {
                           <p className="text-xs leading-relaxed whitespace-pre-wrap">
                             {configIa.saludo
                               .replace(/{cliente}/g, "Carlos")
-                              .replace(/{empresa}/g, organizacionStore.organizacion?.nombre || "Mi Tienda")
-                              .replace(/{taller}/g, organizacionStore.organizacion?.nombre || "Mi Tienda") || "Escribe un mensaje de bienvenida..."}
+                              .replace(/{empresa}/g, organizacionStore.organizacion?.nombre || "Mi Negocio")
+                              .replace(/{taller}/g, organizacionStore.organizacion?.nombre || "Mi Negocio") || "Escribe un mensaje de bienvenida..."}
                           </p>
 
                           <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-gray-500 dark:text-emerald-200/80">

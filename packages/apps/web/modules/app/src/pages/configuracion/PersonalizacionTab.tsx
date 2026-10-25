@@ -26,7 +26,7 @@ import {
 import { VistaPreviaNegocio } from "./VistaPreviaNegocio";
 import { SelectorImagen, LIMITE_IMAGEN_KB } from "./SelectorImagen";
 import { IconoRed, nombreDeRed } from "./IconoRed";
-import { TarjetaQrTienda } from "./TarjetaQrTienda";
+import { TarjetaQrNegocio } from "./TarjetaQrNegocio";
 import {
   COLORES_MARCA,
   COLOR_MARCA_DEFECTO,
@@ -44,9 +44,9 @@ import { BloqueConfig, CampoConfig, ChipDia, ConfigAcciones, Segmentado, ToggleR
 const MAX_ESLOGAN = 60;
 const REDES: { red: RedNegocio; placeholder: string }[] = [
   { red: "whatsapp", placeholder: "+57 300 123 4567" },
-  { red: "instagram", placeholder: "@tutienda" },
-  { red: "facebook", placeholder: "tutienda" },
-  { red: "tiktok", placeholder: "@tutienda" },
+  { red: "instagram", placeholder: "@tunegocio" },
+  { red: "facebook", placeholder: "tunegocio" },
+  { red: "tiktok", placeholder: "@tunegocio" },
 ];
 
 interface BorradorPersonalizacion {
@@ -279,7 +279,7 @@ const FormularioPersonalizacion = observer(({ org }: { org: OrganizacionWorkspac
           <SelectorImagen
             id="pers-logo"
             titulo="Imagen de perfil / Logo"
-            descripcion="El logo que acompaña al nombre de la tienda."
+            descripcion="El logo que acompaña al nombre del negocio."
             forma="cuadrado"
             recomendacion="600 × 600 px"
             valor={borrador.logoUrl}
@@ -457,11 +457,11 @@ const FormularioPersonalizacion = observer(({ org }: { org: OrganizacionWorkspac
       >
         <div className="flex flex-col gap-5">
           <CampoConfig
-            etiqueta="Identificador web y tarjeta QR de la tienda"
+            etiqueta="Identificador web y tarjeta QR del negocio"
             ayuda="Tu enlace directo en Necto con código QR listo para exhibir, compartir o imprimir."
             ancho="max-w-none"
           >
-            <TarjetaQrTienda
+            <TarjetaQrNegocio
               nombre={oActiva.nombre}
               slug={slugDe(oActiva.nombre)}
               subtitulo={borrador.eslogan || "¿Quieres que tus clientes hagan pedidos y exploren tu catálogo digital?"}
@@ -470,7 +470,7 @@ const FormularioPersonalizacion = observer(({ org }: { org: OrganizacionWorkspac
           </CampoConfig>
 
           <CampoConfig
-            etiqueta="Sitio web o tienda externa"
+            etiqueta="Sitio web o negocio externo"
             ayuda="Opcional. Si tienes una tienda online, catálogo o landing externa, enlazarla aquí."
             htmlFor="pers-sitio"
             ancho="max-w-md"
@@ -479,7 +479,7 @@ const FormularioPersonalizacion = observer(({ org }: { org: OrganizacionWorkspac
               id="pers-sitio"
               type="url"
               value={borrador.sitioWeb}
-              placeholder="https://tu-tienda.com"
+              placeholder="https://tu-negocio.com"
               onChange={(e) => set("sitioWeb", e.target.value)}
             />
           </CampoConfig>
@@ -495,7 +495,7 @@ const FormularioPersonalizacion = observer(({ org }: { org: OrganizacionWorkspac
               rows={3}
               maxLength={160}
               value={borrador.descripcion}
-              placeholder="Ej. Tienda especializada en calzado urbano y accesorios con envíos a todo el país."
+              placeholder="Ej. Negocio especializado en calzado urbano y accesorios con envíos a todo el país."
               onChange={(v) => set("descripcion", v)}
             />
           </CampoConfig>

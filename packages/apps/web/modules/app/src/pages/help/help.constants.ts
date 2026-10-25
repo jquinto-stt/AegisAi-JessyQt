@@ -47,7 +47,7 @@ export const HELP_STEPS: HelpStep[] = [
   {
     num: 1,
     title: "Crea tu cuenta",
-    body: "Regístrate con tu correo o entra con Google. Aquí se crea tu cuenta de Necto; todavía no hay ninguna tienda implicada.",
+    body: "Regístrate con tu correo o entra con Google. Aquí se crea tu cuenta de Necto; todavía no hay ningún negocio implicado.",
   },
   {
     num: 2,

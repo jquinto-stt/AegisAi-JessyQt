@@ -628,7 +628,7 @@ const FormularioNuevaCuenta = ({
               </label>
               <Input
                 value={b.titular}
-                placeholder="Ej. Mi Tienda S.A.S / Nombre completo"
+                placeholder="Ej. Mi Negocio S.A.S / Nombre completo"
                 onChange={(e) => set("titular", e.target.value)}
               />
             </div>

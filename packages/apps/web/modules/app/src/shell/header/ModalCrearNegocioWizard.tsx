@@ -196,7 +196,7 @@ export const ModalCrearNegocioWizard: React.FC<ModalCrearNegocioWizardProps> = (
             }}
           />
           <span className="hidden sm:inline-flex items-center text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF] bg-[#EFE6D3] dark:bg-white/10 rounded-full px-3 py-1">
-            Nueva Tienda
+            Nuevo Negocio
           </span>
         </div>
 
@@ -483,9 +483,9 @@ export const ModalCrearNegocioWizard: React.FC<ModalCrearNegocioWizardProps> = (
               >
                 <span>
                   {cargando
-                    ? "Creando tienda..."
+                    ? "Creando negocio..."
                     : paso === 4
-                    ? "Crear tienda"
+                    ? "Crear negocio"
                     : "Continuar"}
                 </span>
                 {paso === 4 ? (

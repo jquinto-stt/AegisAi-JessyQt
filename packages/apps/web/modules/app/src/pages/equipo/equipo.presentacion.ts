@@ -504,7 +504,7 @@ export const PERFILES_TAREA: PerfilTarea[] = [
   },
   {
     id: "encargado",
-    nombre: "Encargado de la tienda",
+    nombre: "Encargado del negocio",
     descripcion: "Todo el ciclo de pedidos, los canales y la configuración.",
     capacidades: [
       "orders.read",
