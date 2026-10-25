@@ -13,11 +13,11 @@ interface TarjetaQrTiendaProps {
 /**
  * Tarjeta de URL y Código QR del negocio.
  * Réplica exacta del diseño de referencia QueryPal:
- *  - SIN fondo de color (transparente / limpio sobre el fondo del contenedor).
- *  - Trazo continuo oscuro (#1A153A) con siluetas orgánicas redondeadas.
- *  - División inclinada (~7°).
+ *  - Sin background (transparente / trazo limpio).
+ *  - División inclinada entre ambos paneles.
+ *  - El Código QR está centrado JUSTO EN EL MEDIO entre ambos lados (montado sobre la división central).
  *  - Panel izquierdo: Isotipo hexagonal QueryPal + Nombre de marca en bold + Pregunta en dos líneas.
- *  - Panel derecho: Código QR en recuadro blanco perfectamente ubicado dentro de la cápsula, sin solaparse.
+ *  - Panel derecho: Cápsula complementaria.
  */
 export const TarjetaQrTienda: React.FC<TarjetaQrTiendaProps> = observer(({
   nombre,
@@ -83,7 +83,7 @@ export const TarjetaQrTienda: React.FC<TarjetaQrTiendaProps> = observer(({
           className="w-full h-auto block"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* Marco exterior sin relleno (fill=none) */}
+          {/* Marco exterior sin relleno */}
           <rect
             x="3"
             y="3"
@@ -200,16 +200,17 @@ export const TarjetaQrTienda: React.FC<TarjetaQrTiendaProps> = observer(({
             className="dark:stroke-white/80"
           />
 
-          {/* ── MARCO BLANCO DEL QR (PERFECTAMENTE ALINEADO Y SEPARADO DE LA LÍNEA) ──
-              El centro del panel derecho entre X=765..980 es X=872.
-              El cuadro de 180x180 se ubica en X=782, dejando 22px de espacio libre con la línea inclinada y 18px con el borde derecho.
+          {/* ── EL CÓDIGO QR CENTRADO JUSTO ENTRE AMBOS LADOS (MONTADO SOBRE LA DIVISIÓN) ──
+              La división central entre el panel izquierdo y derecho pasa por X ≈ 760.
+              Al ubicar el cuadro blanco de 210x210 en X = 655, queda exactamente 50% en el lado izquierdo
+              y 50% en el lado derecho, montado sobre la unión orgánica tal como en la foto de referencia.
           */}
           <rect
-            x="782"
-            y="110"
-            width="180"
-            height="180"
-            rx="24"
+            x="655"
+            y="95"
+            width="210"
+            height="210"
+            rx="30"
             fill="#FFFFFF"
             stroke="#1A153A"
             strokeWidth="3.5"
@@ -221,10 +222,10 @@ export const TarjetaQrTienda: React.FC<TarjetaQrTiendaProps> = observer(({
           {qrDataUrl && (
             <image
               href={qrDataUrl}
-              x="798"
-              y="126"
-              width="148"
-              height="148"
+              x="677"
+              y="117"
+              width="166"
+              height="166"
               style={{ cursor: "pointer" }}
               onClick={copiarEnlace}
             />
