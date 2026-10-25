@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { CanalAvatar } from "./CanalAvatar";
 import { Badge } from "@/elements/ui/badge";
+import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { retardoEscalonado } from "@/utils";
 import { conversacionesStore, etiquetaEstado } from "@/stores/conversaciones.store";
 import { pedidosStore } from "@/stores/pedidos.store";
 import { uiStore } from "@/shell/stores/ui.store";
+import type { FiltroBandeja, FiltroFecha } from "@/stores/conversaciones.types";
 import {
   intencionDe,
   INTENCION_LABEL,
@@ -16,6 +19,25 @@ import {
   ultimoTexto,
 } from "../conversaciones.utils";
 
+const FILTROS_FECHA: ReadonlyArray<{ valor: FiltroFecha; etiqueta: string }> = [
+  { valor: "todas", etiqueta: "Todas las fechas" },
+  { valor: "hoy", etiqueta: "Hoy" },
+  { valor: "ayer", etiqueta: "Ayer" },
+  { valor: "7dias", etiqueta: "Últimos 7 días" },
+  { valor: "30dias", etiqueta: "Últimos 30 días" },
+  { valor: "este_mes", etiqueta: "Este mes" },
+];
+
+const FILTROS_ESTADO: ReadonlyArray<{ valor: FiltroBandeja; etiqueta: string }> = [
+  { valor: "todas", etiqueta: "Todas las conversaciones" },
+  { valor: "requieren_atencion", etiqueta: "Requieren atención" },
+  { valor: "mis_conversaciones", etiqueta: "Mis conversaciones" },
+  { valor: "sin_asignar", etiqueta: "Sin asignar" },
+  { valor: "ia_activa", etiqueta: "IA activa" },
+  { valor: "no_leidas", etiqueta: "Solo no leídas" },
+  { valor: "cerradas", etiqueta: "Resueltas" },
+];
+
 interface BandejaListaProps {
   onToggle?: () => void;
   bandejaExpandida?: boolean;
@@ -25,22 +47,210 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
   const bandeja = conversacionesStore.bandeja;
   const seleccionadaId = conversacionesStore.seleccionadaId;
   const compacta = uiStore.densidadBandeja === "compacta";
+  const [menuFiltrosOpen, setMenuFiltrosOpen] = useState(false);
+  const [recargando, setRecargando] = useState(false);
+
+  const handleRecargar = async () => {
+    setRecargando(true);
+    try {
+      await conversacionesStore.cargarDesdeBase();
+    } finally {
+      setTimeout(() => setRecargando(false), 500);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col overflow-hidden font-sans text-gray-800 dark:text-white/90">
-      {/* Cabecera: Título "Chats" */}
-      <div className="p-4 sm:p-5 pb-2">
-        <div className="flex items-center justify-between">
+      {/* Cabecera: Título "Chats", Filtros, Recargar y Buscador de contactos */}
+      <div className="p-3.5 sm:p-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-2">
-            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white/90">
+            <h3 className="text-xl font-bold tracking-tight text-[#190088] dark:text-white/90">
               Chats
             </h3>
             {conversacionesStore.totalNoLeidos > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1.5 text-xs font-bold text-white shadow-theme-xs">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF3F1A] px-1.5 text-[11px] font-bold text-white shadow-theme-xs">
                 {conversacionesStore.totalNoLeidos}
               </span>
             )}
           </div>
+
+          <div className="flex items-center gap-1.5">
+            {/* Filtros Dropdown */}
+            <div className="relative inline-block">
+              <button
+                type="button"
+                onClick={() => setMenuFiltrosOpen(!menuFiltrosOpen)}
+                className={`relative inline-flex h-8 w-8 items-center justify-center rounded-lg border text-xs shadow-theme-xs transition-colors cursor-pointer ${
+                  conversacionesStore.filtro !== "todas" || conversacionesStore.filtroFecha !== "todas"
+                    ? "border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-500/30 dark:bg-brand-500/15 dark:text-brand-400"
+                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
+                }`}
+                title="Filtrar conversaciones"
+                aria-label="Filtrar conversaciones"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="4" y1="21" x2="4" y2="14" />
+                  <line x1="4" y1="10" x2="4" y2="3" />
+                  <line x1="12" y1="21" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12" y2="3" />
+                  <line x1="20" y1="21" x2="20" y2="16" />
+                  <line x1="20" y1="12" x2="20" y2="3" />
+                  <line x1="1" y1="14" x2="7" y2="14" />
+                  <line x1="9" y1="8" x2="15" y2="8" />
+                  <line x1="17" y1="16" x2="23" y2="16" />
+                </svg>
+                {(conversacionesStore.filtro !== "todas" || conversacionesStore.filtroFecha !== "todas") && (
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[#FF3F1A]" />
+                )}
+              </button>
+
+              <Dropdown
+                isOpen={menuFiltrosOpen}
+                onClose={() => setMenuFiltrosOpen(false)}
+                className="w-60 p-2 max-h-96 overflow-y-auto custom-scrollbar left-0 sm:left-auto sm:right-0 z-50"
+              >
+                <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                  Filtrar por fecha
+                </div>
+                <div className="mb-2 space-y-0.5">
+                  {FILTROS_FECHA.map((f) => (
+                    <DropdownItem
+                      key={f.valor}
+                      onItemClick={() => {
+                        conversacionesStore.setFiltroFecha(f.valor);
+                      }}
+                      className={`text-xs ${
+                        conversacionesStore.filtroFecha === f.valor
+                          ? "font-bold text-brand-600 bg-brand-50 dark:bg-brand-500/10 dark:text-brand-400"
+                          : "font-normal text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      {f.etiqueta}
+                    </DropdownItem>
+                  ))}
+                </div>
+
+                <div className="border-t border-gray-100 dark:border-gray-800 pt-2 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                  Filtrar por estado
+                </div>
+                <div className="space-y-0.5">
+                  {FILTROS_ESTADO.map((f) => (
+                    <DropdownItem
+                      key={f.valor}
+                      onItemClick={() => {
+                        conversacionesStore.setFiltro(f.valor);
+                      }}
+                      className={`text-xs ${
+                        conversacionesStore.filtro === f.valor
+                          ? "font-bold text-brand-600 bg-brand-50 dark:bg-brand-500/10 dark:text-brand-400"
+                          : "font-normal text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      {f.etiqueta}
+                    </DropdownItem>
+                  ))}
+                </div>
+
+                {(conversacionesStore.filtro !== "todas" || conversacionesStore.filtroFecha !== "todas") && (
+                  <div className="border-t border-gray-100 dark:border-gray-800 mt-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        conversacionesStore.setFiltro("todas");
+                        conversacionesStore.setFiltroFecha("todas");
+                        setMenuFiltrosOpen(false);
+                      }}
+                      className="w-full text-center text-xs font-semibold text-[#FF3F1A] hover:underline py-1 cursor-pointer"
+                    >
+                      Limpiar todos los filtros
+                    </button>
+                  </div>
+                )}
+              </Dropdown>
+            </div>
+
+            {/* Botón Refrescar */}
+            <button
+              type="button"
+              onClick={handleRecargar}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-theme-xs transition-colors hover:bg-gray-50 hover:text-gray-900 active:scale-95 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white cursor-pointer"
+              title="Recargar conversaciones"
+              aria-label="Recargar conversaciones"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={recargando ? "animate-spin" : ""}
+              >
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Buscador dentro de la tarjeta de contactos */}
+        <div className="relative">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={conversacionesStore.busqueda}
+            onChange={(e) => conversacionesStore.setBusqueda(e.target.value)}
+            placeholder="Buscar chat, teléfono o ID..."
+            className="h-9 w-full rounded-xl border border-gray-200 bg-[#ECECEC]/40 py-1.5 pl-9 pr-8 text-xs text-[#212121] placeholder:text-gray-400 transition-colors focus:border-[#FF3F1A] focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#FF3F1A]/10 dark:border-gray-800 dark:bg-white/[0.04] dark:text-white/90 dark:placeholder:text-gray-500 dark:focus:border-[#FF3F1A] dark:focus:bg-transparent"
+          />
+          {conversacionesStore.busqueda && (
+            <button
+              type="button"
+              onClick={() => conversacionesStore.setBusqueda("")}
+              className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              title="Limpiar búsqueda"
+              aria-label="Limpiar búsqueda"
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
