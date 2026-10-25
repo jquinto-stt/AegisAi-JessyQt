@@ -294,7 +294,7 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
                 />
 
                 {/* Control de pausa/play para el video */}
-                <div className="absolute top-4 right-4 z-10">
+                <div className="absolute top-4 right-14 z-10">
                   <button
                     type="button"
                     onClick={toggleVideoPlay}
@@ -333,9 +333,9 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
         })}
 
         {/* Gradiente sutil y llamada a la acción */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#190088]/55 via-transparent to-black/10" />
 
-        <div className="absolute bottom-5 sm:bottom-6 md:bottom-8 right-4 sm:right-6 z-20 flex items-center gap-2">
+        <div className="absolute top-4 sm:top-5 left-4 sm:left-6 z-20 flex items-center gap-2">
           <button
             type="button"
             onClick={(e) => {
@@ -351,7 +351,7 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
       </div>
 
       {/* Paginador flotante con miniaturas/píldoras */}
-      <div className="absolute bottom-5 sm:bottom-6 md:bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/15">
+      <div className="absolute bottom-20 sm:bottom-28 lg:bottom-36 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/15">
         <button
           type="button"
           onClick={previo}
@@ -663,7 +663,7 @@ export const InicioDashboardPage = observer(() => {
             <button
               type="button"
               onClick={() => setBannerVisible(false)}
-              className="absolute -bottom-3 left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white text-[#212121] shadow-md transition-[color,transform] duration-150 ease-out hover:text-[#FF3F1A] active:scale-95 dark:border-white/10 dark:bg-gray-900 dark:text-white"
+              className="absolute top-4 right-4 z-20 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white text-[#212121] shadow-md transition-[color,transform] duration-150 ease-out hover:text-[#FF3F1A] active:scale-95 dark:border-white/10 dark:bg-gray-900 dark:text-white"
               title="Contraer banner"
               aria-label="Contraer banner"
             >
@@ -689,13 +689,13 @@ export const InicioDashboardPage = observer(() => {
             ══════════════════════════════════════════════════════════════════ */}
         <div
           className={`grid grid-cols-1 lg:grid-cols-12 gap-5 items-start ${
-            bannerVisible ? "-mt-3 sm:-mt-5 lg:-mt-6 relative z-10 px-1 sm:px-2" : ""
+            bannerVisible ? "-mt-16 sm:-mt-24 lg:-mt-32 relative z-10 px-3 sm:px-5" : ""
           }`}
         >
           {/* COLUMNA IZQUIERDA (7 Columnas): Saludo compacto + Filtro y Gráfica */}
           <div className="lg:col-span-7 space-y-5">
             {/* Tarjeta única y compacta: Saludo + Filtro de fecha (ampliada un 20%) */}
-            <div style={turno(0)} className="dash-pieza w-full max-w-[480px] p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-lg space-y-3.5">
+            <div style={turno(0)} className="dash-pieza w-full max-w-[480px] p-4 sm:p-5 rounded-3xl bg-white/80 dark:bg-gray-900/75 backdrop-blur-xl backdrop-saturate-150 border border-white/70 dark:border-white/10 shadow-[0_20px_50px_-20px_rgba(25,0,136,0.45)] space-y-3.5">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-[20px] sm:text-[22px] font-bold text-[#190088] dark:text-white leading-tight">
@@ -818,7 +818,7 @@ export const InicioDashboardPage = observer(() => {
           {/* COLUMNA DERECHA (5 Columnas): Notificaciones de Gestión ARRIBA + Cifras horizontales */}
           <div className="lg:col-span-5 space-y-5">
             {/* 1. Notificaciones de Gestión (SUPERIOR DERECHA, TAPA EL BANNER) */}
-            <div style={turno(1)} className="dash-pieza p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-lg space-y-3">
+            <div style={turno(1)} className="dash-pieza p-4 sm:p-5 rounded-3xl bg-white/80 dark:bg-gray-900/75 backdrop-blur-xl backdrop-saturate-150 border border-white/70 dark:border-white/10 shadow-[0_20px_50px_-20px_rgba(25,0,136,0.45)] space-y-3">
               <div>
                 <h4 className="text-[15px] font-bold text-[#190088] dark:text-white">
                   Notificaciones de Gestión
