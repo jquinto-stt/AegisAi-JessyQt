@@ -25,6 +25,35 @@ import { uiStore } from "@/stores";
 import { LineChart } from "@/elements/ui/line-chart";
 import type { ApexOptions } from "apexcharts";
 import { tareasDeInicio } from "./tareas-inicio";
+import { CifraAnimada, formatoEntero, formatoPesos } from "./CifraAnimada";
+
+const CLAVE_INTRO = "necto:dashboard:intro-vista";
+
+/**
+ * ¿Toca la entrada coreografiada? Solo en la primera visita de la sesión: el
+ * dashboard se abre muchas veces al día y repetirla cada vez se vuelve espera.
+ * Se decide una vez al montar, para que un re-render no la corte a la mitad.
+ */
+function usePrimeraVisitaDeSesion(): boolean {
+  const [primera] = useState(() => {
+    try {
+      return sessionStorage.getItem(CLAVE_INTRO) === null;
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(CLAVE_INTRO, "1");
+    } catch {
+      /* sin almacenamiento: simplemente no se recuerda */
+    }
+  }, []);
+  return primera;
+}
+
+/** Turno de una pieza en la coreografía de entrada (ver `css/dashboard.css`). */
+const turno = (orden: number) => ({ "--orden": orden }) as React.CSSProperties;
 
 interface BannerItem {
   id: string;
@@ -599,6 +628,7 @@ export const InicioDashboardPage = observer(() => {
     organizacionStore.usuario?.nombre || "Empresario";
 
   const tareasPendientes = tareasDeInicio().filter((t) => !t.completada);
+  const intro = usePrimeraVisitaDeSesion();
 
   return (
     <>
@@ -607,11 +637,15 @@ export const InicioDashboardPage = observer(() => {
         description="Resumen de tu negocio, métricas y operaciones en Necto."
       />
 
-      <div className="flex-1 w-full min-h-[calc(100vh-140px)] p-4 sm:p-6 lg:p-8 space-y-6 font-sans select-none animate-in fade-in duration-200">
+      <div
+        className={`flex-1 w-full min-h-[calc(100vh-140px)] p-4 sm:p-6 lg:p-8 space-y-6 font-sans select-none ${
+          intro ? "dashboard-intro" : "animate-in fade-in duration-200"
+        }`}
+      >
         {/* ══════════════════════════════════════════════════════════════════
             1. BANNER SUPERIOR EXPANDIDO (Motion Graphic + Banners Necto)
             ══════════════════════════════════════════════════════════════════ */}
-        <section className="relative" aria-label="Novedades">
+        <section className="dash-banner relative" aria-label="Novedades">
           <div
             className={`grid transition-[grid-template-rows,opacity] duration-[380ms] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
               bannerVisible ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
@@ -660,7 +694,7 @@ export const InicioDashboardPage = observer(() => {
           {/* COLUMNA IZQUIERDA (7 Columnas): Saludo compacto + Filtro y Gráfica */}
           <div className="lg:col-span-7 space-y-5">
             {/* Tarjeta única y compacta: Saludo + Filtro de fecha (ampliada un 20%) */}
-            <div className="w-full max-w-[480px] p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-lg space-y-3.5">
+            <div style={turno(0)} className="dash-pieza w-full max-w-[480px] p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-lg space-y-3.5">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-[20px] sm:text-[22px] font-bold text-[#190088] dark:text-white leading-tight">
@@ -673,7 +707,7 @@ export const InicioDashboardPage = observer(() => {
 
                 {/* Badge circular Pionero con rayo */}
                 <div
-                  className="w-9 h-9 rounded-full bg-[#190088] dark:bg-white/10 border-2 border-white/20 flex items-center justify-center text-white shadow-xs shrink-0"
+                  className="dash-destello w-9 h-9 rounded-full bg-[#190088] dark:bg-white/10 border-2 border-white/20 flex items-center justify-center text-white shadow-xs shrink-0"
                   title="Pionero Necto"
                 >
                   <Sparkles className="w-4 h-4 text-[#FF3F1A]" />
@@ -703,7 +737,7 @@ export const InicioDashboardPage = observer(() => {
             </div>
 
             {/* Encabezado de Estadísticas y Toggle */}
-            <div className="flex flex-wrap items-center justify-between gap-4 px-1">
+            <div style={turno(2)} className="dash-pieza flex flex-wrap items-center justify-between gap-4 px-1">
               <div>
                 <h3 className="text-[20px] font-bold text-[#190088] dark:text-white">
                   Estadísticas
@@ -735,7 +769,7 @@ export const InicioDashboardPage = observer(() => {
             </div>
 
             {/* Tarjeta con Gráfica Principal de Ventas y Utilidades (Line Chart 2 - Elements) */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs space-y-4">
+            <div style={turno(3)} className="dash-pieza p-6 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs space-y-4">
               {/* Encabezado de la tarjeta: Line Chart 2 */}
               <div className="flex items-center justify-between">
                 <h4 className="text-[16px] font-bold text-[#212121] dark:text-white">
@@ -763,7 +797,7 @@ export const InicioDashboardPage = observer(() => {
                       Productos Vendidos
                     </p>
                     <p className="text-[20px] font-bold text-[#212121] dark:text-white">
-                      2,053
+                      <CifraAnimada valor={2053} formato={formatoEntero} animar={intro} retardo={0.5} />
                     </p>
                   </div>
                 </div>
@@ -777,7 +811,7 @@ export const InicioDashboardPage = observer(() => {
                       Total de Pedidos
                     </p>
                     <p className="text-[20px] font-bold text-[#212121] dark:text-white">
-                      1,388
+                      <CifraAnimada valor={1388} formato={formatoEntero} animar={intro} retardo={0.5} />
                     </p>
                   </div>
                 </div>
@@ -788,7 +822,7 @@ export const InicioDashboardPage = observer(() => {
           {/* COLUMNA DERECHA (5 Columnas): Notificaciones de Gestión ARRIBA + Cifras horizontales */}
           <div className="lg:col-span-5 space-y-5">
             {/* 1. Notificaciones de Gestión (SUPERIOR DERECHA, TAPA EL BANNER) */}
-            <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-lg space-y-3">
+            <div style={turno(1)} className="dash-pieza p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-lg space-y-3">
               <div>
                 <h4 className="text-[15px] font-bold text-[#190088] dark:text-white">
                   Notificaciones de Gestión
@@ -862,7 +896,7 @@ export const InicioDashboardPage = observer(() => {
             </div>
 
             {/* 2. CIFRAS: Ventas y Utilidades en UNA SOLA LÍNEA HORIZONTAL (Line Chart 3 - Elements) */}
-            <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs">
+            <div style={turno(2)} className="dash-pieza p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs">
               <div className="grid grid-cols-2 gap-4 divide-x divide-[#ECECEC] dark:divide-gray-800">
                 {/* Columna Ventas */}
                 <div className="space-y-1.5 pr-2">
@@ -873,14 +907,14 @@ export const InicioDashboardPage = observer(() => {
                       </span>
                       <span>Ventas</span>
                     </span>
-                    <span className="inline-flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1 py-0.5 rounded">
+                    <span className="dash-insignia inline-flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1 py-0.5 rounded">
                       <ArrowUpRight className="w-3 h-3" />
                       <span>18.73%</span>
                     </span>
                   </div>
 
                   <p className="text-[16px] sm:text-[18px] font-bold text-[#212121] dark:text-white tracking-tight">
-                    $ 307.711.012,94
+                    <CifraAnimada valor={307711012.94} formato={formatoPesos} animar={intro} retardo={0.35} />
                   </p>
 
                   {/* Sparkline Line Chart 3 */}
@@ -904,14 +938,14 @@ export const InicioDashboardPage = observer(() => {
                       <TrendingUp className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />
                       <span>Utilidades</span>
                     </span>
-                    <span className="inline-flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1 py-0.5 rounded">
+                    <span className="dash-insignia inline-flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1 py-0.5 rounded">
                       <ArrowUpRight className="w-3 h-3" />
                       <span>16.87%</span>
                     </span>
                   </div>
 
                   <p className="text-[16px] sm:text-[18px] font-bold text-[#212121] dark:text-white tracking-tight">
-                    $ 214.838.216,94
+                    <CifraAnimada valor={214838216.94} formato={formatoPesos} animar={intro} retardo={0.35} />
                   </p>
 
                   {/* Sparkline Line Chart 3 */}
@@ -931,7 +965,7 @@ export const InicioDashboardPage = observer(() => {
             </div>
 
             {/* 3. Totales: Productos Vendidos y Total de Pedidos en 2 columnas */}
-            <div className="p-4 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-xs grid grid-cols-2 gap-4">
+            <div style={turno(3)} className="dash-pieza p-4 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-xs grid grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center shrink-0">
                   <Package className="w-4 h-4" />
@@ -941,7 +975,7 @@ export const InicioDashboardPage = observer(() => {
                     Productos Vendidos
                   </p>
                   <p className="text-[17px] font-bold text-[#212121] dark:text-white">
-                    2053
+                    <CifraAnimada valor={2053} formato={formatoEntero} animar={intro} retardo={0.45} />
                   </p>
                 </div>
               </div>
@@ -955,7 +989,7 @@ export const InicioDashboardPage = observer(() => {
                     Total de Pedidos
                   </p>
                   <p className="text-[17px] font-bold text-[#212121] dark:text-white">
-                    1388
+                    <CifraAnimada valor={1388} formato={formatoEntero} animar={intro} retardo={0.45} />
                   </p>
                 </div>
               </div>

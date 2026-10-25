@@ -1,0 +1,74 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   DASHBOARD — entrada coreografiada
+   ══════════════════════════════════════════════════════════════════════════
+
+   El dashboard se abre decenas de veces al día, así que la coreografía solo
+   corre en la PRIMERA visita de la sesión (`.dashboard-intro`, que pone
+   `InicioDashboardPage`). Las visitas siguientes usan el fundido corto de
+   siempre: repetir 700 ms de entrada cada vez que vuelves al panel se vuelve
+   espera.
+
+   Cada pieza declara su turno con `--orden` en su propio estilo. El paso es de
+   70 ms y el último turno no pasa de ~420 ms: el usuario ya está leyendo el
+   saludo cuando llegan las cifras. */
+
+@keyframes dash-aterriza {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+}
+
+@keyframes dash-banner {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+
+/* El destello del ícono del saludo: entra girando un cuarto de vuelta. */
+@keyframes dash-destello {
+  from {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.6);
+  }
+}
+
+/* La insignia de variación entra cuando la cifra ya casi terminó de contar. */
+@keyframes dash-insignia {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.dashboard-intro .dash-banner {
+  animation: dash-banner 520ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.dashboard-intro .dash-pieza {
+  animation: dash-aterriza 460ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(120ms + var(--orden, 0) * 70ms);
+}
+
+.dashboard-intro .dash-destello {
+  animation: dash-destello 520ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: 360ms;
+}
+
+.dashboard-intro .dash-insignia {
+  animation: dash-insignia 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: 1100ms;
+}
+
+/* Movimiento reducido: las piezas no se desplazan ni giran, pero tampoco
+   aparecen de golpe; un fundido breve sigue diciendo «esto llegó». */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-intro .dash-banner,
+  .dashboard-intro .dash-pieza,
+  .dashboard-intro .dash-destello,
+  .dashboard-intro .dash-insignia {
+    animation: aparecer 160ms ease-out backwards;
+    animation-delay: 0ms;
+  }
+}
