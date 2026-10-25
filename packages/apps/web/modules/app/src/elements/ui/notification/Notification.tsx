@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   AlertHexaIcon,
+  BoltIcon,
   CheckCircleIcon,
   CloseIcon,
   ErrorHexaIcon,
@@ -144,29 +145,29 @@ export type NotificationProps =
 // TOAST LAYOUT (original Notification)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Mismo criterio que en Badge y Alert: el estado se lee por el tinte de la
-// superficie y el icono va en la tinta de la aplicación. `success` e `info`
-// dejan de compartir color.
+// Mapeo semántico idéntico a la referencia de diseño:
+// Fondo de tarjeta oscura `#1F2633`, badge translúcido con tinte de estado,
+// tipografía blanca y línea de acento inferior de 2 px.
 const variantStyles = {
   success: {
-    borderColor: "border-estado-verde",
-    iconBg: "bg-estado-verde text-ink-body",
-    icon: <CheckCircleIcon />,
+    borderClass: "border-b-2 border-b-[#3CBB6D]",
+    iconBg: "bg-[#3CBB6D]/15 text-[#3CBB6D]",
+    icon: <CheckCircleIcon className="size-5 stroke-[2.2]" />,
   },
   info: {
-    borderColor: "border-estado-azul",
-    iconBg: "bg-estado-azul text-ink-body",
-    icon: <InfoIcon />,
+    borderClass: "border-b-2 border-b-[#38BDF8]",
+    iconBg: "bg-[#38BDF8]/15 text-[#38BDF8]",
+    icon: <InfoIcon className="size-5 stroke-[2.2]" />,
   },
   warning: {
-    borderColor: "border-estado-amarillo",
-    iconBg: "bg-estado-amarillo text-ink-body",
-    icon: <AlertHexaIcon />,
+    borderClass: "border-b-2 border-b-[#F97316]",
+    iconBg: "bg-[#F97316]/15 text-[#F97316]",
+    icon: <AlertHexaIcon className="size-5 stroke-[2.2]" />,
   },
   error: {
-    borderColor: "border-estado-rojo",
-    iconBg: "bg-estado-rojo text-ink-body",
-    icon: <ErrorHexaIcon className="size-5" />,
+    borderClass: "border-b-2 border-b-[#EF4444]",
+    iconBg: "bg-[#EF4444]/15 text-[#EF4444]",
+    icon: <ErrorHexaIcon className="size-5 stroke-[2.2]" />,
   },
 };
 
@@ -179,7 +180,7 @@ const ToastNotification: React.FC<NotificationToastProps> = ({
 }) => {
   const [isVisible, setIsVisible] = useState(true);
 
-  const { borderColor, iconBg, icon } = variantStyles[variant];
+  const { borderClass, iconBg, icon } = variantStyles[variant];
 
   const handleClose = () => {
     setIsVisible(false);
@@ -192,30 +193,39 @@ const ToastNotification: React.FC<NotificationToastProps> = ({
 
   return (
     <div
-      className={cn("flex items-center justify-between gap-3 w-full sm:max-w-[340px] rounded-md border-b-4 p-3 shadow-theme-xs dark:bg-gray-900", borderColor, className)}
+      className={cn(
+        "flex items-center justify-between gap-4 w-full sm:max-w-[380px] rounded-2xl bg-[#1F2633] border border-white/5 p-3.5 shadow-xl transition-all duration-200 overflow-hidden",
+        borderClass,
+        className,
+      )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3.5 min-w-0">
         <div
-          className={cn("flex items-center justify-center w-10 h-10 rounded-lg", iconBg)}
+          className={cn(
+            "flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-transform",
+            iconBg,
+          )}
         >
           {icon}
         </div>
-        <div>
-          <h4 className="text-sm text-ink-title sm:text-base dark:text-white/90">
+        <div className="min-w-0">
+          <h4 className="text-[14px] sm:text-[15px] font-semibold text-white tracking-tight leading-snug truncate">
             {title}
           </h4>
           {description && (
-            <p className="mt-1 text-xs text-gray-600 sm:text-sm dark:text-white/70">
+            <p className="mt-0.5 text-xs text-gray-400 leading-normal line-clamp-2">
               {description}
             </p>
           )}
         </div>
       </div>
       <button
+        type="button"
         onClick={handleClose}
-        className="text-gray-400 hover:text-gray-800 dark:hover:text-white/90"
+        className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer shrink-0"
+        aria-label="Cerrar notificación"
       >
-        <CloseIcon />
+        <CloseIcon className="size-4 stroke-[2.2]" />
       </button>
     </div>
   );
@@ -233,37 +243,44 @@ const BannerNotification: React.FC<NotificationBannerProps> = ({
   className,
 }) => {
   return (
-    <div className={cn("w-full max-w-[607px] rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900", className)}>
-      <div className="flex items-start gap-3">
-        {icon && <div className="text-brand-500">{icon}</div>}
-        <div className="flex flex-col items-center gap-5 sm:flex-row">
+    <div
+      className={cn(
+        "w-full max-w-[620px] rounded-2xl border border-white/5 bg-[#1F2633] p-5 shadow-xl transition-all duration-200",
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+        <div className="flex items-start gap-3.5 min-w-0">
+          <div className="text-[#818CF8] shrink-0 mt-0.5">
+            {icon ?? <BoltIcon className="size-5 stroke-[2]" />}
+          </div>
           <div>
-            <h5 className="mb-1 text-base font-medium text-gray-800 dark:text-white/90">
+            <h5 className="text-[15px] font-bold text-white tracking-tight">
               {title}
             </h5>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-0.5 text-[13px] text-gray-400">
               {message}
             </p>
           </div>
-          {actions.length > 0 && (
-            <div className="flex items-center w-full gap-3 sm:max-w-fit">
-              {actions.map((action, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className={
-                    action.variant === "primary"
-                      ? "flex justify-center px-4 py-3 text-sm font-medium text-white rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600"
-                      : "flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
-                  }
-                  onClick={action.onClick}
-                >
-                  {action.label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
+        {actions.length > 0 && (
+          <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto justify-end">
+            {actions.map((action, i) => (
+              <button
+                key={i}
+                type="button"
+                className={
+                  action.variant === "primary"
+                    ? "px-4 py-2 text-sm font-semibold text-white rounded-xl bg-[#4F5CF9] hover:bg-[#434FE0] shadow-md transition-all active:scale-95 cursor-pointer"
+                    : "px-4 py-2 text-sm font-medium text-gray-300 rounded-xl bg-[#263042] hover:bg-[#2F3C52] border border-white/10 transition-all active:scale-95 cursor-pointer"
+                }
+                onClick={action.onClick}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -290,37 +307,45 @@ const ConsentNotification: React.FC<NotificationConsentProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className={cn("relative w-full max-w-[577px] rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900", className)}>
+    <div
+      className={cn(
+        "relative w-full max-w-[580px] rounded-2xl border border-white/5 bg-[#1F2633] p-6 shadow-2xl transition-all duration-200",
+        className,
+      )}
+    >
       <button
-        className="absolute text-gray-400 right-3 top-3 hover:text-gray-800 dark:hover:text-white/90"
+        type="button"
+        className="absolute text-gray-400 right-4 top-4 p-1 rounded-lg hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
         onClick={handleClose}
-        aria-label="Close"
+        aria-label="Cerrar notificación"
       >
-        <CloseIcon className="size-5" />
+        <CloseIcon className="size-4 stroke-[2.2]" />
       </button>
-      <p className="pr-4 mb-6 text-sm text-gray-700 dark:text-gray-400">
+      <p className="pr-6 mb-6 text-[13.5px] leading-relaxed text-gray-300 font-normal">
         {message}
       </p>
-      <div className="flex flex-col justify-end gap-6 sm:flex-row sm:items-center sm:gap-4">
-        {secondaryAction && (
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        {secondaryAction ? (
           <button
             type="button"
-            className="text-sm font-medium text-left text-gray-700 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-sm font-medium text-left text-gray-400 hover:text-white transition-colors cursor-pointer"
             onClick={secondaryAction.onClick}
           >
             {secondaryAction.label}
           </button>
+        ) : (
+          <div />
         )}
         {actions.length > 0 && (
-          <div className="flex items-center w-full gap-3 sm:w-auto">
+          <div className="flex items-center gap-2.5">
             {actions.map((action, i) => (
               <button
                 key={i}
                 type="button"
                 className={
                   action.variant === "primary"
-                    ? "flex justify-center w-full px-4 py-3 text-sm font-medium text-white rounded-lg sm:w-auto bg-brand-500 shadow-theme-xs hover:bg-brand-600"
-                    : "flex w-full sm:w-auto justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+                    ? "px-4 py-2.5 text-sm font-semibold text-white rounded-xl bg-[#4F5CF9] hover:bg-[#434FE0] shadow-md transition-all active:scale-95 cursor-pointer"
+                    : "px-4 py-2.5 text-sm font-medium text-gray-300 rounded-xl bg-[#263042] hover:bg-[#2F3C52] border border-white/10 transition-all active:scale-95 cursor-pointer"
                 }
                 onClick={() => {
                   action.onClick?.();
