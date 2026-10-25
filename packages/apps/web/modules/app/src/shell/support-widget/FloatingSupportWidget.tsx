@@ -5,7 +5,7 @@ import { FAQ_ITEMS, type FaqItem } from "@/pages/help/help.constants";
 
 type WidgetTab = "home" | "chat";
 
-const CATEGORIES = ["Envíos", "Planes", "WhatsApp", "Bancos"];
+const CATEGORIES = ["Shipping", "Subscription", "Refundpolicy"];
 
 export const FloatingSupportWidget: React.FC = observer(() => {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,10 +54,9 @@ export const FloatingSupportWidget: React.FC = observer(() => {
   const articulosFiltrados = FAQ_ITEMS.filter((item) => {
     if (selectedCategory) {
       const text = (item.question + " " + item.answer).toLowerCase();
-      if (selectedCategory === "WhatsApp" && !text.includes("whatsapp") && !text.includes("canal")) return false;
-      if (selectedCategory === "Planes" && !text.includes("plan") && !text.includes("módulo") && !text.includes("modulos") && !text.includes("perfil")) return false;
-      if (selectedCategory === "Bancos" && !text.includes("banc") && !text.includes("moneda") && !text.includes("pago") && !text.includes("retiro")) return false;
-      if (selectedCategory === "Envíos" && !text.includes("envío") && !text.includes("pedido") && !text.includes("entrega") && !text.includes("comercial")) return false;
+      if (selectedCategory === "Shipping" && !text.includes("envío") && !text.includes("pedido") && !text.includes("entrega") && !text.includes("comercial")) return false;
+      if (selectedCategory === "Subscription" && !text.includes("plan") && !text.includes("módulo") && !text.includes("modulos") && !text.includes("perfil")) return false;
+      if (selectedCategory === "Refundpolicy" && !text.includes("banc") && !text.includes("moneda") && !text.includes("pago") && !text.includes("retiro") && !text.includes("cuenta")) return false;
     }
 
     if (!searchQuery.trim()) return true;
@@ -72,27 +71,20 @@ export const FloatingSupportWidget: React.FC = observer(() => {
         <div
           ref={widgetRef}
           aria-label="Plataforma de soporte y asistencia NECTO"
-          className="fixed bottom-24 right-4 sm:right-6 z-50 flex w-[calc(100vw-2rem)] sm:w-[370px] h-[600px] max-h-[85vh] flex-col overflow-hidden rounded-[34px] bg-white shadow-2xl border border-[#ECECEC] dark:bg-[#1a1a1a] dark:border-white/10 font-['DM_Sans',sans-serif] animate-aparecer transition-all duration-300 ease-out"
+          className={`fixed bottom-24 right-4 sm:right-6 z-50 flex w-[calc(100vw-2rem)] sm:w-[360px] ${
+            activeTab === "chat" ? "h-[580px]" : "h-auto"
+          } max-h-[88vh] flex-col overflow-hidden rounded-[32px] bg-white shadow-2xl border border-gray-100 dark:bg-[#181818] dark:border-white/10 font-['DM_Sans',sans-serif] animate-aparecer transition-all duration-300 ease-out`}
         >
           {/* ══════════════════════════════════════════════════════════
-              VISTA PRINCIPAL: HOME (Layout idéntico a referencia)
+              VISTA PRINCIPAL: HOME (Espaciado y proporciones idénticas)
              ══════════════════════════════════════════════════════════ */}
           {activeTab === "home" && !articuloAbierto && (
-            <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-white dark:bg-[#1a1a1a]">
-              {/* ── 1. Hero Card Superior (Azul profundo #190088 con curva inferior) ── */}
-              <div className="relative shrink-0 bg-[#190088] px-6 pt-5 pb-6 text-white rounded-b-[32px] shadow-sm overflow-hidden">
-                {/* Micro-patrón punteado de fondo */}
-                <div
-                  className="pointer-events-none absolute inset-0 opacity-15"
-                  style={{
-                    backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)",
-                    backgroundSize: "16px 16px",
-                  }}
-                />
-
+            <div className="flex flex-col overflow-hidden bg-white dark:bg-[#181818]">
+              {/* ── 1. Hero Card Superior (Azul profundo NECTO #190088 sin ruido de puntos) ── */}
+              <div className="relative shrink-0 bg-[#190088] px-6 pt-5 pb-5 text-white rounded-b-[30px] shadow-sm">
                 {/* Fila superior: Isotipo en blanco + Botón Cerrar */}
-                <div className="relative z-10 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
                     <img
                       src="/images/logo/necto-icon-white.svg"
                       alt="Necto"
@@ -103,11 +95,11 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-white/80 hover:bg-white/15 hover:text-white transition-colors cursor-pointer"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-white/80 hover:bg-white/20 hover:text-white transition-colors cursor-pointer"
                     title="Cerrar soporte"
                     aria-label="Cerrar soporte"
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18" />
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
@@ -115,29 +107,29 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 </div>
 
                 {/* Saludo / Greeting */}
-                <div className="relative z-10 mt-4">
+                <div className="mt-3.5">
                   <h3 className="text-[24px] font-bold text-white tracking-tight leading-tight">
                     Hello!
                   </h3>
-                  <p className="mt-1 text-[16px] font-medium text-white/90">
+                  <p className="mt-1 text-[15px] font-medium text-white/90">
                     How can we Help You?
                   </p>
                 </div>
 
-                {/* Botón CTA Destacado: START A CONVERSATION en Naranja #FF3F1A */}
-                <div className="relative z-10 mt-5">
+                {/* Botón CTA Destacado: START A CONVERSATION en Naranja NECTO #FF3F1A */}
+                <div className="mt-4">
                   <button
                     type="button"
                     onClick={() => {
                       setActiveTab("chat");
                       setArticuloAbierto(null);
                     }}
-                    className="group flex w-full items-center justify-between rounded-2xl bg-[#FF3F1A] hover:bg-[#e03512] p-2 pl-6 text-white shadow-lg transition-all active:scale-[0.98] cursor-pointer"
+                    className="group flex w-full h-[52px] items-center justify-between rounded-[20px] bg-[#FF3F1A] hover:bg-[#e03512] p-1.5 pl-6 text-white shadow-md transition-all active:scale-[0.98] cursor-pointer"
                   >
-                    <span className="flex-1 text-center text-[13px] font-bold tracking-wider uppercase text-white">
+                    <span className="flex-1 text-center text-[13px] font-bold tracking-wider uppercase text-white pr-2">
                       START A CONVERSATION
                     </span>
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#FF3F1A] shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-white text-[#FF3F1A] shadow-xs shrink-0 group-hover:scale-105 transition-transform">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="5" y1="12" x2="19" y2="12" />
                         <polyline points="12 5 19 12 12 19" />
@@ -147,23 +139,23 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 </div>
               </div>
 
-              {/* ── CUERPO: Tarjeta de canales + Buscador rápido de respuestas ── */}
-              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col p-4 space-y-4">
+              {/* ── CUERPO COMPACTO: Canales + Buscador + Píldoras ── */}
+              <div className="flex flex-col">
                 {/* ── 2. Middle Section: Canales flotantes redondeados ── */}
-                <div className="rounded-3xl bg-[#F8FAFC] dark:bg-white/[0.03] border border-gray-100 dark:border-white/5 p-4 text-center">
-                  <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-200">
+                <div className="mx-4 my-3 p-3.5 rounded-[24px] bg-[#F4F6F9] dark:bg-white/[0.04] border border-gray-100/80 dark:border-white/5 text-center">
+                  <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-200">
                     Talk to us on your favourite channels
                   </p>
 
                   <div className="flex items-center justify-center gap-3.5 mt-3">
-                    {/* Canal Messenger / Chat IA */}
+                    {/* Canal Messenger / IA */}
                     <button
                       type="button"
                       onClick={() => {
                         setActiveTab("chat");
                         setArticuloAbierto(null);
                       }}
-                      className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-white/10 shadow-sm border border-gray-100 dark:border-white/10 hover:shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white dark:bg-[#252525] shadow-xs border border-gray-100/90 dark:border-white/10 hover:shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
                       title="Chat directo con IA"
                     >
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -177,7 +169,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                       href="https://wa.me/573000000000?text=Hola,%20necesito%20soporte%20en%20Necto"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-white/10 shadow-sm border border-gray-100 dark:border-white/10 hover:shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white dark:bg-[#252525] shadow-xs border border-gray-100/90 dark:border-white/10 hover:shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
                       title="Chatear por WhatsApp"
                     >
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -189,7 +181,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                     {/* Canal Correo */}
                     <a
                       href="mailto:soporte@necto.co"
-                      className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-white/10 shadow-sm border border-gray-100 dark:border-white/10 hover:shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white dark:bg-[#252525] shadow-xs border border-gray-100/90 dark:border-white/10 hover:shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
                       title="Enviar correo"
                     >
                       <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FF3F1A]/10 text-[#FF3F1A]">
@@ -202,13 +194,13 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 </div>
 
                 {/* ── 3. Bottom Section: Find an Answer Quickly ── */}
-                <div className="flex flex-1 flex-col">
+                <div className="px-4 pt-1 pb-5 flex flex-col">
                   <h4 className="text-[14px] font-bold text-gray-900 dark:text-white mb-2 px-1">
                     Find an Answer Quickly
                   </h4>
 
                   {/* Buscador unificado con botón azul a la derecha */}
-                  <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] p-1.5 flex items-center shadow-2xs focus-within:border-[#190088] transition-colors">
+                  <div className="h-[48px] rounded-[18px] border border-gray-200 dark:border-white/10 bg-white dark:bg-[#252525] p-1 flex items-center shadow-2xs focus-within:border-[#190088] transition-colors">
                     <input
                       type="text"
                       value={searchQuery}
@@ -231,10 +223,10 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                       </button>
                     )}
 
-                    {/* Botón azul cuadrado con icono de check / búsqueda */}
+                    {/* Botón azul con icono de check */}
                     <button
                       type="button"
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#190088] text-white shadow-xs hover:bg-[#150070] active:scale-95 transition-all cursor-pointer"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-[#190088] text-white shadow-xs hover:bg-[#150070] active:scale-95 transition-all cursor-pointer"
                       title="Buscar"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
@@ -244,7 +236,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                   </div>
 
                   {/* Píldoras de categorías estilo referencia */}
-                  <div className="flex items-center gap-2 mt-3 overflow-x-auto scrollbar-none pb-1">
+                  <div className="flex items-center gap-2 mt-2.5 overflow-x-auto scrollbar-none pb-0.5">
                     {CATEGORIES.map((cat) => {
                       const isActive = selectedCategory === cat;
                       return (
@@ -252,10 +244,10 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                           key={cat}
                           type="button"
                           onClick={() => setSelectedCategory(isActive ? null : cat)}
-                          className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
+                          className={`shrink-0 rounded-[13px] px-3.5 py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
                             isActive
                               ? "bg-[#190088] text-white shadow-xs"
-                              : "bg-[#EEF2F6] dark:bg-white/10 text-[#190088] dark:text-[#97D6DF] hover:bg-[#E2E8F0] dark:hover:bg-white/15"
+                              : "bg-[#EEF2F6] dark:bg-white/10 text-[#465FFF] dark:text-[#97D6DF] hover:bg-[#E2E8F0] dark:hover:bg-white/15"
                           }`}
                         >
                           {cat}
@@ -266,9 +258,9 @@ export const FloatingSupportWidget: React.FC = observer(() => {
 
                   {/* Lista de artículos filtrados si hay búsqueda o categoría activa */}
                   {(searchQuery || selectedCategory) && (
-                    <div className="space-y-2 mt-3 pt-2 border-t border-gray-100 dark:border-white/5 animate-aparecer">
+                    <div className="space-y-2 mt-3 pt-2.5 border-t border-gray-100 dark:border-white/5 animate-aparecer max-h-[160px] overflow-y-auto custom-scrollbar">
                       {articulosFiltrados.length === 0 ? (
-                        <div className="py-4 text-center text-[12px] text-gray-400">
+                        <div className="py-3 text-center text-[12px] text-gray-400">
                           No se encontraron resultados para esta búsqueda.
                         </div>
                       ) : (
@@ -277,7 +269,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                             key={item.id}
                             type="button"
                             onClick={() => setArticuloAbierto(item)}
-                            className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-gray-50/80 hover:bg-gray-100/90 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] border border-gray-200/60 dark:border-white/10 p-3 text-left transition-all active:scale-[0.99] cursor-pointer"
+                            className="group flex w-full items-center justify-between gap-3 rounded-[16px] bg-gray-50/80 hover:bg-gray-100/90 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] border border-gray-200/60 dark:border-white/10 p-2.5 px-3 text-left transition-all active:scale-[0.99] cursor-pointer"
                           >
                             <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 line-clamp-2">
                               {item.question}
@@ -309,7 +301,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
               DETALLE DE ARTÍCULO / FAQ ABIERTO
              ══════════════════════════════════════════════════════════ */}
           {articuloAbierto && (
-            <div className="flex flex-1 min-h-0 flex-col p-5 overflow-y-auto custom-scrollbar bg-white dark:bg-[#1a1a1a]">
+            <div className="flex flex-1 min-h-0 flex-col p-5 overflow-y-auto custom-scrollbar bg-white dark:bg-[#181818]">
               <button
                 type="button"
                 onClick={() => setArticuloAbierto(null)}
