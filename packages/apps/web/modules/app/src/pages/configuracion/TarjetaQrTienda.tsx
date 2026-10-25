@@ -66,13 +66,6 @@ export const TarjetaQrTienda: React.FC<TarjetaQrTiendaProps> = observer(({
     }
   };
 
-  // Textos idénticos al cartel de QueryPal (o subtítulo custom si se envía)
-  const linea1 = subtitulo
-    ? subtitulo.split("?")[0] + (subtitulo.includes("?") ? "?" : "")
-    : "How much could agentic AI";
-  const linea2 = subtitulo
-    ? "¿Quieres impulsar tus pedidos y catálogo digital?"
-    : "reduce your support cost and risk?";
 
   return (
     <div className={`w-full max-w-5xl select-none font-['DM_Sans',sans-serif] ${className}`}>
@@ -143,20 +136,15 @@ export const TarjetaQrTienda: React.FC<TarjetaQrTiendaProps> = observer(({
             {nombreTienda}
           </text>
 
-          {/* Pregunta Titular en dos líneas */}
-          <text
-            x="54"
-            y="268"
-            fontFamily="'DM Sans', -apple-system, sans-serif"
-            fontSize="30"
-            fontWeight="600"
-            fill="#1A153A"
-            letterSpacing="-0.025em"
-            className="dark:fill-gray-100"
-          >
-            <tspan x="54" dy="0">{linea1}</tspan>
-            <tspan x="54" dy="42">{linea2}</tspan>
-          </text>
+          {/* Pregunta Titular con ajuste de línea automático y límite antes del QR */}
+          <foreignObject x="54" y="235" width="580" height="140">
+            <div
+              xmlns="http://www.w3.org/1999/xhtml"
+              className="font-['DM_Sans',sans-serif] text-[26px] font-semibold text-[#1A153A] dark:text-gray-100 leading-[1.25] tracking-tight max-w-[570px] pr-2"
+            >
+              {subtitulo || "How much could agentic AI reduce your support cost and risk?"}
+            </div>
+          </foreignObject>
 
           {/* ── PANEL DERECHO: Silueta complementaria inclinada ── */}
           <path
