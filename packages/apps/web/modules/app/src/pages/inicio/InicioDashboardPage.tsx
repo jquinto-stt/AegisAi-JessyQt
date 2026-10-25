@@ -351,7 +351,7 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
       </div>
 
       {/* Paginador flotante con miniaturas/píldoras */}
-      <div className="absolute bottom-20 sm:bottom-28 lg:bottom-36 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/15">
+      <div className="absolute bottom-[52px] sm:bottom-[84px] lg:bottom-[116px] left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/15">
         <button
           type="button"
           onClick={previo}
