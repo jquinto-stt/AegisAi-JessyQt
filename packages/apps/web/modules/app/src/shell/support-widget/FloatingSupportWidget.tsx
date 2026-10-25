@@ -55,13 +55,13 @@ export const FloatingSupportWidget: React.FC = observer(() => {
   });
 
   return (
-    <div className="font-sans antialiased">
+    <div className="font-['DM_Sans',sans-serif] antialiased">
       {/* ── Ventana emergente del widget ── */}
       {isOpen && (
         <div
           ref={widgetRef}
           aria-label="Plataforma de soporte y asistencia IA"
-          className="fixed bottom-24 right-4 sm:right-6 z-50 flex w-[calc(100vw-2rem)] sm:w-[375px] h-[580px] max-h-[82vh] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl border border-gray-200/80 dark:bg-gray-900 dark:border-gray-800 animate-aparecer transition-all duration-300 ease-out"
+          className="fixed bottom-24 right-4 sm:right-6 z-50 flex w-[calc(100vw-2rem)] sm:w-[380px] h-[590px] max-h-[82vh] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl border border-[#ECECEC] dark:bg-[#212121] dark:border-white/10 font-['DM_Sans',sans-serif] animate-aparecer transition-all duration-300 ease-out"
         >
           {/* ── Cabecera Temática NECTO (Azul profundo #190088 con micro-patrón) ── */}
           <div className="relative shrink-0 bg-[#190088] px-4 pt-4 pb-5 text-white overflow-hidden">
@@ -154,15 +154,15 @@ export const FloatingSupportWidget: React.FC = observer(() => {
               </div>
 
               {/* Título de la plataforma de soporte */}
-              <h4 className="mt-2 text-sm font-bold tracking-tight text-white">
+              <h4 className="mt-2 text-[16px] font-bold tracking-tight text-white">
                 Necto Support Platform
               </h4>
 
               {/* Indicador de disponibilidad en tiempo real */}
-              <div className="mt-0.5 flex items-center gap-1.5 text-[11px] font-medium text-emerald-300">
+              <div className="mt-0.5 flex items-center gap-1.5 text-[12px] font-normal text-[#97D6DF]">
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#97D6DF] opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#97D6DF]" />
                 </span>
                 <span>Available 24/7</span>
               </div>
@@ -170,7 +170,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
           </div>
 
           {/* ── CUERPO PRINCIPAL (2 Pestañas: Artículos fusionada con Búsqueda, y Chat) ── */}
-          <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-white dark:bg-gray-900">
+          <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-white dark:bg-[#212121]">
             {/* ══════════════════════════════════════════════════════════
                 PESTAÑA: ARTÍCULOS (Artículos + Búsqueda fusionados)
                ══════════════════════════════════════════════════════════ */}
@@ -306,18 +306,60 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 PESTAÑA: CHAT CON IA (assistantStore conectado)
                ══════════════════════════════════════════════════════════ */}
             {activeTab === "chat" && !articuloAbierto && (
-              <div className="flex flex-1 min-h-0 flex-col">
+              <div className="flex flex-1 min-h-0 flex-col bg-[#212121] text-[#ECECEC]">
                 {/* Mensajes del chat */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar text-xs">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3.5 custom-scrollbar text-[14px]">
                   {/* Mensaje de bienvenida inicial */}
                   <div className="flex items-start gap-2.5">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#190088] text-white shadow-xs">
-                      <img src="/images/logo/necto-icon-white.svg" alt="IA" className="h-3.5 w-3.5 object-contain" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#190088] text-white shadow-xs">
+                      <img src="/images/logo/necto-icon-white.svg" alt="IA" className="h-4 w-4 object-contain" />
                     </div>
-                    <div className="rounded-2xl rounded-tl-sm bg-gray-100 dark:bg-white/10 px-3.5 py-2.5 text-gray-800 dark:text-gray-200 leading-relaxed max-w-[85%]">
-                      ¡Hola! Soy tu asistente de soporte NECTO. ¿En qué te puedo ayudar hoy con tus pedidos o tu cuenta?
+                    <div className="rounded-2xl rounded-tl-sm bg-[#2b2b2b] border border-white/[0.08] px-4 py-2.5 text-[#ECECEC] font-normal leading-relaxed max-w-[85%]">
+                      ¡Hola! Soy tu asistente de soporte NECTO.
                     </div>
                   </div>
+
+                  {/* Preguntas sugeridas estilo imagen 2 si no hay mensajes */}
+                  {assistantStore.mensajes.length === 0 && (
+                    <div className="space-y-2.5 pt-1">
+                      <div className="rounded-2xl rounded-tl-sm bg-[#2b2b2b] border border-white/[0.08] px-4 py-2.5 text-[#ECECEC] font-normal leading-relaxed max-w-[88%] ml-10">
+                        ¿Puedo ayudarte con alguno de estos temas?
+                      </div>
+
+                      {/* Stack de opciones con flecha ↳ estilo referencia imagen 2 */}
+                      <div className="space-y-2 ml-10 max-w-[88%]">
+                        {[
+                          { id: "account", label: "Configurar mi cuenta y organización", q: "¿Cómo configuro mi cuenta y organización?" },
+                          { id: "whatsapp", label: "Conectar canales y WhatsApp", q: "¿Cómo conectar WhatsApp?" },
+                          { id: "bank", label: "Cuentas bancarias y retiros", q: "¿Cómo vinculo mi cuenta bancaria?" },
+                          { id: "metrics", label: "Consultar métricas y pedidos", q: "¿Dónde veo mis métricas y pedidos?" },
+                        ].map((op) => (
+                          <button
+                            key={op.id}
+                            type="button"
+                            onClick={() => handleSeleccionarPreguntaRapida(op.q)}
+                            className="group flex w-full items-center gap-2.5 rounded-2xl bg-[#2b2b2b]/90 hover:bg-[#343434] border border-[#97D6DF]/20 hover:border-[#97D6DF]/60 px-4 py-3 text-left transition-all active:scale-[0.98] cursor-pointer shadow-xs"
+                          >
+                            {/* Flecha curva hacia abajo y derecha ↳ */}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[#97D6DF] transition-transform group-hover:translate-x-0.5">
+                              <path d="M4 4v9a4 4 0 0 0 4 4h12" />
+                              <polyline points="15 12 20 17 15 22" />
+                            </svg>
+                            <span className="text-[14px] font-normal text-[#97D6DF] group-hover:text-white leading-snug">
+                              {op.label}
+                            </span>
+                          </button>
+                        ))}
+
+                        {/* Indicador de 3 puntos • • • */}
+                        <div className="flex items-center justify-center gap-2 pt-1 text-gray-500 opacity-60">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#97D6DF]" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#ECECEC]" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#FF3F1A]" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Mensajes del store */}
                   {assistantStore.mensajes.map((m, idx) => {
@@ -328,18 +370,18 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                         className={`flex items-start gap-2.5 ${esUsuario ? "justify-end" : "justify-start"}`}
                       >
                         {!esUsuario && (
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#190088] text-white shadow-xs">
-                            <img src="/images/logo/necto-icon-white.svg" alt="IA" className="h-3.5 w-3.5 object-contain" />
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#190088] text-white shadow-xs">
+                            <img src="/images/logo/necto-icon-white.svg" alt="IA" className="h-4 w-4 object-contain" />
                           </div>
                         )}
                         <div
-                          className={`rounded-2xl px-3.5 py-2.5 leading-relaxed max-w-[85%] ${
+                          className={`rounded-2xl px-4 py-2.5 text-[14px] font-normal leading-relaxed max-w-[85%] ${
                             esUsuario
-                              ? "bg-[#190088] text-white rounded-tr-sm"
-                              : "bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-gray-200 rounded-tl-sm"
+                              ? "bg-[#190088] text-white rounded-tr-sm shadow-sm"
+                              : "bg-[#2b2b2b] border border-white/[0.08] text-[#ECECEC] rounded-tl-sm"
                           }`}
                         >
-                          {m.content}
+                          {m.text}
                         </div>
                       </div>
                     );
@@ -347,8 +389,8 @@ export const FloatingSupportWidget: React.FC = observer(() => {
 
                   {/* Indicador de pensamiento */}
                   {assistantStore.pensando && (
-                    <div className="flex items-center gap-2 text-xs text-gray-400 pl-9">
-                      <span className="h-2 w-2 rounded-full bg-[#190088] animate-ping" />
+                    <div className="flex items-center gap-2 text-[12px] font-light text-[#97D6DF] pl-10">
+                      <span className="h-2 w-2 rounded-full bg-[#97D6DF] animate-ping" />
                       <span>Escribiendo respuesta...</span>
                     </div>
                   )}
@@ -356,53 +398,65 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Preguntas rápidas sugeridas si hay pocos mensajes */}
-                {assistantStore.mensajes.length === 0 && (
-                  <div className="px-4 pb-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
-                      Preguntas sugeridas:
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
+                {/* ── BARRA DE CHAT INFERIOR (Estilo Imagen 1: Pill con iconos + Botón Enter separado) ── */}
+                <form
+                  onSubmit={handleEnviarMensaje}
+                  className="shrink-0 p-3 bg-[#181818] border-t border-white/[0.08] flex items-center gap-2.5"
+                >
+                  {/* Input Pill con iconos de archivo y emoji a la derecha */}
+                  <div className="flex-1 relative flex items-center rounded-2xl bg-[#262626] border border-white/[0.08] px-4 py-2.5 transition-all focus-within:border-[#97D6DF]/60 focus-within:bg-[#2e2e2e]">
+                    <input
+                      type="text"
+                      value={inputTexto}
+                      onChange={(e) => setInputTexto(e.target.value)}
+                      placeholder="Escribe un mensaje..."
+                      className="flex-1 bg-transparent text-[14px] font-normal text-[#ECECEC] placeholder:text-gray-500 focus:outline-hidden pr-2"
+                    />
+
+                    {/* Iconos de archivo y emoji dentro del pill */}
+                    <div className="flex items-center gap-2.5 shrink-0 text-gray-400">
                       <button
                         type="button"
-                        onClick={() => handleSeleccionarPreguntaRapida("¿Cómo vinculo mi cuenta bancaria?")}
-                        className="rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/15 px-2.5 py-1 text-[11px] font-medium text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+                        onClick={() => {
+                          // Feedback sutil para archivo
+                        }}
+                        className="hover:text-[#97D6DF] transition-colors cursor-pointer"
+                        title="Adjuntar archivo"
                       >
-                        Vincular cuenta bancaria
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+                          <path d="M12 12v9" />
+                          <path d="m16 16-4-4-4 4" />
+                        </svg>
                       </button>
+
                       <button
                         type="button"
-                        onClick={() => handleSeleccionarPreguntaRapida("¿Cómo conectar WhatsApp?")}
-                        className="rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/15 px-2.5 py-1 text-[11px] font-medium text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+                        onClick={() => setInputTexto((prev) => prev + " 😊")}
+                        className="hover:text-[#97D6DF] transition-colors cursor-pointer"
+                        title="Insertar emoji"
                       >
-                        Conectar WhatsApp
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                          <line x1="9" y1="9" x2="9.01" y2="9" />
+                          <line x1="15" y1="9" x2="15.01" y2="9" />
+                        </svg>
                       </button>
                     </div>
                   </div>
-                )}
 
-                {/* Input y botón enviar */}
-                <form
-                  onSubmit={handleEnviarMensaje}
-                  className="shrink-0 border-t border-gray-100 dark:border-gray-800 p-2.5 flex items-center gap-2"
-                >
-                  <input
-                    type="text"
-                    value={inputTexto}
-                    onChange={(e) => setInputTexto(e.target.value)}
-                    placeholder="Escribe tu mensaje aquí..."
-                    className="flex-1 h-9 rounded-xl border border-gray-200 bg-gray-50/80 px-3 text-xs text-gray-800 placeholder:text-gray-400 focus:border-[#190088] focus:bg-white focus:outline-hidden dark:border-gray-800 dark:bg-white/[0.04] dark:text-white dark:placeholder:text-gray-500"
-                  />
+                  {/* Botón Enter Azul NECTO con squircle redondeado */}
                   <button
                     type="submit"
                     disabled={!inputTexto.trim() || assistantStore.pensando}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#190088] text-white transition-opacity disabled:opacity-40 cursor-pointer"
-                    title="Enviar"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#190088] hover:bg-[#150070] active:scale-95 text-white shadow-md transition-all disabled:opacity-40 cursor-pointer"
+                    title="Enviar (Enter)"
                     aria-label="Enviar mensaje"
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="22" y1="2" x2="11" y2="13" />
-                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 10 4 15 9 20" />
+                      <path d="M20 4v7a4 4 0 0 1-4 4H4" />
                     </svg>
                   </button>
                 </form>
@@ -416,7 +470,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#0D2E30] hover:bg-[#071E20] text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border-2 border-white/20"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#190088] hover:bg-[#150070] text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border-2 border-white/20 font-['DM_Sans',sans-serif]"
         title="Soporte y Asistencia IA"
         aria-label="Abrir soporte y asistencia IA"
       >
@@ -427,16 +481,15 @@ export const FloatingSupportWidget: React.FC = observer(() => {
           </svg>
         ) : (
           <div className="relative flex items-center justify-center">
-            {/* Logo de Necto o icono de chat bot */}
+            {/* Logo de Necto */}
             <img
               src="/images/logo/necto-icon-white.svg"
               alt="Necto"
               className="h-7 w-7 object-contain"
             />
-            {/* Punto verde de disponible 24/7 */}
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500 border-2 border-[#0D2E30]" />
+            {/* Badge Naranja NECTO (#FF3F1A) como en referencia de la imagen */}
+            <span className="absolute -top-2 -right-2 flex h-5 min-w-[20px] px-1 items-center justify-center rounded-full bg-[#FF3F1A] text-white text-[12px] font-bold shadow-xs">
+              3
             </span>
           </div>
         )}
