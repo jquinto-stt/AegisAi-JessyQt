@@ -102,9 +102,7 @@ const LogoMedio = ({
 
   return (
     <span
-      className={`${tamClases} flex shrink-0 items-center justify-center font-bold tracking-tight shadow-xs border border-black/10 ${
-        medio.sigla.length > 2 ? "text-[12px]" : "text-[15px]"
-      }`}
+      className={`${tamClases} flex shrink-0 items-center justify-center font-bold tracking-tight shadow-xs border border-black/10 text-[14px]`}
       style={{ backgroundColor: medio.fondo, color: medio.texto }}
       aria-hidden="true"
     >
@@ -189,7 +187,7 @@ const TarjetaCuentaCorporativa = observer(({
         {/* Columna Central: Datos de Operación y Especificaciones */}
         <div className="flex-1 min-w-0 flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h3 className="text-[20px] font-bold text-[#190088] dark:text-white leading-tight">
+            <h3 className="text-[24px] font-bold text-[#190088] dark:text-white leading-tight">
               {cuenta.banco}
             </h3>
             {esPrincipal ? (
@@ -214,13 +212,13 @@ const TarjetaCuentaCorporativa = observer(({
             <li className="flex items-center gap-2">
               <Check className="size-4 text-[#190088] dark:text-[#97D6DF] shrink-0 stroke-[2.5]" />
               <span>
-                Dispersión automática de recaudos contraentrega en <strong>24 horas hábiles</strong>.
+                Dispersión automática de recaudos contraentrega en <strong className="font-bold">24 horas hábiles</strong>.
               </span>
             </li>
             <li className="flex items-center gap-2">
               <Check className="size-4 text-[#190088] dark:text-[#97D6DF] shrink-0 stroke-[2.5]" />
               <span>
-                Titular certificado: <strong>{titular}</strong>
+                Titular certificado: <strong className="font-bold">{titular}</strong>
               </span>
             </li>
             <li className="flex items-center gap-2">
@@ -343,7 +341,7 @@ const FichaSeleccionEntidad = ({
           />
         ) : (
           <span
-            className="text-[13px] font-bold tracking-tight px-3 py-1 rounded-md"
+            className="text-[12px] font-bold tracking-tight px-3 py-1 rounded-md"
             style={{ backgroundColor: medio.fondo, color: medio.texto }}
           >
             {medio.sigla}
@@ -353,15 +351,15 @@ const FichaSeleccionEntidad = ({
 
       {/* Rótulo de la entidad bancaria */}
       <div className="mt-2.5 w-full">
-        <span className="text-[13px] font-bold text-[#212121] dark:text-white block truncate leading-tight">
+        <span className="text-[14px] font-bold text-[#212121] dark:text-white block truncate leading-tight">
           {medio.nombre}
         </span>
         {subtitulo ? (
-          <span className="text-[11px] font-medium text-[#190088] dark:text-[#97D6DF] block truncate mt-0.5">
+          <span className="text-[12px] font-normal text-[#190088] dark:text-[#97D6DF] block truncate mt-0.5">
             {subtitulo}
           </span>
         ) : (
-          <span className="text-[11px] font-normal text-gray-400 dark:text-gray-500 block truncate mt-0.5">
+          <span className="text-[12px] font-light text-[#212121]/60 dark:text-gray-400 block truncate mt-0.5">
             {medio.descripcion || "Cuenta nacional"}
           </span>
         )}
@@ -401,14 +399,14 @@ const FormularioNuevaCuenta = ({
     >
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#ECECEC] dark:border-white/10 pb-5">
         <div className="flex items-center gap-3.5">
-          <span className="size-11 rounded-2xl bg-gradient-to-br from-[#190088] to-[#2500c2] text-white flex items-center justify-center shadow-md">
+          <span className="size-11 rounded-2xl bg-[#190088] text-white flex items-center justify-center shadow-md">
             <Building2 className="size-5" />
           </span>
           <div>
-            <h3 className="text-[22px] sm:text-[24px] font-bold text-[#190088] dark:text-white leading-tight">
+            <h3 className="text-[24px] font-bold text-[#190088] dark:text-white leading-tight">
               Vincular nueva cuenta bancaria
             </h3>
-            <p className="text-[13px] sm:text-[14px] font-light text-[#212121]/70 dark:text-gray-300">
+            <p className="text-[14px] font-light text-[#212121]/70 dark:text-gray-300">
               Selecciona tu entidad financiera y configura tus credenciales de dispersión.
             </p>
           </div>
@@ -416,7 +414,7 @@ const FormularioNuevaCuenta = ({
         <button
           type="button"
           onClick={onCancelar}
-          className="px-4 py-2 rounded-xl text-[13px] font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all cursor-pointer"
+          className="px-4 py-2 rounded-xl text-[14px] font-bold text-[#212121]/60 hover:text-[#190088] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all cursor-pointer"
         >
           Cerrar
         </button>
@@ -429,7 +427,7 @@ const FormularioNuevaCuenta = ({
             <Smartphone className="size-4" />
             <span>Billeteras Digitales y Pagos Inmediatos</span>
           </p>
-          <span className="text-[11px] font-medium text-gray-400">Liquidación al instante</span>
+          <span className="text-[12px] font-light text-[#212121]/60">Liquidación al instante</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
           {BILLETERAS.map((m) => (
@@ -451,7 +449,7 @@ const FormularioNuevaCuenta = ({
             <Landmark className="size-4" />
             <span>Bancos Digitales / Neobancos</span>
           </p>
-          <span className="text-[11px] font-medium text-purple-600 dark:text-purple-400">100% digital</span>
+          <span className="text-[12px] font-normal text-[#190088] dark:text-[#97D6DF]">100% digital</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
           {DIGITALES.map((m) => (
@@ -473,7 +471,7 @@ const FormularioNuevaCuenta = ({
             <Building2 className="size-4" />
             <span>Bancos Tradicionales de Colombia</span>
           </p>
-          <span className="text-[11px] font-medium text-gray-400">Red interbancaria ACH</span>
+          <span className="text-[12px] font-light text-[#212121]/60">Red interbancaria ACH</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
           {TRADICIONALES.map((m) => (
@@ -489,7 +487,7 @@ const FormularioNuevaCuenta = ({
             onClick={() => set("medio", OTRO)}
             className={`group relative flex flex-col items-center justify-between p-3.5 sm:p-4 rounded-2xl border text-center transition-all duration-200 cursor-pointer ${
               b.medio === OTRO
-                ? "border-2 border-[#190088] dark:border-[#97D6DF] bg-gradient-to-b from-[#190088]/8 to-transparent dark:from-[#97D6DF]/15 shadow-md ring-4 ring-[#190088]/15 dark:ring-[#97D6DF]/25 -translate-y-0.5"
+                ? "border-2 border-[#190088] dark:border-[#97D6DF] bg-[#190088]/5 dark:bg-[#97D6DF]/15 shadow-md ring-4 ring-[#190088]/15 dark:ring-[#97D6DF]/25 -translate-y-0.5"
                 : "border-[#ECECEC] dark:border-white/10 hover:border-[#190088]/40 dark:hover:border-[#97D6DF]/40 bg-white dark:bg-white/5 hover:bg-gray-50/70 dark:hover:bg-white/10 hover:-translate-y-1 shadow-2xs hover:shadow-md"
             }`}
           >
@@ -498,14 +496,14 @@ const FormularioNuevaCuenta = ({
                 <Check className="size-3.5 stroke-[3]" />
               </span>
             )}
-            <div className="h-14 sm:h-16 w-full rounded-xl bg-gray-100 dark:bg-white/10 flex items-center justify-center p-2.5 border border-black/5 group-hover:scale-105 transition-transform duration-200 text-gray-600 dark:text-gray-300">
+            <div className="h-14 sm:h-16 w-full rounded-xl bg-[#ECECEC]/60 dark:bg-white/10 flex items-center justify-center p-2.5 border border-black/5 group-hover:scale-105 transition-transform duration-200 text-gray-600 dark:text-gray-300">
               <Landmark className="size-7 text-[#190088] dark:text-[#97D6DF]" />
             </div>
             <div className="mt-2.5 w-full">
-              <span className="text-[13px] font-bold text-[#212121] dark:text-white block truncate leading-tight">
+              <span className="text-[14px] font-bold text-[#212121] dark:text-white block truncate leading-tight">
                 Otro banco
               </span>
-              <span className="text-[11px] font-normal text-gray-400 dark:text-gray-500 block truncate mt-0.5">
+              <span className="text-[12px] font-light text-[#212121]/60 dark:text-gray-400 block truncate mt-0.5">
                 Entidad no listada
               </span>
             </div>
@@ -521,7 +519,7 @@ const FormularioNuevaCuenta = ({
               <CreditCard className="size-4" />
               <span>Redes de Pago y Tarjetas</span>
             </p>
-            <span className="text-[11px] font-medium text-gray-400">Procesamiento global</span>
+            <span className="text-[12px] font-light text-[#212121]/60">Procesamiento global</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
             {REDES.map((m) => (
@@ -539,7 +537,7 @@ const FormularioNuevaCuenta = ({
 
       {/* Banner resumen de entidad elegida + Inputs de cuenta */}
       {b.medio !== "" && (
-        <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-b from-gray-50 to-white dark:from-white/5 dark:to-white/2 border border-[#ECECEC] dark:border-white/10 space-y-5 animate-aparecer shadow-sm">
+        <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-b from-[#ECECEC]/20 to-white dark:from-white/5 dark:to-white/2 border border-[#ECECEC] dark:border-white/10 space-y-5 animate-aparecer shadow-sm">
           {/* Header de la entidad seleccionada */}
           <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-[#190088]/5 dark:bg-[#97D6DF]/10 border border-[#190088]/15 dark:border-[#97D6DF]/20">
             <div className="flex items-center gap-4">
@@ -558,15 +556,15 @@ const FormularioNuevaCuenta = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[15px] font-bold text-[#190088] dark:text-white">
+                  <span className="text-[16px] font-bold text-[#190088] dark:text-white">
                     {b.medio === OTRO ? (b.otroBanco || "Otro banco nacional") : medio?.nombre}
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-bold bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]">
                     <CheckCircle2 className="size-3" />
                     <span>Seleccionado</span>
                   </span>
                 </div>
-                <p className="text-[12px] font-normal text-[#212121]/70 dark:text-gray-300 mt-0.5">
+                <p className="text-[12px] font-light text-[#212121]/70 dark:text-gray-300 mt-0.5">
                   {billetera
                     ? "Indica el número telefónico registrado para abonar tus liquidaciones."
                     : "Ingresa el número de cuenta certificado para transferencias electrónicas."}
@@ -727,28 +725,28 @@ export const CuentasBancarias = observer(() => {
     <div className="flex flex-col gap-12 w-full font-['DM_Sans',sans-serif] pb-12">
       {/* ── HERO BANNER EXACTO AL DE LA REFERENCIA ─────────────────────────── */}
       <div className="relative">
-        <div className="relative rounded-[32px] bg-gradient-to-r from-[#0d2861] via-[#0f2f70] to-[#0d2963] text-white p-8 sm:p-11 pb-20 shadow-2xl">
+        <div className="relative rounded-[32px] bg-gradient-to-r from-[#190088] via-[#120066] to-[#190088] text-white p-8 sm:p-11 pb-20 shadow-2xl">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
             {/* Lado Izquierdo: Textos y datos */}
             <div className="flex flex-col gap-4 max-w-xl">
               {/* Badge superior "ONLINE BANKING" con icono de punto central */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0b204f]/90 border border-white/10 text-white text-[12px] font-bold w-fit shadow-xs">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-white text-[12px] font-bold w-fit shadow-xs">
                 <span className="flex size-3.5 items-center justify-center rounded-full border-[2px] border-white">
                   <span className="size-1.5 rounded-full bg-white" />
                 </span>
-                <span className="tracking-wider uppercase text-[11px]">ONLINE BANKING</span>
+                <span className="tracking-wider uppercase text-[12px] font-bold">ONLINE BANKING</span>
               </div>
 
-              {/* Título exacto con salto de línea y color Cyan (#48b3fe) resaltado */}
-              <h1 className="text-[34px] sm:text-[40px] font-bold tracking-tight text-white leading-[1.15] font-['DM_Sans',sans-serif]">
-                Best 5 <span className="text-[#48b3fe]">Checking Accounts</span>
+              {/* Título exacto con salto de línea y color Cyan NECTO (#97D6DF) resaltado */}
+              <h1 className="text-[36px] font-bold tracking-tight text-white leading-tight font-['DM_Sans',sans-serif]">
+                Best 5 <span className="text-[#97D6DF]">Checking Accounts</span>
                 <br className="hidden sm:inline" /> Companies in 2026
               </h1>
 
               {/* Metadata de fecha y aviso legal */}
-              <div className="flex flex-wrap items-center gap-5 text-[13px] text-white/80 font-normal">
+              <div className="flex flex-wrap items-center gap-5 text-[14px] text-white/80 font-normal">
                 <span className="flex items-center gap-1.5">
-                  <span className="flex size-4 items-center justify-center rounded-full bg-white text-[#0d2861]">
+                  <span className="flex size-4 items-center justify-center rounded-full bg-white text-[#190088]">
                     <Check className="size-2.5 stroke-[3.5]" />
                   </span>
                   <span>Updated: October 7, 2026</span>
@@ -769,15 +767,15 @@ export const CuentasBancarias = observer(() => {
             {/* Lado Derecho: Mujer sonriendo con celular y tooltip de Current Balance */}
             <div className="relative flex items-end justify-center lg:justify-end shrink-0 lg:w-[420px] min-h-[260px]">
               {/* Tooltip flotante "CURRENT BALANCE: $ 10,000" */}
-              <div className="absolute left-2 sm:-left-4 top-4 z-20 flex flex-col bg-white text-[#212121] px-5 py-3 rounded-2xl shadow-2xl border border-gray-100">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 font-['DM_Sans',sans-serif]">
+              <div className="absolute left-2 sm:-left-4 top-4 z-20 flex flex-col bg-white text-[#212121] px-5 py-3 rounded-2xl shadow-2xl border border-[#ECECEC]">
+                <span className="text-[12px] font-bold uppercase tracking-wider text-[#212121]/60 font-['DM_Sans',sans-serif]">
                   CURRENT BALANCE
                 </span>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="flex size-5 items-center justify-center rounded-full bg-[#10b981] text-white text-[11px] font-bold">
+                  <span className="flex size-5 items-center justify-center rounded-full bg-[#190088] text-white text-[12px] font-bold">
                     $
                   </span>
-                  <span className="text-[22px] font-bold text-[#111827] leading-none tracking-tight font-['DM_Sans',sans-serif]">
+                  <span className="text-[24px] font-bold text-[#212121] leading-none tracking-tight font-['DM_Sans',sans-serif]">
                     10,000
                   </span>
                 </div>
@@ -827,20 +825,20 @@ export const CuentasBancarias = observer(() => {
                 onClick={() => setTabActiva("todas")}
                 className={`flex flex-col items-center justify-center min-w-[120px] sm:min-w-[135px] py-3 px-3.5 rounded-2xl bg-white dark:bg-[#16171d] shadow-lg border transition-all cursor-pointer ${
                   tabActiva === "todas"
-                    ? "border-2 border-[#1E5BF0] dark:border-[#97D6DF] text-[#1E5BF0] dark:text-[#97D6DF] ring-2 ring-[#1E5BF0]/15"
-                    : "border-[#ECECEC] dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gray-300"
+                    ? "border-2 border-[#190088] dark:border-[#97D6DF] text-[#190088] dark:text-[#97D6DF] ring-2 ring-[#190088]/15 dark:ring-[#97D6DF]/20"
+                    : "border-[#ECECEC] dark:border-white/10 text-[#212121]/70 dark:text-gray-300 hover:border-gray-300"
                 }`}
               >
-                <Building2 className={`size-5 sm:size-6 ${tabActiva === "todas" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
-                <span className={`text-[12px] sm:text-[13px] font-bold mt-1 leading-tight text-center ${tabActiva === "todas" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-600 dark:text-gray-300"}`}>
+                <Building2 className={`size-5 sm:size-6 ${tabActiva === "todas" ? "text-[#190088] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
+                <span className={`text-[12px] font-bold mt-1 leading-tight text-center ${tabActiva === "todas" ? "text-[#190088] dark:text-[#97D6DF]" : "text-[#212121]/70 dark:text-gray-300"}`}>
                   Todas las cuentas
                 </span>
-                <span className={`mt-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${tabActiva === "todas" ? "bg-[#1E5BF0]/15 text-[#1E5BF0] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]" : "bg-gray-100 dark:bg-white/10 text-gray-400"}`}>
+                <span className={`mt-0.5 px-2 py-0.5 rounded-full text-[12px] font-bold ${tabActiva === "todas" ? "bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]" : "bg-[#ECECEC] dark:bg-white/10 text-[#212121]/60 dark:text-gray-400"}`}>
                   {conteoTodas}
                 </span>
               </button>
               {tabActiva === "todas" && (
-                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[#1E5BF0] text-white shadow-xs">
+                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[#190088] dark:bg-[#97D6DF] text-white dark:text-[#190088] shadow-xs">
                   <Check className="size-3 stroke-[3]" />
                 </span>
               )}
@@ -853,20 +851,20 @@ export const CuentasBancarias = observer(() => {
                 onClick={() => setTabActiva("corrientes")}
                 className={`flex flex-col items-center justify-center min-w-[120px] sm:min-w-[135px] py-3 px-3.5 rounded-2xl bg-white dark:bg-[#16171d] shadow-lg border transition-all cursor-pointer ${
                   tabActiva === "corrientes"
-                    ? "border-2 border-[#1E5BF0] dark:border-[#97D6DF] text-[#1E5BF0] dark:text-[#97D6DF] ring-2 ring-[#1E5BF0]/15"
-                    : "border-[#ECECEC] dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gray-300"
+                    ? "border-2 border-[#190088] dark:border-[#97D6DF] text-[#190088] dark:text-[#97D6DF] ring-2 ring-[#190088]/15 dark:ring-[#97D6DF]/20"
+                    : "border-[#ECECEC] dark:border-white/10 text-[#212121]/70 dark:text-gray-300 hover:border-gray-300"
                 }`}
               >
-                <FileText className={`size-5 sm:size-6 ${tabActiva === "corrientes" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
-                <span className={`text-[12px] sm:text-[13px] font-bold mt-1 leading-tight text-center ${tabActiva === "corrientes" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-600 dark:text-gray-300"}`}>
+                <FileText className={`size-5 sm:size-6 ${tabActiva === "corrientes" ? "text-[#190088] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
+                <span className={`text-[12px] font-bold mt-1 leading-tight text-center ${tabActiva === "corrientes" ? "text-[#190088] dark:text-[#97D6DF]" : "text-[#212121]/70 dark:text-gray-300"}`}>
                   Cuentas corrientes
                 </span>
-                <span className={`mt-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${tabActiva === "corrientes" ? "bg-[#1E5BF0]/15 text-[#1E5BF0] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]" : "bg-gray-100 dark:bg-white/10 text-gray-400"}`}>
+                <span className={`mt-0.5 px-2 py-0.5 rounded-full text-[12px] font-bold ${tabActiva === "corrientes" ? "bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]" : "bg-[#ECECEC] dark:bg-white/10 text-[#212121]/60 dark:text-gray-400"}`}>
                   {conteoCorrientes}
                 </span>
               </button>
               {tabActiva === "corrientes" && (
-                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[#1E5BF0] text-white shadow-xs">
+                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[#190088] dark:bg-[#97D6DF] text-white dark:text-[#190088] shadow-xs">
                   <Check className="size-3 stroke-[3]" />
                 </span>
               )}
@@ -879,20 +877,20 @@ export const CuentasBancarias = observer(() => {
                 onClick={() => setTabActiva("ahorros")}
                 className={`flex flex-col items-center justify-center min-w-[120px] sm:min-w-[135px] py-3 px-3.5 rounded-2xl bg-white dark:bg-[#16171d] shadow-lg border transition-all cursor-pointer ${
                   tabActiva === "ahorros"
-                    ? "border-2 border-[#1E5BF0] dark:border-[#97D6DF] text-[#1E5BF0] dark:text-[#97D6DF] ring-2 ring-[#1E5BF0]/15"
-                    : "border-[#ECECEC] dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gray-300"
+                    ? "border-2 border-[#190088] dark:border-[#97D6DF] text-[#190088] dark:text-[#97D6DF] ring-2 ring-[#190088]/15 dark:ring-[#97D6DF]/20"
+                    : "border-[#ECECEC] dark:border-white/10 text-[#212121]/70 dark:text-gray-300 hover:border-gray-300"
                 }`}
               >
-                <Wallet className={`size-5 sm:size-6 ${tabActiva === "ahorros" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
-                <span className={`text-[12px] sm:text-[13px] font-bold mt-1 leading-tight text-center ${tabActiva === "ahorros" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-600 dark:text-gray-300"}`}>
+                <Wallet className={`size-5 sm:size-6 ${tabActiva === "ahorros" ? "text-[#190088] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
+                <span className={`text-[12px] font-bold mt-1 leading-tight text-center ${tabActiva === "ahorros" ? "text-[#190088] dark:text-[#97D6DF]" : "text-[#212121]/70 dark:text-gray-300"}`}>
                   Cuentas de ahorros
                 </span>
-                <span className={`mt-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${tabActiva === "ahorros" ? "bg-[#1E5BF0]/15 text-[#1E5BF0] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]" : "bg-gray-100 dark:bg-white/10 text-gray-400"}`}>
+                <span className={`mt-0.5 px-2 py-0.5 rounded-full text-[12px] font-bold ${tabActiva === "ahorros" ? "bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]" : "bg-[#ECECEC] dark:bg-white/10 text-[#212121]/60 dark:text-gray-400"}`}>
                   {conteoAhorros}
                 </span>
               </button>
               {tabActiva === "ahorros" && (
-                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[#1E5BF0] text-white shadow-xs">
+                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[#190088] dark:bg-[#97D6DF] text-white dark:text-[#190088] shadow-xs">
                   <Check className="size-3 stroke-[3]" />
                 </span>
               )}
@@ -905,20 +903,20 @@ export const CuentasBancarias = observer(() => {
                 onClick={() => setTabActiva("billeteras")}
                 className={`flex flex-col items-center justify-center min-w-[120px] sm:min-w-[135px] py-3 px-3.5 rounded-2xl bg-white dark:bg-[#16171d] shadow-lg border transition-all cursor-pointer ${
                   tabActiva === "billeteras"
-                    ? "border-2 border-[#1E5BF0] dark:border-[#97D6DF] text-[#1E5BF0] dark:text-[#97D6DF] ring-2 ring-[#1E5BF0]/15"
-                    : "border-[#ECECEC] dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gray-300"
+                    ? "border-2 border-[#190088] dark:border-[#97D6DF] text-[#190088] dark:text-[#97D6DF] ring-2 ring-[#190088]/15 dark:ring-[#97D6DF]/20"
+                    : "border-[#ECECEC] dark:border-white/10 text-[#212121]/70 dark:text-gray-300 hover:border-gray-300"
                 }`}
               >
-                <Smartphone className={`size-5 sm:size-6 ${tabActiva === "billeteras" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
-                <span className={`text-[12px] sm:text-[13px] font-bold mt-1 leading-tight text-center ${tabActiva === "billeteras" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-600 dark:text-gray-300"}`}>
+                <Smartphone className={`size-5 sm:size-6 ${tabActiva === "billeteras" ? "text-[#190088] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
+                <span className={`text-[12px] font-bold mt-1 leading-tight text-center ${tabActiva === "billeteras" ? "text-[#190088] dark:text-[#97D6DF]" : "text-[#212121]/70 dark:text-gray-300"}`}>
                   Billeteras digitales
                 </span>
-                <span className={`mt-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${tabActiva === "billeteras" ? "bg-[#1E5BF0]/15 text-[#1E5BF0] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]" : "bg-gray-100 dark:bg-white/10 text-gray-400"}`}>
+                <span className={`mt-0.5 px-2 py-0.5 rounded-full text-[12px] font-bold ${tabActiva === "billeteras" ? "bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]" : "bg-[#ECECEC] dark:bg-white/10 text-[#212121]/60 dark:text-gray-400"}`}>
                   {conteoBilleteras}
                 </span>
               </button>
               {tabActiva === "billeteras" && (
-                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[#1E5BF0] text-white shadow-xs">
+                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[#190088] dark:bg-[#97D6DF] text-white dark:text-[#190088] shadow-xs">
                   <Check className="size-3 stroke-[3]" />
                 </span>
               )}
@@ -950,14 +948,14 @@ export const CuentasBancarias = observer(() => {
           onClick={() => setAgregando((prev) => !prev)}
           className={`group flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-[14px] transition-all duration-200 cursor-pointer shadow-md ${
             agregando
-              ? "bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/15 text-[#212121] dark:text-white border border-[#ECECEC] dark:border-white/15"
-              : "bg-gradient-to-r from-[#190088] via-[#2400b8] to-[#190088] text-white hover:shadow-xl hover:shadow-[#190088]/30 hover:-translate-y-0.5 active:translate-y-0 border border-white/20"
+              ? "bg-[#ECECEC] hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/15 text-[#212121] dark:text-white border border-[#ECECEC] dark:border-white/15"
+              : "bg-[#190088] hover:bg-[#120066] text-white hover:shadow-xl hover:shadow-[#190088]/25 hover:-translate-y-0.5 active:translate-y-0 border border-white/20"
           }`}
         >
           <span
             className={`flex items-center justify-center size-6 rounded-lg transition-transform duration-300 ${
               agregando
-                ? "bg-gray-300 dark:bg-white/20 text-gray-700 dark:text-white rotate-45"
+                ? "bg-gray-300 dark:bg-white/20 text-[#212121] dark:text-white rotate-45"
                 : "bg-white/20 text-white group-hover:rotate-90"
             }`}
           >
@@ -982,7 +980,7 @@ export const CuentasBancarias = observer(() => {
             <span className="size-14 rounded-2xl bg-[#190088]/5 dark:bg-white/10 flex items-center justify-center text-[#190088] dark:text-[#97D6DF] mb-3.5 shadow-2xs">
               <Landmark className="size-7" />
             </span>
-            <p className="text-[17px] font-bold text-[#190088] dark:text-white">
+            <p className="text-[16px] font-bold text-[#190088] dark:text-white">
               {cuentas.length === 0
                 ? "Aún no tienes cuentas bancarias vinculadas"
                 : `No tienes cuentas registradas en «${
@@ -1003,7 +1001,7 @@ export const CuentasBancarias = observer(() => {
                 <button
                   type="button"
                   onClick={() => setTabActiva("todas")}
-                  className="px-5 py-2.5 rounded-xl bg-[#190088] hover:bg-[#120066] text-white text-[13px] font-bold transition-all shadow-sm cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-[#190088] hover:bg-[#120066] text-white text-[14px] font-bold transition-all shadow-sm cursor-pointer"
                 >
                   Ver todas mis cuentas ({conteoTodas})
                 </button>
@@ -1011,7 +1009,7 @@ export const CuentasBancarias = observer(() => {
               <button
                 type="button"
                 onClick={() => setAgregando(true)}
-                className="px-5 py-2.5 rounded-xl border border-[#ECECEC] dark:border-white/15 bg-white dark:bg-white/10 text-[#190088] dark:text-white text-[13px] font-bold hover:bg-gray-50 dark:hover:bg-white/15 transition-all cursor-pointer"
+                className="px-5 py-2.5 rounded-xl border border-[#ECECEC] dark:border-white/15 bg-white dark:bg-white/10 text-[#190088] dark:text-white text-[14px] font-bold hover:bg-gray-50 dark:hover:bg-white/15 transition-all cursor-pointer"
               >
                 Vincular nueva cuenta
               </button>
@@ -1033,7 +1031,7 @@ export const CuentasBancarias = observer(() => {
       {/* ── INFORMACIÓN INFERIOR INSTITUCIONAL ──────────────────────────────── */}
       <div className="bg-white dark:bg-[#16171d] rounded-2xl p-8 border border-[#ECECEC] dark:border-white/10 shadow-xs flex flex-col gap-6 text-left">
         <div>
-          <h2 className="text-[20px] font-bold text-[#190088] dark:text-white">
+          <h2 className="text-[24px] font-bold text-[#190088] dark:text-white">
             Operativa de Cuentas y Liquidación de Fondos
           </h2>
           <p className="text-[14px] font-light text-[#212121]/75 dark:text-gray-300 mt-1.5 leading-relaxed">

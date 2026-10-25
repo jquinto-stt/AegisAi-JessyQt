@@ -131,8 +131,8 @@ export const VerificacionBancariaGate = observer(({ children }: VerificacionBanc
         pregunta="Registrar documentos del negocio"
         descripcion="Antes de operar con datos fiscales y retiros, necesitamos conocerte. Pueden ser documentos de persona natural o jurídica."
       >
-        <div className="rounded-2xl border border-[#ECECEC] bg-[#F6F7F9] p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-          <ul className="space-y-2 text-[13px] leading-5 text-[#212121]/80 dark:text-gray-300">
+        <div className="rounded-2xl border border-[#ECECEC] bg-[#F6F7F9] p-5 dark:border-gray-800 dark:bg-white/[0.03] font-['DM_Sans',sans-serif]">
+          <ul className="space-y-2 text-[14px] leading-5 text-[#212121]/80 dark:text-gray-300">
             <li className="flex gap-2">
               <span aria-hidden="true">•</span>
               <span>Revisión manual: una persona del equipo revisa cada documento.</span>
@@ -165,24 +165,24 @@ export const VerificacionBancariaGate = observer(({ children }: VerificacionBanc
         pregunta="Tratamiento de tus datos"
         descripcion="Para verificar la identidad del negocio necesitamos tratar datos personales. Esto es lo que se pide y por qué."
       >
-        <ul className="space-y-2 text-[13px] leading-5 text-[#212121]/80 dark:text-gray-300">
+        <ul className="space-y-2 text-[14px] leading-5 text-[#212121]/80 dark:text-gray-300 font-['DM_Sans',sans-serif]">
           <li>
-            <strong className="font-semibold text-ink-title dark:text-white">Qué se recoge:</strong>{" "}
+            <strong className="font-bold text-ink-title dark:text-white">Qué se recoge:</strong>{" "}
             nombre o razón social, tipo y número de documento, correo electrónico, foto del rostro,
             documento de identidad y comprobante de dirección.
           </li>
           <li>
-            <strong className="font-semibold text-ink-title dark:text-white">Para qué:</strong>{" "}
+            <strong className="font-bold text-ink-title dark:text-white">Para qué:</strong>{" "}
             confirmar que el negocio existe y que quien lo registra es su titular. Sin esto no se
             habilitan retiros ni datos fiscales.
           </li>
           <li>
-            <strong className="font-semibold text-ink-title dark:text-white">Cuánto se guarda:</strong>{" "}
+            <strong className="font-bold text-ink-title dark:text-white">Cuánto se guarda:</strong>{" "}
             mientras la organización esté activa. Puedes pedir la eliminación desde soporte.
           </li>
         </ul>
 
-        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-[#ECECEC] p-4 text-[13px] leading-5 dark:border-gray-800">
+        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-[#ECECEC] p-4 text-[14px] leading-5 dark:border-gray-800 font-['DM_Sans',sans-serif]">
           <input
             type="checkbox"
             checked={aceptaTerminos}
@@ -191,11 +191,11 @@ export const VerificacionBancariaGate = observer(({ children }: VerificacionBanc
           />
           <span className="text-[#212121] dark:text-gray-200">
             He leído y acepto los{" "}
-            <Link to="/terminos" className="font-semibold text-brand-600 hover:underline dark:text-brand-400">
+            <Link to="/terminos" className="font-bold text-[#190088] hover:underline dark:text-[#97D6DF]">
               términos y condiciones
             </Link>{" "}
             y la{" "}
-            <Link to="/privacidad" className="font-semibold text-brand-600 hover:underline dark:text-brand-400">
+            <Link to="/privacidad" className="font-bold text-[#190088] hover:underline dark:text-[#97D6DF]">
               política de tratamiento de datos
             </Link>
             .
