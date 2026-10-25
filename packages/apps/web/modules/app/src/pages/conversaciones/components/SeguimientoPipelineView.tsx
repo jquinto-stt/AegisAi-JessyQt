@@ -417,9 +417,9 @@ export const SeguimientoPipelineView = observer(
     };
 
     return (
-      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden font-sans text-gray-900 dark:text-white/90">
+      <div className="necto-panel animate-aparecer flex h-full min-h-0 flex-1 flex-col overflow-hidden p-3.5 sm:p-4.5 lg:p-5 shadow-theme-xs font-sans text-gray-900 dark:text-white/90">
         {/* ── CABECERA NECTO INTEGRADA ── */}
-        <header className="shrink-0 pb-4">
+        <header className="shrink-0 pb-3.5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Píldoras de filtro por etapa Necto (reemplaza título previo) */}
             <div className="flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-gray-50 dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0">
@@ -477,9 +477,9 @@ export const SeguimientoPipelineView = observer(
             </div>
 
             {/* Acciones y Métricas */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               {/* Card Resumen de Pipeline con diseño Necto */}
-              <div className="inline-flex items-center gap-2.5 rounded-2xl border border-gray-200/80 bg-white px-3.5 py-2 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+              <div className="inline-flex items-center gap-2.5 rounded-2xl border border-gray-200/80 bg-gray-50/80 px-3.5 py-2 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                 <div className="flex size-7 items-center justify-center rounded-xl bg-accent-50 text-accent-600 dark:bg-accent-950/40 dark:text-accent-400">
                   <BanknotesIcon className="size-4" />
                 </div>
@@ -504,7 +504,7 @@ export const SeguimientoPipelineView = observer(
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   placeholder="Buscar prospecto o teléfono..."
-                  className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-8 text-xs text-gray-900 placeholder-gray-400 shadow-theme-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50/80 py-2 pl-9 pr-8 text-xs text-gray-900 placeholder-gray-400 shadow-theme-xs focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white"
                 />
                 {busqueda && (
                   <button
@@ -521,7 +521,7 @@ export const SeguimientoPipelineView = observer(
               <button
                 type="button"
                 onClick={handleRecargar}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-theme-xs transition-colors hover:bg-gray-50 hover:text-gray-900 active:scale-95 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white cursor-pointer"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-gray-50/80 text-gray-600 shadow-theme-xs transition-colors hover:bg-white hover:text-gray-900 active:scale-95 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white cursor-pointer"
                 title="Recargar pipeline"
                 aria-label="Recargar pipeline"
               >
