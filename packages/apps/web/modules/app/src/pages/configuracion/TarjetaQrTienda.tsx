@@ -114,42 +114,18 @@ export const TarjetaQrTienda: React.FC<TarjetaQrTiendaProps> = observer(({
             className="dark:stroke-white/80"
           />
 
-          {/* Isotipo Hexagonal QueryPal */}
-          <g transform="translate(54, 56)">
-            {/* Hexágono exterior delineado */}
+          {/* Isotipo Oficial N de NECTO */}
+          <g transform="translate(52, 48) scale(1.68)">
+            {/* Trazo N rojo naranja principal */}
             <path
-              d="M 38 2 L 72 19.5 V 54.5 L 38 72 L 4 54.5 V 19.5 Z"
-              fill="none"
-              stroke="#1A153A"
-              strokeWidth="5"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              className="dark:stroke-white"
+              d="M32.8588 29.4693L30.0813 32.3566C29.5321 32.9215 28.622 32.9372 28.0571 32.3723L20.1954 24.5107C19.301 23.6163 17.7789 24.2439 17.7789 25.515V31.2896C17.7789 32.0742 17.1512 32.7019 16.3666 32.7019H12.8516C12.067 32.7019 11.4394 32.0742 11.4394 31.2896V16.0528C11.4394 15.6762 11.5806 15.3153 11.8474 15.0485L14.719 12.1769C15.2682 11.6277 16.1312 11.6277 16.6961 12.1455L32.796 27.4451C33.3609 27.9786 33.3766 28.8887 32.8431 29.4536L32.8588 29.4693Z"
+              fill="#FF3F1A"
             />
-            {/* Hexágono interior sólido */}
+            {/* Acento superior N azul profundo */}
             <path
-              d="M 38 12.5 L 59 23.5 V 50.5 L 38 61.5 L 17 50.5 V 23.5 Z"
-              fill="#1A153A"
+              d="M33.2511 12.8046V15.2682C33.2511 16.1469 32.5449 16.8688 31.6505 16.8688H26.0956C24.6833 16.8688 23.9772 15.174 24.9501 14.1698L27.3195 11.7061C27.6177 11.3923 28.0257 11.2197 28.465 11.2197H31.6505C32.5292 11.2197 33.2511 11.9258 33.2511 12.8203V12.8046Z"
+              fill="#190088"
               className="dark:fill-white"
-            />
-            {/* Dos cápsulas verticales blancas */}
-            <rect
-              x="31"
-              y="28"
-              width="5"
-              height="13"
-              rx="2.5"
-              fill="#FFFFFF"
-              className="dark:fill-[#121212]"
-            />
-            <rect
-              x="42.5"
-              y="23.5"
-              width="5"
-              height="13"
-              rx="2.5"
-              fill="#FFFFFF"
-              className="dark:fill-[#121212]"
             />
           </g>
 
