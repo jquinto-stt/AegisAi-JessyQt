@@ -5,14 +5,14 @@ import { FAQ_ITEMS, type FaqItem } from "@/pages/help/help.constants";
 
 type WidgetTab = "home" | "chat";
 
-const CATEGORIES = ["Todos", "Envíos", "Planes", "WhatsApp", "Bancos", "Cuenta"];
+const CATEGORIES = ["Envíos", "Planes", "WhatsApp", "Bancos"];
 
 export const FloatingSupportWidget: React.FC = observer(() => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<WidgetTab>("home");
   const [inputTexto, setInputTexto] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [articuloAbierto, setArticuloAbierto] = useState<FaqItem | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -50,14 +50,13 @@ export const FloatingSupportWidget: React.FC = observer(() => {
     await assistantStore.enviar(pregunta);
   };
 
-  // Filtrado de preguntas frecuentes por categoría y búsqueda
+  // Filtrado de preguntas frecuentes
   const articulosFiltrados = FAQ_ITEMS.filter((item) => {
-    if (selectedCategory !== "Todos") {
+    if (selectedCategory) {
       const text = (item.question + " " + item.answer).toLowerCase();
       if (selectedCategory === "WhatsApp" && !text.includes("whatsapp") && !text.includes("canal")) return false;
       if (selectedCategory === "Planes" && !text.includes("plan") && !text.includes("módulo") && !text.includes("modulos") && !text.includes("perfil")) return false;
       if (selectedCategory === "Bancos" && !text.includes("banc") && !text.includes("moneda") && !text.includes("pago") && !text.includes("retiro")) return false;
-      if (selectedCategory === "Cuenta" && !text.includes("cuenta") && !text.includes("usuario") && !text.includes("organización") && !text.includes("contraseña")) return false;
       if (selectedCategory === "Envíos" && !text.includes("envío") && !text.includes("pedido") && !text.includes("entrega") && !text.includes("comercial")) return false;
     }
 
@@ -73,15 +72,15 @@ export const FloatingSupportWidget: React.FC = observer(() => {
         <div
           ref={widgetRef}
           aria-label="Plataforma de soporte y asistencia NECTO"
-          className="fixed bottom-24 right-4 sm:right-6 z-50 flex w-[calc(100vw-2rem)] sm:w-[390px] h-[610px] max-h-[84vh] flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl border border-[#ECECEC] dark:bg-[#212121] dark:border-white/10 font-['DM_Sans',sans-serif] animate-aparecer transition-all duration-300 ease-out"
+          className="fixed bottom-24 right-4 sm:right-6 z-50 flex w-[calc(100vw-2rem)] sm:w-[370px] h-[600px] max-h-[85vh] flex-col overflow-hidden rounded-[34px] bg-white shadow-2xl border border-[#ECECEC] dark:bg-[#1a1a1a] dark:border-white/10 font-['DM_Sans',sans-serif] animate-aparecer transition-all duration-300 ease-out"
         >
           {/* ══════════════════════════════════════════════════════════
-              VISTA PRINCIPAL: HOME (Layout Hero + Canales + FAQs)
+              VISTA PRINCIPAL: HOME (Layout idéntico a referencia)
              ══════════════════════════════════════════════════════════ */}
           {activeTab === "home" && !articuloAbierto && (
-            <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-white dark:bg-[#212121]">
-              {/* ── Hero Superior: Azul Profundo NECTO #190088 con curva inferior ── */}
-              <div className="relative shrink-0 bg-[#190088] px-5 pt-4 pb-5 text-white rounded-b-[28px] shadow-sm overflow-hidden">
+            <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-white dark:bg-[#1a1a1a]">
+              {/* ── 1. Hero Card Superior (Azul profundo #190088 con curva inferior) ── */}
+              <div className="relative shrink-0 bg-[#190088] px-6 pt-5 pb-6 text-white rounded-b-[32px] shadow-sm overflow-hidden">
                 {/* Micro-patrón punteado de fondo */}
                 <div
                   className="pointer-events-none absolute inset-0 opacity-15"
@@ -91,13 +90,13 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                   }}
                 />
 
-                {/* Fila superior: Logo NECTO en blanco + Botón Cerrar */}
+                {/* Fila superior: Isotipo en blanco + Botón Cerrar */}
                 <div className="relative z-10 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <img
-                      src="/images/logo/necto-full-pure-white.svg"
-                      alt="NECTO"
-                      className="h-4.5 w-auto object-contain"
+                      src="/images/logo/necto-icon-white.svg"
+                      alt="Necto"
+                      className="h-7 w-7 object-contain"
                     />
                   </div>
 
@@ -108,7 +107,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                     title="Cerrar soporte"
                     aria-label="Cerrar soporte"
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18" />
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
@@ -116,30 +115,30 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 </div>
 
                 {/* Saludo / Greeting */}
-                <div className="relative z-10 mt-3.5">
+                <div className="relative z-10 mt-4">
                   <h3 className="text-[24px] font-bold text-white tracking-tight leading-tight">
-                    ¡Hola!
+                    Hello!
                   </h3>
-                  <p className="mt-0.5 text-[14px] font-normal text-[#97D6DF]">
-                    ¿Cómo podemos ayudarte hoy?
+                  <p className="mt-1 text-[16px] font-medium text-white/90">
+                    How can we Help You?
                   </p>
                 </div>
 
-                {/* Botón CTA Destacado: INICIAR CONVERSACIÓN en Naranja #FF3F1A */}
-                <div className="relative z-10 mt-3.5">
+                {/* Botón CTA Destacado: START A CONVERSATION en Naranja #FF3F1A */}
+                <div className="relative z-10 mt-5">
                   <button
                     type="button"
                     onClick={() => {
                       setActiveTab("chat");
                       setArticuloAbierto(null);
                     }}
-                    className="group flex w-full items-center justify-between rounded-2xl bg-[#FF3F1A] hover:bg-[#e03512] px-4 py-3 text-white shadow-lg transition-all active:scale-[0.98] cursor-pointer"
+                    className="group flex w-full items-center justify-between rounded-2xl bg-[#FF3F1A] hover:bg-[#e03512] p-2 pl-6 text-white shadow-lg transition-all active:scale-[0.98] cursor-pointer"
                   >
-                    <span className="text-[14px] font-bold tracking-wider uppercase">
-                      INICIAR CONVERSACIÓN
+                    <span className="flex-1 text-center text-[13px] font-bold tracking-wider uppercase text-white">
+                      START A CONVERSATION
                     </span>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 group-hover:bg-white group-hover:text-[#FF3F1A] transition-all text-white">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#FF3F1A] shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="5" y1="12" x2="19" y2="12" />
                         <polyline points="12 5 19 12 12 19" />
                       </svg>
@@ -148,119 +147,115 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 </div>
               </div>
 
-              {/* ── CUERPO SCROLLEABLE: Canales preferidos + Respuestas rápidas ── */}
-              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col">
-                {/* 1. Sección: Canales Preferidos */}
-                <div className="px-5 pt-4">
-                  <h4 className="text-[14px] font-bold text-[#190088] dark:text-[#97D6DF] tracking-tight mb-2.5">
-                    Hablemos por tus canales preferidos
-                  </h4>
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {/* Canal WhatsApp */}
-                    <a
-                      href="https://wa.me/573000000000?text=Hola,%20necesito%20soporte%20en%20Necto"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex flex-col items-center justify-center rounded-2xl border border-[#ECECEC] dark:border-white/10 bg-gray-50/70 hover:bg-emerald-50/50 hover:border-emerald-300 dark:bg-white/[0.03] dark:hover:bg-emerald-950/20 p-2.5 text-center transition-all active:scale-[0.97] cursor-pointer shadow-2xs"
-                    >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366]/15 text-[#25D366] group-hover:scale-110 transition-transform">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c4.54 0 8.24 3.7 8.24 8.24 0 2.2-.86 4.28-2.42 5.84a8.18 8.18 0 0 1-5.82 2.41c-1.42 0-2.82-.37-4.06-1.07l-.29-.16-3.11.82.83-3.03-.19-.3a8.21 8.21 0 0 1-1.26-4.51c0-4.54 3.7-8.24 8.24-8.24m4.53 11.64c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.4-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.15.17-.25.25-.42.08-.17.04-.32-.02-.45-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1s.9 2.44 1.03 2.61c.13.17 1.77 2.7 4.29 3.79.6.26 1.07.41 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.1-.23-.16-.48-.29" />
-                        </svg>
-                      </div>
-                      <span className="mt-1.5 text-[12px] font-bold text-[#212121] dark:text-white">WhatsApp</span>
-                      <span className="text-[10px] text-gray-500 dark:text-gray-400">Directo</span>
-                    </a>
+              {/* ── CUERPO: Tarjeta de canales + Buscador rápido de respuestas ── */}
+              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col p-4 space-y-4">
+                {/* ── 2. Middle Section: Canales flotantes redondeados ── */}
+                <div className="rounded-3xl bg-[#F8FAFC] dark:bg-white/[0.03] border border-gray-100 dark:border-white/5 p-4 text-center">
+                  <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-200">
+                    Talk to us on your favourite channels
+                  </p>
 
-                    {/* Canal Chat IA */}
+                  <div className="flex items-center justify-center gap-3.5 mt-3">
+                    {/* Canal Messenger / Chat IA */}
                     <button
                       type="button"
                       onClick={() => {
                         setActiveTab("chat");
                         setArticuloAbierto(null);
                       }}
-                      className="group flex flex-col items-center justify-center rounded-2xl border border-[#ECECEC] dark:border-white/10 bg-gray-50/70 hover:bg-[#190088]/5 hover:border-[#190088]/40 dark:bg-white/[0.03] dark:hover:bg-[#190088]/20 p-2.5 text-center transition-all active:scale-[0.97] cursor-pointer shadow-2xs"
+                      className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-white/10 shadow-sm border border-gray-100 dark:border-white/10 hover:shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      title="Chat directo con IA"
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#190088]/15 text-[#190088] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF] group-hover:scale-110 transition-transform">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 8V4H8" />
-                          <rect width="16" height="12" x="4" y="8" rx="2" />
-                          <path d="M2 14h2" />
-                          <path d="M20 14h2" />
-                          <path d="M15 13v2" />
-                          <path d="M9 13v2" />
-                        </svg>
-                      </div>
-                      <span className="mt-1.5 text-[12px] font-bold text-[#212121] dark:text-white">Chat IA</span>
-                      <span className="text-[10px] text-gray-500 dark:text-gray-400">24/7 en vivo</span>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="#0084FF" />
+                        <path d="M12 4C7.58 4 4 7.36 4 11.5c0 2.22 1.05 4.22 2.76 5.61v2.75l2.67-1.48c.81.23 1.67.36 2.57.36 4.42 0 8-3.36 8-7.5S16.42 4 12 4zm.8 10.15l-2.05-2.18-4 2.18 4.4-4.68 2.05 2.18 4-2.18-4.4 4.68z" fill="white" />
+                      </svg>
                     </button>
+
+                    {/* Canal WhatsApp */}
+                    <a
+                      href="https://wa.me/573000000000?text=Hola,%20necesito%20soporte%20en%20Necto"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-white/10 shadow-sm border border-gray-100 dark:border-white/10 hover:shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      title="Chatear por WhatsApp"
+                    >
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="#25D366" />
+                        <path d="M17.5 14.3c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.1.2-.5.7-.7.8-.1.1-.3.2-.5.1-.2-.1-.9-.3-1.7-1.1-.6-.6-1.1-1.3-1.2-1.5-.1-.2 0-.3.1-.4.1-.1.2-.2.3-.4.1-.1.1-.2.2-.4 0-.1 0-.3-.1-.4-.1-.1-.5-1.2-.7-1.6-.2-.4-.4-.4-.5-.4h-.4c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.2 1.6 2.4 3.9 3.4.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.3-.5 1.5-1 .2-.5.2-1 .1-1.1 0-.1-.2-.1-.4-.2z" fill="white" />
+                      </svg>
+                    </a>
 
                     {/* Canal Correo */}
                     <a
                       href="mailto:soporte@necto.co"
-                      className="group flex flex-col items-center justify-center rounded-2xl border border-[#ECECEC] dark:border-white/10 bg-gray-50/70 hover:bg-orange-50/50 hover:border-[#FF3F1A]/40 dark:bg-white/[0.03] dark:hover:bg-orange-950/20 p-2.5 text-center transition-all active:scale-[0.97] cursor-pointer shadow-2xs"
+                      className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-white/10 shadow-sm border border-gray-100 dark:border-white/10 hover:shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      title="Enviar correo"
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FF3F1A]/15 text-[#FF3F1A] group-hover:scale-110 transition-transform">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect width="20" height="16" x="2" y="4" rx="2" />
-                          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FF3F1A]/10 text-[#FF3F1A]">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
                         </svg>
                       </div>
-                      <span className="mt-1.5 text-[12px] font-bold text-[#212121] dark:text-white">Correo</span>
-                      <span className="text-[10px] text-gray-500 dark:text-gray-400">soporte@necto</span>
                     </a>
                   </div>
                 </div>
 
-                {/* 2. Sección: Encuentra Respuestas Rápidas */}
-                <div className="px-5 pt-4 pb-4 flex flex-1 flex-col">
-                  <h4 className="text-[14px] font-bold text-[#190088] dark:text-[#97D6DF] tracking-tight mb-2.5">
-                    Encuentra respuestas rápidas
+                {/* ── 3. Bottom Section: Find an Answer Quickly ── */}
+                <div className="flex flex-1 flex-col">
+                  <h4 className="text-[14px] font-bold text-gray-900 dark:text-white mb-2 px-1">
+                    Find an Answer Quickly
                   </h4>
 
-                  {/* Buscador en centro de ayuda */}
-                  <div className="relative shrink-0 mb-2.5">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                      </svg>
-                    </div>
+                  {/* Buscador unificado con botón azul a la derecha */}
+                  <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] p-1.5 flex items-center shadow-2xs focus-within:border-[#190088] transition-colors">
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Buscar en el centro de ayuda..."
-                      className="h-10 w-full rounded-2xl border border-[#ECECEC] bg-gray-50/90 pl-10 pr-9 text-[12px] text-[#212121] placeholder:text-gray-400 focus:border-[#190088] focus:bg-white focus:outline-hidden dark:border-white/10 dark:bg-white/[0.04] dark:text-[#ECECEC] dark:placeholder:text-gray-500 transition-colors"
+                      placeholder="Search our Help Center"
+                      className="flex-1 bg-transparent px-3 text-[13px] text-gray-800 placeholder:text-gray-400 focus:outline-hidden dark:text-gray-100 dark:placeholder:text-gray-500"
                     />
+
                     {searchQuery && (
                       <button
                         type="button"
                         onClick={() => setSearchQuery("")}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-                        title="Limpiar búsqueda"
+                        className="mr-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                        title="Limpiar"
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <line x1="18" y1="6" x2="6" y2="18" />
                           <line x1="6" y1="6" x2="18" y2="18" />
                         </svg>
                       </button>
                     )}
+
+                    {/* Botón azul cuadrado con icono de check / búsqueda */}
+                    <button
+                      type="button"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#190088] text-white shadow-xs hover:bg-[#150070] active:scale-95 transition-all cursor-pointer"
+                      title="Buscar"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </button>
                   </div>
 
-                  {/* Pills de categorías */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none shrink-0">
+                  {/* Píldoras de categorías estilo referencia */}
+                  <div className="flex items-center gap-2 mt-3 overflow-x-auto scrollbar-none pb-1">
                     {CATEGORIES.map((cat) => {
                       const isActive = selectedCategory === cat;
                       return (
                         <button
                           key={cat}
                           type="button"
-                          onClick={() => setSelectedCategory(cat)}
-                          className={`shrink-0 rounded-full px-3 py-1 text-[12px] font-medium transition-all cursor-pointer ${
+                          onClick={() => setSelectedCategory(isActive ? null : cat)}
+                          className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
                             isActive
                               ? "bg-[#190088] text-white shadow-xs"
-                              : "bg-[#ECECEC] text-[#212121] hover:bg-gray-200 dark:bg-white/10 dark:text-[#ECECEC] dark:hover:bg-white/15"
+                              : "bg-[#EEF2F6] dark:bg-white/10 text-[#190088] dark:text-[#97D6DF] hover:bg-[#E2E8F0] dark:hover:bg-white/15"
                           }`}
                         >
                           {cat}
@@ -269,40 +264,42 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                     })}
                   </div>
 
-                  {/* Lista de preguntas frecuentes filtradas */}
-                  <div className="space-y-2 mt-1">
-                    {articulosFiltrados.length === 0 ? (
-                      <div className="py-6 text-center text-[12px] text-gray-400">
-                        No se encontraron respuestas para esta búsqueda.
-                      </div>
-                    ) : (
-                      articulosFiltrados.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => setArticuloAbierto(item)}
-                          className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-gray-50/80 hover:bg-gray-100/90 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] border border-[#ECECEC] dark:border-white/10 p-3 text-left transition-all active:scale-[0.99] cursor-pointer shadow-2xs"
-                        >
-                          <span className="text-[12px] font-normal text-[#212121] dark:text-[#ECECEC] line-clamp-2 leading-relaxed">
-                            {item.question}
-                          </span>
-                          <svg
-                            width="15"
-                            height="15"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="shrink-0 text-gray-400 group-hover:text-[#190088] dark:group-hover:text-[#97D6DF] group-hover:translate-x-0.5 transition-all"
+                  {/* Lista de artículos filtrados si hay búsqueda o categoría activa */}
+                  {(searchQuery || selectedCategory) && (
+                    <div className="space-y-2 mt-3 pt-2 border-t border-gray-100 dark:border-white/5 animate-aparecer">
+                      {articulosFiltrados.length === 0 ? (
+                        <div className="py-4 text-center text-[12px] text-gray-400">
+                          No se encontraron resultados para esta búsqueda.
+                        </div>
+                      ) : (
+                        articulosFiltrados.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setArticuloAbierto(item)}
+                            className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-gray-50/80 hover:bg-gray-100/90 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] border border-gray-200/60 dark:border-white/10 p-3 text-left transition-all active:scale-[0.99] cursor-pointer"
                           >
-                            <polyline points="9 18 15 12 9 6" />
-                          </svg>
-                        </button>
-                      ))
-                    )}
-                  </div>
+                            <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 line-clamp-2">
+                              {item.question}
+                            </span>
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="shrink-0 text-gray-400 group-hover:text-[#190088] dark:group-hover:text-[#97D6DF] group-hover:translate-x-0.5 transition-all"
+                            >
+                              <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -312,7 +309,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
               DETALLE DE ARTÍCULO / FAQ ABIERTO
              ══════════════════════════════════════════════════════════ */}
           {articuloAbierto && (
-            <div className="flex flex-1 min-h-0 flex-col p-5 overflow-y-auto custom-scrollbar bg-white dark:bg-[#212121]">
+            <div className="flex flex-1 min-h-0 flex-col p-5 overflow-y-auto custom-scrollbar bg-white dark:bg-[#1a1a1a]">
               <button
                 type="button"
                 onClick={() => setArticuloAbierto(null)}
@@ -321,14 +318,14 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
-                <span>Volver al inicio</span>
+                <span>Back to Help</span>
               </button>
 
               <h4 className="text-[16px] font-bold text-[#190088] dark:text-white mb-2 leading-snug">
                 {articuloAbierto.question}
               </h4>
 
-              <div className="rounded-2xl bg-gray-50 p-4 text-[14px] text-[#212121] leading-relaxed dark:bg-white/[0.04] dark:text-[#ECECEC] border border-[#ECECEC] dark:border-white/10">
+              <div className="rounded-2xl bg-gray-50 p-4 text-[13px] text-gray-700 leading-relaxed dark:bg-white/[0.04] dark:text-[#ECECEC] border border-gray-100 dark:border-white/10">
                 {articuloAbierto.answer}
               </div>
 
@@ -340,9 +337,9 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                     setArticuloAbierto(null);
                     handleSeleccionarPreguntaRapida(q);
                   }}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#190088] hover:bg-[#150070] text-white text-[14px] font-bold shadow-md transition-all active:scale-[0.98] cursor-pointer"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#190088] hover:bg-[#150070] text-white text-[13px] font-bold shadow-md transition-all active:scale-[0.98] cursor-pointer"
                 >
-                  <span>Preguntar sobre esto a la IA</span>
+                  <span>Ask AI about this</span>
                 </button>
               </div>
             </div>
@@ -354,7 +351,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
           {activeTab === "chat" && !articuloAbierto && (
             <div className="flex flex-1 min-h-0 flex-col bg-[#212121] text-[#ECECEC]">
               {/* Cabecera del chat con botón Volver a Home */}
-              <div className="relative shrink-0 bg-[#190088] px-4 py-3 text-white flex items-center justify-between shadow-xs">
+              <div className="relative shrink-0 bg-[#190088] px-4 py-3.5 text-white flex items-center justify-between shadow-xs">
                 <button
                   type="button"
                   onClick={() => setActiveTab("home")}
@@ -370,11 +367,11 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 <div className="flex flex-col items-center">
                   <div className="flex items-center gap-1.5">
                     <img src="/images/logo/necto-icon-white.svg" alt="Necto" className="h-4 w-4 object-contain" />
-                    <span className="text-[14px] font-bold text-white">Soporte IA</span>
+                    <span className="text-[14px] font-bold text-white">Necto Support</span>
                   </div>
                   <div className="flex items-center gap-1 text-[10px] text-[#97D6DF]">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#97D6DF] animate-pulse" />
-                    <span>En línea 24/7</span>
+                    <span>Online 24/7</span>
                   </div>
                 </div>
 
