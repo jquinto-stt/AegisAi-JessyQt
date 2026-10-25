@@ -3,23 +3,23 @@ import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
 import {
   BanknotesIcon,
-  ChevronDownIcon,
   MagnifyingGlassIcon,
   ChatBubbleLeftRightIcon,
   ViewColumnsIcon,
   XMarkIcon,
-  EllipsisVerticalIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 
-import { conversacionesStore } from "@/stores/conversaciones.store";
+import { Badge } from "@/elements/ui/badge";
+import { conversacionesStore, presenciaDe } from "@/stores/conversaciones.store";
 import { pedidosStore } from "@/stores/pedidos.store";
 import type { ConversacionCanal } from "@/stores";
-import { formatoMoneda, inicialesDe } from "@/utils";
+import { formatoMoneda, inicialesDe, retardoEscalonado } from "@/utils";
+import { ultimoTexto } from "@/pages/conversaciones/conversaciones.utils";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ETAPAS DEL PIPELINE DE SEGUIMIENTO (Réplica exacta MasterShop)
+// ETAPAS DEL PIPELINE DE SEGUIMIENTO
 // ═══════════════════════════════════════════════════════════════════════════
 
 export type EtapaSeguimiento =
@@ -33,14 +33,15 @@ export interface ColumnaEtapaConfig {
   clave: EtapaSeguimiento;
   label: string;
   dotColor: string;
+  dotBg: string;
 }
 
 export const ETAPAS_PIPELINE: ColumnaEtapaConfig[] = [
-  { clave: "contacto_inicial", label: "Contacto Inicial", dotColor: "#2563EB" },   // Azul
-  { clave: "oferta_enviada", label: "Oferta Enviada", dotColor: "#F97316" },       // Naranja
-  { clave: "seguimiento", label: "Seguimiento", dotColor: "#0EA5E9" },             // Cyan / Celeste
-  { clave: "en_cierre", label: "En Cierre", dotColor: "#10B981" },                 // Verde esmeralda
-  { clave: "validacion_pago", label: "Validación de pago", dotColor: "#8B5CF6" },   // Violeta
+  { clave: "contacto_inicial", label: "Contacto Inicial", dotColor: "#2563EB", dotBg: "bg-blue-500" },
+  { clave: "oferta_enviada", label: "Oferta Enviada", dotColor: "#F97316", dotBg: "bg-orange-500" },
+  { clave: "seguimiento", label: "Seguimiento", dotColor: "#0EA5E9", dotBg: "bg-sky-500" },
+  { clave: "en_cierre", label: "En Cierre", dotColor: "#10B981", dotBg: "bg-emerald-500" },
+  { clave: "validacion_pago", label: "Validación de pago", dotColor: "#8B5CF6", dotBg: "bg-purple-500" },
 ];
 
 const LOCAL_STORAGE_STAGES_KEY = "necto_seguimiento_etapas_v1";
@@ -72,8 +73,8 @@ function calcularEtapaPorDefecto(conv: ConversacionCanal): EtapaSeguimiento {
     : "contacto_inicial";
 }
 
-/** Formateador de fecha idéntico a MasterShop: "Hoy · 16:44" o "15/10 · 19:53" */
-function formatearFechaMasterShop(isoString: string): string {
+/** Formateador de fecha amigable integrado con el estilo Necto */
+function formatearFechaNecto(isoString: string): string {
   try {
     const fecha = new Date(isoString);
     if (isNaN(fecha.getTime())) return "Reciente";
@@ -108,38 +109,60 @@ function formatearFechaMasterShop(isoString: string): string {
   }
 }
 
+/** Paleta de avatares de Necto */
+const PALETA_AVATAR = [
+  "bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300",
+  "bg-secondary-50 text-secondary-700 dark:bg-secondary-950/40 dark:text-secondary-300",
+  "bg-accent-50 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300",
+  "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300",
+];
+
 // ═══════════════════════════════════════════════════════════════════════════
 // COMPONENTE TARJETA DE CONVERSACIÓN / LEAD (PIPELINE CARD)
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface TarjetaPipelineProps {
   conv: ConversacionCanal;
+  indice: number;
   onAbrir: (convId: string) => void;
   onDragStart: (e: React.DragEvent, convId: string) => void;
 }
 
-const TarjetaPipeline = observer(({ conv, onAbrir, onDragStart }: TarjetaPipelineProps) => {
+const TarjetaPipeline = observer(({ conv, indice, onAbrir, onDragStart }: TarjetaPipelineProps) => {
   const pedido = pedidosStore.pedidoActivoDe(conv.contacto.telefono);
   const valor = pedido ? pedidosStore.totalPedido(pedido) : 0;
-  const fechaStr = formatearFechaMasterShop(conv.ultimaActividad);
+  const fechaStr = formatearFechaNecto(conv.ultimaActividad);
   const iniciales = inicialesDe(conv.contacto.nombre);
+  const preview = ultimoTexto(conv.id);
+  const presencia = presenciaDe(conv.estado);
 
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, conv.id)}
       onClick={() => onAbrir(conv.id)}
-      className="group relative cursor-pointer select-none rounded-2xl border border-gray-200/80 bg-white p-3 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md active:scale-[0.99] dark:border-gray-800 dark:bg-gray-900/90 dark:hover:border-gray-700"
+      style={{ animationDelay: retardoEscalonado(indice) }}
+      className="group relative cursor-grab active:cursor-grabbing select-none rounded-2xl border border-gray-100 bg-white p-3.5 shadow-theme-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-theme-md dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-800"
     >
-      {/* ── Fila superior: Avatar con iniciales, Nombre, Subtítulo y Fecha ── */}
-      <div className="flex items-start gap-2.5">
-        {/* Avatar redondo con iniciales y punto de WhatsApp */}
+      {/* ── Fila superior: Avatar, Nombre, Subtítulo y Fecha ── */}
+      <div className="flex items-start gap-3">
+        {/* Avatar redondo Necto con iniciales y punto de presencia/WhatsApp */}
         <div className="relative shrink-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-700 dark:bg-white/10 dark:text-gray-200">
+          <div
+            className={`flex size-9 items-center justify-center rounded-full text-xs font-bold ${
+              PALETA_AVATAR[indice % PALETA_AVATAR.length]
+            }`}
+          >
             {iniciales}
           </div>
           <span
-            className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#25D366] ring-2 ring-white dark:ring-gray-900"
+            className={`absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full ring-2 ring-white dark:ring-gray-900 ${
+              presencia === "online"
+                ? "bg-[#25D366]"
+                : presencia === "busy"
+                ? "bg-brand-500"
+                : "bg-gray-400"
+            }`}
             title="WhatsApp"
           />
         </div>
@@ -147,7 +170,7 @@ const TarjetaPipeline = observer(({ conv, onAbrir, onDragStart }: TarjetaPipelin
         {/* Nombre y subtítulo */}
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-1.5">
-            <h4 className="truncate text-[13px] font-bold text-gray-900 group-hover:text-brand-600 dark:text-white dark:group-hover:text-brand-400">
+            <h4 className="truncate text-sm font-bold text-ink-title group-hover:text-brand-600 dark:text-white dark:group-hover:text-brand-400">
               {conv.contacto.nombre}
             </h4>
             <span className="shrink-0 text-[10px] font-medium text-gray-400 dark:text-gray-500">
@@ -155,19 +178,22 @@ const TarjetaPipeline = observer(({ conv, onAbrir, onDragStart }: TarjetaPipelin
             </span>
           </div>
 
-          <div className="flex items-center justify-between gap-1 mt-0.5">
-            <span className="truncate text-[11px] text-gray-400 dark:text-gray-500">
-              Conversación ID: {conv.id.slice(0, 10)}
-            </span>
-            <EllipsisVerticalIcon className="h-3.5 w-3.5 text-gray-300 opacity-60 transition-opacity group-hover:opacity-100 dark:text-gray-600" />
-          </div>
+          <p className="truncate text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+            {conv.contacto.telefono}
+          </p>
+
+          {preview && (
+            <p className="mt-1 line-clamp-1 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+              {preview}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* ── Fila inferior: Valor del negocio / "Sin valor" y etiqueta "Lead" ── */}
-      <div className="mt-3 flex items-center justify-between border-t border-gray-100/90 pt-2 dark:border-gray-800/80">
+      {/* ── Fila inferior: Valor y Badges Necto ── */}
+      <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2.5 dark:border-gray-800">
         <span
-          className={`text-[12px] ${
+          className={`text-xs ${
             valor > 0
               ? "font-bold text-gray-900 dark:text-white"
               : "font-medium text-gray-400 dark:text-gray-500"
@@ -176,16 +202,23 @@ const TarjetaPipeline = observer(({ conv, onAbrir, onDragStart }: TarjetaPipelin
           {valor > 0 ? formatoMoneda(valor) : "Sin valor"}
         </span>
 
-        <span className="rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-white/10 dark:text-gray-300">
-          {pedido ? "Cliente" : "Lead"}
-        </span>
+        <div className="flex items-center gap-1.5">
+          {conv.noLeidos > 0 && (
+            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF3F1A] px-1 text-[10px] font-bold text-white shadow-theme-xs">
+              {conv.noLeidos}
+            </span>
+          )}
+          <Badge color={pedido ? "success" : "light"} size="sm">
+            {pedido ? "Cliente" : "Lead"}
+          </Badge>
+        </div>
       </div>
     </div>
   );
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// COMPONENTE COLUMNA DEL KANBAN
+// COMPONENTE COLUMNA DEL PIPELINE
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface ColumnaPipelineProps {
@@ -228,59 +261,60 @@ const ColumnaPipeline = observer(
     };
 
     return (
-      <div
+      <section
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`flex h-full min-h-0 flex-1 min-w-[270px] xl:min-w-[290px] flex-col rounded-2xl border transition-all duration-200 ${
+        className={`flex h-full min-h-0 flex-1 min-w-[280px] xl:min-w-[300px] flex-col rounded-3xl border transition-all duration-200 ${
           isOver
-            ? "border-brand-500 bg-brand-50/40 ring-2 ring-brand-500/20 dark:border-brand-500 dark:bg-brand-500/10"
-            : "border-gray-200/60 bg-[#EBEDF0]/70 dark:border-white/5 dark:bg-white/[0.02]"
-        } p-2.5 overflow-hidden`}
+            ? "border-brand-500 bg-brand-50/30 ring-2 ring-brand-500/20 dark:border-brand-500 dark:bg-brand-950/20"
+            : "border-gray-100/90 bg-gray-50/90 dark:border-gray-800/60 dark:bg-white/[0.02]"
+        } p-3 overflow-hidden shadow-theme-xs`}
       >
         {/* Cabecera de la columna */}
-        <div className="mb-2.5 px-1.5 pt-1">
+        <header className="mb-3 shrink-0 px-1 pt-1">
           <div className="flex items-center gap-2">
             <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full shadow-2xs"
+              className="size-2.5 shrink-0 rounded-full shadow-2xs"
               style={{ backgroundColor: config.dotColor }}
             />
-            <h3 className="truncate text-sm font-bold text-gray-800 dark:text-gray-100">
+            <h3 className="truncate text-sm font-bold text-ink-title dark:text-white">
               {config.label}
             </h3>
           </div>
-          <p className="mt-1 pl-4.5 text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+          <p className="mt-1 pl-4.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
             {formatoMoneda(totalDinero)}{" "}
             <span className="font-normal text-gray-400 dark:text-gray-500">
               · {convs.length}
             </span>
           </p>
-        </div>
+        </header>
 
         {/* Lista de tarjetas con scroll suave y limpio */}
         <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1 pb-2 [scrollbar-width:thin]">
-          {convs.map((c) => (
+          {convs.map((c, i) => (
             <TarjetaPipeline
               key={c.id}
               conv={c}
+              indice={i}
               onAbrir={onAbrir}
               onDragStart={onDragStart}
             />
           ))}
 
           {convs.length === 0 && (
-            <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-gray-300/70 p-6 text-center text-xs text-gray-400 dark:border-gray-800">
-              Sin prospectos
+            <div className="flex flex-1 items-center justify-center rounded-2xl border-2 border-dashed border-gray-200/80 py-12 text-center text-xs font-medium text-gray-400 dark:border-gray-800/80">
+              Sin prospectos en esta etapa
             </div>
           )}
         </div>
-      </div>
+      </section>
     );
   }
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// VISTA PRINCIPAL: SEGUIMIENTO PIPELINE (MasterShop UI Exact Replica)
+// VISTA PRINCIPAL: SEGUIMIENTO PIPELINE (Diseño 100% Nativo Necto)
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface SeguimientoPipelineViewProps {
@@ -291,6 +325,7 @@ export const SeguimientoPipelineView = observer(
   ({ onCambiarAVistaChats }: SeguimientoPipelineViewProps) => {
     const navigate = useNavigate();
     const [busqueda, setBusqueda] = useState("");
+    const [recargando, setRecargando] = useState(false);
     const [etapasMap, setEtapasMap] = useState<Record<string, EtapaSeguimiento>>(
       leerEtapasPersonalizadas
     );
@@ -334,7 +369,7 @@ export const SeguimientoPipelineView = observer(
       return resultado;
     }, [conversaciones, etapasMap, busqueda]);
 
-    // Métricas totales del pipeline (Badge verde en el centro)
+    // Métricas totales del pipeline
     const { totalValorPipeline, totalProspectos } = useMemo(() => {
       let suma = 0;
       let cantidad = 0;
@@ -361,107 +396,142 @@ export const SeguimientoPipelineView = observer(
       guardarEtapasPersonalizadas(nuevoMapa);
     };
 
-    const handleAbrirChat = (convId: string) => {
-      setChatSeleccionadoId(convId);
+    const handleRecargar = async () => {
+      setRecargando(true);
+      try {
+        await conversacionesStore.cargarDesdeBase();
+      } finally {
+        setTimeout(() => setRecargando(false), 500);
+      }
     };
 
     return (
-      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#F6F7F9] font-sans dark:bg-[#0B0F19]">
-        {/* ── TOP BAR (RÉPLICA EXACTA DE LA FOTO MASTERSHOP) ── */}
-        <header className="shrink-0 border-b border-gray-200/80 bg-white/95 px-4 py-3 backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90 sm:px-6">
+      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden font-sans text-gray-900 dark:text-white/90">
+        {/* ── CABECERA NECTO INTEGRADA ── */}
+        <header className="shrink-0 pb-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            {/* Lado izquierdo: Selector 'Ventas' y Badge 'Total en Pipeline' */}
-            <div className="flex items-center gap-3">
-              {/* Dropdown 'Ventas' */}
-              <div className="relative inline-flex items-center">
-                <button
-                  type="button"
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-gray-800 shadow-2xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700/80"
-                >
-                  <span>Ventas</span>
-                  <ChevronDownIcon className="h-4 w-4 text-gray-400" />
-                </button>
-              </div>
-
-              {/* Badge verde: Total en Pipeline: $ 8.787.400 / 470 */}
-              <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50 px-3.5 py-1.5 text-xs font-bold text-emerald-800 shadow-2xs dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300">
-                <BanknotesIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <span>
-                  Total en Pipeline: {formatoMoneda(totalValorPipeline)} / {totalProspectos}
+            {/* Título y subtítulo Necto */}
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#190088] dark:text-white/90">
+                  Seguimiento
+                </h1>
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF3F1A] px-1.5 text-[11px] font-bold text-white shadow-theme-xs">
+                  {totalProspectos}
                 </span>
               </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Pipeline de prospectos y conversaciones de ventas en tiempo real
+              </p>
             </div>
 
-            {/* Lado derecho: Buscador por nombre y Selector de Vistas (Chats / Seguimiento) */}
-            <div className="flex items-center gap-2.5">
-              {/* Buscador */}
-              <div className="relative w-48 sm:w-64">
-                <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            {/* Acciones y Métricas */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Card Resumen de Pipeline con diseño Necto */}
+              <div className="inline-flex items-center gap-2.5 rounded-2xl border border-gray-200/80 bg-white px-3.5 py-2 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+                <div className="flex size-7 items-center justify-center rounded-xl bg-accent-50 text-accent-600 dark:bg-accent-950/40 dark:text-accent-400">
+                  <BanknotesIcon className="size-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                    Total en Pipeline
+                  </span>
+                  <span className="text-xs font-bold text-gray-900 dark:text-white">
+                    {formatoMoneda(totalValorPipeline)}{" "}
+                    <span className="text-gray-400 dark:text-gray-500 font-medium">
+                      ({totalProspectos} leads)
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Buscador de contactos */}
+              <div className="relative w-44 sm:w-60">
+                <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Búsqueda por nombre..."
-                  className="w-full rounded-xl border border-gray-200 bg-white py-1.5 pl-9 pr-8 text-xs text-gray-900 placeholder-gray-400 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Buscar prospecto o teléfono..."
+                  className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-8 text-xs text-gray-900 placeholder-gray-400 shadow-theme-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white"
                 />
                 {busqueda && (
                   <button
                     type="button"
                     onClick={() => setBusqueda("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
                   >
-                    <XMarkIcon className="h-3.5 w-3.5" />
+                    <XMarkIcon className="size-3.5" />
                   </button>
                 )}
               </div>
 
-              {/* Tag Colombia 🇨🇴 */}
-              <div className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 shadow-2xs dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                <span>🇨🇴</span>
-                <span>Colombia</span>
-              </div>
+              {/* Botón Refrescar */}
+              <button
+                type="button"
+                onClick={handleRecargar}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-theme-xs transition-colors hover:bg-gray-50 hover:text-gray-900 active:scale-95 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white cursor-pointer"
+                title="Recargar pipeline"
+                aria-label="Recargar pipeline"
+              >
+                <ArrowPathIcon
+                  className={`size-4 text-gray-600 dark:text-gray-400 ${
+                    recargando ? "animate-spin" : ""
+                  }`}
+                />
+              </button>
 
-              {/* Botón de alternancia a vista Chats */}
-              {onCambiarAVistaChats ? (
+              {/* Segmented Control Necto (Chats / Seguimiento) */}
+              <div className="flex items-center rounded-xl bg-gray-100 p-1 dark:bg-white/[0.06] border border-gray-200/50 dark:border-gray-800 shadow-2xs">
+                {onCambiarAVistaChats ? (
+                  <button
+                    type="button"
+                    onClick={onCambiarAVistaChats}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
+                    title="Ir a consola de chats"
+                  >
+                    <ChatBubbleLeftRightIcon className="size-3.5 text-brand-500" />
+                    <span>Chats</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/conversaciones")}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
+                    title="Ir a consola de chats"
+                  >
+                    <ChatBubbleLeftRightIcon className="size-3.5 text-brand-500" />
+                    <span>Chats</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
-                  onClick={onCambiarAVistaChats}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-2xs transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                  title="Cambiar a consola de chats"
+                  className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white cursor-default"
                 >
-                  <ChatBubbleLeftRightIcon className="h-4 w-4 text-brand-500" />
-                  <span className="hidden md:inline">Ver Chats</span>
+                  <ViewColumnsIcon className="size-3.5 text-[#190088] dark:text-[#97D6DF]" />
+                  <span>Seguimiento</span>
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => navigate("/conversaciones")}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-2xs transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                  title="Cambiar a consola de chats"
-                >
-                  <ChatBubbleLeftRightIcon className="h-4 w-4 text-brand-500" />
-                  <span className="hidden md:inline">Ver Chats</span>
-                </button>
-              )}
+              </div>
             </div>
           </div>
         </header>
 
-        {/* ── CUERPO: 5 COLUMNAS KANBAN HORIZONTALES ── */}
-        <main className="flex min-h-0 flex-1 gap-3.5 overflow-x-auto p-4 sm:p-5">
+        {/* ── CUERPO: 5 COLUMNAS KANBAN HORIZONTALES CON ESTILO NECTO ── */}
+        <main className="flex min-h-0 flex-1 gap-4 overflow-x-auto pb-1 [scrollbar-width:thin]">
           {ETAPAS_PIPELINE.map((config) => (
             <ColumnaPipeline
               key={config.clave}
               config={config}
               convs={conversacionesPorEtapa[config.clave]}
-              onAbrir={handleAbrirChat}
+              onAbrir={(id) => setChatSeleccionadoId(id)}
               onDropConv={handleDropConv}
               onDragStart={handleDragStart}
             />
           ))}
         </main>
 
-        {/* ── DRAWER DE CHAT RÁPIDO AL HACER CLIC EN CUALQUIER TARJETA ── */}
+        {/* ── SLIDE-OVER / DRAWER NECTO PARA RESPONDER CHATS SIN SALIR ── */}
         {chatSeleccionadoId && (
           <ChatDrawer
             convId={chatSeleccionadoId}
