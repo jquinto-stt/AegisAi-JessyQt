@@ -2,35 +2,34 @@
    DASHBOARD — entrada coreografiada
    ══════════════════════════════════════════════════════════════════════════
 
-   El dashboard se abre decenas de veces al día, así que la coreografía solo
-   corre en la PRIMERA visita de la sesión (`.dashboard-intro`, que pone
-   `InicioDashboardPage`). Las visitas siguientes usan el fundido corto de
-   siempre: repetir 700 ms de entrada cada vez que vuelves al panel se vuelve
-   espera.
+   El dashboard se abre decenas de veces al día, así que la coreografía corre
+   una vez por carga de la app (`.dashboard-intro`, que pone
+   `InicioDashboardPage`). Al volver al panel desde otra sección se usa el
+   fundido corto de siempre.
 
    Cada pieza declara su turno con `--orden` en su propio estilo. El paso es de
-   70 ms y el último turno no pasa de ~420 ms: el usuario ya está leyendo el
-   saludo cuando llegan las cifras. */
+   110 ms: lo bastante separado para que se lea el orden (saludo → avisos →
+   cifras → gráfica), sin que la última tarjeta llegue después de ~1 s. */
 
 @keyframes dash-aterriza {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.98);
+    transform: translateY(32px) scale(0.96);
   }
 }
 
 @keyframes dash-banner {
   from {
     opacity: 0;
-    transform: scale(0.985);
+    transform: translateY(-12px) scale(0.97);
   }
 }
 
-/* El destello del ícono del saludo: entra girando un cuarto de vuelta. */
+/* El destello del ícono del saludo: entra girando media vuelta. */
 @keyframes dash-destello {
   from {
     opacity: 0;
-    transform: rotate(-90deg) scale(0.6);
+    transform: rotate(-180deg) scale(0.4);
   }
 }
 
@@ -38,27 +37,27 @@
 @keyframes dash-insignia {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(8px) scale(0.9);
   }
 }
 
 .dashboard-intro .dash-banner {
-  animation: dash-banner 520ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: dash-banner 700ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 .dashboard-intro .dash-pieza {
-  animation: dash-aterriza 460ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  animation-delay: calc(120ms + var(--orden, 0) * 70ms);
+  animation: dash-aterriza 700ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(250ms + var(--orden, 0) * 110ms);
 }
 
 .dashboard-intro .dash-destello {
-  animation: dash-destello 520ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  animation-delay: 360ms;
+  animation: dash-destello 800ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: 550ms;
 }
 
 .dashboard-intro .dash-insignia {
-  animation: dash-insignia 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  animation-delay: 1100ms;
+  animation: dash-insignia 400ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: 1900ms;
 }
 
 /* Movimiento reducido: las piezas no se desplazan ni giran, pero tampoco

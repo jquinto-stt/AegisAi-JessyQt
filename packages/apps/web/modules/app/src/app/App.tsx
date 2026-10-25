@@ -229,6 +229,17 @@ export default function App() {
         />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/perfil" element={<ProfilePage />} />
+        <Route
+          path="/404"
+          element={
+            <ProximamentePage
+              titulo="Error 404 · Página no encontrada"
+              subtitulo="La página que buscas no existe o aún se encuentra en construcción."
+              codigo="404"
+              categoria="Error 404"
+            />
+          }
+        />
       </Route>
 
       {/* Onboarding simplificado: Bienvenida -> Teléfono/Ubicación/WhatsApp -> Encuesta -> Cargando */}

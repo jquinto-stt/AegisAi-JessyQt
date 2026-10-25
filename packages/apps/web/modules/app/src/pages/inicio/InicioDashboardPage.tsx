@@ -27,27 +27,19 @@ import type { ApexOptions } from "apexcharts";
 import { tareasDeInicio } from "./tareas-inicio";
 import { CifraAnimada, formatoEntero, formatoPesos } from "./CifraAnimada";
 
-const CLAVE_INTRO = "necto:dashboard:intro-vista";
+/** Se pone en `true` la primera vez que el dashboard se monta en esta carga. */
+let introReproducida = false;
 
 /**
- * ¿Toca la entrada coreografiada? Solo en la primera visita de la sesión: el
- * dashboard se abre muchas veces al día y repetirla cada vez se vuelve espera.
+ * ¿Toca la entrada coreografiada? Una vez por carga de la app (al entrar o al
+ * recargar con F5), no en cada navegación de vuelta al panel: el dashboard se
+ * abre muchas veces al día y repetirla siempre se vuelve espera.
  * Se decide una vez al montar, para que un re-render no la corte a la mitad.
  */
 function usePrimeraVisitaDeSesion(): boolean {
-  const [primera] = useState(() => {
-    try {
-      return sessionStorage.getItem(CLAVE_INTRO) === null;
-    } catch {
-      return false;
-    }
-  });
+  const [primera] = useState(() => !introReproducida);
   useEffect(() => {
-    try {
-      sessionStorage.setItem(CLAVE_INTRO, "1");
-    } catch {
-      /* sin almacenamiento: simplemente no se recuerda */
-    }
+    introReproducida = true;
   }, []);
   return primera;
 }
@@ -244,7 +236,7 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
       aria-label="Novedades de Necto"
     >
       <div
-        onClick={() => onIr(actual.ctaLink)}
+        onClick={() => onIr("/404")}
         className="relative block w-full aspect-[21/9] sm:aspect-[24/9] md:aspect-[32/10] max-h-[420px] sm:max-h-[440px] cursor-pointer overflow-hidden text-left"
         title={actual.title}
         role="button"
@@ -334,12 +326,12 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
         {/* Gradiente sutil y llamada a la acción */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10" />
 
-        <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
+        <div className="absolute bottom-12 sm:bottom-16 md:bottom-20 right-4 sm:right-6 z-20 flex items-center gap-2">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onIr(actual.ctaLink);
+              onIr("/404");
             }}
             className="inline-flex items-center gap-1.5 rounded-full bg-[#FF3F1A] px-4 py-1.5 text-[12px] font-bold text-white shadow-lg transition-all hover:bg-[#e03413] hover:shadow-[#FF3F1A]/30 active:scale-95 cursor-pointer"
           >
@@ -350,7 +342,7 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
       </div>
 
       {/* Paginador flotante con miniaturas/píldoras */}
-      <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/15">
+      <div className="absolute bottom-12 sm:bottom-16 md:bottom-20 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/15">
         <button
           type="button"
           onClick={previo}
@@ -770,12 +762,7 @@ export const InicioDashboardPage = observer(() => {
 
             {/* Tarjeta con Gráfica Principal de Ventas y Utilidades (Line Chart 2 - Elements) */}
             <div style={turno(3)} className="dash-pieza p-6 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs space-y-4">
-              {/* Encabezado de la tarjeta: Line Chart 2 */}
-              <div className="flex items-center justify-between">
-                <h4 className="text-[16px] font-bold text-[#212121] dark:text-white">
-                  Line Chart 2
-                </h4>
-              </div>
+
 
               {/* Contenedor del gráfico LineChart de Elements */}
               <div className="w-full -ml-3 sm:-ml-2">
@@ -797,7 +784,7 @@ export const InicioDashboardPage = observer(() => {
                       Productos Vendidos
                     </p>
                     <p className="text-[20px] font-bold text-[#212121] dark:text-white">
-                      <CifraAnimada valor={2053} formato={formatoEntero} animar={intro} retardo={0.5} />
+                      <CifraAnimada valor={2053} formato={formatoEntero} animar={intro} retardo={0.8} />
                     </p>
                   </div>
                 </div>
@@ -811,7 +798,7 @@ export const InicioDashboardPage = observer(() => {
                       Total de Pedidos
                     </p>
                     <p className="text-[20px] font-bold text-[#212121] dark:text-white">
-                      <CifraAnimada valor={1388} formato={formatoEntero} animar={intro} retardo={0.5} />
+                      <CifraAnimada valor={1388} formato={formatoEntero} animar={intro} retardo={0.8} />
                     </p>
                   </div>
                 </div>
@@ -914,7 +901,7 @@ export const InicioDashboardPage = observer(() => {
                   </div>
 
                   <p className="text-[16px] sm:text-[18px] font-bold text-[#212121] dark:text-white tracking-tight">
-                    <CifraAnimada valor={307711012.94} formato={formatoPesos} animar={intro} retardo={0.35} />
+                    <CifraAnimada valor={307711012.94} formato={formatoPesos} animar={intro} retardo={0.7} />
                   </p>
 
                   {/* Sparkline Line Chart 3 */}
@@ -945,7 +932,7 @@ export const InicioDashboardPage = observer(() => {
                   </div>
 
                   <p className="text-[16px] sm:text-[18px] font-bold text-[#212121] dark:text-white tracking-tight">
-                    <CifraAnimada valor={214838216.94} formato={formatoPesos} animar={intro} retardo={0.35} />
+                    <CifraAnimada valor={214838216.94} formato={formatoPesos} animar={intro} retardo={0.7} />
                   </p>
 
                   {/* Sparkline Line Chart 3 */}
@@ -975,7 +962,7 @@ export const InicioDashboardPage = observer(() => {
                     Productos Vendidos
                   </p>
                   <p className="text-[17px] font-bold text-[#212121] dark:text-white">
-                    <CifraAnimada valor={2053} formato={formatoEntero} animar={intro} retardo={0.45} />
+                    <CifraAnimada valor={2053} formato={formatoEntero} animar={intro} retardo={0.8} />
                   </p>
                 </div>
               </div>
@@ -989,7 +976,7 @@ export const InicioDashboardPage = observer(() => {
                     Total de Pedidos
                   </p>
                   <p className="text-[17px] font-bold text-[#212121] dark:text-white">
-                    <CifraAnimada valor={1388} formato={formatoEntero} animar={intro} retardo={0.45} />
+                    <CifraAnimada valor={1388} formato={formatoEntero} animar={intro} retardo={0.8} />
                   </p>
                 </div>
               </div>

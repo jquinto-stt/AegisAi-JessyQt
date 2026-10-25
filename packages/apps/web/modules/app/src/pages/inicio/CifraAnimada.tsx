@@ -38,7 +38,7 @@ export function CifraAnimada({
     }
     nodo.textContent = formato(0);
     const control = animate(0, valor, {
-      duration: 0.9,
+      duration: 1.6,
       delay: retardo,
       ease: [0.22, 1, 0.36, 1],
       onUpdate: (n) => {
