@@ -171,18 +171,9 @@
            ESCENA 2: CONEXIÓN EN TIEMPO REAL (3.8s – 8.2s)
            ══════════════════════════════════════════════════════════════════════ -->
       <div id="scene2" class="clip" data-start="3.8" data-duration="4.4" data-track-index="0" style="opacity: 0;">
-        <div id="scene2-inner" class="scene-inner" style="justify-content: flex-start; padding-top: 130px;">
-          <div id="s2-header" style="text-align: center; max-width: 1200px; opacity: 0; transform: translateY(20px);">
-            <h2 style="font-size: 64px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15;">
-              Tus conversaciones, pedidos e inventario.
-            </h2>
-            <p style="margin-top: 16px; font-size: 28px; font-weight: 400; color: #ECECEC; line-height: 1.4;">
-              Automatiza conversaciones y transforma la manera en que conectas con tus clientes.
-            </p>
-          </div>
-
+        <div id="scene2-inner" class="scene-inner" style="justify-content: center; align-items: center;">
           <!-- Módulos conectados -->
-          <div id="s2-cards-container" style="display: flex; align-items: center; justify-content: center; gap: 40px; margin-top: 65px; width: 100%; max-width: 1540px;">
+          <div id="s2-cards-container" style="display: flex; align-items: center; justify-content: center; gap: 40px; width: 100%; max-width: 1540px;">
             <!-- Tarjeta WhatsApp -->
             <div id="s2-card-1" class="glass-card" style="flex: 1; opacity: 0; transform: translateX(-40px);">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px;">
@@ -338,10 +329,9 @@
       tl.to("#scene2", { opacity: 1, duration: 0.7, ease: "power2.inOut" }, 3.7);
 
       // ── ESCENA 2 (3.8s – 8.2s) ──────────────────────────────────────────
-      tl.fromTo("#s2-header", { opacity: 0, y: 25, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.6, ease: "power3.out" }, 3.9);
-      tl.fromTo("#s2-card-1", { opacity: 0, x: -50, scale: 0.95 }, { opacity: 1, x: 0, scale: 1, duration: 0.65, ease: "power3.out" }, 4.3);
-      tl.fromTo("#s2-connector", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.55, ease: "back.out(1.5)" }, 4.6);
-      tl.fromTo("#s2-card-2", { opacity: 0, x: 50, scale: 0.95 }, { opacity: 1, x: 0, scale: 1, duration: 0.65, ease: "power3.out" }, 4.9);
+      tl.fromTo("#s2-card-1", { opacity: 0, x: -50, scale: 0.95 }, { opacity: 1, x: 0, scale: 1, duration: 0.65, ease: "power3.out" }, 3.9);
+      tl.fromTo("#s2-connector", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.55, ease: "back.out(1.5)" }, 4.2);
+      tl.fromTo("#s2-card-2", { opacity: 0, x: 50, scale: 0.95 }, { opacity: 1, x: 0, scale: 1, duration: 0.65, ease: "power3.out" }, 4.5);
 
       // Transición cruzada fluida 2 → 3 (overlap continuo en 7.5s - 8.2s)
       tl.to("#scene2", { opacity: 0, scale: 0.95, filter: "blur(8px)", duration: 0.7, ease: "power2.inOut" }, 7.5);
