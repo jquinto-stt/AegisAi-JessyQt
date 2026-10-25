@@ -5,7 +5,7 @@ import { FAQ_ITEMS, type FaqItem } from "@/pages/help/help.constants";
 
 type WidgetTab = "home" | "chat";
 
-const CATEGORIES = ["Shipping", "Subscription", "Refundpolicy"];
+const CATEGORIES = ["Envíos", "Suscripción", "Reembolsos"];
 
 export const FloatingSupportWidget: React.FC = observer(() => {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,9 +54,9 @@ export const FloatingSupportWidget: React.FC = observer(() => {
   const articulosFiltrados = FAQ_ITEMS.filter((item) => {
     if (selectedCategory) {
       const text = (item.question + " " + item.answer).toLowerCase();
-      if (selectedCategory === "Shipping" && !text.includes("envío") && !text.includes("pedido") && !text.includes("entrega") && !text.includes("comercial")) return false;
-      if (selectedCategory === "Subscription" && !text.includes("plan") && !text.includes("módulo") && !text.includes("modulos") && !text.includes("perfil")) return false;
-      if (selectedCategory === "Refundpolicy" && !text.includes("banc") && !text.includes("moneda") && !text.includes("pago") && !text.includes("retiro") && !text.includes("cuenta")) return false;
+      if (selectedCategory === "Envíos" && !text.includes("envío") && !text.includes("pedido") && !text.includes("entrega") && !text.includes("comercial")) return false;
+      if (selectedCategory === "Suscripción" && !text.includes("plan") && !text.includes("módulo") && !text.includes("modulos") && !text.includes("perfil")) return false;
+      if (selectedCategory === "Reembolsos" && !text.includes("banc") && !text.includes("moneda") && !text.includes("pago") && !text.includes("retiro") && !text.includes("cuenta") && !text.includes("reembolso")) return false;
     }
 
     if (!searchQuery.trim()) return true;
@@ -109,14 +109,14 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 {/* Saludo / Greeting */}
                 <div className="mt-3.5">
                   <h3 className="text-[24px] font-bold text-white tracking-tight leading-tight">
-                    Hello!
+                    ¡Hola!
                   </h3>
                   <p className="mt-1 text-[15px] font-medium text-white/90">
-                    How can we Help You?
+                    ¿Cómo podemos ayudarte hoy?
                   </p>
                 </div>
 
-                {/* Botón CTA Destacado: START A CONVERSATION en Naranja NECTO #FF3F1A */}
+                {/* Botón CTA Destacado: INICIAR CONVERSACIÓN en Naranja NECTO #FF3F1A */}
                 <div className="mt-4">
                   <button
                     type="button"
@@ -127,7 +127,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                     className="group flex w-full h-[52px] items-center justify-between rounded-[20px] bg-[#FF3F1A] hover:bg-[#e03512] p-1.5 pl-6 text-white shadow-md transition-all active:scale-[0.98] cursor-pointer"
                   >
                     <span className="flex-1 text-center text-[13px] font-bold tracking-wider uppercase text-white pr-2">
-                      START A CONVERSATION
+                      INICIAR CONVERSACIÓN
                     </span>
                     <div className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-white text-[#FF3F1A] shadow-xs shrink-0 group-hover:scale-105 transition-transform">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
@@ -144,11 +144,11 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 {/* ── 2. Middle Section: Canales flotantes redondeados ── */}
                 <div className="mx-4 my-3 p-3.5 rounded-[24px] bg-[#F4F6F9] dark:bg-white/[0.04] border border-gray-100/80 dark:border-white/5 text-center">
                   <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-200">
-                    Talk to us on your favourite channels
+                    Hablemos por tus canales favoritos
                   </p>
 
                   <div className="flex items-center justify-center gap-3.5 mt-3">
-                    {/* Canal Messenger / IA */}
+                    {/* Canal Messenger / Chat IA */}
                     <button
                       type="button"
                       onClick={() => {
@@ -156,12 +156,13 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                         setArticuloAbierto(null);
                       }}
                       className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white dark:bg-[#252525] shadow-xs border border-gray-100/90 dark:border-white/10 hover:shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                      title="Chat directo con IA"
+                      title="Chat de asistencia"
                     >
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" fill="#0084FF" />
-                        <path d="M12 4C7.58 4 4 7.36 4 11.5c0 2.22 1.05 4.22 2.76 5.61v2.75l2.67-1.48c.81.23 1.67.36 2.57.36 4.42 0 8-3.36 8-7.5S16.42 4 12 4zm.8 10.15l-2.05-2.18-4 2.18 4.4-4.68 2.05 2.18 4-2.18-4.4 4.68z" fill="white" />
-                      </svg>
+                      <img
+                        src="/images/channels/messenger.png"
+                        alt="Messenger"
+                        className="h-5 w-5 object-contain dark:invert"
+                      />
                     </button>
 
                     {/* Canal WhatsApp */}
@@ -172,10 +173,11 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                       className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white dark:bg-[#252525] shadow-xs border border-gray-100/90 dark:border-white/10 hover:shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
                       title="Chatear por WhatsApp"
                     >
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" fill="#25D366" />
-                        <path d="M17.5 14.3c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.1.2-.5.7-.7.8-.1.1-.3.2-.5.1-.2-.1-.9-.3-1.7-1.1-.6-.6-1.1-1.3-1.2-1.5-.1-.2 0-.3.1-.4.1-.1.2-.2.3-.4.1-.1.1-.2.2-.4 0-.1 0-.3-.1-.4-.1-.1-.5-1.2-.7-1.6-.2-.4-.4-.4-.5-.4h-.4c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.2 1.6 2.4 3.9 3.4.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.3-.5 1.5-1 .2-.5.2-1 .1-1.1 0-.1-.2-.1-.4-.2z" fill="white" />
-                      </svg>
+                      <img
+                        src="/images/channels/whatsapp.png"
+                        alt="WhatsApp"
+                        className="h-5 w-5 object-contain dark:invert"
+                      />
                     </a>
 
                     {/* Canal Correo */}
@@ -184,11 +186,11 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                       className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white dark:bg-[#252525] shadow-xs border border-gray-100/90 dark:border-white/10 hover:shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
                       title="Enviar correo"
                     >
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FF3F1A]/10 text-[#FF3F1A]">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-                        </svg>
-                      </div>
+                      <img
+                        src="/images/channels/email.png"
+                        alt="Correo"
+                        className="h-5 w-5 object-contain dark:invert"
+                      />
                     </a>
                   </div>
                 </div>
@@ -196,7 +198,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 {/* ── 3. Bottom Section: Find an Answer Quickly ── */}
                 <div className="px-4 pt-1 pb-5 flex flex-col">
                   <h4 className="text-[14px] font-bold text-gray-900 dark:text-white mb-2 px-1">
-                    Find an Answer Quickly
+                    Encuentra respuestas rápidas
                   </h4>
 
                   {/* Buscador unificado con botón azul a la derecha */}
@@ -205,7 +207,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search our Help Center"
+                      placeholder="Buscar en el centro de ayuda..."
                       className="flex-1 bg-transparent px-3 text-[13px] text-gray-800 placeholder:text-gray-400 focus:outline-hidden dark:text-gray-100 dark:placeholder:text-gray-500"
                     />
 
@@ -310,7 +312,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
-                <span>Back to Help</span>
+                <span>Volver al inicio</span>
               </button>
 
               <h4 className="text-[16px] font-bold text-[#190088] dark:text-white mb-2 leading-snug">
@@ -331,7 +333,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                   }}
                   className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#190088] hover:bg-[#150070] text-white text-[13px] font-bold shadow-md transition-all active:scale-[0.98] cursor-pointer"
                 >
-                  <span>Ask AI about this</span>
+                  <span>Preguntar a la IA sobre esto</span>
                 </button>
               </div>
             </div>
@@ -359,11 +361,11 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                 <div className="flex flex-col items-center">
                   <div className="flex items-center gap-1.5">
                     <img src="/images/logo/necto-icon-white.svg" alt="Necto" className="h-4 w-4 object-contain" />
-                    <span className="text-[14px] font-bold text-white">Necto Support</span>
+                    <span className="text-[14px] font-bold text-white">Soporte Necto</span>
                   </div>
                   <div className="flex items-center gap-1 text-[10px] text-[#97D6DF]">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#97D6DF] animate-pulse" />
-                    <span>Online 24/7</span>
+                    <span>En línea 24/7</span>
                   </div>
                 </div>
 
