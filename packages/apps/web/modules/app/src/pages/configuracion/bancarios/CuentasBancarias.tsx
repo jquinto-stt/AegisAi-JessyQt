@@ -21,8 +21,15 @@ import {
 
 import { Input } from "@/elements/form/input";
 import { organizacionStore } from "@/stores/organizacion.store";
-import type { CuentaBancariaRegistrada } from "@/stores/organizacion.store";
-import { BANCOS, BILLETERAS, medioPorNombre, type MedioPago } from "./medios-pago";
+import {
+  BANCOS,
+  BILLETERAS,
+  DIGITALES,
+  TRADICIONALES,
+  REDES,
+  medioPorNombre,
+  type MedioPago,
+} from "./medios-pago";
 import { reiniciarBancariosEnSesion } from "./VerificacionBancariaGate";
 
 const OTRO = "otro";
@@ -339,12 +346,12 @@ const FormularioNuevaCuenta = ({
         </button>
       </div>
 
-      {/* Billeteras */}
+      {/* 1. Billeteras y Pagos Inmediatos */}
       <div>
         <p className="mb-2 text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
-          Billeteras Digitales
+          Billeteras Digitales y Pagos Inmediatos
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2.5">
           {BILLETERAS.map((m) => {
             const activo = b.medio === m.id;
             return (
@@ -359,7 +366,7 @@ const FormularioNuevaCuenta = ({
                 }`}
               >
                 <LogoMedio medio={m} tamano="sm" />
-                <span className="text-[14px] font-bold text-[#212121] dark:text-white">
+                <span className="text-[14px] font-bold text-[#212121] dark:text-white truncate">
                   {m.nombre}
                 </span>
               </button>
@@ -368,13 +375,47 @@ const FormularioNuevaCuenta = ({
         </div>
       </div>
 
-      {/* Bancos */}
+      {/* 2. Bancos Digitales / Neobancos */}
+      <div>
+        <p className="mb-2 text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
+          Bancos Digitales / Neobancos
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2.5">
+          {DIGITALES.map((m) => {
+            const activo = b.medio === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => set("medio", m.id)}
+                className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  activo
+                    ? "border-2 border-[#190088] dark:border-[#97D6DF] bg-[#EFE6D3]/40 dark:bg-white/10 shadow-xs"
+                    : "border-[#ECECEC] dark:border-white/10 hover:border-gray-400 bg-white dark:bg-white/5"
+                }`}
+              >
+                <LogoMedio medio={m} tamano="sm" />
+                <div className="min-w-0">
+                  <span className="text-[14px] font-bold text-[#212121] dark:text-white block truncate">
+                    {m.nombre}
+                  </span>
+                  <span className="text-[11px] font-normal text-purple-700 dark:text-purple-300 block">
+                    Cuenta de ahorros digital
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. Bancos Tradicionales */}
       <div>
         <p className="mb-2 text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
           Bancos Tradicionales
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-          {BANCOS.map((m) => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2.5">
+          {TRADICIONALES.map((m) => {
             const activo = b.medio === m.id;
             return (
               <button
@@ -412,6 +453,37 @@ const FormularioNuevaCuenta = ({
           </button>
         </div>
       </div>
+
+      {/* 4. Redes de Pago */}
+      {REDES.length > 0 && (
+        <div>
+          <p className="mb-2 text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
+            Redes de Pago
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2.5">
+            {REDES.map((m) => {
+              const activo = b.medio === m.id;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => set("medio", m.id)}
+                  className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    activo
+                      ? "border-2 border-[#190088] dark:border-[#97D6DF] bg-[#EFE6D3]/40 dark:bg-white/10 shadow-xs"
+                      : "border-[#ECECEC] dark:border-white/10 hover:border-gray-400 bg-white dark:bg-white/5"
+                  }`}
+                >
+                  <LogoMedio medio={m} tamano="sm" />
+                  <span className="text-[14px] font-bold text-[#212121] dark:text-white truncate">
+                    {m.nombre}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Inputs */}
       {b.medio !== "" && (
