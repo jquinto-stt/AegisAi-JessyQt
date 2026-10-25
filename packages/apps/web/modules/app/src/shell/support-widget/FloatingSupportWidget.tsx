@@ -3,11 +3,11 @@ import { observer } from "mobx-react-lite";
 import { assistantStore } from "@/stores";
 import { FAQ_ITEMS, type FaqItem } from "@/pages/help/help.constants";
 
-type WidgetTab = "home" | "chat" | "articles" | "search";
+type WidgetTab = "chat" | "articles";
 
 export const FloatingSupportWidget: React.FC = observer(() => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<WidgetTab>("home");
+  const [activeTab, setActiveTab] = useState<WidgetTab>("articles");
   const [inputTexto, setInputTexto] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [articuloAbierto, setArticuloAbierto] = useState<FaqItem | null>(null);
@@ -43,18 +43,16 @@ export const FloatingSupportWidget: React.FC = observer(() => {
 
   const handleSeleccionarPreguntaRapida = async (pregunta: string) => {
     setActiveTab("chat");
+    setArticuloAbierto(null);
     await assistantStore.enviar(pregunta);
   };
 
-  // Filtrado de artículos para la pestaña Search y Articles
+  // Filtrado de artículos fusionado con búsqueda
   const articulosFiltrados = FAQ_ITEMS.filter((item) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return item.question.toLowerCase().includes(q) || item.answer.toLowerCase().includes(q);
   });
-
-  // 3 Accesos rápidos representativos para la vista Home (como en la referencia)
-  const accesosRapidos = FAQ_ITEMS.slice(0, 3);
 
   return (
     <div className="font-sans antialiased">
@@ -76,30 +74,9 @@ export const FloatingSupportWidget: React.FC = observer(() => {
               }}
             />
 
-            {/* Fila superior: Botón Home + Segmented Nav Pill + Botón Minimizar */}
+            {/* Fila superior: Segmented Nav Pill [ Chat | Artículos ] + Botón Minimizar */}
             <div className="relative z-10 flex items-center justify-between gap-2">
-              {/* Botón Home circular */}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("home");
-                  setArticuloAbierto(null);
-                }}
-                className={`flex h-8 w-8 items-center justify-center rounded-full transition-all shadow-xs cursor-pointer ${
-                  activeTab === "home" && !articuloAbierto
-                    ? "bg-white text-[#190088]"
-                    : "bg-white/20 text-white hover:bg-white hover:text-[#190088]"
-                }`}
-                title="Inicio"
-                aria-label="Inicio"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-              </button>
-
-              {/* Segmented Nav Pill [ Chat | Articles | Search ] */}
+              {/* Segmented Nav Pill [ Chat | Artículos ] */}
               <nav
                 aria-label="Pestañas de soporte"
                 className="flex items-center rounded-full bg-black/25 p-0.5 backdrop-blur-md"
@@ -110,7 +87,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                     setActiveTab("chat");
                     setArticuloAbierto(null);
                   }}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`rounded-full px-4 py-1 text-xs font-semibold transition-all cursor-pointer ${
                     activeTab === "chat"
                       ? "bg-white/25 text-white shadow-xs"
                       : "text-white/75 hover:text-white"
@@ -124,27 +101,13 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                     setActiveTab("articles");
                     setArticuloAbierto(null);
                   }}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`rounded-full px-4 py-1 text-xs font-semibold transition-all cursor-pointer ${
                     activeTab === "articles"
                       ? "bg-white/25 text-white shadow-xs"
                       : "text-white/75 hover:text-white"
                   }`}
                 >
-                  Articles
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab("search");
-                    setArticuloAbierto(null);
-                  }}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
-                    activeTab === "search"
-                      ? "bg-white/25 text-white shadow-xs"
-                      : "text-white/75 hover:text-white"
-                  }`}
-                >
-                  Search
+                  Artículos
                 </button>
               </nav>
 
@@ -206,21 +169,55 @@ export const FloatingSupportWidget: React.FC = observer(() => {
             </div>
           </div>
 
-          {/* ── CUERPO PRINCIPAL (Cambia según la pestaña activa) ── */}
+          {/* ── CUERPO PRINCIPAL (2 Pestañas: Artículos fusionada con Búsqueda, y Chat) ── */}
           <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-white dark:bg-gray-900">
             {/* ══════════════════════════════════════════════════════════
-                VISTA 1: HOME (Accesos directos + CTA Iniciar conversación)
+                PESTAÑA: ARTÍCULOS (Artículos + Búsqueda fusionados)
                ══════════════════════════════════════════════════════════ */}
-            {activeTab === "home" && !articuloAbierto && (
-              <div className="flex flex-1 min-h-0 flex-col justify-between p-4 sm:p-5 overflow-y-auto custom-scrollbar">
-                <div>
-                  <h5 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-2.5">
-                    Quick Access
+            {activeTab === "articles" && !articuloAbierto && (
+              <div className="flex flex-1 min-h-0 flex-col p-4 sm:p-5 overflow-hidden">
+                {/* Buscador de artículos integrado */}
+                <div className="relative mb-3 shrink-0">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar guías o preguntas..."
+                    className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50/90 pl-9 pr-8 text-xs text-gray-800 placeholder:text-gray-400 focus:border-[#190088] focus:bg-white focus:outline-hidden dark:border-gray-800 dark:bg-white/[0.04] dark:text-white dark:placeholder:text-gray-500"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                      title="Limpiar búsqueda"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Lista de artículos / Guías */}
+                <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1">
+                  <h5 className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    {searchQuery ? "Resultados de búsqueda" : "Guías y preguntas frecuentes"}
                   </h5>
 
-                  {/* Lista de 3 accesos rápidos estilo tarjetas con chevron */}
-                  <div className="space-y-2">
-                    {accesosRapidos.map((item) => (
+                  {articulosFiltrados.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-gray-400">
+                      No encontramos artículos para "{searchQuery}".
+                    </div>
+                  ) : (
+                    articulosFiltrados.map((item) => (
                       <button
                         key={item.id}
                         type="button"
@@ -244,12 +241,12 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                           <polyline points="9 18 15 12 9 6" />
                         </svg>
                       </button>
-                    ))}
-                  </div>
+                    ))
+                  )}
                 </div>
 
                 {/* Zona inferior: Botón Start Conversation + Powered by Necto */}
-                <div className="pt-4 mt-auto">
+                <div className="pt-3 mt-auto shrink-0 border-t border-gray-100 dark:border-gray-800">
                   <button
                     type="button"
                     onClick={() => setActiveTab("chat")}
@@ -258,7 +255,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                     <span>Start Conversation</span>
                   </button>
 
-                  <p className="mt-3 text-center text-[11px] text-gray-400 dark:text-gray-500">
+                  <p className="mt-2.5 text-center text-[11px] text-gray-400 dark:text-gray-500">
                     Powered by <strong className="font-semibold text-gray-600 dark:text-gray-300 underline underline-offset-2">Necto</strong>
                   </p>
                 </div>
@@ -266,7 +263,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
             )}
 
             {/* ══════════════════════════════════════════════════════════
-                DETALLE DE ARTÍCULO ABIERTO DESDE HOME O ARTICLES
+                DETALLE DE ARTÍCULO ABIERTO
                ══════════════════════════════════════════════════════════ */}
             {articuloAbierto && (
               <div className="flex flex-1 min-h-0 flex-col p-4 sm:p-5 overflow-y-auto custom-scrollbar">
@@ -278,10 +275,10 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
-                  <span>Volver</span>
+                  <span>Volver a artículos</span>
                 </button>
 
-                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2 leading-snug">
                   {articuloAbierto.question}
                 </h4>
 
@@ -306,7 +303,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
             )}
 
             {/* ══════════════════════════════════════════════════════════
-                VISTA 2: CHAT CON IA (assistantStore conectado)
+                PESTAÑA: CHAT CON IA (assistantStore conectado)
                ══════════════════════════════════════════════════════════ */}
             {activeTab === "chat" && !articuloAbierto && (
               <div className="flex flex-1 min-h-0 flex-col">
@@ -409,93 +406,6 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                     </svg>
                   </button>
                 </form>
-              </div>
-            )}
-
-            {/* ══════════════════════════════════════════════════════════
-                VISTA 3: ARTICLES (Documentación y Guías)
-               ══════════════════════════════════════════════════════════ */}
-            {activeTab === "articles" && !articuloAbierto && (
-              <div className="flex flex-1 min-h-0 flex-col p-4 overflow-y-auto custom-scrollbar">
-                <h5 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-2.5">
-                  Artículos de Ayuda
-                </h5>
-
-                <div className="space-y-2">
-                  {FAQ_ITEMS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setArticuloAbierto(item)}
-                      className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-gray-50 p-3 text-left transition-all hover:bg-gray-100 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-gray-100 dark:border-gray-800 cursor-pointer"
-                    >
-                      <span className="text-xs font-medium text-gray-800 dark:text-gray-200 line-clamp-2">
-                        {item.question}
-                      </span>
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="shrink-0 text-gray-400 group-hover:text-gray-700 dark:group-hover:text-white"
-                      >
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ══════════════════════════════════════════════════════════
-                VISTA 4: SEARCH (Buscador dinámico en la base de conocimiento)
-               ══════════════════════════════════════════════════════════ */}
-            {activeTab === "search" && !articuloAbierto && (
-              <div className="flex flex-1 min-h-0 flex-col p-4 overflow-hidden">
-                <div className="relative mb-3 shrink-0">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="11" cy="11" r="8" />
-                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Buscar guías o preguntas..."
-                    className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50/80 pl-9 pr-3 text-xs text-gray-800 placeholder:text-gray-400 focus:border-[#190088] focus:bg-white focus:outline-hidden dark:border-gray-800 dark:bg-white/[0.04] dark:text-white"
-                    autoFocus
-                  />
-                </div>
-
-                <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1">
-                  {articulosFiltrados.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-gray-400">
-                      No encontramos artículos para "{searchQuery}".
-                    </div>
-                  ) : (
-                    articulosFiltrados.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setArticuloAbierto(item)}
-                        className="group flex w-full items-center justify-between gap-3 rounded-2xl bg-gray-50 p-3 text-left transition-all hover:bg-gray-100 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-gray-100 dark:border-gray-800 cursor-pointer"
-                      >
-                        <span className="text-xs font-medium text-gray-800 dark:text-gray-200 line-clamp-2">
-                          {item.question}
-                        </span>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-gray-400 group-hover:text-gray-700 dark:group-hover:text-white">
-                          <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                      </button>
-                    ))
-                  )}
-                </div>
               </div>
             )}
           </div>
