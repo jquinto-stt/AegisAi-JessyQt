@@ -22,6 +22,8 @@ import {
 import { PageMeta } from "@/shell/meta";
 import { organizacionStore } from "@/stores/organizacion.store";
 import { uiStore } from "@/stores";
+import { LineChart } from "@/elements/ui/line-chart";
+import type { ApexOptions } from "apexcharts";
 import { tareasDeInicio } from "./tareas-inicio";
 
 interface BannerItem {
@@ -374,6 +376,217 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
   );
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIGURACIÓN LINE CHART 2 (ELEMENTS)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const lineChartTwoOptions: ApexOptions = {
+  legend: {
+    show: false,
+    position: "top",
+    horizontalAlign: "left",
+  },
+  colors: ["#465FFF", "#97D6DF"],
+  chart: {
+    fontFamily: "DM Sans, sans-serif",
+    height: 310,
+    type: "area",
+    toolbar: {
+      show: false,
+    },
+  },
+  fill: {
+    type: "gradient",
+    gradient: {
+      type: "vertical",
+      shadeIntensity: 1,
+      opacityFrom: 0.35,
+      opacityTo: 0.05,
+      stops: [0, 90, 100],
+    },
+  },
+  stroke: {
+    curve: "smooth",
+    width: [2.5, 2.5],
+  },
+  markers: {
+    size: 0,
+    hover: {
+      size: 5,
+    },
+  },
+  grid: {
+    borderColor: "rgba(255, 255, 255, 0.06)",
+    strokeDashArray: 0,
+    xaxis: {
+      lines: {
+        show: false,
+      },
+    },
+    yaxis: {
+      lines: {
+        show: true,
+      },
+    },
+  },
+  dataLabels: {
+    enabled: false,
+  },
+  tooltip: {
+    enabled: true,
+  },
+  xaxis: {
+    type: "category",
+    categories: [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ],
+    axisBorder: {
+      show: false,
+    },
+    axisTicks: {
+      show: false,
+    },
+    tooltip: {
+      enabled: false,
+    },
+    labels: {
+      style: {
+        colors: "#94a3b8",
+        fontSize: "12px",
+        fontFamily: "DM Sans, sans-serif",
+      },
+    },
+  },
+  yaxis: {
+    min: 0,
+    max: 250,
+    tickAmount: 5,
+    labels: {
+      style: {
+        colors: "#94a3b8",
+        fontSize: "12px",
+        fontFamily: "DM Sans, sans-serif",
+      },
+    },
+  },
+};
+
+const lineChartTwoSeries = [
+  {
+    name: "Series 1",
+    data: [180, 190, 170, 160, 175, 165, 170, 205, 230, 210, 240, 235],
+  },
+  {
+    name: "Series 2",
+    data: [40, 30, 50, 40, 55, 40, 70, 100, 110, 120, 150, 140],
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIGURACIÓN LINE CHART 3 (SPARKLINES VENTAS Y UTILIDADES - ELEMENTS)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const lineChartThreeVentasData = [
+  31.2, 31.0, 31.8, 32.2, 31.9, 32.5, 32.3, 33.1, 32.8, 33.8, 32.2, 33.5,
+  34.2, 33.1, 34.5, 34.2, 34.8, 33.4, 33.2, 32.8, 33.5, 32.1, 33.2, 33.6,
+  32.4, 32.5, 31.5, 31.8, 31.2, 29.8, 30.5, 31.8, 31.2, 32.4, 31.8, 30.2,
+  31.5, 32.2, 31.4, 30.8, 32.6, 33.8, 33.7, 32.2, 32.4, 31.8, 32.6, 33.2,
+  33.0, 34.2, 32.8, 32.6, 32.2, 33.4, 33.2, 34.1, 34.2, 33.0, 32.8, 33.4,
+  33.2, 34.8, 35.2, 35.5, 35.2, 37.2, 37.8,
+];
+
+const lineChartThreeUtilidadesData = [
+  21.8, 22.1, 21.9, 22.5, 23.0, 22.8, 23.4, 23.1, 24.0, 23.5, 24.2, 23.8,
+  24.6, 24.1, 23.5, 23.9, 23.2, 22.8, 23.5, 22.9, 23.4, 22.1, 21.5, 22.2,
+  22.8, 21.9, 22.4, 23.1, 22.8, 21.9, 22.4, 23.2, 22.8, 23.9, 24.1, 23.5,
+  24.2, 23.8, 24.5, 24.1, 23.6, 24.2, 23.9, 24.8, 25.2, 25.0, 26.1, 26.8,
+];
+
+const sparklineVentasOptions: ApexOptions = {
+  chart: {
+    type: "area",
+    height: 52,
+    sparkline: {
+      enabled: true,
+    },
+    animations: {
+      enabled: true,
+      speed: 600,
+    },
+  },
+  stroke: {
+    curve: "smooth",
+    width: 2,
+  },
+  colors: ["#465FFF"],
+  fill: {
+    type: "gradient",
+    gradient: {
+      type: "vertical",
+      shadeIntensity: 1,
+      opacityFrom: 0.45,
+      opacityTo: 0.04,
+      stops: [0, 100],
+    },
+  },
+  tooltip: {
+    enabled: true,
+    theme: "dark",
+    x: { show: false },
+    y: {
+      formatter: (val) => `$ ${val.toFixed(2)}M`,
+    },
+  },
+};
+
+const sparklineUtilidadesOptions: ApexOptions = {
+  chart: {
+    type: "area",
+    height: 52,
+    sparkline: {
+      enabled: true,
+    },
+    animations: {
+      enabled: true,
+      speed: 600,
+    },
+  },
+  stroke: {
+    curve: "smooth",
+    width: 2,
+  },
+  colors: ["#97D6DF"],
+  fill: {
+    type: "gradient",
+    gradient: {
+      type: "vertical",
+      shadeIntensity: 1,
+      opacityFrom: 0.45,
+      opacityTo: 0.04,
+      stops: [0, 100],
+    },
+  },
+  tooltip: {
+    enabled: true,
+    theme: "dark",
+    x: { show: false },
+    y: {
+      formatter: (val) => `$ ${val.toFixed(2)}M`,
+    },
+  },
+};
+
 export const InicioDashboardPage = observer(() => {
   const navigate = useNavigate();
   const [bannerVisible, setBannerVisible] = useState(true);
@@ -521,78 +734,28 @@ export const InicioDashboardPage = observer(() => {
               </label>
             </div>
 
-            {/* Tarjeta con Gráfica Principal de Ventas y Utilidades */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-xs space-y-6">
-              {/* Leyenda de la gráfica */}
-              <div className="flex items-center gap-6 text-[13px] font-bold">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#FF3F1A]" />
-                  <span className="text-[#212121] dark:text-white">Ventas</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#97D6DF]" />
-                  <span className="text-[#212121] dark:text-white">Utilidades</span>
-                </div>
+            {/* Tarjeta con Gráfica Principal de Ventas y Utilidades (Line Chart 2 - Elements) */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs space-y-4">
+              {/* Encabezado de la tarjeta: Line Chart 2 */}
+              <div className="flex items-center justify-between">
+                <h4 className="text-[16px] font-bold text-[#212121] dark:text-white">
+                  Line Chart 2
+                </h4>
               </div>
 
-              {/* Área Gráfica Interactiva (SVG Wave Gradient Necto) */}
-              <div className="w-full h-64 sm:h-72 relative">
-                <svg
-                  viewBox="0 0 800 240"
-                  preserveAspectRatio="none"
-                  className="w-full h-full overflow-visible"
-                >
-                  <defs>
-                    {/* Gradiente Ventas (Naranja Necto) */}
-                    <linearGradient id="gradVentas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#FF3F1A" stopOpacity="0.35" />
-                      <stop offset="100%" stopColor="#FF3F1A" stopOpacity="0.0" />
-                    </linearGradient>
-
-                    {/* Gradiente Utilidades (Cyan Necto) */}
-                    <linearGradient id="gradUtilidades" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#97D6DF" stopOpacity="0.45" />
-                      <stop offset="100%" stopColor="#97D6DF" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Líneas guía de fondo */}
-                  <line x1="0" y1="60" x2="800" y2="60" stroke="#ECECEC" strokeDasharray="4 4" strokeWidth="1" className="dark:stroke-white/10" />
-                  <line x1="0" y1="120" x2="800" y2="120" stroke="#ECECEC" strokeDasharray="4 4" strokeWidth="1" className="dark:stroke-white/10" />
-                  <line x1="0" y1="180" x2="800" y2="180" stroke="#ECECEC" strokeDasharray="4 4" strokeWidth="1" className="dark:stroke-white/10" />
-
-                  {/* Curva Ventas: Relleno y Trazo */}
-                  <path
-                    d="M0,170 Q100,50 200,90 T400,60 T600,100 T800,40 L800,240 L0,240 Z"
-                    fill="url(#gradVentas)"
-                  />
-                  <path
-                    d="M0,170 Q100,50 200,90 T400,60 T600,100 T800,40"
-                    fill="none"
-                    stroke="#FF3F1A"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                  />
-
-                  {/* Curva Utilidades: Relleno y Trazo */}
-                  <path
-                    d="M0,200 Q100,120 200,150 T400,120 T600,160 T800,110 L800,240 L0,240 Z"
-                    fill="url(#gradUtilidades)"
-                  />
-                  <path
-                    d="M0,200 Q100,120 200,150 T400,120 T600,160 T800,110"
-                    fill="none"
-                    stroke="#97D6DF"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-                </svg>
+              {/* Contenedor del gráfico LineChart de Elements */}
+              <div className="w-full -ml-3 sm:-ml-2">
+                <LineChart
+                  series={lineChartTwoSeries}
+                  options={lineChartTwoOptions}
+                  height={310}
+                />
               </div>
 
               {/* Indicadores de resumen al pie de la gráfica */}
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#ECECEC] dark:border-white/10">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#465FFF]/10 text-[#465FFF] flex items-center justify-center shrink-0">
                     <Package className="w-5 h-5" />
                   </div>
                   <div>
@@ -698,8 +861,8 @@ export const InicioDashboardPage = observer(() => {
               ))}
             </div>
 
-            {/* 2. CIFRAS: Ventas y Utilidades en UNA SOLA LÍNEA HORIZONTAL (compactas) */}
-            <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-xs">
+            {/* 2. CIFRAS: Ventas y Utilidades en UNA SOLA LÍNEA HORIZONTAL (Line Chart 3 - Elements) */}
+            <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs">
               <div className="grid grid-cols-2 gap-4 divide-x divide-[#ECECEC] dark:divide-gray-800">
                 {/* Columna Ventas */}
                 <div className="space-y-1.5 pr-2">
@@ -720,21 +883,13 @@ export const InicioDashboardPage = observer(() => {
                     $ 307.711.012,94
                   </p>
 
-                  {/* Sparkline verde */}
-                  <div className="h-6 w-full">
-                    <svg viewBox="0 0 200 36" preserveAspectRatio="none" className="w-full h-full">
-                      <path
-                        d="M0,28 Q30,10 60,20 T120,8 T160,18 T200,6 L200,36 L0,36 Z"
-                        fill="#22c55e"
-                        fillOpacity="0.2"
-                      />
-                      <path
-                        d="M0,28 Q30,10 60,20 T120,8 T160,18 T200,6"
-                        fill="none"
-                        stroke="#22c55e"
-                        strokeWidth="2.5"
-                      />
-                    </svg>
+                  {/* Sparkline Line Chart 3 */}
+                  <div className="w-full -mx-1 py-0.5 overflow-hidden">
+                    <LineChart
+                      series={[{ name: "Ventas", data: lineChartThreeVentasData }]}
+                      options={sparklineVentasOptions}
+                      height={52}
+                    />
                   </div>
 
                   <p className="text-[10px] text-[#212121]/50 dark:text-[#ECECEC]/50 font-medium">
@@ -759,21 +914,13 @@ export const InicioDashboardPage = observer(() => {
                     $ 214.838.216,94
                   </p>
 
-                  {/* Sparkline azul */}
-                  <div className="h-6 w-full">
-                    <svg viewBox="0 0 200 36" preserveAspectRatio="none" className="w-full h-full">
-                      <path
-                        d="M0,30 Q40,15 80,24 T140,12 T200,8 L200,36 L0,36 Z"
-                        fill="#38bdf8"
-                        fillOpacity="0.25"
-                      />
-                      <path
-                        d="M0,30 Q40,15 80,24 T140,12 T200,8"
-                        fill="none"
-                        stroke="#38bdf8"
-                        strokeWidth="2.5"
-                      />
-                    </svg>
+                  {/* Sparkline Line Chart 3 */}
+                  <div className="w-full -mx-1 py-0.5 overflow-hidden">
+                    <LineChart
+                      series={[{ name: "Utilidades", data: lineChartThreeUtilidadesData }]}
+                      options={sparklineUtilidadesOptions}
+                      height={52}
+                    />
                   </div>
 
                   <p className="text-[10px] text-[#212121]/50 dark:text-[#ECECEC]/50 font-medium">
