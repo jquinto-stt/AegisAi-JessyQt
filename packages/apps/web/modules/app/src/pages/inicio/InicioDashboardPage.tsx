@@ -960,36 +960,6 @@ export const InicioDashboardPage = observer(() => {
               </div>
             </div>
 
-            {/* 3. Totales: Productos Vendidos y Total de Pedidos en 2 columnas */}
-            <div style={turno(3)} className="dash-pieza p-4 rounded-3xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 shadow-xs grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center shrink-0">
-                  <Package className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium text-[#212121]/60 dark:text-[#ECECEC]/60">
-                    Productos Vendidos
-                  </p>
-                  <p className="text-[17px] font-bold text-[#212121] dark:text-white">
-                    <CifraAnimada valor={2053} formato={formatoEntero} animar={intro} retardo={0.8} />
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF] flex items-center justify-center shrink-0">
-                  <ShoppingBag className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium text-[#212121]/60 dark:text-[#ECECEC]/60">
-                    Total de Pedidos
-                  </p>
-                  <p className="text-[17px] font-bold text-[#212121] dark:text-white">
-                    <CifraAnimada valor={1388} formato={formatoEntero} animar={intro} retardo={0.8} />
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
