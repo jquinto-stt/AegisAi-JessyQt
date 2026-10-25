@@ -257,8 +257,39 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
       {/* Lista de Chats */}
       <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-2 custom-scrollbar">
         {bandeja.length === 0 ? (
-          <div className="flex h-36 items-center justify-center p-4 text-center text-xs font-normal text-gray-400 dark:text-gray-500">
-            No se encontraron conversaciones.
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+            <div className="mb-3 flex items-center justify-center rounded-2xl bg-[#ECECEC]/30 p-3 dark:bg-white/[0.04]">
+              <img
+                src="/images/whatsapp/whatsapp-10.svg"
+                alt="WhatsApp"
+                className="h-7 w-auto max-w-[130px] object-contain opacity-80 dark:invert dark:opacity-85"
+              />
+            </div>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              No se encontraron conversaciones
+            </p>
+            {conversacionesStore.busqueda ? (
+              <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500 max-w-[200px]">
+                Ningún chat coincide con "{conversacionesStore.busqueda}".
+              </p>
+            ) : (
+              <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500 max-w-[200px]">
+                Tus conversaciones activas aparecerán aquí.
+              </p>
+            )}
+            {(conversacionesStore.busqueda || conversacionesStore.filtro !== "todas" || conversacionesStore.filtroFecha !== "todas") && (
+              <button
+                type="button"
+                onClick={() => {
+                  conversacionesStore.setBusqueda("");
+                  conversacionesStore.setFiltro("todas");
+                  conversacionesStore.setFiltroFecha("todas");
+                }}
+                className="mt-3 text-[11px] font-semibold text-[#FF3F1A] hover:underline cursor-pointer"
+              >
+                Limpiar filtros y búsqueda
+              </button>
+            )}
           </div>
         ) : (
           <div className={compacta ? "space-y-0.5" : "space-y-1"}>
