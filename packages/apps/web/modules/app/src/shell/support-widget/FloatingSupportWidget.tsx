@@ -345,6 +345,14 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                     </div>
                   )}
                 </div>
+
+                {/* Footer de marca: Potenciado por Necto (estilo referencia) */}
+                <div className="py-2 text-center text-[11px] text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-white/5 select-none">
+                  Potenciado por{" "}
+                  <span className="font-bold underline text-gray-700 dark:text-gray-300">
+                    Necto
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -612,6 +620,14 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                   </svg>
                 </button>
               </form>
+
+              {/* Footer de marca: Potenciado por Necto (estilo referencia) */}
+              <div className="py-1.5 text-center text-[11px] text-gray-400 dark:text-gray-500 bg-[#181818] border-t border-white/[0.08] select-none">
+                Potenciado por{" "}
+                <span className="font-bold underline text-gray-300">
+                  Necto
+                </span>
+              </div>
             </div>
           )}
         </div>
