@@ -26,6 +26,7 @@ import {
 import { ConfiguracionPage } from "@/pages/configuracion";
 import { InicioChecklistPage } from "@/pages/inicio/InicioChecklistPage";
 import { InicioDashboardPage } from "@/pages/inicio/InicioDashboardPage";
+import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
 import {
   ConversacionesPage,
   SeguimientoPage,
