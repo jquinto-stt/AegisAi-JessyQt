@@ -35,7 +35,7 @@ import { SparklesIcon } from "@heroicons/react/24/outline";
 // CUATRO tarjetas:
 //   1. «Configuración del negocio» (nombre comercial, logo, país, moneda y rubro)
 //      — clave `general`, que es la que viaja en la URL
-//   2. «Integraciones» — clave `modulos`
+//   2. «Módulos» — clave `modulos`
 //   3. «Opciones de mensajería» (WhatsApp, Telegram, Instagram, Facebook)
 //      — clave `canales`
 //   4. «Preferencias» — clave `apariencia`
@@ -292,7 +292,7 @@ export const ConfiguracionPage = observer(() => {
     return (
       <div className="mx-auto max-w-5xl pb-12">
         <PageMeta
-          title="Configuraciones · Integraciones"
+          title="Configuraciones · Módulos"
           description="Servicios y extensiones activas de la organización"
         />
 
@@ -301,7 +301,7 @@ export const ConfiguracionPage = observer(() => {
         <div className="animate-aparecer">
           <ConfigShell
             seccionKey="modulos"
-            titulo="Integraciones"
+            titulo="Módulos"
             hint="Activa o desactiva capacidades instaladas en tu organización"
           >
             <ModulosTab />

@@ -2,7 +2,7 @@
  * Configuración de la organización — `/configuracion`.
  *
  * Una sola pantalla con cuatro tarjetas: **Configuración del negocio** (`general`) ·
- * **Integraciones** (`modulos`) · **Opciones de mensajería** (`canales`) ·
+ * **Módulos** (`modulos`) · **Opciones de mensajería** (`canales`) ·
  * **Preferencias** (`apariencia`). Las
  * dos primeras reutilizan contenido de otros sitios (`GeneralOrgTab` de aquí y
  * `ModulosTab` de `@/pages/equipo`), que es donde vivía antes de agruparlas.

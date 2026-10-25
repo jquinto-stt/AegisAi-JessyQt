@@ -43,12 +43,12 @@ export const TARJETAS_CONFIG: TarjetaConfig[] = [
   },
   {
     key: "modulos",
-    label: "Integraciones",
+    label: "Módulos",
     hint: "Herramientas activas, catálogo de extensiones y funciones del sistema.",
     icono: PuzzlePieceIcon,
     accion: "Configurar",
     ajustes: ["Módulos activos", "Extensiones"],
-    palabrasClave: ["integraciones", "modulos", "extensiones", "servicios", "plataforma", "funciones"],
+    palabrasClave: ["modulos", "extensiones", "servicios", "plataforma", "funciones"],
   },
   {
     key: "canales",
