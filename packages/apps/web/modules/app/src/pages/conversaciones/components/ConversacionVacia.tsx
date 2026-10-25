@@ -1,9 +1,7 @@
 import React from "react";
 import { NectoLogo } from "@/compositions/shared/NectoLogo";
-import { conversacionesStore } from "@/stores/conversaciones.store";
 
 export const ConversacionVacia: React.FC = () => {
-  const bandeja = conversacionesStore.bandeja;
 
   return (
     <div className="relative flex flex-1 min-h-0 w-full flex-col items-center justify-between overflow-hidden bg-[#FAF9F5] dark:bg-[#0E131F]/90 transition-colors">
@@ -32,23 +30,6 @@ export const ConversacionVacia: React.FC = () => {
           ¡Aún no has seleccionado un chat de WhatsApp!
         </h2>
       </div>
-
-      {/* ── Botón flotante inferior derecho (FAB) ── */}
-      <button
-        type="button"
-        onClick={() => {
-          if (bandeja.length > 0) {
-            conversacionesStore.seleccionar(bandeja[0].id);
-          }
-        }}
-        className="absolute bottom-6 right-6 z-10 flex h-13 w-13 items-center justify-center rounded-full bg-[#1F242C] text-white shadow-xl transition-all hover:scale-105 hover:bg-black active:scale-95 dark:bg-brand-500 dark:hover:bg-brand-600"
-        title="Abrir chat"
-        aria-label="Abrir chat"
-      >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-        </svg>
-      </button>
     </div>
   );
 };
