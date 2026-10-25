@@ -128,7 +128,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
           aria-label="Plataforma de soporte y asistencia NECTO"
           data-estado={isOpen ? "abierto" : "cerrado"}
           {...(!isOpen ? { inert: "" } : {})}
-          className={`soporte-panel fixed bottom-24 right-4 sm:right-6 z-50 flex w-[calc(100vw-2rem)] sm:w-[360px] ${
+          className={`soporte-panel fixed bottom-[112px] right-4 sm:right-8 z-50 flex w-[calc(100vw-2rem)] sm:w-[360px] ${
             activeTab === "chat" ? "h-[580px]" : "h-auto"
           } max-h-[88vh] flex-col overflow-hidden rounded-[32px] bg-white shadow-2xl border border-gray-100 dark:bg-[#181818] dark:border-white/10 font-['DM_Sans',sans-serif]`}
         >
@@ -678,33 +678,38 @@ export const FloatingSupportWidget: React.FC = observer(() => {
         </div>
       )}
 
-      {/* ── BOTÓN FLOTANTE DISPARADOR (Launcher circular en esquina inferior derecha) ── */}
+      {/* ── BOTÓN FLOTANTE DISPARADOR (Launcher con silueta orgánica de gota/burbuja de chat en naranja Necto) ── */}
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="soporte-lanzador fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#190088] hover:bg-[#150070] text-white shadow-xl hover:shadow-2xl cursor-pointer border-2 border-white/20 font-['DM_Sans',sans-serif]"
+        className="soporte-lanzador fixed bottom-10 right-8 z-50 flex h-[60px] w-[60px] items-center justify-center [border-radius:50%_14px_50%_50%] bg-[#FF3F1A] hover:bg-[#E63815] text-white shadow-[0_10px_25px_-3px_rgba(255,63,26,0.35)] hover:shadow-[0_14px_28px_-3px_rgba(255,63,26,0.45)] cursor-pointer border-0 font-['DM_Sans',sans-serif] transition-all duration-200 active:scale-95"
         title="Soporte y Asistencia NECTO"
         aria-label={isOpen ? "Cerrar soporte y asistencia NECTO" : "Abrir soporte y asistencia NECTO"}
         aria-expanded={isOpen}
       >
-        {/* Los dos íconos están siempre montados y se cruzan girando: así el
-            cambio se puede interrumpir a mitad sin saltos. */}
+        {/* Ícono de burbuja de chat con dos líneas de texto (idéntico al diseño de referencia) */}
         <span className={`soporte-lanzador__icono soporte-lanzador__icono--logo ${isOpen ? "is-oculto" : ""}`}>
-          <img src="/images/logo/necto-icon-white.svg" alt="" className="h-7 w-7 object-contain" />
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 28 28"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-7 w-7"
+          >
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M4 8.5C4 5.46243 6.46243 3 9.5 3H18.5C21.5376 3 24 5.46243 24 8.5V15.5C24 19.6421 20.6421 23 16.5 23H4V8.5ZM7.75 8.75C7.75 7.92157 8.42157 7.25 9.25 7.25H18.75C19.5784 7.25 20.25 7.92157 20.25 8.75C20.25 9.57843 19.5784 10.25 18.75 10.25H9.25C8.42157 10.25 7.75 9.57843 7.75 8.75ZM7.75 14.75C7.75 13.9216 8.42157 13.25 9.25 13.25H14.75C15.5784 13.25 16.25 13.9216 16.25 14.75C16.25 15.5784 15.5784 16.25 14.75 16.25H9.25C8.42157 16.25 7.75 15.5784 7.75 14.75Z"
+              fill="white"
+            />
+          </svg>
         </span>
         <span className={`soporte-lanzador__icono soporte-lanzador__icono--cerrar ${isOpen ? "" : "is-oculto"}`}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
-        </span>
-        {/* Badge Naranja NECTO (#FF3F1A) en el perímetro superior derecho exterior */}
-        <span
-          className={`soporte-insignia absolute -top-1 -right-1 flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-[#FF3F1A] text-white text-[11px] font-bold shadow-md border-2 border-white dark:border-[#181818] pointer-events-none ${
-            isOpen ? "is-oculto" : ""
-          }`}
-        >
-          3
         </span>
       </button>
     </div>
