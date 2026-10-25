@@ -37,11 +37,11 @@ export interface ColumnaEtapaConfig {
 }
 
 export const ETAPAS_PIPELINE: ColumnaEtapaConfig[] = [
-  { clave: "contacto_inicial", label: "Contacto Inicial", dotColor: "#2563EB", dotBg: "bg-blue-500" },
-  { clave: "oferta_enviada", label: "Oferta Enviada", dotColor: "#F97316", dotBg: "bg-orange-500" },
-  { clave: "seguimiento", label: "Seguimiento", dotColor: "#0EA5E9", dotBg: "bg-sky-500" },
-  { clave: "en_cierre", label: "En Cierre", dotColor: "#10B981", dotBg: "bg-emerald-500" },
-  { clave: "validacion_pago", label: "Validación de pago", dotColor: "#8B5CF6", dotBg: "bg-purple-500" },
+  { clave: "contacto_inicial", label: "Contacto Inicial", dotColor: "#0284C7", dotBg: "bg-accent-500" },
+  { clave: "oferta_enviada", label: "Oferta Enviada", dotColor: "#FF3F1A", dotBg: "bg-brand-500" },
+  { clave: "seguimiento", label: "Seguimiento", dotColor: "#190088", dotBg: "bg-secondary-500" },
+  { clave: "en_cierre", label: "En Cierre", dotColor: "#10B981", dotBg: "bg-success-500" },
+  { clave: "validacion_pago", label: "Validación de pago", dotColor: "#F59E0B", dotBg: "bg-warning-500" },
 ];
 
 const LOCAL_STORAGE_STAGES_KEY = "necto_seguimiento_etapas_v1";
@@ -227,10 +227,11 @@ interface ColumnaPipelineProps {
   onAbrir: (convId: string) => void;
   onDropConv: (convId: string, nuevaEtapa: EtapaSeguimiento) => void;
   onDragStart: (e: React.DragEvent, convId: string) => void;
+  isSingleColumn?: boolean;
 }
 
 const ColumnaPipeline = observer(
-  ({ config, convs, onAbrir, onDropConv, onDragStart }: ColumnaPipelineProps) => {
+  ({ config, convs, onAbrir, onDropConv, onDragStart, isSingleColumn }: ColumnaPipelineProps) => {
     const [isOver, setIsOver] = useState(false);
 
     // Suma de dinero de la columna (pedidos activos de sus contactos)
@@ -265,7 +266,9 @@ const ColumnaPipeline = observer(
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`flex h-full min-h-0 flex-1 min-w-[280px] xl:min-w-[300px] flex-col rounded-3xl border transition-all duration-200 ${
+        className={`flex h-full min-h-0 flex-1 ${
+          isSingleColumn ? "w-full max-w-md xl:max-w-xl" : "min-w-[280px] xl:min-w-[300px]"
+        } flex-col rounded-3xl border transition-all duration-200 ${
           isOver
             ? "border-brand-500 bg-brand-50/30 ring-2 ring-brand-500/20 dark:border-brand-500 dark:bg-brand-950/20"
             : "border-gray-100/90 bg-gray-50/90 dark:border-gray-800/60 dark:bg-white/[0.02]"
@@ -326,6 +329,7 @@ export const SeguimientoPipelineView = observer(
     const navigate = useNavigate();
     const [busqueda, setBusqueda] = useState("");
     const [recargando, setRecargando] = useState(false);
+    const [filtroEtapa, setFiltroEtapa] = useState<EtapaSeguimiento | "todas">("todas");
     const [etapasMap, setEtapasMap] = useState<Record<string, EtapaSeguimiento>>(
       leerEtapasPersonalizadas
     );
@@ -369,6 +373,13 @@ export const SeguimientoPipelineView = observer(
       return resultado;
     }, [conversaciones, etapasMap, busqueda]);
 
+    // Columnas visibles según el filtro seleccionado
+    const columnasVisibles = useMemo(() => {
+      return ETAPAS_PIPELINE.filter(
+        (e) => filtroEtapa === "todas" || e.clave === filtroEtapa
+      );
+    }, [filtroEtapa]);
+
     // Métricas totales del pipeline
     const { totalValorPipeline, totalProspectos } = useMemo(() => {
       let suma = 0;
@@ -410,19 +421,59 @@ export const SeguimientoPipelineView = observer(
         {/* ── CABECERA NECTO INTEGRADA ── */}
         <header className="shrink-0 pb-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            {/* Título y subtítulo Necto */}
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#190088] dark:text-white/90">
-                  Seguimiento
-                </h1>
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF3F1A] px-1.5 text-[11px] font-bold text-white shadow-theme-xs">
+            {/* Píldoras de filtro por etapa Necto (reemplaza título previo) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-gray-50 dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0">
+              <button
+                type="button"
+                onClick={() => setFiltroEtapa("todas")}
+                aria-pressed={filtroEtapa === "todas"}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
+                  filtroEtapa === "todas"
+                    ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium"
+                }`}
+              >
+                <span className="whitespace-nowrap">Todos</span>
+                <span
+                  className={`flex size-5.5 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
+                    filtroEtapa === "todas"
+                      ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400"
+                      : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300 font-semibold"
+                  }`}
+                >
                   {totalProspectos}
                 </span>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Pipeline de prospectos y conversaciones de ventas en tiempo real
-              </p>
+              </button>
+
+              {ETAPAS_PIPELINE.map((e) => {
+                const activa = filtroEtapa === e.clave;
+                const count = conversacionesPorEtapa[e.clave]?.length || 0;
+                return (
+                  <button
+                    key={e.clave}
+                    type="button"
+                    onClick={() => setFiltroEtapa(activa ? "todas" : e.clave)}
+                    aria-pressed={activa}
+                    className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm transition-all whitespace-nowrap shrink-0 cursor-pointer select-none ${
+                      activa
+                        ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white font-semibold"
+                        : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium"
+                    }`}
+                  >
+                    <span className={`size-1.5 shrink-0 rounded-full ${e.dotBg}`} />
+                    <span className="whitespace-nowrap">{e.label}</span>
+                    <span
+                      className={`flex size-5.5 items-center justify-center rounded-full text-xs shrink-0 ${
+                        activa
+                          ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400 font-bold"
+                          : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300 font-semibold"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Acciones y Métricas */}
@@ -517,9 +568,9 @@ export const SeguimientoPipelineView = observer(
           </div>
         </header>
 
-        {/* ── CUERPO: 5 COLUMNAS KANBAN HORIZONTALES CON ESTILO NECTO ── */}
+        {/* ── CUERPO: COLUMNAS KANBAN HORIZONTALES CON ESTILO NECTO ── */}
         <main className="flex min-h-0 flex-1 gap-4 overflow-x-auto pb-1 [scrollbar-width:thin]">
-          {ETAPAS_PIPELINE.map((config) => (
+          {columnasVisibles.map((config) => (
             <ColumnaPipeline
               key={config.clave}
               config={config}
@@ -527,6 +578,7 @@ export const SeguimientoPipelineView = observer(
               onAbrir={(id) => setChatSeleccionadoId(id)}
               onDropConv={handleDropConv}
               onDragStart={handleDragStart}
+              isSingleColumn={columnasVisibles.length === 1}
             />
           ))}
         </main>
