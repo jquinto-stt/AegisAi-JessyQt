@@ -70,15 +70,15 @@ const LogoMedio = ({
   tamano?: "sm" | "md" | "lg";
 }) => {
   const tamClases = {
-    sm: "size-8 rounded-lg",
-    md: "size-12 rounded-xl",
-    lg: "size-14 rounded-2xl",
+    sm: "h-9 w-20 px-2 py-1 rounded-lg",
+    md: "h-11 w-24 sm:w-28 px-2.5 py-1.5 rounded-xl",
+    lg: "h-14 w-32 sm:w-36 px-3 py-1.5 rounded-xl",
   }[tamano];
 
   if (!medio) {
     return (
       <span
-        className={`${tamClases} flex shrink-0 items-center justify-center bg-[#ECECEC] text-[#212121]/60 dark:bg-white/10 dark:text-gray-300`}
+        className={`${tamClases} flex shrink-0 items-center justify-center bg-[#ECECEC] text-[#212121]/60 dark:bg-white/10 dark:text-gray-300 border border-black/5`}
         aria-hidden="true"
       >
         <Landmark className="size-6" />
@@ -88,18 +88,22 @@ const LogoMedio = ({
 
   if (medio.logo) {
     return (
-      <img
-        src={medio.logo}
-        alt={medio.nombre}
-        className={`${tamClases} shrink-0 object-contain bg-white p-1 ring-1 ring-black/5 shadow-xs`}
-      />
+      <span
+        className={`${tamClases} flex shrink-0 items-center justify-center bg-white dark:bg-white border border-black/10 shadow-2xs`}
+      >
+        <img
+          src={medio.logo}
+          alt={medio.nombre}
+          className="max-h-full max-w-full object-contain"
+        />
+      </span>
     );
   }
 
   return (
     <span
-      className={`${tamClases} flex shrink-0 items-center justify-center font-bold tracking-tight shadow-xs ring-1 ring-black/5 ${
-        medio.sigla.length > 2 ? "text-[12px]" : "text-[16px]"
+      className={`${tamClases} flex shrink-0 items-center justify-center font-bold tracking-tight shadow-xs border border-black/10 ${
+        medio.sigla.length > 2 ? "text-[12px]" : "text-[15px]"
       }`}
       style={{ backgroundColor: medio.fondo, color: medio.texto }}
       aria-hidden="true"
@@ -167,7 +171,7 @@ const TarjetaCuentaCorporativa = observer(({
         }`}
       >
         {/* Columna Izquierda: Logo de Banco, Tipo e Identificación */}
-        <div className="flex items-start sm:items-center gap-4 shrink-0 lg:w-56">
+        <div className="flex items-start sm:items-center gap-4 shrink-0 lg:w-72">
           <LogoMedio medio={medio} tamano="lg" />
           <div className="flex flex-col">
             <span className="text-[14px] font-bold text-[#212121] dark:text-white leading-tight">
@@ -299,6 +303,73 @@ const TarjetaCuentaCorporativa = observer(({
   );
 });
 
+// ── Ficha interactiva de selección de banco o billetera ─────────────────────
+
+const FichaSeleccionEntidad = ({
+  medio,
+  activo,
+  onSelect,
+  subtitulo,
+}: {
+  medio: MedioPago;
+  activo: boolean;
+  onSelect: () => void;
+  subtitulo?: string;
+}) => {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`group relative flex flex-col items-center justify-between p-3.5 sm:p-4 rounded-2xl border text-center transition-all duration-200 cursor-pointer ${
+        activo
+          ? "border-2 border-[#190088] dark:border-[#97D6DF] bg-gradient-to-b from-[#190088]/8 to-transparent dark:from-[#97D6DF]/15 shadow-md ring-4 ring-[#190088]/15 dark:ring-[#97D6DF]/25 -translate-y-0.5"
+          : "border-[#ECECEC] dark:border-white/10 hover:border-[#190088]/40 dark:hover:border-[#97D6DF]/40 bg-white dark:bg-white/5 hover:bg-gray-50/70 dark:hover:bg-white/10 hover:-translate-y-1 shadow-2xs hover:shadow-md"
+      }`}
+    >
+      {/* Badge check flotante si está seleccionado */}
+      {activo && (
+        <span className="absolute -top-2 -right-2 size-6 rounded-full bg-[#190088] dark:bg-[#97D6DF] text-white dark:text-[#190088] flex items-center justify-center shadow-md animate-in zoom-in-75">
+          <Check className="size-3.5 stroke-[3]" />
+        </span>
+      )}
+
+      {/* Bahía blanca limpia, amplia y destacada para el logo del banco */}
+      <div className="h-14 sm:h-16 w-full rounded-xl bg-white dark:bg-white flex items-center justify-center p-2.5 shadow-2xs border border-black/5 group-hover:scale-105 transition-transform duration-200">
+        {medio.logo ? (
+          <img
+            src={medio.logo}
+            alt={medio.nombre}
+            className="max-h-10 sm:max-h-11 max-w-[125px] w-auto h-auto object-contain"
+          />
+        ) : (
+          <span
+            className="text-[13px] font-bold tracking-tight px-3 py-1 rounded-md"
+            style={{ backgroundColor: medio.fondo, color: medio.texto }}
+          >
+            {medio.sigla}
+          </span>
+        )}
+      </div>
+
+      {/* Rótulo de la entidad bancaria */}
+      <div className="mt-2.5 w-full">
+        <span className="text-[13px] font-bold text-[#212121] dark:text-white block truncate leading-tight">
+          {medio.nombre}
+        </span>
+        {subtitulo ? (
+          <span className="text-[11px] font-medium text-[#190088] dark:text-[#97D6DF] block truncate mt-0.5">
+            {subtitulo}
+          </span>
+        ) : (
+          <span className="text-[11px] font-normal text-gray-400 dark:text-gray-500 block truncate mt-0.5">
+            {medio.descripcion || "Cuenta nacional"}
+          </span>
+        )}
+      </div>
+    </button>
+  );
+};
+
 // ── Formulario de Vinculación ───────────────────────────────────────────────
 
 const FormularioNuevaCuenta = ({
@@ -326,21 +397,26 @@ const FormularioNuevaCuenta = ({
         e.preventDefault();
         if (valido) onGuardar({ ...b, medio: b.medio === OTRO ? b.otroBanco.trim() : nombreMedio });
       }}
-      className="p-6 sm:p-8 rounded-3xl border border-[#ECECEC] dark:border-white/10 bg-white dark:bg-[#16171d] shadow-xl space-y-6 animate-aparecer font-['DM_Sans',sans-serif]"
+      className="p-6 sm:p-8 rounded-3xl border border-[#ECECEC] dark:border-white/10 bg-white dark:bg-[#16171d] shadow-xl space-y-7 animate-aparecer font-['DM_Sans',sans-serif]"
     >
-      <div className="flex items-center justify-between border-b border-[#ECECEC] dark:border-white/10 pb-4">
-        <div>
-          <h3 className="text-[24px] font-bold text-[#190088] dark:text-white">
-            Vincular nueva cuenta bancaria
-          </h3>
-          <p className="text-[14px] font-light text-[#212121]/70 dark:text-gray-300">
-            Ingresa los datos de la cuenta o billetera digital para recibir tus liquidaciones.
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#ECECEC] dark:border-white/10 pb-5">
+        <div className="flex items-center gap-3.5">
+          <span className="size-11 rounded-2xl bg-gradient-to-br from-[#190088] to-[#2500c2] text-white flex items-center justify-center shadow-md">
+            <Building2 className="size-5" />
+          </span>
+          <div>
+            <h3 className="text-[22px] sm:text-[24px] font-bold text-[#190088] dark:text-white leading-tight">
+              Vincular nueva cuenta bancaria
+            </h3>
+            <p className="text-[13px] sm:text-[14px] font-light text-[#212121]/70 dark:text-gray-300">
+              Selecciona tu entidad financiera y configura tus credenciales de dispersión.
+            </p>
+          </div>
         </div>
         <button
           type="button"
           onClick={onCancelar}
-          className="text-[14px] font-bold text-gray-400 hover:text-gray-700 dark:hover:text-white"
+          className="px-4 py-2 rounded-xl text-[13px] font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all cursor-pointer"
         >
           Cerrar
         </button>
@@ -348,108 +424,91 @@ const FormularioNuevaCuenta = ({
 
       {/* 1. Billeteras y Pagos Inmediatos */}
       <div>
-        <p className="mb-2 text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
-          Billeteras Digitales y Pagos Inmediatos
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2.5">
-          {BILLETERAS.map((m) => {
-            const activo = b.medio === m.id;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => set("medio", m.id)}
-                className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                  activo
-                    ? "border-2 border-[#190088] dark:border-[#97D6DF] bg-[#EFE6D3]/40 dark:bg-white/10 shadow-xs"
-                    : "border-[#ECECEC] dark:border-white/10 hover:border-gray-400 bg-white dark:bg-white/5"
-                }`}
-              >
-                <LogoMedio medio={m} tamano="sm" />
-                <span className="text-[14px] font-bold text-[#212121] dark:text-white truncate">
-                  {m.nombre}
-                </span>
-              </button>
-            );
-          })}
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF] flex items-center gap-1.5">
+            <Smartphone className="size-4" />
+            <span>Billeteras Digitales y Pagos Inmediatos</span>
+          </p>
+          <span className="text-[11px] font-medium text-gray-400">Liquidación al instante</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+          {BILLETERAS.map((m) => (
+            <FichaSeleccionEntidad
+              key={m.id}
+              medio={m}
+              activo={b.medio === m.id}
+              onSelect={() => set("medio", m.id)}
+              subtitulo="Billetera digital"
+            />
+          ))}
         </div>
       </div>
 
       {/* 2. Bancos Digitales / Neobancos */}
       <div>
-        <p className="mb-2 text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
-          Bancos Digitales / Neobancos
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2.5">
-          {DIGITALES.map((m) => {
-            const activo = b.medio === m.id;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => set("medio", m.id)}
-                className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                  activo
-                    ? "border-2 border-[#190088] dark:border-[#97D6DF] bg-[#EFE6D3]/40 dark:bg-white/10 shadow-xs"
-                    : "border-[#ECECEC] dark:border-white/10 hover:border-gray-400 bg-white dark:bg-white/5"
-                }`}
-              >
-                <LogoMedio medio={m} tamano="sm" />
-                <div className="min-w-0">
-                  <span className="text-[14px] font-bold text-[#212121] dark:text-white block truncate">
-                    {m.nombre}
-                  </span>
-                  <span className="text-[11px] font-normal text-purple-700 dark:text-purple-300 block">
-                    Cuenta de ahorros digital
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF] flex items-center gap-1.5">
+            <Landmark className="size-4" />
+            <span>Bancos Digitales / Neobancos</span>
+          </p>
+          <span className="text-[11px] font-medium text-purple-600 dark:text-purple-400">100% digital</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+          {DIGITALES.map((m) => (
+            <FichaSeleccionEntidad
+              key={m.id}
+              medio={m}
+              activo={b.medio === m.id}
+              onSelect={() => set("medio", m.id)}
+              subtitulo="Cuenta de ahorros digital"
+            />
+          ))}
         </div>
       </div>
 
       {/* 3. Bancos Tradicionales */}
       <div>
-        <p className="mb-2 text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
-          Bancos Tradicionales
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2.5">
-          {TRADICIONALES.map((m) => {
-            const activo = b.medio === m.id;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => set("medio", m.id)}
-                className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                  activo
-                    ? "border-2 border-[#190088] dark:border-[#97D6DF] bg-[#EFE6D3]/40 dark:bg-white/10 shadow-xs"
-                    : "border-[#ECECEC] dark:border-white/10 hover:border-gray-400 bg-white dark:bg-white/5"
-                }`}
-              >
-                <LogoMedio medio={m} tamano="sm" />
-                <span className="text-[14px] font-bold text-[#212121] dark:text-white truncate">
-                  {m.nombre}
-                </span>
-              </button>
-            );
-          })}
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF] flex items-center gap-1.5">
+            <Building2 className="size-4" />
+            <span>Bancos Tradicionales de Colombia</span>
+          </p>
+          <span className="text-[11px] font-medium text-gray-400">Red interbancaria ACH</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+          {TRADICIONALES.map((m) => (
+            <FichaSeleccionEntidad
+              key={m.id}
+              medio={m}
+              activo={b.medio === m.id}
+              onSelect={() => set("medio", m.id)}
+            />
+          ))}
           <button
             type="button"
             onClick={() => set("medio", OTRO)}
-            className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+            className={`group relative flex flex-col items-center justify-between p-3.5 sm:p-4 rounded-2xl border text-center transition-all duration-200 cursor-pointer ${
               b.medio === OTRO
-                ? "border-2 border-[#190088] dark:border-[#97D6DF] bg-[#EFE6D3]/40 dark:bg-white/10 shadow-xs"
-                : "border-[#ECECEC] dark:border-white/10 hover:border-gray-400 bg-white dark:bg-white/5"
+                ? "border-2 border-[#190088] dark:border-[#97D6DF] bg-gradient-to-b from-[#190088]/8 to-transparent dark:from-[#97D6DF]/15 shadow-md ring-4 ring-[#190088]/15 dark:ring-[#97D6DF]/25 -translate-y-0.5"
+                : "border-[#ECECEC] dark:border-white/10 hover:border-[#190088]/40 dark:hover:border-[#97D6DF]/40 bg-white dark:bg-white/5 hover:bg-gray-50/70 dark:hover:bg-white/10 hover:-translate-y-1 shadow-2xs hover:shadow-md"
             }`}
           >
-            <span className="size-8 rounded-lg flex items-center justify-center bg-gray-100 dark:bg-white/10 text-gray-500">
-              <Landmark className="size-4" />
-            </span>
-            <span className="text-[14px] font-bold text-[#212121] dark:text-white">
-              Otro banco
-            </span>
+            {b.medio === OTRO && (
+              <span className="absolute -top-2 -right-2 size-6 rounded-full bg-[#190088] dark:bg-[#97D6DF] text-white dark:text-[#190088] flex items-center justify-center shadow-md animate-in zoom-in-75">
+                <Check className="size-3.5 stroke-[3]" />
+              </span>
+            )}
+            <div className="h-14 sm:h-16 w-full rounded-xl bg-gray-100 dark:bg-white/10 flex items-center justify-center p-2.5 border border-black/5 group-hover:scale-105 transition-transform duration-200 text-gray-600 dark:text-gray-300">
+              <Landmark className="size-7 text-[#190088] dark:text-[#97D6DF]" />
+            </div>
+            <div className="mt-2.5 w-full">
+              <span className="text-[13px] font-bold text-[#212121] dark:text-white block truncate leading-tight">
+                Otro banco
+              </span>
+              <span className="text-[11px] font-normal text-gray-400 dark:text-gray-500 block truncate mt-0.5">
+                Entidad no listada
+              </span>
+            </div>
           </button>
         </div>
       </div>
@@ -457,37 +516,64 @@ const FormularioNuevaCuenta = ({
       {/* 4. Redes de Pago */}
       {REDES.length > 0 && (
         <div>
-          <p className="mb-2 text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
-            Redes de Pago
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2.5">
-            {REDES.map((m) => {
-              const activo = b.medio === m.id;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => set("medio", m.id)}
-                  className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                    activo
-                      ? "border-2 border-[#190088] dark:border-[#97D6DF] bg-[#EFE6D3]/40 dark:bg-white/10 shadow-xs"
-                      : "border-[#ECECEC] dark:border-white/10 hover:border-gray-400 bg-white dark:bg-white/5"
-                  }`}
-                >
-                  <LogoMedio medio={m} tamano="sm" />
-                  <span className="text-[14px] font-bold text-[#212121] dark:text-white truncate">
-                    {m.nombre}
-                  </span>
-                </button>
-              );
-            })}
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF] flex items-center gap-1.5">
+              <CreditCard className="size-4" />
+              <span>Redes de Pago y Tarjetas</span>
+            </p>
+            <span className="text-[11px] font-medium text-gray-400">Procesamiento global</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+            {REDES.map((m) => (
+              <FichaSeleccionEntidad
+                key={m.id}
+                medio={m}
+                activo={b.medio === m.id}
+                onSelect={() => set("medio", m.id)}
+                subtitulo="Red de pagos"
+              />
+            ))}
           </div>
         </div>
       )}
 
-      {/* Inputs */}
+      {/* Banner resumen de entidad elegida + Inputs de cuenta */}
       {b.medio !== "" && (
-        <div className="p-5 rounded-2xl bg-gray-50 dark:bg-white/5 border border-[#ECECEC] dark:border-white/10 space-y-4 animate-aparecer">
+        <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-b from-gray-50 to-white dark:from-white/5 dark:to-white/2 border border-[#ECECEC] dark:border-white/10 space-y-5 animate-aparecer shadow-sm">
+          {/* Header de la entidad seleccionada */}
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-[#190088]/5 dark:bg-[#97D6DF]/10 border border-[#190088]/15 dark:border-[#97D6DF]/20">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-28 rounded-xl bg-white dark:bg-white flex items-center justify-center p-2 shadow-2xs border border-black/10">
+                {b.medio === OTRO ? (
+                  <Landmark className="size-6 text-[#190088]" />
+                ) : medio?.logo ? (
+                  <img
+                    src={medio.logo}
+                    alt={medio.nombre}
+                    className="max-h-8 max-w-[100px] w-auto h-auto object-contain"
+                  />
+                ) : (
+                  <span className="text-[12px] font-bold text-[#190088]">{medio?.sigla}</span>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[15px] font-bold text-[#190088] dark:text-white">
+                    {b.medio === OTRO ? (b.otroBanco || "Otro banco nacional") : medio?.nombre}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]">
+                    <CheckCircle2 className="size-3" />
+                    <span>Seleccionado</span>
+                  </span>
+                </div>
+                <p className="text-[12px] font-normal text-[#212121]/70 dark:text-gray-300 mt-0.5">
+                  {billetera
+                    ? "Indica el número telefónico registrado para abonar tus liquidaciones."
+                    : "Ingresa el número de cuenta certificado para transferencias electrónicas."}
+                </p>
+              </div>
+            </div>
+          </div>
           {b.medio === OTRO && (
             <div>
               <label className="block text-[12px] font-bold text-[#212121] dark:text-white mb-1">
@@ -806,10 +892,22 @@ export const CuentasBancarias = observer(() => {
         <button
           type="button"
           onClick={() => setAgregando((prev) => !prev)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#ECECEC] dark:border-white/15 bg-white dark:bg-[#16171d] hover:border-[#190088] text-[14px] font-bold text-[#190088] dark:text-white transition-all cursor-pointer shadow-xs"
+          className={`group flex items-center gap-2.5 px-6 py-3 rounded-2xl font-bold text-[14px] transition-all duration-200 cursor-pointer shadow-md ${
+            agregando
+              ? "bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/15 text-[#212121] dark:text-white border border-[#ECECEC] dark:border-white/15"
+              : "bg-gradient-to-r from-[#190088] via-[#2400b8] to-[#190088] text-white hover:shadow-xl hover:shadow-[#190088]/30 hover:-translate-y-0.5 active:translate-y-0 border border-white/20"
+          }`}
         >
-          <Plus className="size-4" />
-          <span>Vincular nueva cuenta</span>
+          <span
+            className={`flex items-center justify-center size-6 rounded-lg transition-transform duration-300 ${
+              agregando
+                ? "bg-gray-300 dark:bg-white/20 text-gray-700 dark:text-white rotate-45"
+                : "bg-white/20 text-white group-hover:rotate-90"
+            }`}
+          >
+            <Plus className="size-4 stroke-[2.5]" />
+          </span>
+          <span>{agregando ? "Cerrar formulario" : "Vincular nueva cuenta"}</span>
         </button>
       </div>
 
