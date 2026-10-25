@@ -153,3 +153,6 @@ export {
   HeartIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
+
+export { PanelToggleIcon } from "./PanelToggleIcon";
+

@@ -1,15 +1,13 @@
 import { observer } from 'mobx-react-lite';
 import { uiStore } from "@/stores";
+import { PanelToggleIcon } from "@/icons";
 
 /**
  * @kgId eeb27c126370
  *
- * Botón de alternar (expandir / contraer) la barra lateral.
- * - Cuando la barra está contraída en escritorio: se sitúa arriba en la misma
- *   línea vertical de la barra (columna fija `left-4 w-[54px]`), actuando como
- *   un botón cápsula flotante.
- * - Cuando está expandida (o en móvil): vive dentro de la cabecera en el inicio
- *   de las opciones izquierdas.
+ * Botón de alternar (expandir / contraer) la barra lateral con icono bento/paneles.
+ * - Cuando la barra está contraída: contorno (outline, inactivo).
+ * - Cuando está expandida: relleno (filled, activo).
  */
 export const ToggleAppSidebar: React.FC = observer(() => {
   const isExpanded = uiStore.isSidebarVisible;
@@ -24,20 +22,7 @@ export const ToggleAppSidebar: React.FC = observer(() => {
         aria-label="Contraer barra lateral"
         title="Contraer barra lateral"
       >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <path d="M9 3v18" />
-          <path d="m14 9-3 3 3 3" />
-        </svg>
+        <PanelToggleIcon filled={isExpanded} size={20} />
       </button>
     );
   }
@@ -51,23 +36,11 @@ export const ToggleAppSidebar: React.FC = observer(() => {
         aria-label="Expandir barra lateral"
         title="Expandir barra lateral"
       >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <path d="M9 3v18" />
-          <path d="m13 15 3-3-3-3" />
-        </svg>
+        <PanelToggleIcon filled={false} size={20} />
       </button>
     </div>
   );
 });
 
 export default ToggleAppSidebar;
+
