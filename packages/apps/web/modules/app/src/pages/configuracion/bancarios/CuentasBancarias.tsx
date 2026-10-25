@@ -662,7 +662,7 @@ const FormularioNuevaCuenta = ({
 
 export const CuentasBancarias = observer(() => {
   const cuentas = organizacionStore.organizacion?.cuentasBancarias ?? [];
-  const [tabActiva, setTabActiva] = useState<"ahorros" | "corrientes" | "billeteras">("corrientes");
+  const [tabActiva, setTabActiva] = useState<"todas" | "corrientes" | "ahorros" | "billeteras">("todas");
   const [agregando, setAgregando] = useState(false);
 
   // Asegurar cuentas iniciales si está vacío
@@ -708,8 +708,15 @@ export const CuentasBancarias = observer(() => {
     setAgregando(false);
   };
 
+  // Conteo de cuentas por tipo
+  const conteoTodas = cuentas.length;
+  const conteoCorrientes = cuentas.filter((c) => c.tipoCuenta.toLowerCase().includes("corriente")).length;
+  const conteoAhorros = cuentas.filter((c) => c.tipoCuenta.toLowerCase().includes("ahorro")).length;
+  const conteoBilleteras = cuentas.filter((c) => c.tipoCuenta === TIPO_BILLETERA).length;
+
   // Filtrado de cuentas
   const cuentasFiltradas = cuentas.filter((c) => {
+    if (tabActiva === "todas") return true;
     if (tabActiva === "ahorros") return c.tipoCuenta.toLowerCase().includes("ahorro");
     if (tabActiva === "corrientes") return c.tipoCuenta.toLowerCase().includes("corriente");
     if (tabActiva === "billeteras") return c.tipoCuenta === TIPO_BILLETERA;
@@ -812,37 +819,50 @@ export const CuentasBancarias = observer(() => {
           </div>
 
           {/* ── TABS VERTICALES QUE CUELGAN EN EL BORDE INFERIOR DEL BANNER ── */}
-          <div className="absolute -bottom-10 left-6 sm:left-12 flex items-center gap-3.5 z-30">
-            {/* Tab 1: Savings Accounts */}
-            <button
-              type="button"
-              onClick={() => setTabActiva("ahorros")}
-              className={`flex flex-col items-center justify-center min-w-[125px] sm:min-w-[145px] py-3.5 px-4 rounded-2xl bg-white dark:bg-[#16171d] shadow-lg border transition-all cursor-pointer ${
-                tabActiva === "ahorros"
-                  ? "border-2 border-[#1E5BF0] dark:border-[#97D6DF] text-[#1E5BF0] dark:text-[#97D6DF] ring-2 ring-[#1E5BF0]/15"
-                  : "border-[#ECECEC] dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gray-300"
-              }`}
-            >
-              <Wallet className={`size-6 ${tabActiva === "ahorros" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
-              <span className={`text-[13px] font-bold mt-1.5 leading-tight text-center ${tabActiva === "ahorros" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-600 dark:text-gray-300"}`}>
-                Savings Accounts
-              </span>
-            </button>
+          <div className="absolute -bottom-10 left-6 sm:left-12 right-6 sm:right-12 flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none z-30">
+            {/* Tab 1: Todas las cuentas */}
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setTabActiva("todas")}
+                className={`flex flex-col items-center justify-center min-w-[120px] sm:min-w-[135px] py-3 px-3.5 rounded-2xl bg-white dark:bg-[#16171d] shadow-lg border transition-all cursor-pointer ${
+                  tabActiva === "todas"
+                    ? "border-2 border-[#1E5BF0] dark:border-[#97D6DF] text-[#1E5BF0] dark:text-[#97D6DF] ring-2 ring-[#1E5BF0]/15"
+                    : "border-[#ECECEC] dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gray-300"
+                }`}
+              >
+                <Building2 className={`size-5 sm:size-6 ${tabActiva === "todas" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
+                <span className={`text-[12px] sm:text-[13px] font-bold mt-1 leading-tight text-center ${tabActiva === "todas" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-600 dark:text-gray-300"}`}>
+                  Todas las cuentas
+                </span>
+                <span className={`mt-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${tabActiva === "todas" ? "bg-[#1E5BF0]/15 text-[#1E5BF0] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]" : "bg-gray-100 dark:bg-white/10 text-gray-400"}`}>
+                  {conteoTodas}
+                </span>
+              </button>
+              {tabActiva === "todas" && (
+                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[#1E5BF0] text-white shadow-xs">
+                  <Check className="size-3 stroke-[3]" />
+                </span>
+              )}
+            </div>
 
-            {/* Tab 2: Checking Accounts (Activo con borde azul y checkmark superior) */}
-            <div className="relative">
+            {/* Tab 2: Cuentas corrientes */}
+            <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setTabActiva("corrientes")}
-                className={`flex flex-col items-center justify-center min-w-[125px] sm:min-w-[145px] py-3.5 px-4 rounded-2xl bg-white dark:bg-[#16171d] shadow-lg border transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center min-w-[120px] sm:min-w-[135px] py-3 px-3.5 rounded-2xl bg-white dark:bg-[#16171d] shadow-lg border transition-all cursor-pointer ${
                   tabActiva === "corrientes"
                     ? "border-2 border-[#1E5BF0] dark:border-[#97D6DF] text-[#1E5BF0] dark:text-[#97D6DF] ring-2 ring-[#1E5BF0]/15"
                     : "border-[#ECECEC] dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gray-300"
                 }`}
               >
-                <FileText className={`size-6 ${tabActiva === "corrientes" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
-                <span className={`text-[13px] font-bold mt-1.5 leading-tight text-center ${tabActiva === "corrientes" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-600 dark:text-gray-300"}`}>
-                  Checking Accounts
+                <FileText className={`size-5 sm:size-6 ${tabActiva === "corrientes" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
+                <span className={`text-[12px] sm:text-[13px] font-bold mt-1 leading-tight text-center ${tabActiva === "corrientes" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-600 dark:text-gray-300"}`}>
+                  Cuentas corrientes
+                </span>
+                <span className={`mt-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${tabActiva === "corrientes" ? "bg-[#1E5BF0]/15 text-[#1E5BF0] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]" : "bg-gray-100 dark:bg-white/10 text-gray-400"}`}>
+                  {conteoCorrientes}
                 </span>
               </button>
               {tabActiva === "corrientes" && (
@@ -852,21 +872,57 @@ export const CuentasBancarias = observer(() => {
               )}
             </div>
 
-            {/* Tab 3: Business Banking */}
-            <button
-              type="button"
-              onClick={() => setTabActiva("billeteras")}
-              className={`flex flex-col items-center justify-center min-w-[125px] sm:min-w-[145px] py-3.5 px-4 rounded-2xl bg-white dark:bg-[#16171d] shadow-lg border transition-all cursor-pointer ${
-                tabActiva === "billeteras"
-                  ? "border-2 border-[#1E5BF0] dark:border-[#97D6DF] text-[#1E5BF0] dark:text-[#97D6DF] ring-2 ring-[#1E5BF0]/15"
-                  : "border-[#ECECEC] dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gray-300"
-              }`}
-            >
-              <Briefcase className={`size-6 ${tabActiva === "billeteras" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
-              <span className={`text-[13px] font-bold mt-1.5 leading-tight text-center ${tabActiva === "billeteras" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-600 dark:text-gray-300"}`}>
-                Business Banking
-              </span>
-            </button>
+            {/* Tab 3: Cuentas de ahorros */}
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setTabActiva("ahorros")}
+                className={`flex flex-col items-center justify-center min-w-[120px] sm:min-w-[135px] py-3 px-3.5 rounded-2xl bg-white dark:bg-[#16171d] shadow-lg border transition-all cursor-pointer ${
+                  tabActiva === "ahorros"
+                    ? "border-2 border-[#1E5BF0] dark:border-[#97D6DF] text-[#1E5BF0] dark:text-[#97D6DF] ring-2 ring-[#1E5BF0]/15"
+                    : "border-[#ECECEC] dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gray-300"
+                }`}
+              >
+                <Wallet className={`size-5 sm:size-6 ${tabActiva === "ahorros" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
+                <span className={`text-[12px] sm:text-[13px] font-bold mt-1 leading-tight text-center ${tabActiva === "ahorros" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-600 dark:text-gray-300"}`}>
+                  Cuentas de ahorros
+                </span>
+                <span className={`mt-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${tabActiva === "ahorros" ? "bg-[#1E5BF0]/15 text-[#1E5BF0] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]" : "bg-gray-100 dark:bg-white/10 text-gray-400"}`}>
+                  {conteoAhorros}
+                </span>
+              </button>
+              {tabActiva === "ahorros" && (
+                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[#1E5BF0] text-white shadow-xs">
+                  <Check className="size-3 stroke-[3]" />
+                </span>
+              )}
+            </div>
+
+            {/* Tab 4: Billeteras digitales */}
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setTabActiva("billeteras")}
+                className={`flex flex-col items-center justify-center min-w-[120px] sm:min-w-[135px] py-3 px-3.5 rounded-2xl bg-white dark:bg-[#16171d] shadow-lg border transition-all cursor-pointer ${
+                  tabActiva === "billeteras"
+                    ? "border-2 border-[#1E5BF0] dark:border-[#97D6DF] text-[#1E5BF0] dark:text-[#97D6DF] ring-2 ring-[#1E5BF0]/15"
+                    : "border-[#ECECEC] dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gray-300"
+                }`}
+              >
+                <Smartphone className={`size-5 sm:size-6 ${tabActiva === "billeteras" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-400 dark:text-gray-400"}`} />
+                <span className={`text-[12px] sm:text-[13px] font-bold mt-1 leading-tight text-center ${tabActiva === "billeteras" ? "text-[#1E5BF0] dark:text-[#97D6DF]" : "text-gray-600 dark:text-gray-300"}`}>
+                  Billeteras digitales
+                </span>
+                <span className={`mt-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${tabActiva === "billeteras" ? "bg-[#1E5BF0]/15 text-[#1E5BF0] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]" : "bg-gray-100 dark:bg-white/10 text-gray-400"}`}>
+                  {conteoBilleteras}
+                </span>
+              </button>
+              {tabActiva === "billeteras" && (
+                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-[#1E5BF0] text-white shadow-xs">
+                  <Check className="size-3 stroke-[3]" />
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -922,13 +978,44 @@ export const CuentasBancarias = observer(() => {
       {/* ── LISTADO DE CUENTAS EN ESTILO CORPORATIVO ──────────────────────── */}
       <div className="flex flex-col gap-6">
         {cuentasFiltradas.length === 0 ? (
-          <div className="p-12 text-center rounded-2xl border border-dashed border-[#ECECEC] dark:border-white/10 bg-white/50 dark:bg-white/5">
-            <p className="text-[16px] font-bold text-[#190088] dark:text-white">
-              No hay cuentas registradas en esta categoría
+          <div className="p-10 sm:p-14 text-center rounded-3xl border border-dashed border-[#ECECEC] dark:border-white/10 bg-white/60 dark:bg-white/5 flex flex-col items-center justify-center animate-aparecer">
+            <span className="size-14 rounded-2xl bg-[#190088]/5 dark:bg-white/10 flex items-center justify-center text-[#190088] dark:text-[#97D6DF] mb-3.5 shadow-2xs">
+              <Landmark className="size-7" />
+            </span>
+            <p className="text-[17px] font-bold text-[#190088] dark:text-white">
+              {cuentas.length === 0
+                ? "Aún no tienes cuentas bancarias vinculadas"
+                : `No tienes cuentas registradas en «${
+                    tabActiva === "corrientes"
+                      ? "Cuentas corrientes"
+                      : tabActiva === "ahorros"
+                      ? "Cuentas de ahorros"
+                      : "Billeteras digitales"
+                  }»`}
             </p>
-            <p className="text-[14px] font-light text-gray-500 mt-1">
-              Selecciona otra categoría o vincula una nueva cuenta bancaria.
+            <p className="text-[14px] font-light text-[#212121]/70 dark:text-gray-300 mt-1 max-w-md">
+              {cuentas.length === 0
+                ? "Vincula tu primera cuenta bancaria o billetera digital para recibir automáticamente la dispersión de tus liquidaciones."
+                : `Tienes ${cuentas.length} ${cuentas.length === 1 ? "cuenta activa" : "cuentas activas"} registradas en otras categorías de dispersión.`}
             </p>
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-5">
+              {cuentas.length > 0 && tabActiva !== "todas" && (
+                <button
+                  type="button"
+                  onClick={() => setTabActiva("todas")}
+                  className="px-5 py-2.5 rounded-xl bg-[#190088] hover:bg-[#120066] text-white text-[13px] font-bold transition-all shadow-sm cursor-pointer"
+                >
+                  Ver todas mis cuentas ({conteoTodas})
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setAgregando(true)}
+                className="px-5 py-2.5 rounded-xl border border-[#ECECEC] dark:border-white/15 bg-white dark:bg-white/10 text-[#190088] dark:text-white text-[13px] font-bold hover:bg-gray-50 dark:hover:bg-white/15 transition-all cursor-pointer"
+              >
+                Vincular nueva cuenta
+              </button>
+            </div>
           </div>
         ) : (
           cuentasFiltradas.map((cuenta, idx) => (
