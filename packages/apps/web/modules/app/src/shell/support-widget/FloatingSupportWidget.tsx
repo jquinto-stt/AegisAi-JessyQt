@@ -25,6 +25,39 @@ export const FloatingSupportWidget: React.FC = observer(() => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
 
+  // El panel sigue montado mientras corre su salida; `isOpen` dice hacia dónde
+  // va y `montado` si todavía está en pantalla.
+  const [montado, setMontado] = useState(false);
+  const temporizadorCierre = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    window.clearTimeout(temporizadorCierre.current);
+    if (isOpen) {
+      setMontado(true);
+      return;
+    }
+    // Un poco más que la transición de cierre (170 ms en `css/soporte.css`).
+    temporizadorCierre.current = window.setTimeout(() => setMontado(false), 200);
+    return () => window.clearTimeout(temporizadorCierre.current);
+  }, [isOpen]);
+
+  // Dirección del deslizamiento entre vistas. Se calcula al render (patrón de
+  // «estado del render anterior») para que la vista nueva monte ya con su clase
+  // y no se pinte un fotograma quieta antes de animar. Solo se anima un cambio
+  // con el panel ya abierto: al abrirlo, basta la entrada del panel.
+  const vista = articuloAbierto ? "articulo" : activeTab;
+  const totalMensajes = assistantStore.mensajes.length;
+  const [previo, setPrevio] = useState({ vista, abierto: isOpen });
+  const [animVista, setAnimVista] = useState<"" | "adelante" | "atras">("");
+  // Mensajes que ya estaban al entrar al chat: esos no se animan otra vez.
+  const [mensajesPrevios, setMensajesPrevios] = useState(totalMensajes);
+  if (previo.vista !== vista || previo.abierto !== isOpen) {
+    setPrevio({ vista, abierto: isOpen });
+    setMensajesPrevios(totalMensajes);
+    if (!previo.abierto && isOpen) setAnimVista("");
+    else if (previo.vista !== vista) setAnimVista(vista === "home" ? "atras" : "adelante");
+  }
+  const claseVista = animVista ? `soporte-vista--${animVista}` : "";
+
   // Escuchar evento global para abrir el widget (ej: desde Chatear en Vivo en el menú de Soporte)
   useEffect(() => {
     const handleOpenWidget = (e: Event) => {
@@ -89,24 +122,26 @@ export const FloatingSupportWidget: React.FC = observer(() => {
   return (
     <div className="font-['DM_Sans',sans-serif] antialiased">
       {/* ── Ventana emergente del widget ── */}
-      {isOpen && (
+      {montado && (
         <div
           ref={widgetRef}
           aria-label="Plataforma de soporte y asistencia NECTO"
-          className={`fixed bottom-24 right-4 sm:right-6 z-50 flex w-[calc(100vw-2rem)] sm:w-[360px] ${
+          data-estado={isOpen ? "abierto" : "cerrado"}
+          {...(!isOpen ? { inert: "" } : {})}
+          className={`soporte-panel fixed bottom-24 right-4 sm:right-6 z-50 flex w-[calc(100vw-2rem)] sm:w-[360px] ${
             activeTab === "chat" ? "h-[580px]" : "h-auto"
-          } max-h-[88vh] flex-col overflow-hidden rounded-[32px] bg-white shadow-2xl border border-gray-100 dark:bg-[#181818] dark:border-white/10 font-['DM_Sans',sans-serif] animate-aparecer transition-all duration-300 ease-out`}
+          } max-h-[88vh] flex-col overflow-hidden rounded-[32px] bg-white shadow-2xl border border-gray-100 dark:bg-[#181818] dark:border-white/10 font-['DM_Sans',sans-serif]`}
         >
           {/* ══════════════════════════════════════════════════════════
               VISTA PRINCIPAL: HOME (Espaciado y proporciones idénticas)
              ══════════════════════════════════════════════════════════ */}
           {activeTab === "home" && !articuloAbierto && (
-            <div className="flex flex-col overflow-hidden bg-white dark:bg-[#181818]">
+            <div className={`flex flex-col overflow-hidden bg-white dark:bg-[#181818] ${claseVista}`}>
               {/* ── 1. Hero Card Superior (Azul profundo NECTO #190088 con sutil textura de puntos estilo referencia) ── */}
-              <div className="relative shrink-0 bg-[#190088] bg-[radial-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:12px_12px] px-6 pt-5 pb-5 text-white rounded-b-[30px] shadow-sm">
+              <div className="relative shrink-0 bg-[#190088] bg-[radial-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:12px_12px] px-6 pt-5 pb-5 text-white rounded-b-[30px] shadow-sm soporte-hero">
                 {/* Fila superior: Cluster de avatares superpuestos + Botón Cerrar */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center -space-x-2">
+                  <div className="soporte-avatares flex items-center -space-x-2">
                     <img
                       src="/images/user/user-01.jpg"
                       alt="Agente"
@@ -190,7 +225,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
               </div>
 
               {/* ── CUERPO COMPACTO: Canales + Buscador + Píldoras ── */}
-              <div className="flex flex-col">
+              <div className="necto-escalonado flex flex-col">
                 {/* ── 2. Middle Section: Canales flotantes redondeados ── */}
                 <div className="mx-4 my-3 p-3.5 rounded-[24px] bg-[#F4F6F9] dark:bg-white/[0.04] border border-gray-100/80 dark:border-white/5 text-center">
                   <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-200">
@@ -361,7 +396,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
               DETALLE DE ARTÍCULO / FAQ ABIERTO
              ══════════════════════════════════════════════════════════ */}
           {articuloAbierto && (
-            <div className="flex flex-1 min-h-0 flex-col p-5 overflow-y-auto custom-scrollbar bg-white dark:bg-[#181818]">
+            <div className={`flex flex-1 min-h-0 flex-col p-5 overflow-y-auto custom-scrollbar bg-white dark:bg-[#181818] ${claseVista}`}>
               <button
                 type="button"
                 onClick={() => setArticuloAbierto(null)}
@@ -401,7 +436,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
               VISTA: CHAT CON ASISTENTE IA (assistantStore conectado)
              ══════════════════════════════════════════════════════════ */}
           {activeTab === "chat" && !articuloAbierto && (
-            <div className="flex flex-1 min-h-0 flex-col bg-[#212121] text-[#ECECEC]">
+            <div className={`flex flex-1 min-h-0 flex-col bg-[#212121] text-[#ECECEC] ${claseVista}`}>
               {/* Cabecera del chat con botón Volver a Home y estilo idéntico a referencia */}
               <div className="relative shrink-0 bg-[#190088] bg-[radial-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:12px_12px] px-5 pt-3.5 pb-4 text-white shadow-xs">
                 {/* Barra de navegación superior: Volver a inicio y Cerrar */}
@@ -490,7 +525,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                     </div>
 
                     {/* Stack de opciones con flecha ↳ */}
-                    <div className="space-y-2 ml-10 max-w-[88%]">
+                    <div className="necto-escalonado space-y-2 ml-10 max-w-[88%]">
                       {[
                         { id: "account", label: "Configurar mi cuenta y organización", q: "¿Cómo configuro mi cuenta y organización?" },
                         { id: "whatsapp", label: "Conectar canales y WhatsApp", q: "¿Cómo conectar WhatsApp?" },
@@ -529,7 +564,13 @@ export const FloatingSupportWidget: React.FC = observer(() => {
                   return (
                     <div
                       key={idx}
-                      className={`flex items-start gap-2.5 ${esUsuario ? "justify-end" : "justify-start"}`}
+                      className={`flex items-start gap-2.5 ${esUsuario ? "justify-end" : "justify-start"} ${
+                        idx >= mensajesPrevios
+                          ? esUsuario
+                            ? "soporte-mensaje--usuario"
+                            : "soporte-mensaje--asistente"
+                          : ""
+                      }`}
                     >
                       {!esUsuario && (
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#190088] text-white shadow-xs">
@@ -551,8 +592,12 @@ export const FloatingSupportWidget: React.FC = observer(() => {
 
                 {/* Indicador de pensamiento */}
                 {assistantStore.pensando && (
-                  <div className="flex items-center gap-2 text-[12px] font-light text-[#97D6DF] pl-10">
-                    <span className="h-2 w-2 rounded-full bg-[#97D6DF] animate-ping" />
+                  <div className="soporte-mensaje--asistente flex items-center gap-2 text-[12px] font-light text-[#97D6DF] pl-10">
+                    <span className="soporte-escribiendo flex items-center gap-1" aria-hidden="true">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#97D6DF]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#ECECEC]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#FF3F1A]" />
+                    </span>
                     <span>Escribiendo respuesta...</span>
                   </div>
                 )}
@@ -637,29 +682,30 @@ export const FloatingSupportWidget: React.FC = observer(() => {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#190088] hover:bg-[#150070] text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border-2 border-white/20 font-['DM_Sans',sans-serif]"
+        className="soporte-lanzador fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#190088] hover:bg-[#150070] text-white shadow-xl hover:shadow-2xl cursor-pointer border-2 border-white/20 font-['DM_Sans',sans-serif]"
         title="Soporte y Asistencia NECTO"
-        aria-label="Abrir soporte y asistencia NECTO"
+        aria-label={isOpen ? "Cerrar soporte y asistencia NECTO" : "Abrir soporte y asistencia NECTO"}
+        aria-expanded={isOpen}
       >
-        {isOpen ? (
+        {/* Los dos íconos están siempre montados y se cruzan girando: así el
+            cambio se puede interrumpir a mitad sin saltos. */}
+        <span className={`soporte-lanzador__icono soporte-lanzador__icono--logo ${isOpen ? "is-oculto" : ""}`}>
+          <img src="/images/logo/necto-icon-white.svg" alt="" className="h-7 w-7 object-contain" />
+        </span>
+        <span className={`soporte-lanzador__icono soporte-lanzador__icono--cerrar ${isOpen ? "" : "is-oculto"}`}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
-        ) : (
-          <>
-            {/* Logo Isotipo de Necto en blanco centrado y despejado */}
-            <img
-              src="/images/logo/necto-icon-white.svg"
-              alt="Necto"
-              className="h-7 w-7 object-contain"
-            />
-            {/* Badge Naranja NECTO (#FF3F1A) en el perímetro superior derecho exterior */}
-            <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-[#FF3F1A] text-white text-[11px] font-bold shadow-md border-2 border-white dark:border-[#181818] pointer-events-none">
-              3
-            </span>
-          </>
-        )}
+        </span>
+        {/* Badge Naranja NECTO (#FF3F1A) en el perímetro superior derecho exterior */}
+        <span
+          className={`soporte-insignia absolute -top-1 -right-1 flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-[#FF3F1A] text-white text-[11px] font-bold shadow-md border-2 border-white dark:border-[#181818] pointer-events-none ${
+            isOpen ? "is-oculto" : ""
+          }`}
+        >
+          3
+        </span>
       </button>
     </div>
   );

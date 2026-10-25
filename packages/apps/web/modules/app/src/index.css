@@ -8,6 +8,7 @@ layer(base);
 @import "./css/onboarding.css";
 @import "./css/checklist.css";
 @import "./css/dashboard.css";
+@import "./css/soporte.css";
 @import "./css/shell.css";
 @import "./css/scrollbar.css";
 @import "./css/legacy.css";

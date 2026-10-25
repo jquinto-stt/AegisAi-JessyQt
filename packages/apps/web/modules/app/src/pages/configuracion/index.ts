@@ -26,3 +26,4 @@
 export { ConfiguracionPage } from "./ConfiguracionPage";
 export { GeneralOrgTab } from "./GeneralOrgTab";
 export { AparienciaTab } from "./AparienciaTab";
+export { TarjetaQrTienda } from "./TarjetaQrTienda";

@@ -26,6 +26,7 @@ import {
 import { VistaPreviaNegocio } from "./VistaPreviaNegocio";
 import { SelectorImagen, LIMITE_IMAGEN_KB } from "./SelectorImagen";
 import { IconoRed, nombreDeRed } from "./IconoRed";
+import { TarjetaQrTienda } from "./TarjetaQrTienda";
 import {
   COLORES_MARCA,
   COLOR_MARCA_DEFECTO,
@@ -456,13 +457,16 @@ const FormularioPersonalizacion = observer(({ org }: { org: OrganizacionWorkspac
       >
         <div className="flex flex-col gap-5">
           <CampoConfig
-            etiqueta="Identificador web propio"
-            ayuda="Tu URL directa en Necto basada en el nombre comercial."
+            etiqueta="Identificador web y tarjeta QR de la tienda"
+            ayuda="Tu enlace directo en Necto con código QR listo para exhibir, compartir o imprimir."
             ancho="max-w-none"
           >
-            <span className="font-mono text-[14px] font-bold text-[#190088] dark:text-[#97D6DF]">
-              necto.app/{slugDe(oActiva.nombre)}
-            </span>
+            <TarjetaQrTienda
+              nombre={oActiva.nombre}
+              slug={slugDe(oActiva.nombre)}
+              subtitulo={borrador.eslogan || "¿Quieres que tus clientes hagan pedidos y exploren tu catálogo digital?"}
+              className="mt-1"
+            />
           </CampoConfig>
 
           <CampoConfig

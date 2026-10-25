@@ -24,6 +24,7 @@ import {
   UserIcon,
 } from "@/icons";
 import { TruckIcon, PhoneIcon } from "@heroicons/react/24/outline";
+import { TarjetaQrTienda } from "./TarjetaQrTienda";
 import {
   BloqueConfig,
   CampoConfig,
@@ -173,13 +174,15 @@ const FormularioGeneral = observer(({ org }: { org: OrganizacionWorkspace }) => 
           </CampoConfig>
 
           <CampoConfig
-            etiqueta="Identificador web derivado"
-            ayuda="Se deriva automáticamente del nombre del negocio."
+            etiqueta="Identificador web derivado y tarjeta QR de la tienda"
+            ayuda="Tu enlace directo en Necto con código QR listo para exhibir, compartir o imprimir."
             ancho="max-w-none"
           >
-            <span className="font-mono text-[14px] font-bold text-[#190088] dark:text-[#97D6DF]">
-              necto.app/{slugDe(borrador.nombre)}
-            </span>
+            <TarjetaQrTienda
+              nombre={borrador.nombre}
+              slug={slugDe(borrador.nombre)}
+              className="mt-1"
+            />
           </CampoConfig>
         </div>
 

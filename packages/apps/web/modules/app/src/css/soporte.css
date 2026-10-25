@@ -1,0 +1,252 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   WIDGET DE SOPORTE — movimiento
+   ══════════════════════════════════════════════════════════════════════════
+
+   Se abre de vez en cuando, así que lleva movimiento estándar, no de
+   celebración: todo bajo ~300 ms y con la curva del proyecto.
+
+   · Panel     nace desde el botón (origen abajo a la derecha) con una
+               transición, no con keyframes: si lo abres y lo cierras rápido,
+               se devuelve desde donde iba en vez de reiniciar.
+   · Botón     el isotipo gira y se convierte en la X; la insignia se encoge.
+   · Vistas    Inicio ↔ Chat ↔ Artículo se deslizan según la dirección: hacia
+               adentro avanza desde la derecha, volver entra desde la izquierda.
+   · Mensajes  cada mensaje nuevo sube desde su lado.
+   · Escribiendo  tres puntos NECTO en ola, en vez de un punto que parpadea. */
+
+/* ── Panel ─────────────────────────────────────────────────────────────── */
+
+.soporte-panel {
+  transform-origin: bottom right;
+  transition:
+    opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@starting-style {
+  .soporte-panel {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+}
+
+/* Al cerrar va más rápido que al abrir: lo que se va no necesita mirarse. */
+.soporte-panel[data-estado="cerrado"] {
+  opacity: 0;
+  transform: translateY(12px) scale(0.95);
+  transition-duration: 170ms;
+  pointer-events: none;
+}
+
+/* ── Botón lanzador ────────────────────────────────────────────────────── */
+
+@keyframes soporte-lanzador-llega {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.9);
+  }
+}
+
+.soporte-lanzador {
+  animation: soporte-lanzador-llega 400ms cubic-bezier(0.22, 1, 0.36, 1) 600ms backwards;
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.soporte-lanzador:active {
+  transform: scale(0.94);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .soporte-lanzador:hover {
+    transform: scale(1.05);
+  }
+  .soporte-lanzador:hover:active {
+    transform: scale(0.97);
+  }
+}
+
+.soporte-lanzador__icono {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Giran en sentidos opuestos: el isotipo sale hacia un lado mientras la X
+   llega desde el otro, y se lee como una sola pieza que se transforma. */
+.soporte-lanzador__icono--logo.is-oculto {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.6);
+}
+
+.soporte-lanzador__icono--cerrar.is-oculto {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.6);
+}
+
+.soporte-insignia {
+  transition:
+    opacity 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.soporte-insignia.is-oculto {
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+/* ── Cabecera de Inicio ────────────────────────────────────────────────── */
+
+@keyframes soporte-sube {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes soporte-avatar {
+  from {
+    opacity: 0;
+    transform: translateX(-6px) scale(0.85);
+  }
+}
+
+.soporte-hero > * {
+  animation: soporte-sube 300ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.soporte-hero > *:nth-child(2) { animation-delay: 60ms; }
+.soporte-hero > *:nth-child(3) { animation-delay: 100ms; }
+.soporte-hero > *:nth-child(4) { animation-delay: 140ms; }
+
+/* Los avatares se suman uno a uno al grupo, como quien entra a la sala. */
+.soporte-avatares > * {
+  animation: soporte-avatar 280ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.soporte-avatares > *:nth-child(1) { animation-delay: 80ms; }
+.soporte-avatares > *:nth-child(2) { animation-delay: 120ms; }
+.soporte-avatares > *:nth-child(3) { animation-delay: 160ms; }
+.soporte-avatares > *:nth-child(4) { animation-delay: 200ms; }
+
+/* ── Cambio de vista ───────────────────────────────────────────────────── */
+
+@keyframes soporte-vista-adelante {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+@keyframes soporte-vista-atras {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+
+.soporte-vista--adelante {
+  animation: soporte-vista-adelante 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.soporte-vista--atras {
+  animation: soporte-vista-atras 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* ── Mensajes ──────────────────────────────────────────────────────────── */
+
+@keyframes soporte-mensaje-usuario {
+  from {
+    opacity: 0;
+    transform: translate(8px, 8px) scale(0.97);
+  }
+}
+
+@keyframes soporte-mensaje-asistente {
+  from {
+    opacity: 0;
+    transform: translate(-8px, 8px) scale(0.97);
+  }
+}
+
+.soporte-mensaje--usuario {
+  transform-origin: bottom right;
+  animation: soporte-mensaje-usuario 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.soporte-mensaje--asistente {
+  transform-origin: bottom left;
+  animation: soporte-mensaje-asistente 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* ── Escribiendo ───────────────────────────────────────────────────────── */
+
+@keyframes soporte-punto {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.soporte-escribiendo > span {
+  animation: soporte-punto 1100ms ease-in-out infinite;
+}
+.soporte-escribiendo > span:nth-child(2) { animation-delay: 140ms; }
+.soporte-escribiendo > span:nth-child(3) { animation-delay: 280ms; }
+
+/* ── Movimiento reducido ───────────────────────────────────────────────── */
+/* Fuera desplazamientos, giros y escalas; quedan los fundidos, que siguen
+   diciendo qué apareció y qué se fue. Los puntos solo cambian de opacidad. */
+@media (prefers-reduced-motion: reduce) {
+  .soporte-panel,
+  .soporte-panel[data-estado="cerrado"] {
+    transform: none;
+    transition: opacity 150ms ease-out;
+  }
+
+  @starting-style {
+    .soporte-panel {
+      transform: none;
+    }
+  }
+
+  .soporte-lanzador,
+  .soporte-hero > *,
+  .soporte-avatares > *,
+  .soporte-vista--adelante,
+  .soporte-vista--atras,
+  .soporte-mensaje--usuario,
+  .soporte-mensaje--asistente {
+    animation: aparecer 150ms ease-out backwards;
+  }
+
+  .soporte-lanzador:active,
+  .soporte-lanzador:hover,
+  .soporte-lanzador__icono--logo.is-oculto,
+  .soporte-lanzador__icono--cerrar.is-oculto,
+  .soporte-insignia.is-oculto {
+    transform: none;
+  }
+
+  @keyframes soporte-punto-suave {
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .soporte-escribiendo > span {
+    opacity: 0.4;
+    animation: soporte-punto-suave 1100ms ease-in-out infinite;
+  }
+}
