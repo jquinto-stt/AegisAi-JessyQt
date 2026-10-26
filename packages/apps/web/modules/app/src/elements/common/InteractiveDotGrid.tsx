@@ -17,34 +17,33 @@ interface ChainNode {
   row: number;
 }
 
-interface DynamicLaserRay {
+interface DynamicDotChain {
   nodes: ChainNode[];
-  state: "unfolding" | "rest" | "folding" | "dead";
+  state: "unfolding" | "rest" | "folding";
   stateStartTime: number;
   stepDuration: number;
   restDuration: number;
-  lineWidth: number;
 }
 
 /**
  * InteractiveDotGrid
- *
- * Animación de ráfagas láser procedimentales:
- * 1. El lienzo arranca completamente limpio (cero puntos en pantalla).
- * 2. Un pulso láser se dispara desde el centro geométrico hacia el exterior en
- *    múltiples direcciones (horizontales, verticales y codos en ángulo recto).
- * 3. Al proyectarse como un láser veloz, va dejando a su paso los puntos encendidos.
- * 4. Reposa un instante breve (~300ms).
- * 5. Se repliega velozmente (el nodo anterior se absorbe en el siguiente como un láser
- *    que se recoge) hasta desaparecer por completo.
- * 6. Breve pausa en lienzo vacío y nuevo disparo con trayectorias renovadas.
+ * Fondo estelar procedimental 100% dinámico:
+ * - Cadenas orgánicas efímeras que se generan en posiciones, direcciones y formas aleatorias.
+ * - Soporta trazos rectos (horizontales, verticales) y giros en ángulo recto (L-shapes).
+ * - Secuencia de vida:
+ *     1. Despliegue: Se proyecta la línea y van brotando los puntos sucesivamente (1 -> 2 -> 3).
+ *     2. Respiro: Permanece visible un instante.
+ *     3. Recogida: El punto 1 se desplaza sobre la línea y se mete en el punto 2, el 2 en el 3, etc.
+ *     4. Regeneración: Al extinguirse, nace una nueva cadena en una coordenada totalmente distinta.
+ * - Puntos y líneas siempre en blanco puro translúcido con sutil resplandor.
  */
 export default function InteractiveDotGrid({
   dotGap = 26,
-  baseRadius = 2.0,
-  activeRadius = 4.0,
-  glowDistance = 160,
+  baseRadius = 1.9,
+  activeRadius = 4.2,
+  glowDistance = 170,
   className = "",
+  dotColor = "rgba(255, 255, 255, 0.22)",
   activeDotColor = "rgba(255, 255, 255, 0.98)",
 }: InteractiveDotGridProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -64,111 +63,93 @@ export default function InteractiveDotGrid({
     let offsetX = 0;
     let offsetY = 0;
 
-    let rays: DynamicLaserRay[] = [];
-    let nextBurstTime = 0;
+    const chains: DynamicDotChain[] = [];
 
-    // Mouse coordinates para interacción
+    // Mouse coordinates
     const targetMouse = { x: -9999, y: -9999, active: false };
     const currentMouse = { x: -9999, y: -9999, intensity: 0 };
 
     /**
-     * Genera una ráfaga de rayos láser desde el centro hacia afuera.
+     * Generador procedimental de cadenas sobre la grilla:
+     * Elige caminos rectos o giros en "L", asegurando que nunca se repita la misma trayectoria.
      */
-    const triggerLaserBurst = (now: number) => {
-      if (cols <= 2 || rows <= 2) return;
+    const createRandomChain = (now: number, delayMs = 0): DynamicDotChain => {
+      const length = 3 + Math.floor(Math.random() * 3); // 3 a 5 puntos
+      const patternType = Math.random(); // 0-0.4: horizontal, 0.4-0.8: vertical, 0.8-1.0: codo en L
 
-      const centerCol = Math.floor(cols / 2);
-      const centerRow = Math.floor(rows / 2);
+      // Punto inicial aleatorio
+      let c = Math.floor(Math.random() * Math.max(1, cols - 1));
+      let r = Math.floor(Math.random() * Math.max(1, rows - 1));
 
-      // Direcciones primarias de propagación radial sobre la grilla
-      // (Horizontales, verticales y diagonales/L)
-      const primaryDirections: Array<{ dc: number; dr: number }> = [
-        { dc: 1, dr: 0 },   // Derecha
-        { dc: -1, dr: 0 },  // Izquierda
-        { dc: 0, dr: 1 },   // Abajo
-        { dc: 0, dr: -1 },  // Arriba
-        { dc: 1, dr: 1 },   // Abajo-Derecha
-        { dc: -1, dr: 1 },  // Abajo-Izquierda
-        { dc: 1, dr: -1 },  // Arriba-Derecha
-        { dc: -1, dr: -1 }, // Arriba-Izquierda
-        // Ángulos extra para enriquecer la ráfaga
-        { dc: 1, dr: 0 },
-        { dc: -1, dr: 0 },
-        { dc: 0, dr: 1 },
-        { dc: 0, dr: -1 },
-      ];
+      const nodes: ChainNode[] = [{
+        col: c,
+        row: r,
+        x: offsetX + c * dotGap,
+        y: offsetY + r * dotGap,
+      }];
 
-      const newRays: DynamicLaserRay[] = [];
-
-      primaryDirections.forEach((dir, idx) => {
-        const length = 4 + Math.floor(Math.random() * 4); // 4 a 7 saltos
-        const nodes: ChainNode[] = [
-          {
-            col: centerCol,
-            row: centerRow,
-            x: offsetX + centerCol * dotGap,
-            y: offsetY + centerRow * dotGap,
-          },
-        ];
-
-        let currC = centerCol;
-        let currR = centerRow;
-
-        // Comportamiento de trayectoria: línea recta o bifurcación en L
-        const makesTurn = Math.random() > 0.45;
-        const turnStep = 2 + Math.floor(Math.random() * 2);
-
-        for (let s = 1; s < length; s++) {
-          if (makesTurn && s >= turnStep) {
-            // Gira en ángulo recto según la dirección principal
-            if (dir.dc !== 0 && dir.dr === 0) {
-              currR += Math.random() > 0.5 ? 1 : -1;
-            } else if (dir.dr !== 0 && dir.dc === 0) {
-              currC += Math.random() > 0.5 ? 1 : -1;
-            } else {
-              // Diagonal: avanza en uno de los dos ejes
-              if (Math.random() > 0.5) currC += dir.dc;
-              else currR += dir.dr;
-            }
-          } else {
-            // Continúa en la dirección principal hacia el exterior
-            if (dir.dc !== 0 && dir.dr !== 0) {
-              // En diagonal avanza paso a paso ortogonalmente
-              if (s % 2 === 0) currC += dir.dc;
-              else currR += dir.dr;
-            } else {
-              currC += dir.dc;
-              currR += dir.dr;
-            }
-          }
-
-          currC = Math.max(0, Math.min(cols - 1, currC));
-          currR = Math.max(0, Math.min(rows - 1, currR));
-
+      if (patternType < 0.42) {
+        // Horizontal pura (hacia la derecha o hacia la izquierda)
+        const dir = Math.random() > 0.5 ? 1 : -1;
+        for (let i = 1; i < length; i++) {
+          c = Math.max(0, Math.min(cols - 1, c + dir));
           nodes.push({
-            col: currC,
-            row: currR,
-            x: offsetX + currC * dotGap,
-            y: offsetY + currR * dotGap,
+            col: c,
+            row: r,
+            x: offsetX + c * dotGap,
+            y: offsetY + r * dotGap,
           });
         }
+      } else if (patternType < 0.84) {
+        // Vertical pura (hacia abajo o hacia arriba)
+        const dir = Math.random() > 0.5 ? 1 : -1;
+        for (let i = 1; i < length; i++) {
+          r = Math.max(0, Math.min(rows - 1, r + dir));
+          nodes.push({
+            col: c,
+            row: r,
+            x: offsetX + c * dotGap,
+            y: offsetY + r * dotGap,
+          });
+        }
+      } else {
+        // Giro en L o codo sobre la grilla
+        const firstSegment = 1 + Math.floor(Math.random() * 2);
+        const dirH = Math.random() > 0.5 ? 1 : -1;
+        const dirV = Math.random() > 0.5 ? 1 : -1;
 
-        // Ligero desfase de disparo para dinamismo (como chispas consecutivas del láser)
-        const stagger = (idx % 4) * 25 + Math.random() * 30;
+        for (let i = 1; i <= firstSegment && nodes.length < length; i++) {
+          c = Math.max(0, Math.min(cols - 1, c + dirH));
+          nodes.push({
+            col: c,
+            row: r,
+            x: offsetX + c * dotGap,
+            y: offsetY + r * dotGap,
+          });
+        }
+        while (nodes.length < length) {
+          r = Math.max(0, Math.min(rows - 1, r + dirV));
+          nodes.push({
+            col: c,
+            row: r,
+            x: offsetX + c * dotGap,
+            y: offsetY + r * dotGap,
+          });
+        }
+      }
 
-        newRays.push({
-          nodes,
-          state: "unfolding",
-          stateStartTime: now + stagger,
-          // Velocidad tipo láser: 70ms a 100ms por tramo (rápido y definido)
-          stepDuration: 75 + Math.random() * 25,
-          // Reposo breve para apreciar la figura formada
-          restDuration: 300 + Math.random() * 250,
-          lineWidth: 1.8 + Math.random() * 0.8,
-        });
-      });
+      // 50% de probabilidad de invertir el sentido de despliegue
+      if (Math.random() > 0.5) {
+        nodes.reverse();
+      }
 
-      rays = newRays;
+      return {
+        nodes,
+        state: "unfolding",
+        stateStartTime: now + delayMs,
+        stepDuration: 280 + Math.random() * 140, // 280ms a 420ms por nodo (ritmo fluido y perceptible)
+        restDuration: 700 + Math.random() * 900,  // 0.7s a 1.6s en reposo visible
+      };
     };
 
     const handleResize = () => {
@@ -193,175 +174,187 @@ export default function InteractiveDotGrid({
       offsetX = (width - (cols - 1) * dotGap) / 2;
       offsetY = (height - (rows - 1) * dotGap) / 2;
 
-      // Iniciar el ciclo de disparo con un breve retardo inicial
+      // Inicializar el pool dinámico con desfase temporal
+      chains.length = 0;
+      const targetChains = Math.min(16, Math.max(7, Math.floor((cols * rows) / 50)));
       const now = performance.now();
-      rays = [];
-      nextBurstTime = now + 200;
+
+      for (let i = 0; i < targetChains; i++) {
+        // Distribuimos el inicio de las cadenas en el tiempo para que no empiecen a la vez
+        chains.push(createRandomChain(now, i * 280 + Math.random() * 400));
+      }
     };
 
     const draw = (now: number) => {
       if (!ctx || width === 0 || height === 0) return;
 
-      // Limpiar lienzo por completo: inicia en vacío/negro total (sin puntos de fondo)
       ctx.clearRect(0, 0, width, height);
 
-      // Si no hay ráfaga activa y llegó la hora del próximo disparo, disparar
-      const allDead = rays.length === 0 || rays.every((r) => r.state === "dead");
-      if (allDead) {
-        if (now >= nextBurstTime) {
-          triggerLaserBurst(now);
-        }
-      }
+      // ── 1. DIBUJAR MATRIZ DE PUNTOS TENUES DE FONDO ──
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          const x = offsetX + i * dotGap;
+          const y = offsetY + j * dotGap;
 
-      // Dibujar interacción sutil con el cursor si el usuario mueve el ratón
-      if (currentMouse.intensity > 0.05) {
-        const mouseCol = Math.round((currentMouse.x - offsetX) / dotGap);
-        const mouseRow = Math.round((currentMouse.y - offsetY) / dotGap);
+          const dx = x - currentMouse.x;
+          const dy = y - currentMouse.y;
+          const dist = Math.hypot(dx, dy);
 
-        if (mouseCol >= 0 && mouseCol < cols && mouseRow >= 0 && mouseRow < rows) {
-          const mx = offsetX + mouseCol * dotGap;
-          const my = offsetY + mouseRow * dotGap;
+          let radius = baseRadius;
+          let alpha = 0.18;
+          let isHover = false;
+
+          if (dist < glowDistance && currentMouse.intensity > 0.01) {
+            const norm = 1 - dist / glowDistance;
+            const factor = Math.pow(norm, 2.2) * currentMouse.intensity;
+            radius = baseRadius + (activeRadius - baseRadius) * factor;
+            alpha = 0.18 + (0.95 - 0.18) * factor;
+            if (factor > 0.3) isHover = true;
+          }
+
           ctx.beginPath();
-          ctx.arc(mx, my, activeRadius * 1.2, 0, Math.PI * 2);
-          ctx.fillStyle = activeDotColor;
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+
+          if (isHover) {
+            ctx.shadowBlur = activeRadius * 1.5;
+            ctx.shadowColor = "rgba(255, 255, 255, 0.75)";
+            ctx.fillStyle = activeDotColor;
+          } else {
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = "transparent";
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
+          }
+
           ctx.fill();
         }
       }
 
-      // ── ACTUALIZAR Y DIBUJAR RAYOS LÁSER Y SUS PUNTOS ──
-      for (let c = 0; c < rays.length; c++) {
-        const ray = rays[c];
-        if (ray.state === "dead" || now < ray.stateStartTime) continue;
+      // ── 2. ACTUALIZAR Y DIBUJAR CADENAS DINÁMICAS (EL 1 SE METE EN EL 2, REPLIEGUE Y RENACIMIENTO) ──
+      for (let c = 0; c < chains.length; c++) {
+        const chain = chains[c];
+        if (now < chain.stateStartTime) continue;
 
-        const elapsed = now - ray.stateStartTime;
-        const totalSteps = ray.nodes.length - 1;
-        const totalStepTime = totalSteps * ray.stepDuration;
+        const elapsed = now - chain.stateStartTime;
+        const totalSteps = chain.nodes.length - 1;
+        const totalStepTime = totalSteps * chain.stepDuration;
 
         // ── TRANSICIONES DE ESTADO ──
-        if (ray.state === "unfolding") {
+        if (chain.state === "unfolding") {
           if (elapsed >= totalStepTime) {
-            ray.state = "rest";
-            ray.stateStartTime = now;
+            chain.state = "rest";
+            chain.stateStartTime = now;
           }
-        } else if (ray.state === "rest") {
-          if (elapsed >= ray.restDuration) {
-            ray.state = "folding";
-            ray.stateStartTime = now;
+        } else if (chain.state === "rest") {
+          if (elapsed >= chain.restDuration) {
+            chain.state = "folding";
+            chain.stateStartTime = now;
           }
-        } else if (ray.state === "folding") {
+        } else if (chain.state === "folding") {
           if (elapsed >= totalStepTime) {
-            ray.state = "dead";
-
-            // Si todos los rayos murieron, programar el próximo disparo desde el centro
-            const anyAlive = rays.some((r) => r.state !== "dead");
-            if (!anyAlive) {
-              // Pausa con el lienzo completamente vacío antes del siguiente disparo láser
-              nextBurstTime = now + 450;
-            }
+            // ¡La cadena murió! Se engendra de inmediato una NUEVA cadena en otra posición y forma
+            chains[c] = createRandomChain(now, 200 + Math.random() * 600);
             continue;
           }
         }
 
         // ── RENDERIZADO DEL ESTADO ACTUAL ──
-        if (ray.state === "unfolding") {
-          // DESPLIEGUE LÁSER: El haz se dispara hacia afuera encendiendo puntos a su paso
-          const stepIndex = Math.min(totalSteps - 1, Math.floor(elapsed / ray.stepDuration));
-          const stepElapsed = elapsed - stepIndex * ray.stepDuration;
-          const stepT = Math.min(1, stepElapsed / ray.stepDuration);
+        if (chain.state === "unfolding") {
+          // DESPLIEGUE: Se proyecta la línea y van naciendo los puntos (1 -> 2 -> 3)
+          const stepIndex = Math.min(totalSteps - 1, Math.floor(elapsed / chain.stepDuration));
+          const stepElapsed = elapsed - stepIndex * chain.stepDuration;
+          const stepT = Math.min(1, stepElapsed / chain.stepDuration);
 
-          const fromNode = ray.nodes[stepIndex];
-          const toNode = ray.nodes[stepIndex + 1];
+          const fromNode = chain.nodes[stepIndex];
+          const toNode = chain.nodes[stepIndex + 1];
 
-          // Posición del cabezal láser
+          // Posición del cabezal de luz viajero
           const headX = fromNode.x + (toNode.x - fromNode.x) * stepT;
           const headY = fromNode.y + (toNode.y - fromNode.y) * stepT;
 
-          // 1. Puntos nacidos a lo largo de la trayectoria del láser
+          // 1. Dibujar puntos ya nacidos
           for (let n = 0; n <= stepIndex; n++) {
-            const node = ray.nodes[n];
+            const node = chain.nodes[n];
             ctx.beginPath();
-            ctx.arc(node.x, node.y, baseRadius * 1.3, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-            ctx.shadowBlur = 6;
-            ctx.shadowColor = "rgba(255, 255, 255, 0.75)";
+            ctx.arc(node.x, node.y, baseRadius * 1.35, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = "rgba(255, 255, 255, 0.6)";
             ctx.fill();
           }
 
-          // 2. Haz de luz láser disparándose
+          // 2. Línea proyectándose hacia el siguiente punto
           ctx.save();
           ctx.beginPath();
           ctx.moveTo(fromNode.x, fromNode.y);
           ctx.lineTo(headX, headY);
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
-          ctx.lineWidth = ray.lineWidth;
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+          ctx.lineWidth = 2.0;
           ctx.lineCap = "round";
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = "rgba(255, 255, 255, 0.85)";
+          ctx.shadowBlur = 5;
+          ctx.shadowColor = "rgba(255, 255, 255, 0.7)";
           ctx.stroke();
           ctx.restore();
 
-          // 3. Destello en la punta del láser
+          // 3. Cabezal de luz
           ctx.beginPath();
-          ctx.arc(headX, headY, baseRadius * 1.5, 0, Math.PI * 2);
-          ctx.fillStyle = "#FFFFFF";
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = "rgba(255, 255, 255, 0.95)";
+          ctx.arc(headX, headY, baseRadius * 1.45, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
+          ctx.shadowBlur = 6;
+          ctx.shadowColor = "rgba(255, 255, 255, 0.85)";
           ctx.fill();
-        } else if (ray.state === "rest") {
-          // REPOSO: Todos los puntos y la estructura brillan un instante
-          for (let n = 0; n < ray.nodes.length; n++) {
-            const node = ray.nodes[n];
+        } else if (chain.state === "rest") {
+          // REPOSO: Todos los puntos de la cadena brillan conectados suavemente
+          for (let n = 0; n < chain.nodes.length; n++) {
+            const node = chain.nodes[n];
             ctx.beginPath();
-            ctx.arc(node.x, node.y, baseRadius * 1.3, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = "rgba(255, 255, 255, 0.7)";
+            ctx.arc(node.x, node.y, baseRadius * 1.35, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = "rgba(255, 255, 255, 0.6)";
             ctx.fill();
           }
-        } else if (ray.state === "folding") {
-          // REPLIEGUE RÁPIDO: El haz y los puntos se recogen y se tragan hacia el siguiente nodo
-          const stepIndex = Math.min(totalSteps - 1, Math.floor(elapsed / ray.stepDuration));
-          const stepElapsed = elapsed - stepIndex * ray.stepDuration;
-          const stepT = Math.min(1, stepElapsed / ray.stepDuration);
+        } else if (chain.state === "folding") {
+          // RECOGIDA: El punto k se desplaza por la línea y se mete dentro de k+1
+          const stepIndex = Math.min(totalSteps - 1, Math.floor(elapsed / chain.stepDuration));
+          const stepElapsed = elapsed - stepIndex * chain.stepDuration;
+          const stepT = Math.min(1, stepElapsed / chain.stepDuration);
 
-          const fromNode = ray.nodes[stepIndex];
-          const toNode = ray.nodes[stepIndex + 1];
+          const fromNode = chain.nodes[stepIndex];
+          const toNode = chain.nodes[stepIndex + 1];
 
-          // Posición del punto mientras se absorbe en el siguiente
+          // Posición del punto mientras se mete en el siguiente
           const curX = fromNode.x + (toNode.x - fromNode.x) * stepT;
           const curY = fromNode.y + (toNode.y - fromNode.y) * stepT;
 
-          // 1. Línea que se retrae velozmente
+          // 1. Línea que se recoge hacia el punto destino
           ctx.save();
           ctx.beginPath();
           ctx.moveTo(curX, curY);
           ctx.lineTo(toNode.x, toNode.y);
           ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-          ctx.lineWidth = ray.lineWidth;
+          ctx.lineWidth = 2.0;
           ctx.lineCap = "round";
-          ctx.shadowBlur = 7;
-          ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
+          ctx.shadowBlur = 5;
+          ctx.shadowColor = "rgba(255, 255, 255, 0.7)";
           ctx.stroke();
           ctx.restore();
 
-          // 2. Punto en movimiento
+          // 2. Punto viajero que se mete en el siguiente
           ctx.beginPath();
-          ctx.arc(curX, curY, baseRadius * 1.4, 0, Math.PI * 2);
-          ctx.fillStyle = "#FFFFFF";
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = "rgba(255, 255, 255, 0.9)";
+          ctx.arc(curX, curY, baseRadius * 1.45, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
+          ctx.shadowBlur = 6;
+          ctx.shadowColor = "rgba(255, 255, 255, 0.85)";
           ctx.fill();
 
-          // 3. Puntos restantes por ser absorbidos
-          for (let n = stepIndex + 1; n < ray.nodes.length; n++) {
-            const node = ray.nodes[n];
+          // 3. Puntos restantes esperando a ser recogidos
+          for (let n = stepIndex + 1; n < chain.nodes.length; n++) {
+            const node = chain.nodes[n];
             ctx.beginPath();
-            ctx.arc(node.x, node.y, baseRadius * 1.3, 0, Math.PI * 2);
+            ctx.arc(node.x, node.y, baseRadius * 1.35, 0, Math.PI * 2);
             ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = "rgba(255, 255, 255, 0.6)";
+            ctx.shadowBlur = 3;
+            ctx.shadowColor = "rgba(255, 255, 255, 0.5)";
             ctx.fill();
           }
         }
@@ -415,7 +408,7 @@ export default function InteractiveDotGrid({
       }
       resizeObserver.disconnect();
     };
-  }, [dotGap, baseRadius, activeRadius, glowDistance, activeDotColor]);
+  }, [dotGap, baseRadius, activeRadius, glowDistance, dotColor, activeDotColor]);
 
   return (
     <canvas
