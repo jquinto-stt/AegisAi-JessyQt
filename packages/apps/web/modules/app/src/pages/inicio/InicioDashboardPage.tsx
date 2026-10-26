@@ -26,6 +26,8 @@ import { LineChart } from "@/elements/ui/line-chart";
 import type { ApexOptions } from "apexcharts";
 import { tareasDeInicio } from "./tareas-inicio";
 import { CifraAnimada, formatoEntero, formatoPesos } from "./CifraAnimada";
+import { inicialesDe } from "@/utils";
+import { InsigniaVerificada } from "@/icons";
 
 /** Se pone en `true` la primera vez que el dashboard se monta en esta carga. */
 let introReproducida = false;
@@ -628,6 +630,17 @@ export const InicioDashboardPage = observer(() => {
   const usuarioNombre =
     organizacionStore.usuario?.nombre || "Empresario";
 
+  // Datos de la organización/negocio actual
+  const org = organizacionStore.organizacion;
+  const nombreNegocio =
+    org?.nombrePublico?.trim() || org?.nombre?.trim() || "Mi Negocio";
+  const logoNegocio = org?.logoUrl?.trim();
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    setLogoError(false);
+  }, [logoNegocio]);
+
   const tareasPendientes = tareasDeInicio().filter((t) => !t.completada);
   const intro = usePrimeraVisitaDeSesion();
 
@@ -706,12 +719,35 @@ export const InicioDashboardPage = observer(() => {
                   </p>
                 </div>
 
-                {/* Badge circular Pionero con rayo */}
-                <div
-                  className="dash-destello w-9 h-9 rounded-full bg-[#190088] dark:bg-white/10 border-2 border-white/20 flex items-center justify-center text-white shadow-xs shrink-0"
-                  title="Pionero Necto"
-                >
-                  <Sparkles className="w-4 h-4 text-[#FF3F1A]" />
+                {/* Foto / Logo del negocio */}
+                <div className="relative shrink-0">
+                  <Link
+                    to="/configuracion?tab=personalizacion"
+                    className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white/80 dark:border-white/20 bg-gradient-to-br from-[#190088] to-[#2B00D9] dark:from-white/15 dark:to-white/5 flex items-center justify-center text-white shadow-sm shrink-0 transition-transform duration-200 hover:scale-105 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#190088]/40 dark:focus:ring-white/30 block"
+                    title={`Foto de ${nombreNegocio} · Personalizar identidad`}
+                    aria-label={`Foto de ${nombreNegocio}`}
+                  >
+                    {logoNegocio && !logoError ? (
+                      <img
+                        src={logoNegocio}
+                        alt={nombreNegocio}
+                        className="w-full h-full object-cover transition-opacity duration-200"
+                        onError={() => setLogoError(true)}
+                      />
+                    ) : (
+                      <span className="text-[13px] sm:text-[14px] font-bold text-white tracking-wider select-none">
+                        {inicialesDe(nombreNegocio)}
+                      </span>
+                    )}
+                  </Link>
+                  {org?.verificacion?.estado === "aprobado" && (
+                    <span
+                      className="absolute -top-1 -right-1 z-10 flex items-center justify-center rounded-full bg-white dark:bg-gray-900 ring-1.5 ring-white dark:ring-gray-900 shadow-xs pointer-events-none"
+                      title="Negocio verificado"
+                    >
+                      <InsigniaVerificada className="size-4" />
+                    </span>
+                  )}
                 </div>
               </div>
 

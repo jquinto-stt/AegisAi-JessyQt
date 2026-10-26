@@ -13,6 +13,8 @@ import {
   GlobeAltIcon,
 } from "@heroicons/react/24/outline";
 import { organizacionStore, slugDe } from "@/stores/organizacion.store";
+import { inicialesDe } from "@/utils";
+import { InsigniaVerificada } from "@/icons";
 import { ModalCrearNegocioWizard } from "./ModalCrearNegocioWizard";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -60,6 +62,65 @@ export const BanderaPais = ({
     <div className={`relative rounded-lg overflow-hidden shrink-0 border border-black/10 dark:border-white/10 shadow-xs bg-gray-100 dark:bg-gray-800 ${className}`}>
       {contenido}
       <div className="absolute inset-0 bg-gradient-to-tr from-black/5 via-transparent to-white/20 pointer-events-none" />
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AVATAR / FOTO DEL NEGOCIO
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const AvatarNegocio = ({
+  logoUrl,
+  nombre,
+  pais,
+  verificado,
+  className = "w-7 h-7 sm:w-8 sm:h-8",
+}: {
+  logoUrl?: string;
+  nombre?: string;
+  pais?: string;
+  verificado?: boolean;
+  className?: string;
+}) => {
+  const [error, setError] = useState(false);
+  const tieneLogo = Boolean(logoUrl?.trim()) && !error;
+
+  useEffect(() => {
+    setError(false);
+  }, [logoUrl]);
+
+  const esVerificado =
+    verificado !== undefined
+      ? verificado
+      : organizacionStore.organizacion?.verificacion?.estado === "aprobado";
+
+  return (
+    <div className={`relative shrink-0 ${className}`}>
+      <div className="relative rounded-lg overflow-hidden w-full h-full border border-black/10 dark:border-white/10 shadow-xs flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+        {tieneLogo ? (
+          <img
+            src={logoUrl}
+            alt={nombre || "Foto del negocio"}
+            className="w-full h-full object-cover"
+            onError={() => setError(true)}
+          />
+        ) : nombre?.trim() ? (
+          <div className="w-full h-full bg-gradient-to-br from-[#190088] to-[#2B00D9] dark:from-white/20 dark:to-white/10 flex items-center justify-center text-white font-bold text-[11px] sm:text-[12px] tracking-wide select-none">
+            {inicialesDe(nombre)}
+          </div>
+        ) : (
+          <BanderaPais pais={pais} className="w-full h-full rounded-none border-0 shadow-none" />
+        )}
+      </div>
+      {esVerificado && (
+        <span
+          className="absolute -top-1 -right-1 z-10 flex items-center justify-center rounded-full bg-white dark:bg-gray-900 ring-1 ring-white dark:ring-gray-900 shadow-xs pointer-events-none"
+          title="Negocio verificado"
+        >
+          <InsigniaVerificada className="size-3.5" />
+        </span>
+      )}
     </div>
   );
 };
@@ -167,7 +228,13 @@ export const NegocioSelector = observer(() => {
         onClick={() => setDropdownAbierto((prev) => !prev)}
         className="group flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 shadow-xs hover:shadow-sm transition-all text-left focus:outline-none cursor-pointer"
       >
-        <BanderaPais pais={paisMostrar} className="w-7 h-7 sm:w-8 sm:h-8" />
+        <AvatarNegocio
+          logoUrl={orgActiva?.logoUrl}
+          nombre={nombreMostrar}
+          pais={paisMostrar}
+          verificado={orgActiva?.verificacion?.estado === "aprobado"}
+          className="w-7 h-7 sm:w-8 sm:h-8"
+        />
         <div className="flex flex-col min-w-0 pr-1">
           <span className="text-[14px] font-bold text-[#212121] dark:text-white truncate max-w-[130px] sm:max-w-[170px] leading-tight">
             {nombreMostrar}
@@ -210,7 +277,13 @@ export const NegocioSelector = observer(() => {
                     }}
                     className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer focus:outline-none"
                   >
-                    <BanderaPais pais={negocio.pais} className="w-8 h-8" />
+                    <AvatarNegocio
+                      logoUrl={negocio.logoUrl}
+                      nombre={negocio.nombre}
+                      pais={negocio.pais}
+                      verificado={negocio.verificacion?.estado === "aprobado"}
+                      className="w-8 h-8"
+                    />
                     <div className="flex flex-col min-w-0">
                       <span className="text-[14px] font-bold text-[#212121] dark:text-white truncate">
                         {negocio.nombre}

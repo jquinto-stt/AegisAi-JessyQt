@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
@@ -8,7 +8,6 @@ import { Modal } from "@/elements/ui/modal";
 import { SearchInput } from "@/elements";
 import {
   pedidosStore,
-  conversacionesStore,
   ETIQUETA_PAGO,
   puedeMoverA,
   puedeCancelarPedido,
@@ -26,7 +25,6 @@ import { useEntradaEscalonada } from "@/hooks/useEntradaEscalonada";
 import { ProgramarModal } from "./ProgramarModal";
 import { DetallePedidoModal } from "./DetallePedidoModal";
 import { ResumenPedidosVista } from "./ResumenPedidosVista";
-import { ChatEnVivoBoard, ETAPAS_CHAT, contarEtapaChat, type EtapaChat } from "./ChatEnVivoBoard";
 import { ETAPAS_INICIO, contarEtapa, type EtapaInicio } from "./ResumenPedidosVista";
 import {
   avanzarPedido,
@@ -40,6 +38,7 @@ import {
   ArrowPathIcon,
   ArrowRightIcon,
   CalendarDaysIcon,
+  CheckIcon,
   EllipsisHorizontalIcon,
   MagnifyingGlassIcon,
   PencilIcon,
@@ -69,19 +68,17 @@ import {
 // PREFERENCIA DE VISTA (persistida en localStorage)
 // ═══════════════════════════════════════════════════════════════════════════
 
-type VistaTablero = "inicio" | "kanban";
+type VistaTablero = "inicio" | "lista";
 const VISTA_KEY = "necto.pedidosVista";
 
 /**
- * Vista inicial: «Inicio».
- *
- * Es la que responde «¿cómo va el flujo?» sin abrir nada. «Tabla» (kanban)
- * sigue ahí para operar por columnas, y la preferencia guardada manda.
+ * Vista inicial / predeterminada: «Inicio» (tablero Kanban de pedidos por columnas).
+ * «Lista»: resumen y tabla de pedidos.
  */
 const loadVista = (): VistaTablero => {
   try {
     const guardada = localStorage.getItem(VISTA_KEY);
-    if (guardada === "inicio" || guardada === "kanban") return guardada;
+    if (guardada === "lista") return "lista";
     return "inicio";
   } catch {
     return "inicio";
@@ -798,7 +795,7 @@ const ProgramadosModal = observer(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TOGGLE DE VISTA (Inicio / Tabla)
+// TOGGLE DE VISTA (Inicio / Lista)
 // ═══════════════════════════════════════════════════════════════════════════
 
 const VistaToggle = ({ vista, onChange }: { vista: VistaTablero; onChange: (v: VistaTablero) => void }) => {
@@ -808,21 +805,16 @@ const VistaToggle = ({ vista, onChange }: { vista: VistaTablero; onChange: (v: V
       label: "Inicio",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5 12 3l9 7.5M5.5 9.5V21h13V9.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h5v14H4zM15 5h5v9h-5z" />
         </svg>
       ),
     },
     {
-      id: "kanban",
-      // El rótulo decía «Kanban», que es jerga de metodología: describe cómo está
-      // hecha la vista, no lo que el usuario ve. Se cambia a «Tabla» (09/10) — la
-      // CLAVE sigue siendo `kanban`, porque viaja en el almacenamiento
-      // (`loadVista`/`saveVista`) y renombrarla invalidaría la preferencia de
-      // quien ya la tenía guardada.
-      label: "Tabla",
+      id: "lista",
+      label: "Lista",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h5v14H4zM15 5h5v9h-5z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
         </svg>
       ),
     },
@@ -1113,6 +1105,22 @@ export const TableroPage = observer(() => {
 
   type FiltroPago = "todos" | "pendientes" | "pagados";
   const [filtroPago, setFiltroPago] = useState<FiltroPago>("todos");
+  const [menuFiltrosAbierto, setMenuFiltrosAbierto] = useState(false);
+  const menuFiltrosRef = useRef<HTMLDivElement>(null);
+  const [recargando, setRecargando] = useState(false);
+  const [etapasFiltro, setEtapasFiltro] = useState<EtapaInicio[]>([]);
+
+  // Cierre al hacer click fuera del menú de filtros
+  useEffect(() => {
+    if (!menuFiltrosAbierto) return;
+    const handleClickFuera = (e: MouseEvent) => {
+      if (menuFiltrosRef.current && !menuFiltrosRef.current.contains(e.target as Node)) {
+        setMenuFiltrosAbierto(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, [menuFiltrosAbierto]);
 
   // Gestión dinámica de columnas
   const [menuColumnaId, setMenuColumnaId] = useState<string | null>(null);
@@ -1123,25 +1131,6 @@ export const TableroPage = observer(() => {
 
   const [focusId, setFocusId] = useState<string | null>(null);
   const [vista, setVista] = useState<VistaTablero>(loadVista);
-
-  /**
-   * Conmutador de SUPERFICIE de la página: «Operación» (el tablero de pedidos
-   * de siempre) o «Chat en vivo» (el flujo de conversaciones en columnas).
-   *
-   * Es un eje distinto del de `vista` (Inicio / Tabla / Lista), que solo tiene
-   * sentido dentro de «Operación». Por eso, al volver de «Chat en vivo», el
-   * usuario recupera exactamente la vista que tenía —no una por defecto— y sus
-   * filtros siguen intactos: cambiar de superficie no debe costar el trabajo
-   * hecho en la otra.
-   */
-  const [modo, setModo] = useState<"operacion" | "chat">("operacion");
-
-  /**
-   * Etapa activa en «Chat en vivo». Es el equivalente de `columnaFiltroActiva`
-   * en el tablero de pedidos: la barra siempre filtra algo, y al cambiar de
-   * superficie cambia el vocabulario del filtro, no su existencia.
-   */
-  const [filtroEtapaChat, setFiltroEtapaChat] = useState<EtapaChat | "todas">("todas");
 
   // Rastreo de arrastre activo y última tarjeta reubicada para animación de aterrizaje
   const [, setArrastrandoId] = useState<string | null>(null);
@@ -1168,16 +1157,8 @@ export const TableroPage = observer(() => {
   // drawer resuelve el hilo con el resolutor canónico del store y no se duplica
   // la regla de normalización de teléfono en el call site.
   const [chatDrawerPedidoId, setChatDrawerPedidoId] = useState<string | null>(null);
-  /** Hilo abierto desde «Chat en vivo»: ahí el punto de partida es el contacto. */
-  const [chatDrawerConvId, setChatDrawerConvId] = useState<string | null>(null);
 
-  /**
-   * Etapa activa en la vista «Inicio».
-   *
-   * Arranca en «Por preparar» porque es donde hay trabajo pendiente: abrir en
-   * «Finalizadas» daría una tabla enorme de pedidos ya cerrados.
-   */
-  const [etapaInicio, setEtapaInicio] = useState<EtapaInicio>("por_preparar");
+
 
   /** Chips de «Inicio». Viven aparte de los filtros del tablero a propósito:
    *  encender uno aquí no debe dejar el tablero recortado al cambiar de vista. */
@@ -1187,10 +1168,6 @@ export const TableroPage = observer(() => {
   const cambiarVista = (v: VistaTablero) => {
     setVista(v);
     saveVista(v);
-    // «Chat en vivo» es una SUPERFICIE de la vista Tabla, no una vista más: si
-    // se sale de Tabla, se vuelve a Operación. Dejar el modo encendido sin sus
-    // botones a la vista sería una pantalla sin salida.
-    if (v !== "kanban") setModo("operacion");
   };
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1333,25 +1310,56 @@ export const TableroPage = observer(() => {
     (e) => e.estados.join(",") === columnaFiltroActiva,
   );
 
-  // ── «Modo Cocina / KDS» — RETIRADO el 09/10 ──────────────────────────────
-  //
-  // Aquí vivía una vista que estrechaba el tablero a dos columnas
-  // (`en_preparacion` y `listo`) y se auto-activaba para los perfiles de
-  // preparación, con un botón para que el admin la encendiera a mano.
-  //
-  // Se retira porque el producto **no es un restaurante**: el perfil comercial
-  // es configurable y puede ser venta de ropa, ferretería o cualquier otro
-  // retail. Una pantalla que se pliega sola por el nombre del rol y habla de
-  // «cocina» y «comandas» deja de ser neutral en cuanto el negocio cambia, y
-  // el tablero es la pantalla que más se mira.
-  //
-  // Qué NO se toca: la capacidad `preparation.manage` sigue gobernando las
-  // etapas de preparación (avanzar a `en_preparacion`, `listo`, `en_camino` y
-  // `entregado`), y `en_preparacion` sigue siendo una etapa del pipeline. Lo
-  // retirado es la VISTA, no la autorización ni el flujo.
+  const toggleEtapaFiltro = (clave: EtapaInicio) => {
+    setEtapasFiltro((prev) =>
+      prev.includes(clave)
+        ? prev.filter((k) => k !== clave)
+        : [...prev, clave],
+    );
+  };
+
+  const limpiarFiltros = () => {
+    setEtapasFiltro([]);
+    setFiltroPago("todos");
+    setColumnaFiltroActiva("all");
+    setBusquedaTablero("");
+    setPorConfirmarInicio(false);
+    setPendienteInicio(false);
+  };
+
+  const handleRecargar = async () => {
+    setRecargando(true);
+    setBusquedaTablero("");
+    setBuscadorAbierto(false);
+    limpiarFiltros();
+    try {
+      await pedidosStore.cargarDesdeBase();
+    } finally {
+      setTimeout(() => setRecargando(false), 500);
+    }
+  };
+
+  const totalPorCobrar = pedidosStore.pedidos.filter((p) => !p.pagado).length;
+  const totalPagados = pedidosStore.pedidos.filter((p) => Boolean(p.pagado)).length;
+
+  const totalFiltrosActivos =
+    etapasFiltro.length +
+    (filtroPago !== "todos" ? 1 : 0) +
+    (columnaFiltroActiva !== "all" ? 1 : 0);
+
+  const estadosPermitidos: readonly PedidoEstado[] | null =
+    etapasFiltro.length > 0
+      ? etapasFiltro.flatMap((clave) => {
+          const e = ETAPAS_INICIO.find((item) => item.clave === clave);
+          return (e ? e.estados : []) as readonly PedidoEstado[];
+        })
+      : null;
 
   // Filtrado de columnas visibles según la pestaña seleccionada
   const columnasVisibles = columnas.filter((estado) => {
+    if (estadosPermitidos && !estadosPermitidos.includes(estado)) {
+      return false;
+    }
     if (columnaFiltroActiva === "all") return true;
     if (columnaFiltroActiva.includes(",")) {
       return columnaFiltroActiva.split(",").map((s) => s.trim()).includes(estado);
@@ -1403,316 +1411,298 @@ export const TableroPage = observer(() => {
     <>
       <PageMeta title="Tablero de pedidos" description="Flujo de pedidos en vivo, de nuevo a entregado" />
 
-      {/* ── BARRA SUPERIOR DE FILTROS Y ACCIONES (Idéntica a la Maqueta) ── */}
-      {/* `items-start` y no `items-center`: el bloque de la izquierda puede tener
-          DOS filas (filtros + conmutador de superficie), y centrar la columna
-          derecha contra las dos la dejaba más abajo que la fila de filtros —
-          justo la sensación de «esto está descuadrado». Alineado arriba, la
-          lupa y el conmutador de vista arrancan a la altura del filtro. */}
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between min-w-0">
-        <div className="flex min-w-0 flex-col gap-2">
-        {/* FILTROS DE LA BARRA — cambian con la superficie.
-            En «Operación» filtran PEDIDOS (etapas del pipeline de pedidos); en
-            «Chat en vivo», el pipeline de conversaciones. Un filtro que
-            desaparece al cambiar de superficie deja al usuario sin saber qué
-            está mirando, y aquí la barra es lo único que dice «esto es un
-            embudo y estás en tal tramo». */}
-        {modo === "chat" ? (
-          /* Las cinco etapas del chat se ENVUELVEN en vez de desplazarse: son
-             pocas y son el mapa de la pantalla — una etapa escondida tras un
-             scroll horizontal es una etapa que el usuario no sabe que existe. */
-          <div className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 min-w-0">
-            <button
-              type="button"
-              onClick={() => setFiltroEtapaChat("todas")}
-              aria-pressed={filtroEtapaChat === "todas"}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
-                filtroEtapaChat === "todas"
-                  ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
-                  : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-              }`}
-            >
-              <span className="whitespace-nowrap">Todos</span>
-              <span
-                className={`flex size-5.5 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
-                  filtroEtapaChat === "todas"
-                    ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400"
-                    : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                }`}
-              >
-                {conversacionesStore.conversaciones.length}
-              </span>
-            </button>
+      {/* ── BARRA SUPERIOR DE FILTROS Y ACCIONES (Idéntica a Seguimiento) ── */}
+      <header className="mb-4 sm:mb-6 shrink-0">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between min-w-0">
+          {/* Bloque izquierdo: VistaToggle + Buscador desplegable + Botón Refrescar + Filtro + Chips de activos */}
+          <div className="flex flex-wrap items-center gap-2.5 min-w-0">
+            {/* Conmutador de vista (Inicio / Lista) */}
+            <VistaToggle vista={vista} onChange={cambiarVista} />
 
-            {ETAPAS_CHAT.map((e) => {
-              const activa = filtroEtapaChat === e.clave;
-              return (
-                <button
-                  key={e.clave}
-                  type="button"
-                  onClick={() => setFiltroEtapaChat(activa ? "todas" : e.clave)}
-                  aria-pressed={activa}
-                  className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm transition-all whitespace-nowrap shrink-0 cursor-pointer select-none ${
-                    activa
-                      ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white font-semibold"
-                      : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium"
-                  }`}
-                >
-                  <span className={`size-1.5 shrink-0 rounded-full ${e.punto}`} />
-                  <span className="whitespace-nowrap">{e.label}</span>
-                  <span
-                    className={`flex size-5.5 items-center justify-center rounded-full text-xs shrink-0 ${
-                      activa
-                        ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400 font-bold"
-                        : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300 font-semibold"
-                    }`}
-                  >
-                    {contarEtapaChat(conversacionesStore.conversaciones, e.clave)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ) : vista === "inicio" ? (
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-ink-title dark:text-white">Pedidos</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Consulta y gestiona tus pedidos de acuerdo a la etapa o estado en el que se encuentren.
-            </p>
-          </div>
-        ) : (
-        <div className="flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-gray-50 dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0">
-          <button
-            type="button"
-            onClick={() => setColumnaFiltroActiva("all")}
-            aria-pressed={columnaFiltroActiva === "all"}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
-              columnaFiltroActiva === "all"
-                ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
-                : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-            }`}
-          >
-            <span className="whitespace-nowrap">Todas</span>
-            <span
-              className={`flex size-5.5 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
-                columnaFiltroActiva === "all"
-                  ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400"
-                  : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-              }`}
-            >
-              {/* Suma de las cuatro etapas, no de las tarjetas: la fila de
-                  píldoras resume el pipeline y sus números tienen que cuadrar
-                  entre sí. El tablero, en cambio, solo tiene columnas de
-                  pedidos en curso — por eso «Finalizadas» no dibuja columna. */}
-              {ETAPAS_INICIO.reduce(
-                (s, e) => s + contarEtapa(pedidosStore.pedidos, e.clave),
-                0,
-              )}
-            </span>
-          </button>
-
-          {/* Etapas AGREGADAS, las mismas de «Inicio»: un pedido se mira por
-              tramo del flujo (Por preparar, En preparación, En tránsito,
-              Finalizadas), no por el estado crudo del pipeline. Elegir una
-              etapa filtra el tablero a los estados que la componen
-              (`nuevo,confirmado`…), que es lo que ya entiende
-              `columnaFiltroActiva`. */}
-          {ETAPAS_INICIO.map((e) => {
-            const estados = e.estados.join(",");
-            const activa = columnaFiltroActiva === estados;
-            return (
-              <button
-                key={e.clave}
-                type="button"
-                onClick={() => setColumnaFiltroActiva(activa ? "all" : estados)}
-                aria-pressed={activa}
-                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm transition-all whitespace-nowrap shrink-0 cursor-pointer select-none ${
-                  activa
-                    ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white font-semibold"
-                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium"
-                }`}
-              >
-                <span className="whitespace-nowrap">{e.label}</span>
-                <span
-                  className={`flex size-5.5 items-center justify-center rounded-full text-xs shrink-0 ${
-                    activa
-                      ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400 font-bold"
-                      : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300 font-semibold"
-                  }`}
-                >
-                  {contarEtapa(pedidosStore.pedidos, e.clave)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-          )}
-
-          {/* Conmutador de superficie: «Chat en vivo» / «Operación».
-              SOLO en la vista Tabla: es una forma de mirar el tablero, no una
-              pantalla del módulo. En Inicio y Lista no existe, y salir de Tabla
-              devuelve a Operación (ver `cambiarVista`).
-              Va DEBAJO de los filtros a propósito: primero se elige qué se mira
-              y los filtros son consecuencia —por eso cambian de contenido con
-              la superficie, no al revés. */}
-          {vista === "kanban" && (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setModo("chat")}
-              aria-pressed={modo === "chat"}
-              className={`rounded-xl border px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                modo === "chat"
-                  ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-              }`}
-            >
-              Chat en vivo
-            </button>
-            <button
-              type="button"
-              onClick={() => setModo("operacion")}
-              aria-pressed={modo === "operacion"}
-              className={`rounded-xl border px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                modo === "operacion"
-                  ? "border-secondary-500 bg-secondary-50 text-secondary-700 dark:border-secondary-500 dark:bg-secondary-950/40 dark:text-secondary-300"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-              }`}
-            >
-              Operación
-            </button>
-          </div>
-          )}
-        </div>
-
-        {/* Acciones derechas: Chips de filtros activos + Buscador (lupa) + VistaToggle + Crear pedido */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
-          {/* Los chips de filtro activo son de PEDIDOS: en «Chat en vivo» no
-              hay pago ni etapa de pedido que mostrar. El buscador y el botón de
-              restablecer SÍ se quedan — también filtran conversaciones. */}
-          {vista !== "inicio" && modo === "operacion" && (
-            <>
-          {/* Chip de filtro activo de pago */}
-          {filtroPago !== "todos" && (
-            <span className="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-900 dark:bg-brand-950/60 dark:text-brand-300">
-              <span>Pago: {filtroPago === "pagados" ? "Pagados" : "Por cobrar"}</span>
-              <button
-                type="button"
-                onClick={() => setFiltroPago("todos")}
-                className="hover:text-brand-900 dark:hover:text-white cursor-pointer"
-                title="Quitar filtro de pago"
-              >
-                <XMarkIcon className="size-3.5" />
-              </button>
-            </span>
-          )}
-
-          {/* Chip de filtro activo de etapa */}
-          {columnaFiltroActiva !== "all" && !etapaTablaActiva && (
-            <span className="inline-flex items-center gap-1.5 rounded-xl border border-secondary-200 bg-secondary-50 px-3 py-1.5 text-xs font-semibold text-secondary-700 dark:border-accent-900 dark:bg-accent-950/60 dark:text-accent-300">
-              <span>
-                Etapa:{" "}
-                {columnaFiltroActiva.includes(",")
-                  ? columnaFiltroActiva
-                      .split(",")
-                      .map((s) => pedidosStore.estadoLabel(s.trim() as PedidoEstado))
-                      .join(" + ")
-                  : pedidosStore.estadoLabel(columnaFiltroActiva as PedidoEstado)}
-              </span>
-              <button
-                type="button"
-                onClick={() => setColumnaFiltroActiva("all")}
-                className="hover:text-secondary-900 dark:hover:text-white cursor-pointer"
-                title="Ver todas las etapas"
-              >
-                <XMarkIcon className="size-3.5" />
-              </button>
-            </span>
-          )}
-            </>
-          )}
-
-          {vista !== "inicio" && (
-            <>
-              {buscadorAbierto ? (
+            {/* Buscador expandible */}
+            {buscadorAbierto ? (
+              <div className="relative flex items-center shrink-0">
                 <SearchInput
                   autoFocus
                   value={busquedaTablero}
                   onChange={(e) => setBusquedaTablero(e.target.value)}
                   onClear={() => setBusquedaTablero("")}
-                  placeholder={
-                    modo === "chat" ? "Nombre o teléfono del contacto…" : "Cliente, # pedido, producto…"
-                  }
-                  className="h-10 w-48 sm:w-64 shrink-0"
-                  aria-label={
-                    modo === "chat" ? "Buscar contactos en el flujo en vivo" : "Buscar pedidos en el tablero"
-                  }
+                  placeholder="Cliente, # pedido, producto…"
+                  className="h-10 w-48 sm:w-64"
+                  aria-label="Buscar pedidos en el tablero"
                 />
-              ) : null}
+                {busquedaTablero && (
+                  <button
+                    type="button"
+                    onClick={() => setBusquedaTablero("")}
+                    className="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <XMarkIcon className="size-3.5" />
+                  </button>
+                )}
+              </div>
+            ) : null}
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (buscadorAbierto) setBusquedaTablero("");
-                  setBuscadorAbierto((v) => !v);
-                }}
-                aria-expanded={buscadorAbierto}
-                aria-label={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
-                title={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
-                className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
-                  buscadorAbierto
-                    ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300"
-                    : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-                }`}
-              >
-                <MagnifyingGlassIcon className="size-4" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setBusquedaTablero("");
-                  setColumnaFiltroActiva("all");
-                  setFiltroPago("todos");
-                  setEtapaInicio("por_preparar");
-                  setPorConfirmarInicio(false);
-                  setPendienteInicio(false);
-                  setFiltroEtapaChat("todas");
-                }}
-                aria-label="Restablecer filtros"
-                title="Restablecer filtros"
-                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-gray-200/90 bg-white text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-50 cursor-pointer dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-                <ArrowPathIcon className="size-4" />
-              </button>
-            </>
-          )}
-
-          {/* Selector de vista: Inicio / Tabla / Lista. Siempre visible: es la
-              salida de «Chat en vivo» —elegir otra vista devuelve a Operación
-              (ver `cambiarVista`)—. */}
-          <VistaToggle vista={vista} onChange={cambiarVista} />
-
-          {/* Botón "+ Añadir pedido" (Navega a /pedidos/crear).
-              Va en el naranja de marca (`bg-brand-500`), el mismo relleno que el
-              «Crear pedido» de Inicio: es la acción principal de la barra, y en
-              `gray-900` se leía como un control neutro más, al lado del resto de
-              controles de filtrado. */}
-          {puedeCrearPedido() && (
+            {/* Botón lupa neutro (h-10 w-10 rounded-xl) */}
             <button
               type="button"
-              onClick={() => navigate("/pedidos/crear")}
-              className="flex items-center justify-center gap-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-theme-xs transition-colors cursor-pointer shrink-0"
+              onClick={() => {
+                if (buscadorAbierto) setBusquedaTablero("");
+                setBuscadorAbierto((v) => !v);
+              }}
+              aria-expanded={buscadorAbierto}
+              aria-label={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
+              title={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
+              className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
+                buscadorAbierto
+                  ? "border-gray-400 bg-gray-100 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+              }`}
             >
-              <PlusIcon className="size-4 stroke-2" />
-              <span>Añadir pedido</span>
+              <MagnifyingGlassIcon className="size-4" />
             </button>
-          )}
+
+            {/* Botón Restablecer / Refrescar */}
+            <button
+              type="button"
+              onClick={handleRecargar}
+              aria-label="Restablecer filtros"
+              title="Restablecer filtros"
+              className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-gray-200/90 bg-white text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-50 cursor-pointer dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              <ArrowPathIcon
+                className={`size-4 text-gray-600 dark:text-gray-400 ${
+                  recargando ? "animate-spin" : ""
+                }`}
+              />
+            </button>
+
+            {/* Menú Dropdown Filter con Popover estilo Seguimiento */}
+            <div ref={menuFiltrosRef} className="relative inline-block text-left shrink-0">
+              <button
+                type="button"
+                onClick={() => setMenuFiltrosAbierto((v) => !v)}
+                aria-expanded={menuFiltrosAbierto}
+                aria-haspopup="true"
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-gray-200/90 bg-white px-3 text-xs font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer select-none"
+              >
+                <svg
+                  className="size-3.5 text-gray-500 dark:text-gray-400"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                >
+                  <path d="M4 7h16M7 12h10M10 17h4" />
+                </svg>
+                <span>Filter</span>
+                {totalFiltrosActivos > 0 && (
+                  <span className="flex size-4.5 items-center justify-center rounded-full bg-secondary-100 text-[10px] font-bold text-secondary-700 dark:bg-accent-900/60 dark:text-accent-300">
+                    {totalFiltrosActivos}
+                  </span>
+                )}
+              </button>
+
+              {menuFiltrosAbierto && (
+                <div className="absolute left-0 top-full z-50 mt-1.5 w-60 rounded-xl border border-gray-200/90 bg-white p-1.5 shadow-theme-lg dark:border-gray-700 dark:bg-gray-900">
+                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                    Filtrar por etapa
+                  </div>
+                  {ETAPAS_INICIO.map((e) => {
+                    const seleccionada = etapasFiltro.includes(e.clave);
+                    const count = contarEtapa(pedidosStore.pedidos, e.clave);
+                    return (
+                      <button
+                        key={e.clave}
+                        type="button"
+                        onClick={() => toggleEtapaFiltro(e.clave)}
+                        className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors cursor-pointer ${
+                          seleccionada
+                            ? "bg-gray-100 font-semibold text-gray-900 dark:bg-gray-800 dark:text-white"
+                            : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/60"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`flex size-4 items-center justify-center rounded border ${
+                              seleccionada
+                                ? "border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-900"
+                                : "border-gray-300 dark:border-gray-600"
+                            }`}
+                          >
+                            {seleccionada && <CheckIcon className="size-3 stroke-[3]" />}
+                          </div>
+                          <span>{e.label}</span>
+                        </div>
+                        <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500">
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                    Filtrar por pago
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFiltroPago((prev) => (prev === "pendientes" ? "todos" : "pendientes"))
+                    }
+                    className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors cursor-pointer ${
+                      filtroPago === "pendientes"
+                        ? "bg-gray-100 font-semibold text-gray-900 dark:bg-gray-800 dark:text-white"
+                        : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`flex size-4 items-center justify-center rounded border ${
+                          filtroPago === "pendientes"
+                            ? "border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-900"
+                            : "border-gray-300 dark:border-gray-600"
+                        }`}
+                      >
+                        {filtroPago === "pendientes" && <CheckIcon className="size-3 stroke-[3]" />}
+                      </div>
+                      <span>Por cobrar</span>
+                    </div>
+                    <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500">
+                      {totalPorCobrar}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFiltroPago((prev) => (prev === "pagados" ? "todos" : "pagados"))
+                    }
+                    className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors cursor-pointer ${
+                      filtroPago === "pagados"
+                        ? "bg-gray-100 font-semibold text-gray-900 dark:bg-gray-800 dark:text-white"
+                        : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`flex size-4 items-center justify-center rounded border ${
+                          filtroPago === "pagados"
+                            ? "border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-900"
+                            : "border-gray-300 dark:border-gray-600"
+                        }`}
+                      >
+                        {filtroPago === "pagados" && <CheckIcon className="size-3 stroke-[3]" />}
+                      </div>
+                      <span>Pagados</span>
+                    </div>
+                    <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500">
+                      {totalPagados}
+                    </span>
+                  </button>
+
+                  {totalFiltrosActivos > 0 && (
+                    <>
+                      <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+                      <button
+                        type="button"
+                        onClick={limpiarFiltros}
+                        className="flex w-full items-center justify-center rounded-lg py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-red-400 cursor-pointer"
+                      >
+                        Limpiar filtros
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Separador vertical si hay filtros activos */}
+            {totalFiltrosActivos > 0 && (
+              <div className="h-4 w-px bg-gray-200 dark:bg-gray-700 mx-0.5" />
+            )}
+
+            {/* Chips de filtros activos estilo Seguimiento */}
+            {etapasFiltro.map((clave) => {
+              const info = ETAPAS_INICIO.find((e) => e.clave === clave);
+              if (!info) return null;
+              return (
+                <span
+                  key={clave}
+                  className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-gray-200/90 bg-white px-3 text-xs font-medium text-gray-800 shadow-theme-xs dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-200"
+                >
+                  <span>{info.label}</span>
+                  <button
+                    type="button"
+                    onClick={() => toggleEtapaFiltro(clave)}
+                    className="ml-0.5 rounded p-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-white cursor-pointer"
+                    title={`Quitar ${info.label}`}
+                  >
+                    <XMarkIcon className="size-3.5 stroke-[2.5]" />
+                  </button>
+                </span>
+              );
+            })}
+
+            {filtroPago !== "todos" && (
+              <span className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-gray-200/90 bg-white px-3 text-xs font-medium text-gray-800 shadow-theme-xs dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-200">
+                <span>Pago: {filtroPago === "pagados" ? "Pagados" : "Por cobrar"}</span>
+                <button
+                  type="button"
+                  onClick={() => setFiltroPago("todos")}
+                  className="ml-0.5 rounded p-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-white cursor-pointer"
+                  title="Quitar filtro de pago"
+                >
+                  <XMarkIcon className="size-3.5 stroke-[2.5]" />
+                </button>
+              </span>
+            )}
+
+            {columnaFiltroActiva !== "all" && !etapaTablaActiva && (
+              <span className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-gray-200/90 bg-white px-3 text-xs font-medium text-gray-800 shadow-theme-xs dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-200">
+                <span>
+                  Etapa:{" "}
+                  {columnaFiltroActiva.includes(",")
+                    ? columnaFiltroActiva
+                        .split(",")
+                        .map((s) => pedidosStore.estadoLabel(s.trim() as PedidoEstado))
+                        .join(" + ")
+                    : pedidosStore.estadoLabel(columnaFiltroActiva as PedidoEstado)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setColumnaFiltroActiva("all")}
+                  className="ml-0.5 rounded p-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-white cursor-pointer"
+                  title="Ver todas las etapas"
+                >
+                  <XMarkIcon className="size-3.5 stroke-[2.5]" />
+                </button>
+              </span>
+            )}
+
+          </div>
+
+          {/* Bloque derecho: Botón "+ Añadir pedido" */}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
+            {puedeCrearPedido() && (
+              <button
+                type="button"
+                onClick={() => navigate("/pedidos/crear")}
+                className="flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white px-4 text-xs sm:text-sm font-semibold shadow-theme-xs transition-colors cursor-pointer shrink-0"
+              >
+                <PlusIcon className="size-4 stroke-2" />
+                <span>Añadir pedido</span>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* PEDIDOS PROGRAMADOS PARA FECHAS FUTURAS */}
-      {verProgramados && modo === "operacion" && (
+      {verProgramados && (
         <ProgramadosSection
           onCancelar={(p) => abrirCancelar(p.id)}
           onReprogramar={(p) => abrirReprogramar(p.id)}
@@ -1722,21 +1712,14 @@ export const TableroPage = observer(() => {
         />
       )}
 
-      {/* Chat en vivo — el flujo de conversaciones, o el tablero de pedidos */}
-      {modo === "chat" ? (
-        <ChatEnVivoBoard
-          filtro={filtroEtapaChat}
-          busqueda={busquedaTablero}
-          onAbrirChat={(id) => setChatDrawerConvId(id)}
-        />
-      ) : vista === "inicio" ? (
+      {vista === "lista" ? (
         <div className="min-h-0 flex-1 overflow-y-auto">
           <ResumenPedidosVista
-            etapa={etapaInicio}
-            onEtapaChange={setEtapaInicio}
             busqueda={busquedaTablero}
             porConfirmar={porConfirmarInicio}
             pendiente={pendienteInicio}
+            filtroPago={filtroPago}
+            etapasFiltro={etapasFiltro}
           />
         </div>
       ) : (
@@ -1954,10 +1937,9 @@ export const TableroPage = observer(() => {
           arrastre de tarjetas del Kanban. */}
       <ChatDrawer
         pedido={chatDrawerPedidoId ? pedidosStore.getPedido(chatDrawerPedidoId) ?? null : null}
-        convId={chatDrawerPedidoId ? null : chatDrawerConvId}
+        convId={null}
         onClose={() => {
           setChatDrawerPedidoId(null);
-          setChatDrawerConvId(null);
         }}
       />
     </>

@@ -155,4 +155,5 @@ export {
 } from "@heroicons/react/24/outline";
 
 export { PanelToggleIcon } from "./PanelToggleIcon";
+export { InsigniaVerificada } from "./InsigniaVerificada";
 

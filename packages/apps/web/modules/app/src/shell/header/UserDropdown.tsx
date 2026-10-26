@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { ShellDropdown, ShellDropdownItem } from "@/shell/header/ShellDropdown";
 import { useNavigate } from "react-router";
@@ -9,22 +9,18 @@ import {
 } from "@heroicons/react/24/outline";
 import { sessionStore, organizacionStore } from "@/stores";
 import { cerrarSesion } from "@/lib/auth.service";
+import { InsigniaVerificada } from "@/icons";
 
 /**
  * UserDropdown
  * Trigger y menú desplegable del perfil de usuario.
- * Diseño: [Iniciales con halo celeste] [Nombre] [Chevron]
+ * Diseño: [Avatar / Iniciales con halo celeste] [Nombre] [Chevron]
  *
- * La identidad se lee de `organizacionStore.usuario`. Antes estaba escrita a mano
- * —«Musharof», «Musharof Chowdhury», `randomuser@pimjo.com` y la foto
- * `/images/user/owner.png`—, así que la cabecera de **todas** las páginas le
- * atribuía al usuario un nombre, un correo y una cara que no eran los suyos.
+ * La identidad se lee de `organizacionStore.usuario` (o `sessionStore.operadorSimulado`).
+ * Si el usuario cuenta con `avatarUrl`, se renderiza la fotografía recortada al círculo;
+ * si no tiene foto o falla al cargar, cae grácilmente a las iniciales del nombre o al icono genérico.
  *
- * `UsuarioPerfil` no tiene campo de avatar, así que se pintan **iniciales** en vez
- * de la foto de un desconocido: es lo que el sistema sabe de verdad. El día que el
- * modelo tenga `avatarUrl`, se cambia aquí y en ningún otro sitio.
- *
- * Es `observer` porque `usuario` cambia —onboarding, `/profile`— y el nombre del
+ * Es `observer` porque `usuario` cambia —onboarding, `/profile`— y el avatar/nombre del
  * trigger tiene que seguirlo sin recargar la página.
  */
 const UserDropdown = observer(() => {
@@ -40,9 +36,16 @@ const UserDropdown = observer(() => {
         email: opSimulado.cargo || "",
         pais: "Colombia",
         perfilCompletado: true,
+        avatarUrl: opSimulado.avatarUrl,
       }
     : organizacionStore.usuario;
 
+  const avatarUrl = usuario?.avatarUrl?.trim();
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [avatarUrl]);
 
   const iniciales = usuario
     ? `${usuario.nombre.charAt(0)}${usuario.apellido?.charAt(0) ?? ""}`.toUpperCase()
@@ -50,6 +53,8 @@ const UserDropdown = observer(() => {
   const nombreCompleto = usuario
     ? `${usuario.nombre} ${usuario.apellido ?? ""}`.trim()
     : "Mi cuenta";
+
+  const estaVerificado = organizacionStore.organizacion?.verificacion?.estado === "aprobado";
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -74,16 +79,31 @@ const UserDropdown = observer(() => {
         aria-expanded={isOpen}
       >
         {/* Avatar circular con halo celeste de marca.
-            El halo era `#E0E2FD`, un lila escrito a mano que no existe en
-            `Esencia_necto` —ni en `theme.css`— y que por tanto no cambiaba con
-            el tema. Ahora es el celeste de la guía (`accent-200`), que sí es
-            token y tiene su variante oscura.
-            Sin `avatarUrl` en el modelo se pintan iniciales; si no hay sesión
-            de usuario, un glifo genérico. */}
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent-200 p-0.5 overflow-hidden dark:bg-accent-500/25">
-          <span className="flex h-full w-full items-center justify-center rounded-full bg-white text-sm font-medium uppercase text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-            {iniciales || <UserIcon className="size-4 text-gray-400" />}
-          </span>
+            Renderiza la imagen de avatarUrl si está definida y válida;
+            de lo contrario muestra las iniciales o el glifo genérico. */}
+        <div className="relative">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent-200 p-0.5 overflow-hidden dark:bg-accent-500/25">
+            {avatarUrl && !imageError ? (
+              <img
+                src={avatarUrl}
+                alt={nombreCompleto}
+                onError={() => setImageError(true)}
+                className="h-full w-full rounded-full object-cover object-center"
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center rounded-full bg-white text-sm font-medium uppercase text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                {iniciales || <UserIcon className="size-4 text-gray-400" />}
+              </span>
+            )}
+          </div>
+          {estaVerificado && (
+            <span
+              className="absolute -top-1 -right-1 z-10 flex items-center justify-center rounded-full bg-white dark:bg-gray-900 ring-2 ring-white dark:ring-gray-900 shadow-xs"
+              title="Usuario verificado"
+            >
+              <InsigniaVerificada className="size-4" />
+            </span>
+          )}
         </div>
 
         <span className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
@@ -115,17 +135,42 @@ const UserDropdown = observer(() => {
         onClose={closeDropdown}
         className="absolute right-0 mt-[14px] flex w-[270px] flex-col rounded-2xl border border-gray-200 bg-white p-3.5 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900 z-50 font-sans animate-entrada-menu"
       >
-        {/* Cabecera del usuario. Sin `usuario` no se inventa un correo: la línea
-            simplemente no se pinta. */}
-        <div className="px-2 pt-1 pb-2">
-          <span className="block font-bold text-gray-900 text-sm dark:text-white">
-            {nombreCompleto}
-          </span>
-          {usuario?.email && (
-            <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400 truncate">
-              {usuario.email}
+        {/* Cabecera del usuario */}
+        <div className="flex items-center gap-3 px-2 pt-1 pb-2.5 border-b border-gray-100 dark:border-gray-800">
+          <div className="relative shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-200 p-0.5 overflow-hidden dark:bg-accent-500/25">
+              {avatarUrl && !imageError ? (
+                <img
+                  src={avatarUrl}
+                  alt={nombreCompleto}
+                  onError={() => setImageError(true)}
+                  className="h-full w-full rounded-full object-cover object-center"
+                />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center rounded-full bg-white text-xs font-semibold uppercase text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                  {iniciales || <UserIcon className="size-3.5 text-gray-400" />}
+                </span>
+              )}
+            </div>
+            {estaVerificado && (
+              <span
+                className="absolute -top-1 -right-1 z-10 flex items-center justify-center rounded-full bg-white dark:bg-gray-900 ring-1.5 ring-white dark:ring-gray-900 shadow-xs"
+                title="Usuario verificado"
+              >
+                <InsigniaVerificada className="size-3.5" />
+              </span>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="block font-bold text-gray-900 text-sm dark:text-white truncate">
+              {nombreCompleto}
             </span>
-          )}
+            {usuario?.email && (
+              <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400 truncate">
+                {usuario.email}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Lista de opciones */}

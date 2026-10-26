@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 import { Input } from "@/elements/form/input";
-import { organizacionStore } from "@/stores/organizacion.store";
+import { organizacionStore, type CuentaBancariaRegistrada } from "@/stores/organizacion.store";
 import {
   BANCOS,
   BILLETERAS,

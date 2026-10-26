@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { observer } from "mobx-react-lite";
 
 import { Button } from "@/elements/ui/button";
 import {
@@ -9,14 +10,16 @@ import {
   IdentificationIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
+import { InsigniaVerificada } from "@/icons";
+import { organizacionStore } from "@/stores/organizacion.store";
 import type { ArchivoVerificacion, VerificacionFiscal as Verificacion } from "@/stores/organizacion.store";
 
 /**
  * Estado «Documentos aprobados» de la verificación.
  *
  * Es la pantalla que ve el usuario cuando su registro quedó validado: el sello
- * de aprobación, sus datos tal como los envió y los dos documentos que subió,
- * con descarga real.
+ * de aprobación con la insignia verificada destacada, sus datos personales con
+ * su foto de usuario y los dos documentos que subió, con descarga real.
  *
  * ── Sobre la descarga ─────────────────────────────────────────────────────
  *
@@ -27,6 +30,10 @@ import type { ArchivoVerificacion, VerificacionFiscal as Verificacion } from "@/
  */
 
 const kb = (bytes: number) => Math.max(1, Math.round(bytes / 1024));
+
+// Foto de muestra profesional por defecto (idéntica a la usada en perfil)
+const FOTO_POR_DEFECTO =
+  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80";
 
 /** Un dato de la ficha, con icono delante. */
 const Dato = ({
@@ -91,24 +98,35 @@ export interface EstadoAprobadoProps {
   onReiniciar: () => void;
 }
 
-export const EstadoAprobado = ({ verificacion, onReiniciar }: EstadoAprobadoProps) => {
+export const EstadoAprobado = observer(({ verificacion, onReiniciar }: EstadoAprobadoProps) => {
   const { nombreCompleto, persona, tipoDocumento, numeroDocumento, selfie, documento, comprobante } =
     verificacion;
 
+  const usuario = organizacionStore.usuario;
+  // Foto del usuario: avatar configurado en el perfil > selfie subida en verificación > foto por defecto
+  const fotoUsuario = usuario?.avatarUrl?.trim() || selfie?.dataUrl || FOTO_POR_DEFECTO;
+  const nombreUsuario =
+    nombreCompleto?.trim() ||
+    `${usuario?.nombre || ""} ${usuario?.apellido || ""}`.trim() ||
+    "Usuario verificado";
+
   return (
     <div className="rounded-3xl border border-[#ECECEC] bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 sm:p-8">
-      {/* ── SELLO ────────────────────────────────────────────────────────── */}
-      <div className="flex items-start gap-4 rounded-2xl border border-accent-200 bg-accent-50 p-5 dark:border-accent-500/30 dark:bg-accent-500/10">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-accent-600 text-accent-600 dark:border-accent-400 dark:text-accent-400">
-          <CheckIcon className="h-6 w-6" aria-hidden="true" />
-        </span>
+      {/* ── SELLO VERIFICADO (GRANDE) ────────────────────────────────────── */}
+      <div className="flex items-center gap-4 sm:gap-5 rounded-2xl border border-orange-200 bg-orange-50/70 p-5 sm:p-6 dark:border-orange-500/20 dark:bg-orange-500/10">
+        <InsigniaVerificada className="size-14 sm:size-16 shrink-0 drop-shadow-md" />
         <div className="min-w-0">
-          <p className="text-[15px] font-bold text-accent-700 dark:text-accent-300">
-            Documentos Aprobados
-          </p>
-          <p className="mt-1 text-[13px] leading-5 text-accent-700/80 dark:text-accent-200/80">
-            Tu registro fue exitoso, a continuación podrás ver la información que subiste a la
-            plataforma.
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[16px] sm:text-[18px] font-bold text-orange-950 dark:text-orange-200">
+              Datos Fiscales Verificados
+            </p>
+            <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-[11px] font-bold text-orange-800 dark:bg-orange-500/20 dark:text-orange-300">
+              <CheckIcon className="h-3 w-3 stroke-[3]" />
+              Aprobado
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] leading-5 text-orange-900/80 dark:text-orange-200/80">
+            Tu identidad y documentación fiscal fueron validadas y aprobadas con éxito en la plataforma.
           </p>
         </div>
       </div>
@@ -119,24 +137,26 @@ export const EstadoAprobado = ({ verificacion, onReiniciar }: EstadoAprobadoProp
           <h3 className="text-[15px] font-bold text-ink-title dark:text-white">Datos Personales</h3>
 
           <div className="mt-4 flex items-start gap-4">
-            {selfie?.dataUrl ? (
+            <div className="relative shrink-0">
               <img
-                src={selfie.dataUrl}
-                alt="Foto del rostro registrada"
-                className="h-24 w-24 shrink-0 rounded-2xl object-cover"
+                src={fotoUsuario}
+                alt={nombreUsuario}
+                className="h-24 w-24 rounded-2xl object-cover shadow-2xs border border-gray-100 dark:border-gray-800"
               />
-            ) : (
-              <span className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500">
-                <UserIcon className="h-8 w-8" aria-hidden="true" />
+              <span className="absolute -top-1.5 -right-1.5 z-10 rounded-full bg-white p-0.5 shadow-xs dark:bg-gray-900 ring-1 ring-white dark:ring-gray-900 pointer-events-none">
+                <InsigniaVerificada className="size-5 shrink-0" />
               </span>
-            )}
+            </div>
 
             <div className="min-w-0">
-              <p className="truncate text-[18px] font-bold leading-tight text-ink-title dark:text-white">
-                {nombreCompleto || "Sin nombre registrado"}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="truncate text-[18px] font-bold leading-tight text-ink-title dark:text-white">
+                  {nombreUsuario}
+                </p>
+                <InsigniaVerificada className="size-5 shrink-0" />
+              </div>
               <div className="mt-3 space-y-1.5">
-                <Dato icono={UserIcon}>{persona === "juridica" ? "jurídica" : "natural"}</Dato>
+                <Dato icono={UserIcon}>{persona === "juridica" ? "Persona jurídica" : "Persona natural"}</Dato>
                 <Dato icono={IdentificationIcon}>{tipoDocumento || "Documento sin definir"}</Dato>
                 <Dato icono={HashtagIcon}>{numeroDocumento || "Sin número"}</Dato>
               </div>
@@ -171,6 +191,6 @@ export const EstadoAprobado = ({ verificacion, onReiniciar }: EstadoAprobadoProp
       </div>
     </div>
   );
-};
+});
 
 export default EstadoAprobado;

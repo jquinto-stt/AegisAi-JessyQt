@@ -2,36 +2,32 @@
  * Perfil del usuario (`/profile` & `/perfil`).
  *
  * Arquitectura de 4 burbujas nativas de Necto:
- * 1. Burbuja 1: Tarjeta de Identidad Digital (vCard, foto a sangre lateral, CTAs rápidos y enlace público)
+ * 1. Burbuja 1: Foto y Vista Previa de Perfil (Diseño de tarjeta con foto a sangre para visualización y gestión)
  * 2. Burbuja 2: Información Personal y de Contacto
  * 3. Burbuja 3: Organización y Permisos en Necto (Rol, permisos y módulos activos)
  * 4. Burbuja 4: Seguridad y Cuenta (Supabase Auth y control de sesión)
  */
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import {
   ArrowLeftIcon,
   CheckIcon,
-  ClipboardDocumentCheckIcon,
-  ClipboardDocumentIcon,
   ExclamationTriangleIcon,
-  LinkIcon,
   PencilIcon,
   ShieldCheckIcon,
   XMarkIcon,
-  ChatBubbleLeftRightIcon,
-  PhoneIcon,
   UserIcon,
   BuildingOffice2Icon,
-  SparklesIcon,
   KeyIcon,
-  ArrowDownTrayIcon,
-  CheckBadgeIcon,
+  ArrowUpTrayIcon,
+  TrashIcon,
+  PhotoIcon,
+  LinkIcon,
 } from "@heroicons/react/24/outline";
 import { organizacionStore, sessionStore } from "@/stores";
+import { InsigniaVerificada } from "@/icons";
 import { actualizarPerfilRemoto, cambiarPassword } from "@/lib/auth.service";
 import type { RedesSociales } from "@/stores";
-import { slugDe } from "@/stores/organizacion.store";
 
 const CLASE_INPUT =
   "w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white transition-colors";
@@ -56,51 +52,24 @@ interface FormPersonal {
   redes: RedesSociales;
 }
 
-/**
- * Descarga una tarjeta de contacto vCard (.vcf) estándar para el teléfono o equipo.
- */
-function downloadVCard(usuario: typeof organizacionStore.usuario, orgNombre?: string) {
-  if (!usuario) return;
-  const fullName = `${usuario.nombre || ""} ${usuario.apellido || ""}`.trim() || "Contacto Necto";
-  const vcardLines = [
-    "BEGIN:VCARD",
-    "VERSION:3.0",
-    `FN:${fullName}`,
-    `N:${usuario.apellido || ""};${usuario.nombre || ""};;;`,
-    usuario.cargo ? `TITLE:${usuario.cargo}` : "",
-    orgNombre ? `ORG:${orgNombre}` : "ORG:Necto",
-    usuario.email ? `EMAIL;TYPE=INTERNET,WORK:${usuario.email}` : "",
-    usuario.telefono ? `TEL;TYPE=CELL,VOICE:${usuario.telefono}` : "",
-    usuario.ubicacion ? `ADR;TYPE=WORK:;;${usuario.ubicacion};;;;` : "",
-    usuario.bio ? `NOTE:${usuario.bio.replace(/\n/g, " ")}` : "",
-    "END:VCARD",
-  ].filter(Boolean).join("\r\n");
-
-  const blob = new Blob([vcardLines], { type: "text/vcard;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${fullName.replace(/\s+/g, "_")}.vcf`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
 const ProfilePage = observer(function ProfilePage() {
   const usuario = organizacionStore.usuario;
   const org = organizacionStore.organizacion;
   const orgNombre = org?.nombre || "Necto";
+  const estaVerificado = org?.verificacion?.estado === "aprobado";
 
   const [successToast, setSuccessToast] = useState<string | null>(null);
-  const [copiedLink, setCopiedLink] = useState(false);
 
   // Estados de modales
   const [isEditPersonalOpen, setIsEditPersonalOpen] = useState(false);
-  const [isEditLinkOpen, setIsEditLinkOpen] = useState(false);
-  const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
+
+  // Gestión de foto de perfil
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [urlFotoInput, setUrlFotoInput] = useState("");
+  const [mostrarInputUrl, setMostrarInputUrl] = useState(false);
 
   // Estados de formularios
   const [personalForm, setPersonalForm] = useState<FormPersonal>({
@@ -114,7 +83,6 @@ const ProfilePage = observer(function ProfilePage() {
     avatarUrl: "",
     redes: {},
   });
-  const [customLinkInput, setCustomLinkInput] = useState("");
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -130,11 +98,7 @@ const ProfilePage = observer(function ProfilePage() {
     usuario?.bio ||
     "Mi pasión por el sector comenzó al adquirir mi primer proyecto a los 24 años. Tras experimentar los desafíos y la satisfacción de crecer, hoy me dedico a compartir esa experiencia y generar valor con clientes y colaboradores.";
   const fotoAMostrar = usuario?.avatarUrl?.trim() || FOTO_POR_DEFECTO;
-
-  // Cálculo del slug del enlace público en Necto
-  const defaultSlug = slugDe(`${nombre}_${apellido}`) || "milia_basova";
-  const currentSlug = usuario?.customLink || defaultSlug;
-  const fullProfileUrl = `necto.app/p/${currentSlug}`;
+  const tieneFotoPersonalizada = Boolean(usuario?.avatarUrl && usuario.avatarUrl.trim().length > 0);
 
   // Datos de rol y sesión
   const rolSesion = sessionStore.tipoSesion === "operador" ? "Operador" : "Administrador";
@@ -145,11 +109,67 @@ const ProfilePage = observer(function ProfilePage() {
     setTimeout(() => setSuccessToast(null), 3000);
   };
 
-  const copyProfileLink = () => {
-    navigator.clipboard.writeText(`https://${fullProfileUrl}`);
-    setCopiedLink(true);
-    showToast("Enlace de perfil copiado al portapapeles");
-    setTimeout(() => setCopiedLink(false), 2000);
+  const handleFotoArchivo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Por favor selecciona un archivo de imagen válido");
+      return;
+    }
+
+    // 5MB máximo
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("La imagen no debe superar los 5 MB");
+      return;
+    }
+
+    setSubiendoFoto(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      try {
+        await actualizarPerfilRemoto({ avatarUrl: dataUrl });
+        showToast("Foto de perfil actualizada con éxito");
+      } catch {
+        showToast("Error al guardar la foto de perfil");
+      } finally {
+        setSubiendoFoto(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+    reader.onerror = () => {
+      setSubiendoFoto(false);
+      showToast("Error al procesar el archivo de imagen");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGuardarUrlFoto = async () => {
+    if (!urlFotoInput.trim()) return;
+    setSubiendoFoto(true);
+    try {
+      await actualizarPerfilRemoto({ avatarUrl: urlFotoInput.trim() });
+      showToast("Foto de perfil actualizada con éxito");
+      setUrlFotoInput("");
+      setMostrarInputUrl(false);
+    } catch {
+      showToast("Error al guardar la foto de perfil");
+    } finally {
+      setSubiendoFoto(false);
+    }
+  };
+
+  const handleEliminarFoto = async () => {
+    setSubiendoFoto(true);
+    try {
+      await actualizarPerfilRemoto({ avatarUrl: "" });
+      showToast("Foto de perfil eliminada");
+    } catch {
+      showToast("Error al eliminar la foto de perfil");
+    } finally {
+      setSubiendoFoto(false);
+    }
   };
 
   const abrirPersonal = () => {
@@ -165,11 +185,6 @@ const ProfilePage = observer(function ProfilePage() {
       redes: { ...usuario?.redes },
     });
     setIsEditPersonalOpen(true);
-  };
-
-  const abrirLink = () => {
-    setCustomLinkInput(usuario?.customLink ?? currentSlug);
-    setIsEditLinkOpen(true);
   };
 
   const handleSavePersonal = async (e: React.FormEvent) => {
@@ -192,16 +207,6 @@ const ProfilePage = observer(function ProfilePage() {
     } finally {
       setSavingPersonal(false);
     }
-  };
-
-  const handleSaveLink = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const clean = slugDe(customLinkInput);
-    await actualizarPerfilRemoto({
-      customLink: clean,
-    });
-    setIsEditLinkOpen(false);
-    showToast("Enlace de perfil actualizado");
   };
 
   const handleSavePassword = async (e: React.FormEvent) => {
@@ -267,62 +272,71 @@ const ProfilePage = observer(function ProfilePage() {
               Perfil de {fullName}
             </h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Gestiona tu tarjeta digital, información personal y credenciales de acceso a Necto.
+              Gestiona tu foto de perfil, información personal y credenciales de acceso a Necto.
             </p>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 dark:bg-brand-950/40 px-3 py-1 text-xs font-semibold text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
-            <CheckBadgeIcon className="size-4 text-brand-600 dark:text-brand-400" />
-            <span>Operador verificado</span>
-          </span>
+          {estaVerificado && (
+            <span className="inline-flex items-center gap-2 rounded-full bg-blue-50/90 dark:bg-blue-950/40 px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/70 shadow-2xs">
+              <InsigniaVerificada className="size-5 sm:size-6 shrink-0" />
+              <span>Verificado</span>
+            </span>
+          )}
         </div>
       </div>
 
-      {/* ── BURBUJA 1: TARJETA DE IDENTIDAD DIGITAL (vCard & Presencia) ── */}
+      {/* ── BURBUJA 1: FOTO DE PERFIL Y VISTA PREVIA DE IDENTIDAD ── */}
       <section className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 transition-colors">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-5 dark:border-gray-800">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-950/40 dark:text-brand-400">
-              <SparklesIcon className="size-5" />
+              <PhotoIcon className="size-5" />
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-                Tarjeta de presentación digital
+                Foto de perfil
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Vista previa de tu tarjeta de contacto digital con foto a sangre y llamadas a la acción
+                Visualiza y administra la fotografía que identifica tu cuenta en Necto
               </p>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={abrirPersonal}
-            className={CLASE_BOTON_EDITAR}
-          >
-            <PencilIcon className="size-3.5" />
-            <span>Editar tarjeta</span>
-          </button>
         </div>
 
-        <div className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          {/* Tarjeta Digital exacta a la captura */}
-          <div className="lg:col-span-7 flex justify-center lg:justify-start">
+        <div className="pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Tarjeta de visualización con foto a sangre */}
+          <div className="lg:col-span-6 xl:col-span-5 flex flex-col items-center lg:items-start">
             <div className="relative flex w-full max-w-md h-44 sm:h-48 overflow-hidden rounded-2xl bg-[#28343c] text-white shadow-xl border border-slate-700/60 select-none">
               
               {/* Mitad izquierda: Foto a sangre completa sin márgenes */}
               <div className="w-[42%] h-full shrink-0 relative overflow-hidden bg-slate-800">
-                <img
-                  src={fotoAMostrar}
-                  alt={fullName}
-                  className="w-full h-full object-cover object-center"
-                />
+                {fotoAMostrar ? (
+                  <img
+                    src={fotoAMostrar}
+                    alt={fullName}
+                    className="w-full h-full object-cover object-center"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center w-full h-full text-slate-400 bg-slate-800/80 p-2 text-center">
+                    <PhotoIcon className="size-8 text-slate-500 mb-1" />
+                    <span className="text-[11px] font-medium leading-tight text-slate-400">Sin foto</span>
+                  </div>
+                )}
+                {estaVerificado && (
+                  <span
+                    className="absolute top-2 right-2 z-10 flex items-center justify-center rounded-full bg-white dark:bg-gray-900 ring-1.5 ring-white dark:ring-gray-900 shadow-xs pointer-events-none"
+                    title="Usuario verificado"
+                  >
+                    <InsigniaVerificada className="size-4 sm:size-4.5" />
+                  </span>
+                )}
               </div>
 
               {/* Mitad derecha: Datos en panel oscuro */}
               <div className="w-[58%] h-full p-4 sm:p-5 flex flex-col justify-center relative bg-[#28343c]">
                 <div className="pr-2">
-                  <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight">
-                    {fullName}
+                  <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight flex items-center gap-2">
+                    <span>{fullName}</span>
+                    {estaVerificado && <InsigniaVerificada className="size-5 shrink-0 inline-block" />}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-300 font-normal mt-1 leading-snug">
                     {cargo}
@@ -331,81 +345,135 @@ const ProfilePage = observer(function ProfilePage() {
                 </div>
 
                 {/* Sello de LOGO en esquina inferior derecha */}
-                <div className="absolute bottom-3 right-3 flex size-8 sm:size-9 items-center justify-center rounded-lg bg-[#141a1e] border border-white/10 shadow-inner">
-                  <div className="flex size-6 sm:size-7 items-center justify-center rounded-full border border-white/30 text-[8px] font-bold tracking-widest text-white uppercase">
-                    LOGO
+                <div className="absolute bottom-3 right-3">
+                  <div className="flex size-8 sm:size-9 items-center justify-center rounded-lg bg-[#141a1e] border border-white/10 shadow-inner overflow-hidden">
+                    {org?.logoUrl ? (
+                      <img
+                        src={org.logoUrl}
+                        alt={orgNombre}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex size-6 sm:size-7 items-center justify-center rounded-full border border-white/30 text-[8px] font-bold tracking-widest text-white uppercase">
+                        LOGO
+                      </div>
+                    )}
                   </div>
+                  {estaVerificado && (
+                    <span
+                      className="absolute -top-1 -right-1 z-10 flex items-center justify-center rounded-full bg-white dark:bg-gray-900 ring-1 ring-white dark:ring-gray-900 shadow-xs pointer-events-none"
+                      title="Negocio verificado"
+                    >
+                      <InsigniaVerificada className="size-3" />
+                    </span>
+                  )}
                 </div>
               </div>
 
             </div>
+
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2.5 text-center lg:text-left">
+              Visualización en tiempo real de tu credencial de usuario con foto a sangre.
+            </p>
           </div>
 
-          {/* Acciones de la tarjeta & Enlace público */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                Acciones de contacto rápido
-              </span>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Permite a tus clientes y colaboradores guardar tu número o escribirte con un solo toque.
+          {/* Panel de administración de la foto */}
+          <div className="lg:col-span-6 xl:col-span-7 space-y-4">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Actualizar fotografía
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Carga una imagen cuadrada desde tu equipo o vincúlala mediante una URL externa.
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2.5">
+            {/* Input de archivo oculto */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              onChange={handleFotoArchivo}
+              className="hidden"
+            />
+
+            {/* Botones de acción rápida */}
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={() => {
-                  downloadVCard(usuario, orgNombre);
-                  showToast("Tarjeta vCard (.vcf) descargada");
-                }}
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 shadow-2xs hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all cursor-pointer"
+                disabled={subiendoFoto}
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-2 rounded-xl bg-brand-500 hover:bg-brand-600 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
               >
-                <ArrowDownTrayIcon className="size-4 text-gray-500 dark:text-gray-400" />
-                <span>Guardar contacto (vCard)</span>
+                <ArrowUpTrayIcon className="size-4" />
+                <span>{subiendoFoto ? "Procesando..." : "Subir nueva foto"}</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setIsExchangeModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#EF4444] hover:bg-[#DC2626] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer"
-              >
-                <ChatBubbleLeftRightIcon className="size-4" />
-                <span>Intercambiar</span>
-              </button>
-            </div>
-
-            {/* Enlace público */}
-            <div className="pt-2">
-              <span className="block text-xs font-medium text-gray-400 dark:text-gray-500 mb-1.5">
-                Enlace público de tu perfil:
-              </span>
-              <div className="flex items-center gap-2">
-                <div
-                  onClick={copyProfileLink}
-                  title="Copiar enlace público"
-                  className="group flex-1 flex items-center justify-between rounded-xl bg-gray-50 dark:bg-gray-800/80 px-3.5 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all cursor-pointer"
-                >
-                  <span className="flex items-center gap-2 truncate">
-                    <LinkIcon className="size-3.5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 shrink-0" />
-                    <span>necto.app/p/<strong>{currentSlug}</strong></span>
-                  </span>
-                  {copiedLink ? (
-                    <ClipboardDocumentCheckIcon className="size-4 text-emerald-500 shrink-0 ml-2" />
-                  ) : (
-                    <ClipboardDocumentIcon className="size-4 text-gray-400 group-hover:text-gray-600 shrink-0 ml-2" />
-                  )}
-                </div>
-
+              {tieneFotoPersonalizada && (
                 <button
                   type="button"
-                  onClick={abrirLink}
-                  className="rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  disabled={subiendoFoto}
+                  onClick={handleEliminarFoto}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/50 hover:bg-red-100/60 dark:bg-red-950/20 dark:hover:bg-red-950/40 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  Cambiar
+                  <TrashIcon className="size-4" />
+                  <span>Quitar foto</span>
                 </button>
-              </div>
+              )}
             </div>
+
+            {/* Opción de enlazar vía URL web */}
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+              {!mostrarInputUrl ? (
+                <button
+                  type="button"
+                  onClick={() => setMostrarInputUrl(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 transition-colors cursor-pointer"
+                >
+                  <LinkIcon className="size-3.5" />
+                  <span>O vincular foto desde una URL web</span>
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      URL directa de la imagen
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMostrarInputUrl(false);
+                        setUrlFotoInput("");
+                      }}
+                      className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={urlFotoInput}
+                      onChange={(e) => setUrlFotoInput(e.target.value)}
+                      placeholder="https://ejemplo.com/mi-foto.jpg"
+                      className={CLASE_INPUT}
+                    />
+                    <button
+                      type="button"
+                      disabled={subiendoFoto || !urlFotoInput.trim()}
+                      onClick={handleGuardarUrlFoto}
+                      className="shrink-0 rounded-xl bg-brand-500 hover:bg-brand-600 px-4 py-2 text-xs sm:text-sm font-semibold text-white transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <p className="text-[11px] text-gray-400 dark:text-gray-500">
+              Formatos aceptados: PNG, JPG o WebP. Tamaño máximo recomendado: 5 MB.
+            </p>
           </div>
         </div>
       </section>
@@ -777,128 +845,6 @@ const ProfilePage = observer(function ProfilePage() {
         </div>
       )}
 
-      {/* ── MODAL: ACCIÓN DE INTERCAMBIO (EXCHANGE) ── */}
-      {isExchangeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 sm:p-7 shadow-2xl dark:bg-gray-900 dark:border dark:border-gray-800 text-center">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500 dark:bg-rose-950/40 dark:text-rose-400 mb-4">
-              <ChatBubbleLeftRightIcon className="size-7" />
-            </div>
-
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              Intercambiar contacto
-            </h3>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Conecta de inmediato con <strong>{fullName}</strong> vía WhatsApp o llamada directa.
-            </p>
-
-            <div className="mt-6 space-y-3">
-              {usuario?.telefono ? (
-                <>
-                  <a
-                    href={`https://wa.me/${usuario.telefono.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${fullName}, vi tu tarjeta de presentación digital en Necto y quiero conectar contigo.`)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-xs transition-colors"
-                  >
-                    <ChatBubbleLeftRightIcon className="size-4" />
-                    <span>Abrir chat de WhatsApp</span>
-                  </a>
-
-                  <a
-                    href={`tel:${usuario.telefono}`}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition-colors"
-                  >
-                    <PhoneIcon className="size-4" />
-                    <span>Llamar por teléfono</span>
-                  </a>
-                </>
-              ) : (
-                <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-700 dark:text-amber-300">
-                  Aún no has registrado un número de teléfono. Haz clic en <strong>Editar</strong> para configurarlo.
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={() => copyProfileLink()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition-colors"
-              >
-                <ClipboardDocumentIcon className="size-4" />
-                <span>Copiar enlace público</span>
-              </button>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
-              <button
-                type="button"
-                onClick={() => setIsExchangeModalOpen(false)}
-                className={CLASE_BOTON_SECUNDARIO}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL: EDITAR ENLACE DEL PERFIL ── */}
-      {isEditLinkOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 sm:p-7 shadow-2xl dark:bg-gray-900 dark:border dark:border-gray-800">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                Personalizar enlace público
-              </h3>
-              <button
-                onClick={() => setIsEditLinkOpen(false)}
-                aria-label="Cerrar"
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-              >
-                <XMarkIcon className="size-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveLink} className="space-y-4 pt-5">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Nombre de usuario / Slug
-                </label>
-                <div className="flex items-center rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2.5 text-sm">
-                  <span className="text-gray-400 font-medium">necto.app/p/</span>
-                  <input
-                    type="text"
-                    value={customLinkInput}
-                    onChange={(e) => setCustomLinkInput(e.target.value)}
-                    placeholder="tu-nombre"
-                    className="ml-1 w-full bg-transparent text-gray-900 dark:text-white font-semibold focus:outline-none"
-                    required
-                  />
-                </div>
-                <p className="mt-1.5 text-xs text-gray-400">
-                  Usa letras, números y guiones.
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-5 border-t border-gray-100 dark:border-gray-800">
-                <button
-                  type="button"
-                  onClick={() => setIsEditLinkOpen(false)}
-                  className={CLASE_BOTON_SECUNDARIO}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-xl bg-brand-500 hover:bg-brand-600 px-5 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
-                >
-                  Guardar enlace
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ── MODAL: CAMBIAR CONTRASEÑA ── */}
       {isChangePasswordOpen && (

@@ -139,10 +139,7 @@ export const TarjetaQrNegocio: React.FC<TarjetaQrNegocioProps> = observer(({
 
           {/* Pregunta Titular con ajuste de línea automático y límite antes del QR */}
           <foreignObject x="54" y="235" width="580" height="140">
-            <div
-              xmlns="http://www.w3.org/1999/xhtml"
-              className="font-['DM_Sans',sans-serif] text-[26px] font-semibold text-[#1A153A] dark:text-gray-100 leading-[1.25] tracking-tight max-w-[570px] pr-2"
-            >
+            <div className="font-['DM_Sans',sans-serif] text-[26px] font-semibold text-[#1A153A] dark:text-gray-100 leading-[1.25] tracking-tight max-w-[570px] pr-2">
               {subtitulo || "How much could agentic AI reduce your support cost and risk?"}
             </div>
           </foreignObject>
