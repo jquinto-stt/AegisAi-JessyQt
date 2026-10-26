@@ -428,6 +428,10 @@ export const SeguimientoPipelineView = observer(
 
     const handleRecargar = async () => {
       setRecargando(true);
+      // Restablecer filtros y búsqueda
+      setEtapasFiltro([]);
+      setBusqueda("");
+      setBuscadorAbierto(false);
       try {
         await conversacionesStore.cargarDesdeBase();
       } finally {
@@ -475,7 +479,7 @@ export const SeguimientoPipelineView = observer(
                 </button>
               </div>
 
-              {/* Buscador expandible con botón lupa */}
+              {/* Buscador expandible con botón lupa (neutro sin rojo) */}
               {buscadorAbierto ? (
                 <div className="relative h-10 w-48 sm:w-64 shrink-0">
                   <input
@@ -484,9 +488,9 @@ export const SeguimientoPipelineView = observer(
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                     placeholder="Buscar prospecto o teléfono…"
-                    className="h-full w-full rounded-xl border border-brand-500 bg-brand-50/40 py-2 pl-9 pr-8 text-xs text-gray-900 placeholder-gray-400 focus:outline-none dark:border-brand-500 dark:bg-brand-950/40 dark:text-white"
+                    className="h-full w-full rounded-xl border border-gray-300 bg-white py-2 pl-9 pr-8 text-xs text-gray-900 placeholder-gray-400 focus:border-gray-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:focus:border-gray-500 shadow-theme-xs"
                   />
-                  <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-500" />
+                  <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                   {busqueda && (
                     <button
                       type="button"
@@ -510,7 +514,7 @@ export const SeguimientoPipelineView = observer(
                 title={buscadorAbierto ? "Ocultar el buscador" : "Buscar prospectos"}
                 className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
                   buscadorAbierto
-                    ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300"
+                    ? "border-gray-400 bg-gray-100 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                     : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
                 }`}
               >
