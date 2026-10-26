@@ -10,41 +10,32 @@ interface InteractiveDotGridProps {
   activeDotColor?: string;
 }
 
-interface ChainNode {
-  x: number;
-  y: number;
+interface GridRunner {
+  isHorizontal: boolean;
   col: number;
   row: number;
-}
-
-interface DynamicDotChain {
-  nodes: ChainNode[];
-  state: "unfolding" | "rest" | "folding";
-  stateStartTime: number;
-  stepDuration: number;
-  restDuration: number;
+  length: number;
+  startTime: number;
+  duration: number;
 }
 
 /**
  * InteractiveDotGrid
- * Fondo estelar procedimental 100% dinámico:
- * - Cadenas orgánicas efímeras que se generan en posiciones, direcciones y formas aleatorias.
- * - Soporta trazos rectos (horizontales, verticales) y giros en ángulo recto (L-shapes).
- * - Secuencia de vida:
- *     1. Despliegue: Se proyecta la línea y van brotando los puntos sucesivamente (1 -> 2 -> 3).
- *     2. Respiro: Permanece visible un instante.
- *     3. Recogida: El punto 1 se desplaza sobre la línea y se mete en el punto 2, el 2 en el 3, etc.
- *     4. Regeneración: Al extinguirse, nace una nueva cadena en una coordenada totalmente distinta.
- * - Puntos y líneas siempre en blanco puro translúcido con sutil resplandor.
+ * Fondo cinemático inspirado en el patrón orgánico de puntos y runners láser:
+ * - Matriz ortogonal de puntos con onda armónica orgánica continua (Simplex/harmonic drift).
+ * - Los puntos nacen, respiran y se desvanecen en siluetas fluidas como en la referencia de video.
+ * - Runners lineales: trazos rectos efímeros (horizontales y verticales) que conectan puntos de la grilla.
+ * - Interacción por mouse: halo responsivo que intensifica la constelación local al pasar el cursor.
+ * - 60 FPS garantizados, renderizado eficiente en canvas nativo con aceleración por hardware.
  */
 export default function InteractiveDotGrid({
   dotGap = 26,
-  baseRadius = 1.9,
-  activeRadius = 4.2,
-  glowDistance = 170,
+  baseRadius = 1.6,
+  activeRadius = 3.4,
+  glowDistance = 160,
   className = "",
-  dotColor = "rgba(255, 255, 255, 0.22)",
-  activeDotColor = "rgba(255, 255, 255, 0.98)",
+  dotColor = "rgba(255, 255, 255, 0.05)",
+  activeDotColor = "rgba(255, 255, 255, 0.96)",
 }: InteractiveDotGridProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -63,92 +54,73 @@ export default function InteractiveDotGrid({
     let offsetX = 0;
     let offsetY = 0;
 
-    const chains: DynamicDotChain[] = [];
+    const runners: GridRunner[] = [];
 
-    // Mouse coordinates
+    // Coordenadas y suavizado del cursor
     const targetMouse = { x: -9999, y: -9999, active: false };
     const currentMouse = { x: -9999, y: -9999, intensity: 0 };
 
     /**
-     * Generador procedimental de cadenas sobre la grilla:
-     * Elige caminos rectos o giros en "L", asegurando que nunca se repita la misma trayectoria.
+     * Evalúa el campo de onda orgánica para una coordenada de la grilla en el tiempo t.
+     * Combina armónicos sinusoidales para generar una silueta fluida similar al video de referencia.
      */
-    const createRandomChain = (now: number, delayMs = 0): DynamicDotChain => {
-      const length = 3 + Math.floor(Math.random() * 3); // 3 a 5 puntos
-      const patternType = Math.random(); // 0-0.4: horizontal, 0.4-0.8: vertical, 0.8-1.0: codo en L
+    const evaluateField = (c: number, r: number, time: number): number => {
+      const scale = 0.11;
+      const t1 = time * 0.00032;
+      const t2 = time * 0.00022;
 
-      // Punto inicial aleatorio
-      let c = Math.floor(Math.random() * Math.max(1, cols - 1));
-      let r = Math.floor(Math.random() * Math.max(1, rows - 1));
+      // Centros viajeros con trayectoria elíptica suave
+      const cx1 = cols * (0.52 + 0.30 * Math.sin(t1 * 0.7));
+      const cy1 = rows * (0.48 + 0.32 * Math.cos(t2 * 0.6));
 
-      const nodes: ChainNode[] = [{
-        col: c,
-        row: r,
-        x: offsetX + c * dotGap,
-        y: offsetY + r * dotGap,
-      }];
+      const cx2 = cols * (0.46 + 0.32 * Math.cos(t1 * 0.5 + 1.8));
+      const cy2 = rows * (0.54 + 0.28 * Math.sin(t2 * 0.8 + 2.2));
 
-      if (patternType < 0.42) {
-        // Horizontal pura (hacia la derecha o hacia la izquierda)
-        const dir = Math.random() > 0.5 ? 1 : -1;
-        for (let i = 1; i < length; i++) {
-          c = Math.max(0, Math.min(cols - 1, c + dir));
-          nodes.push({
-            col: c,
-            row: r,
-            x: offsetX + c * dotGap,
-            y: offsetY + r * dotGap,
-          });
+      // Distancia normalizada a los focos de densidad
+      const d1 = Math.hypot(c - cx1, (r - cy1) * 1.1) / (cols * 0.40);
+      const d2 = Math.hypot(c - cx2, (r - cy2) * 1.1) / (cols * 0.44);
+
+      // Modulación armónica para deformar los bordes en curvas vivas
+      const undulation =
+        Math.sin(c * scale + t1 * 1.4) * 0.38 +
+        Math.cos(r * scale - t2 * 1.1) * 0.38 +
+        Math.sin((c + r) * (scale * 0.65) + t1 * 0.9) * 0.32;
+
+      const blob1 = Math.max(0, 1 - d1) + undulation * 0.35;
+      const blob2 = Math.max(0, 1 - d2) - undulation * 0.30;
+
+      return Math.max(0, Math.min(1, Math.max(blob1, blob2)));
+    };
+
+    /**
+     * Genera un runner recto en una posición con alta densidad de puntos
+     */
+    const createRunner = (now: number, delayMs = 0): GridRunner => {
+      const isHorizontal = Math.random() > 0.48;
+      const length = 2 + Math.floor(Math.random() * 3); // 2 a 4 pasos de grilla
+
+      // Buscar un punto donde la onda esté viva
+      let col = Math.floor(Math.random() * Math.max(1, cols - (isHorizontal ? length : 1)));
+      let row = Math.floor(Math.random() * Math.max(1, rows - (!isHorizontal ? length : 1)));
+
+      // Intentar hasta 6 veces encontrar un punto dentro de la onda activa
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const testCol = Math.floor(Math.random() * Math.max(1, cols - (isHorizontal ? length : 1)));
+        const testRow = Math.floor(Math.random() * Math.max(1, rows - (!isHorizontal ? length : 1)));
+        if (evaluateField(testCol, testRow, now) > 0.25) {
+          col = testCol;
+          row = testRow;
+          break;
         }
-      } else if (patternType < 0.84) {
-        // Vertical pura (hacia abajo o hacia arriba)
-        const dir = Math.random() > 0.5 ? 1 : -1;
-        for (let i = 1; i < length; i++) {
-          r = Math.max(0, Math.min(rows - 1, r + dir));
-          nodes.push({
-            col: c,
-            row: r,
-            x: offsetX + c * dotGap,
-            y: offsetY + r * dotGap,
-          });
-        }
-      } else {
-        // Giro en L o codo sobre la grilla
-        const firstSegment = 1 + Math.floor(Math.random() * 2);
-        const dirH = Math.random() > 0.5 ? 1 : -1;
-        const dirV = Math.random() > 0.5 ? 1 : -1;
-
-        for (let i = 1; i <= firstSegment && nodes.length < length; i++) {
-          c = Math.max(0, Math.min(cols - 1, c + dirH));
-          nodes.push({
-            col: c,
-            row: r,
-            x: offsetX + c * dotGap,
-            y: offsetY + r * dotGap,
-          });
-        }
-        while (nodes.length < length) {
-          r = Math.max(0, Math.min(rows - 1, r + dirV));
-          nodes.push({
-            col: c,
-            row: r,
-            x: offsetX + c * dotGap,
-            y: offsetY + r * dotGap,
-          });
-        }
-      }
-
-      // 50% de probabilidad de invertir el sentido de despliegue
-      if (Math.random() > 0.5) {
-        nodes.reverse();
       }
 
       return {
-        nodes,
-        state: "unfolding",
-        stateStartTime: now + delayMs,
-        stepDuration: 280 + Math.random() * 140, // 280ms a 420ms por nodo (ritmo fluido y perceptible)
-        restDuration: 700 + Math.random() * 900,  // 0.7s a 1.6s en reposo visible
+        isHorizontal,
+        col,
+        row,
+        length,
+        startTime: now + delayMs,
+        duration: 800 + Math.random() * 850, // 800ms a 1650ms de vida
       };
     };
 
@@ -174,14 +146,13 @@ export default function InteractiveDotGrid({
       offsetX = (width - (cols - 1) * dotGap) / 2;
       offsetY = (height - (rows - 1) * dotGap) / 2;
 
-      // Inicializar el pool dinámico con desfase temporal
-      chains.length = 0;
-      const targetChains = Math.min(16, Math.max(7, Math.floor((cols * rows) / 50)));
+      // Inicializar el pool de runners con cadencia escalonada
+      runners.length = 0;
+      const targetRunners = Math.min(7, Math.max(3, Math.floor((cols * rows) / 90)));
       const now = performance.now();
 
-      for (let i = 0; i < targetChains; i++) {
-        // Distribuimos el inicio de las cadenas en el tiempo para que no empiecen a la vez
-        chains.push(createRandomChain(now, i * 280 + Math.random() * 400));
+      for (let i = 0; i < targetRunners; i++) {
+        runners.push(createRunner(now, i * 220 + Math.random() * 400));
       }
     };
 
@@ -190,34 +161,52 @@ export default function InteractiveDotGrid({
 
       ctx.clearRect(0, 0, width, height);
 
-      // ── 1. DIBUJAR MATRIZ DE PUNTOS TENUES DE FONDO ──
+      // ── 1. DIBUJAR PUNTOS DE LA MALLA CON CAMPO ORGÁNICO ──
       for (let i = 0; i < cols; i++) {
         for (let j = 0; j < rows; j++) {
           const x = offsetX + i * dotGap;
           const y = offsetY + j * dotGap;
 
+          // Intensidad base de la onda orgánica
+          const fieldIntensity = evaluateField(i, j, now);
+
+          // Influencia del cursor del mouse
           const dx = x - currentMouse.x;
           const dy = y - currentMouse.y;
           const dist = Math.hypot(dx, dy);
 
-          let radius = baseRadius;
-          let alpha = 0.18;
-          let isHover = false;
-
+          let mouseFactor = 0;
           if (dist < glowDistance && currentMouse.intensity > 0.01) {
             const norm = 1 - dist / glowDistance;
-            const factor = Math.pow(norm, 2.2) * currentMouse.intensity;
-            radius = baseRadius + (activeRadius - baseRadius) * factor;
-            alpha = 0.18 + (0.95 - 0.18) * factor;
-            if (factor > 0.3) isHover = true;
+            mouseFactor = Math.pow(norm, 2.0) * currentMouse.intensity;
           }
+
+          // Combinar campo armónico con proximidad al cursor
+          const combined = Math.min(1, fieldIntensity + mouseFactor * 0.95);
+
+          // Umbral de visibilidad: fuera de la onda, los puntos son ultra sutiles
+          if (combined < 0.12) {
+            ctx.beginPath();
+            ctx.arc(x, y, baseRadius * 0.75, 0, Math.PI * 2);
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = "transparent";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.045)";
+            ctx.fill();
+            continue;
+          }
+
+          // Curva suave de opacidad (smoothstep)
+          const normVal = (combined - 0.12) / 0.88;
+          const alpha = 0.12 + Math.pow(normVal, 1.3) * 0.82;
+          const radius = baseRadius + (activeRadius - baseRadius) * Math.pow(normVal, 1.5);
+          const isHighLight = combined > 0.65 || mouseFactor > 0.25;
 
           ctx.beginPath();
           ctx.arc(x, y, radius, 0, Math.PI * 2);
 
-          if (isHover) {
-            ctx.shadowBlur = activeRadius * 1.5;
-            ctx.shadowColor = "rgba(255, 255, 255, 0.75)";
+          if (isHighLight) {
+            ctx.shadowBlur = radius * 2.2;
+            ctx.shadowColor = "rgba(255, 255, 255, 0.80)";
             ctx.fillStyle = activeDotColor;
           } else {
             ctx.shadowBlur = 0;
@@ -229,140 +218,64 @@ export default function InteractiveDotGrid({
         }
       }
 
-      // ── 2. ACTUALIZAR Y DIBUJAR CADENAS DINÁMICAS (EL 1 SE METE EN EL 2, REPLIEGUE Y RENACIMIENTO) ──
-      for (let c = 0; c < chains.length; c++) {
-        const chain = chains[c];
-        if (now < chain.stateStartTime) continue;
+      // ── 2. DIBUJAR TRAZOS RECTOS EFÍMEROS (GRID RUNNERS DEL VIDEO) ──
+      for (let r = 0; r < runners.length; r++) {
+        const runner = runners[r];
+        if (now < runner.startTime) continue;
 
-        const elapsed = now - chain.stateStartTime;
-        const totalSteps = chain.nodes.length - 1;
-        const totalStepTime = totalSteps * chain.stepDuration;
-
-        // ── TRANSICIONES DE ESTADO ──
-        if (chain.state === "unfolding") {
-          if (elapsed >= totalStepTime) {
-            chain.state = "rest";
-            chain.stateStartTime = now;
-          }
-        } else if (chain.state === "rest") {
-          if (elapsed >= chain.restDuration) {
-            chain.state = "folding";
-            chain.stateStartTime = now;
-          }
-        } else if (chain.state === "folding") {
-          if (elapsed >= totalStepTime) {
-            // ¡La cadena murió! Se engendra de inmediato una NUEVA cadena en otra posición y forma
-            chains[c] = createRandomChain(now, 200 + Math.random() * 600);
-            continue;
-          }
+        const elapsed = now - runner.startTime;
+        if (elapsed >= runner.duration) {
+          // El runner terminó: generamos uno nuevo con un pequeño delay
+          runners[r] = createRunner(now, 150 + Math.random() * 500);
+          continue;
         }
 
-        // ── RENDERIZADO DEL ESTADO ACTUAL ──
-        if (chain.state === "unfolding") {
-          // DESPLIEGUE: Se proyecta la línea y van naciendo los puntos (1 -> 2 -> 3)
-          const stepIndex = Math.min(totalSteps - 1, Math.floor(elapsed / chain.stepDuration));
-          const stepElapsed = elapsed - stepIndex * chain.stepDuration;
-          const stepT = Math.min(1, stepElapsed / chain.stepDuration);
+        // Progreso normalizado de vida (0 -> 1)
+        const p = elapsed / runner.duration;
 
-          const fromNode = chain.nodes[stepIndex];
-          const toNode = chain.nodes[stepIndex + 1];
-
-          // Posición del cabezal de luz viajero
-          const headX = fromNode.x + (toNode.x - fromNode.x) * stepT;
-          const headY = fromNode.y + (toNode.y - fromNode.y) * stepT;
-
-          // 1. Dibujar puntos ya nacidos
-          for (let n = 0; n <= stepIndex; n++) {
-            const node = chain.nodes[n];
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, baseRadius * 1.35, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = "rgba(255, 255, 255, 0.6)";
-            ctx.fill();
-          }
-
-          // 2. Línea proyectándose hacia el siguiente punto
-          ctx.save();
-          ctx.beginPath();
-          ctx.moveTo(fromNode.x, fromNode.y);
-          ctx.lineTo(headX, headY);
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-          ctx.lineWidth = 2.0;
-          ctx.lineCap = "round";
-          ctx.shadowBlur = 5;
-          ctx.shadowColor = "rgba(255, 255, 255, 0.7)";
-          ctx.stroke();
-          ctx.restore();
-
-          // 3. Cabezal de luz
-          ctx.beginPath();
-          ctx.arc(headX, headY, baseRadius * 1.45, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
-          ctx.shadowBlur = 6;
-          ctx.shadowColor = "rgba(255, 255, 255, 0.85)";
-          ctx.fill();
-        } else if (chain.state === "rest") {
-          // REPOSO: Todos los puntos de la cadena brillan conectados suavemente
-          for (let n = 0; n < chain.nodes.length; n++) {
-            const node = chain.nodes[n];
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, baseRadius * 1.35, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = "rgba(255, 255, 255, 0.6)";
-            ctx.fill();
-          }
-        } else if (chain.state === "folding") {
-          // RECOGIDA: El punto k se desplaza por la línea y se mete dentro de k+1
-          const stepIndex = Math.min(totalSteps - 1, Math.floor(elapsed / chain.stepDuration));
-          const stepElapsed = elapsed - stepIndex * chain.stepDuration;
-          const stepT = Math.min(1, stepElapsed / chain.stepDuration);
-
-          const fromNode = chain.nodes[stepIndex];
-          const toNode = chain.nodes[stepIndex + 1];
-
-          // Posición del punto mientras se mete en el siguiente
-          const curX = fromNode.x + (toNode.x - fromNode.x) * stepT;
-          const curY = fromNode.y + (toNode.y - fromNode.y) * stepT;
-
-          // 1. Línea que se recoge hacia el punto destino
-          ctx.save();
-          ctx.beginPath();
-          ctx.moveTo(curX, curY);
-          ctx.lineTo(toNode.x, toNode.y);
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-          ctx.lineWidth = 2.0;
-          ctx.lineCap = "round";
-          ctx.shadowBlur = 5;
-          ctx.shadowColor = "rgba(255, 255, 255, 0.7)";
-          ctx.stroke();
-          ctx.restore();
-
-          // 2. Punto viajero que se mete en el siguiente
-          ctx.beginPath();
-          ctx.arc(curX, curY, baseRadius * 1.45, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
-          ctx.shadowBlur = 6;
-          ctx.shadowColor = "rgba(255, 255, 255, 0.85)";
-          ctx.fill();
-
-          // 3. Puntos restantes esperando a ser recogidos
-          for (let n = stepIndex + 1; n < chain.nodes.length; n++) {
-            const node = chain.nodes[n];
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, baseRadius * 1.35, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
-            ctx.shadowBlur = 3;
-            ctx.shadowColor = "rgba(255, 255, 255, 0.5)";
-            ctx.fill();
-          }
+        // Envolvente de opacidad: entrada rápida, reposo visible, desvanecimiento suave
+        let runnerAlpha = 0;
+        if (p < 0.22) {
+          runnerAlpha = p / 0.22;
+        } else if (p < 0.68) {
+          runnerAlpha = 1.0;
+        } else {
+          runnerAlpha = (1.0 - p) / 0.32;
         }
+
+        const startX = offsetX + runner.col * dotGap;
+        const startY = offsetY + runner.row * dotGap;
+        const endX = offsetX + (runner.isHorizontal ? runner.col + runner.length : runner.col) * dotGap;
+        const endY = offsetY + (runner.isHorizontal ? runner.row : runner.row + runner.length) * dotGap;
+
+        // Línea conectora sobre los rieles de la grilla
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${(runnerAlpha * 0.90).toFixed(3)})`;
+        ctx.lineWidth = 1.8;
+        ctx.lineCap = "round";
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = "rgba(255, 255, 255, 0.75)";
+        ctx.stroke();
+
+        // Nodos iluminados en los extremos del runner
+        ctx.beginPath();
+        ctx.arc(startX, startY, baseRadius * 1.45, 0, Math.PI * 2);
+        ctx.arc(endX, endY, baseRadius * 1.45, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${(runnerAlpha * 0.98).toFixed(3)})`;
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = "rgba(255, 255, 255, 0.85)";
+        ctx.fill();
+
+        ctx.restore();
       }
     };
 
     const loop = (time: number) => {
-      const lerpFactor = 0.16;
+      // Suavizado cinemático del mouse (lerp)
+      const lerpFactor = 0.15;
       currentMouse.x += (targetMouse.x - currentMouse.x) * lerpFactor;
       currentMouse.y += (targetMouse.y - currentMouse.y) * lerpFactor;
 
