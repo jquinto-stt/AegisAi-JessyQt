@@ -25,6 +25,162 @@ export const FloatingSupportWidget: React.FC = observer(() => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
 
+  // ── Posición flotante arrastrable del botón lanzador ──
+  const [posicion, setPosicion] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [haEntrado, setHaEntrado] = useState(false);
+  const botonRef = useRef<HTMLButtonElement>(null);
+  const dragInfoRef = useRef<{
+    isPointerDown: boolean;
+    startX: number;
+    startY: number;
+    initialX: number;
+    initialY: number;
+    hasDragged: boolean;
+    pointerId: number | null;
+  }>({
+    isPointerDown: false,
+    startX: 0,
+    startY: 0,
+    initialX: 0,
+    initialY: 0,
+    hasDragged: false,
+    pointerId: null,
+  });
+  const justDraggedRef = useRef(false);
+
+  // Mantener el botón dentro de los límites visibles si la ventana cambia de tamaño
+  useEffect(() => {
+    const handleResize = () => {
+      setPosicion((prev) => {
+        if (!prev) return null;
+        const btnW = 60;
+        const btnH = 60;
+        const margin = 12;
+        const maxX = window.innerWidth - btnW - margin;
+        const maxY = window.innerHeight - btnH - margin;
+        return {
+          x: Math.max(margin, Math.min(prev.x, maxX)),
+          y: Math.max(margin, Math.min(prev.y, maxY)),
+        };
+      });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Desactivar permanentemente la animación de entrada tras el primer render
+  useEffect(() => {
+    const timer = window.setTimeout(() => setHaEntrado(true), 1100);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    setHaEntrado(true);
+    if (e.button !== 0) return;
+    const btn = botonRef.current;
+    if (!btn) return;
+
+    const rect = btn.getBoundingClientRect();
+    dragInfoRef.current = {
+      isPointerDown: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: rect.left,
+      initialY: rect.top,
+      hasDragged: false,
+      pointerId: e.pointerId,
+    };
+
+    btn.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = dragInfoRef.current;
+    if (!drag.isPointerDown || drag.pointerId !== e.pointerId) return;
+
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+
+    if (!drag.hasDragged && Math.hypot(dx, dy) > 4) {
+      drag.hasDragged = true;
+      setIsDragging(true);
+    }
+
+    if (drag.hasDragged) {
+      const btnW = 60;
+      const btnH = 60;
+      const margin = 12;
+      const maxX = window.innerWidth - btnW - margin;
+      const maxY = window.innerHeight - btnH - margin;
+
+      const newX = Math.max(margin, Math.min(drag.initialX + dx, maxX));
+      const newY = Math.max(margin, Math.min(drag.initialY + dy, maxY));
+
+      setPosicion({ x: newX, y: newY });
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = dragInfoRef.current;
+    if (drag.pointerId !== e.pointerId) return;
+
+    const btn = botonRef.current;
+    if (btn && btn.hasPointerCapture(e.pointerId)) {
+      btn.releasePointerCapture(e.pointerId);
+    }
+
+    if (drag.hasDragged) {
+      justDraggedRef.current = true;
+      setIsDragging(false);
+      window.setTimeout(() => {
+        justDraggedRef.current = false;
+      }, 100);
+    }
+
+    drag.isPointerDown = false;
+    drag.hasDragged = false;
+    drag.pointerId = null;
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent<HTMLButtonElement>) => {
+    handlePointerUp(e);
+  };
+
+  // Posicionamiento dinámico de la ventana emergente para acompañar al botón
+  const getPanelStyle = (): React.CSSProperties => {
+    if (!posicion) return {};
+
+    const isBottomHalf = posicion.y >= window.innerHeight / 2;
+    const isRightHalf = posicion.x >= window.innerWidth / 2;
+    const panelWidth = Math.min(360, window.innerWidth - 32);
+
+    const style: React.CSSProperties = {};
+
+    // Eje vertical: si el botón está abajo, el chat abre hacia arriba; si está arriba, abre hacia abajo
+    if (isBottomHalf) {
+      style.bottom = `${window.innerHeight - posicion.y + 12}px`;
+      style.top = "auto";
+    } else {
+      style.top = `${posicion.y + 60 + 12}px`;
+      style.bottom = "auto";
+    }
+
+    // Eje horizontal: alinear panel junto al botón respetando márgenes de pantalla
+    if (isRightHalf) {
+      const rightDistance = window.innerWidth - (posicion.x + 60);
+      const clampedRight = Math.max(16, Math.min(rightDistance, window.innerWidth - panelWidth - 16));
+      style.right = `${clampedRight}px`;
+      style.left = "auto";
+    } else {
+      const clampedLeft = Math.max(16, Math.min(posicion.x, window.innerWidth - panelWidth - 16));
+      style.left = `${clampedLeft}px`;
+      style.right = "auto";
+    }
+
+    return style;
+  };
+
   // El panel sigue montado mientras corre su salida; `isOpen` dice hacia dónde
   // va y `montado` si todavía está en pantalla.
   const [montado, setMontado] = useState(false);
@@ -128,9 +284,12 @@ export const FloatingSupportWidget: React.FC = observer(() => {
           aria-label="Plataforma de soporte y asistencia NECTO"
           data-estado={isOpen ? "abierto" : "cerrado"}
           {...(!isOpen ? { inert: "" } : {})}
-          className={`soporte-panel fixed bottom-[112px] right-4 sm:right-8 z-50 flex w-[calc(100vw-2rem)] sm:w-[360px] ${
+          style={getPanelStyle()}
+          className={`soporte-panel fixed z-50 flex w-[calc(100vw-2rem)] sm:w-[360px] ${
             activeTab === "chat" ? "h-[580px]" : "h-auto"
-          } max-h-[88vh] flex-col overflow-hidden rounded-[32px] bg-white shadow-2xl border border-gray-100 dark:bg-[#181818] dark:border-white/10 font-['DM_Sans',sans-serif]`}
+          } max-h-[88vh] flex-col overflow-hidden rounded-[32px] bg-white shadow-2xl border border-gray-100 dark:bg-[#181818] dark:border-white/10 font-['DM_Sans',sans-serif] ${
+            !posicion ? "bottom-[112px] right-4 sm:right-8" : ""
+          }`}
         >
           {/* ══════════════════════════════════════════════════════════
               VISTA PRINCIPAL: HOME (Espaciado y proporciones idénticas)
@@ -678,17 +837,67 @@ export const FloatingSupportWidget: React.FC = observer(() => {
         </div>
       )}
 
-      {/* ── BOTÓN FLOTANTE DISPARADOR (Launcher con silueta orgánica de gota/burbuja de chat en naranja Necto) ── */}
+      {/* ── BOTÓN FLOTANTE DISPARADOR Y ARRASTRABLE (Launcher NECTO con indicador 2x3 para mover) ── */}
       <button
+        ref={botonRef}
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="soporte-lanzador fixed bottom-10 right-8 z-50 flex h-[60px] w-[60px] items-center justify-center [border-radius:50%_14px_50%_50%] bg-[#FF3F1A] hover:bg-[#E63815] text-white shadow-[0_10px_25px_-3px_rgba(255,63,26,0.35)] hover:shadow-[0_14px_28px_-3px_rgba(255,63,26,0.45)] cursor-pointer border-0 font-['DM_Sans',sans-serif] transition-all duration-200 active:scale-95"
-        title="Soporte y Asistencia NECTO"
+        onAnimationEnd={(e) => {
+          if (e.target === botonRef.current) {
+            setHaEntrado(true);
+          }
+        }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onClick={() => {
+          if (justDraggedRef.current) return;
+          setIsOpen((prev) => !prev);
+        }}
+        style={{
+          ...(posicion
+            ? {
+                left: `${posicion.x}px`,
+                top: `${posicion.y}px`,
+                right: "auto",
+                bottom: "auto",
+              }
+            : {}),
+          touchAction: "none",
+        }}
+        className={`soporte-lanzador fixed z-50 flex h-[60px] w-[60px] items-center justify-center [border-radius:50%_14px_50%_50%] bg-[#FF3F1A] hover:bg-[#E63815] text-white shadow-[0_10px_25px_-3px_rgba(255,63,26,0.35)] hover:shadow-[0_14px_28px_-3px_rgba(255,63,26,0.45)] border-0 font-['DM_Sans',sans-serif] group select-none ${
+          !posicion ? "bottom-10 right-8" : ""
+        } ${isDragging ? "is-dragging" : ""} ${haEntrado ? "ha-entrado" : ""} ${posicion ? "ha-sido-movido" : ""}`}
+        title="Arrastra para mover o haz clic para abrir soporte NECTO"
         aria-label={isOpen ? "Cerrar soporte y asistencia NECTO" : "Abrir soporte y asistencia NECTO"}
         aria-expanded={isOpen}
       >
+        {/* Indicador táctil de agarre: 2 columnas x 3 filas de puntos (6 puntos en total) */}
+        <span
+          className="soporte-lanzador__grip pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center opacity-70 transition-opacity group-hover:opacity-100"
+          aria-hidden="true"
+        >
+          <svg
+            width="10"
+            height="16"
+            viewBox="0 0 10 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="text-white drop-shadow-sm"
+          >
+            {/* Columna 1 */}
+            <circle cx="2.5" cy="2.5" r="1.3" fill="currentColor" />
+            <circle cx="2.5" cy="8" r="1.3" fill="currentColor" />
+            <circle cx="2.5" cy="13.5" r="1.3" fill="currentColor" />
+            {/* Columna 2 */}
+            <circle cx="7.5" cy="2.5" r="1.3" fill="currentColor" />
+            <circle cx="7.5" cy="8" r="1.3" fill="currentColor" />
+            <circle cx="7.5" cy="13.5" r="1.3" fill="currentColor" />
+          </svg>
+        </span>
+
         {/* Ícono de burbuja de chat con dos líneas de texto (idéntico al diseño de referencia) */}
-        <span className={`soporte-lanzador__icono soporte-lanzador__icono--logo ${isOpen ? "is-oculto" : ""}`}>
+        <span className={`soporte-lanzador__icono soporte-lanzador__icono--logo pl-1.5 ${isOpen ? "is-oculto" : ""}`}>
           <svg
             width="28"
             height="28"
@@ -705,7 +914,7 @@ export const FloatingSupportWidget: React.FC = observer(() => {
             />
           </svg>
         </span>
-        <span className={`soporte-lanzador__icono soporte-lanzador__icono--cerrar ${isOpen ? "" : "is-oculto"}`}>
+        <span className={`soporte-lanzador__icono soporte-lanzador__icono--cerrar pl-1.5 ${isOpen ? "" : "is-oculto"}`}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />

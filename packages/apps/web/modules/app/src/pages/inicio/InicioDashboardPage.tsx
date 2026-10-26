@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { PageMeta } from "@/shell/meta";
 import { organizacionStore } from "@/stores/organizacion.store";
-import { uiStore } from "@/stores";
+import { uiStore, pedidosStore } from "@/stores";
 import { LineChart } from "@/elements/ui/line-chart";
 import type { ApexOptions } from "apexcharts";
 import { tareasDeInicio } from "./tareas-inicio";
@@ -642,6 +642,9 @@ export const InicioDashboardPage = observer(() => {
   }, [logoNegocio]);
 
   const tareasPendientes = tareasDeInicio().filter((t) => !t.completada);
+  const pedidosAtencion = pedidosStore.enCurso().length;
+  const hayNotificacionesGestion =
+    pedidosAtencion > 0 || tareasPendientes.length > 0;
   const intro = usePrimeraVisitaDeSesion();
 
   return (
@@ -673,15 +676,17 @@ export const InicioDashboardPage = observer(() => {
           </div>
 
           {bannerVisible ? (
-            <button
-              type="button"
-              onClick={() => setBannerVisible(false)}
-              className="absolute top-4 right-4 z-20 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white text-[#212121] shadow-md transition-[color,transform] duration-150 ease-out hover:text-[#FF3F1A] active:scale-95 dark:border-white/10 dark:bg-gray-900 dark:text-white"
-              title="Contraer banner"
-              aria-label="Contraer banner"
-            >
-              <ChevronUp className="h-4 w-4 stroke-[2.5]" />
-            </button>
+            <div className="banner-pestana flex w-full justify-center -mt-3.5 relative z-20">
+              <button
+                type="button"
+                onClick={() => setBannerVisible(false)}
+                className="group inline-flex cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white p-1.5 text-gray-500 shadow-md transition-[color,transform] duration-150 ease-out hover:text-[#FF3F1A] active:scale-95 dark:border-white/10 dark:bg-gray-900 dark:text-gray-400"
+                title="Esconder banner"
+                aria-label="Esconder banner"
+              >
+                <ChevronUp className="h-4 w-4 stroke-[2.5] group-hover:text-[#FF3F1A]" />
+              </button>
+            </div>
           ) : (
             <div className="banner-pestana flex w-full justify-center">
               <button
@@ -854,78 +859,88 @@ export const InicioDashboardPage = observer(() => {
           {/* COLUMNA DERECHA (5 Columnas): Notificaciones de Gestión ARRIBA + Cifras horizontales */}
           <div className="lg:col-span-5 space-y-5">
             {/* 1. Notificaciones de Gestión (SUPERIOR DERECHA, TAPA EL BANNER) */}
-            <div style={turno(1)} className="dash-pieza p-4 sm:p-5 rounded-3xl bg-white/80 dark:bg-gray-900/75 backdrop-blur-xl backdrop-saturate-150 border border-white/70 dark:border-white/10 shadow-[0_20px_50px_-20px_rgba(25,0,136,0.45)] space-y-3">
-              <div>
-                <h4 className="text-[15px] font-bold text-[#190088] dark:text-white">
-                  Notificaciones de Gestión
-                </h4>
-                <p className="text-[11px] text-[#212121]/60 dark:text-[#ECECEC]/60">
-                  Éste listado de notificaciones requiere de tu atención.
-                </p>
-              </div>
+            {hayNotificacionesGestion && (
+              <div style={turno(1)} className="dash-pieza p-4 sm:p-5 rounded-3xl bg-white/80 dark:bg-gray-900/75 backdrop-blur-xl backdrop-saturate-150 border border-white/70 dark:border-white/10 shadow-[0_20px_50px_-20px_rgba(25,0,136,0.45)] space-y-3">
+                <div>
+                  <h4 className="text-[15px] font-bold text-[#190088] dark:text-white">
+                    Notificaciones de Gestión
+                  </h4>
+                  <p className="text-[11px] text-[#212121]/60 dark:text-[#ECECEC]/60">
+                    Éste listado de notificaciones requiere de tu atención.
+                  </p>
+                </div>
 
-              {/* Acordeón compacto */}
-              <div className="border border-[#ECECEC] dark:border-white/10 rounded-xl overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setAcordeonNotifAbierto(!acordeonNotifAbierto)}
-                  className="w-full p-3 flex items-center justify-between text-left bg-gray-50/70 dark:bg-white/5 hover:bg-gray-100/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <Package className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="text-[12px] font-normal text-[#212121] dark:text-white">
-                      Tienes <strong className="font-bold">20 pedidos</strong> que requieren atención
-                    </span>
-                  </div>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
-                      acordeonNotifAbierto ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-
-                {acordeonNotifAbierto && (
-                  <div className="p-3 bg-white dark:bg-gray-900 border-t border-[#ECECEC] dark:border-gray-800 text-[11px] text-[#212121]/70 dark:text-[#ECECEC]/70 space-y-2">
-                    <p>Hay pedidos pendientes de despacho y cobro por validar en el sistema.</p>
-                    <Link
-                      to="/pedidos"
-                      className="inline-flex items-center gap-1 text-[#FF3F1A] font-bold hover:underline"
+                {/* Acordeón compacto */}
+                {pedidosAtencion > 0 && (
+                  <div className="border border-[#ECECEC] dark:border-white/10 rounded-xl overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setAcordeonNotifAbierto(!acordeonNotifAbierto)}
+                      className="w-full p-3 flex items-center justify-between text-left bg-gray-50/70 dark:bg-white/5 hover:bg-gray-100/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
                     >
-                      <span>Gestionar pedidos ahora</span>
+                      <div className="flex items-center gap-2">
+                        <Package className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="text-[12px] font-normal text-[#212121] dark:text-white">
+                          Tienes{" "}
+                          <strong className="font-bold">
+                            {pedidosAtencion}{" "}
+                            {pedidosAtencion === 1 ? "pedido" : "pedidos"}
+                          </strong>{" "}
+                          que {pedidosAtencion === 1 ? "requiere" : "requieren"}{" "}
+                          atención
+                        </span>
+                      </div>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
+                          acordeonNotifAbierto ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {acordeonNotifAbierto && (
+                      <div className="p-3 bg-white dark:bg-gray-900 border-t border-[#ECECEC] dark:border-gray-800 text-[11px] text-[#212121]/70 dark:text-[#ECECEC]/70 space-y-2">
+                        <p>Hay pedidos pendientes de despacho y cobro por validar en el sistema.</p>
+                        <Link
+                          to="/pedidos"
+                          className="inline-flex items-center gap-1 text-[#FF3F1A] font-bold hover:underline"
+                        >
+                          <span>Gestionar pedidos ahora</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tareas de puesta en marcha pendientes: misma fuente que el checklist de
+                    Inicio, así que cada aviso se quita solo al completarse la tarea. */}
+                {tareasPendientes.map((tarea) => (
+                  <div
+                    key={tarea.id}
+                    className="p-3 rounded-2xl bg-[#97D6DF]/15 dark:bg-[#97D6DF]/10 border border-[#97D6DF]/40 flex items-center justify-between gap-3"
+                  >
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
+                        <p className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] truncate">
+                          {tarea.aviso.titulo}
+                        </p>
+                      </div>
+                      <p className="text-[11px] text-[#212121]/70 dark:text-[#ECECEC]/70 leading-snug">
+                        {tarea.aviso.texto}
+                      </p>
+                    </div>
+                    <Link
+                      to={tarea.ruta}
+                      className="shrink-0 px-3 py-1.5 rounded-xl bg-[#190088] hover:bg-[#190088]/90 text-white text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                    >
+                      <span>{tarea.aviso.accion}</span>
                       <ChevronRight className="w-3 h-3" />
                     </Link>
                   </div>
-                )}
+                ))}
               </div>
-
-              {/* Tareas de puesta en marcha pendientes: misma fuente que el checklist de
-                  Inicio, así que cada aviso se quita solo al completarse la tarea. */}
-              {tareasPendientes.map((tarea) => (
-                <div
-                  key={tarea.id}
-                  className="p-3 rounded-2xl bg-[#97D6DF]/15 dark:bg-[#97D6DF]/10 border border-[#97D6DF]/40 flex items-center justify-between gap-3"
-                >
-                  <div className="space-y-0.5 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
-                      <p className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] truncate">
-                        {tarea.aviso.titulo}
-                      </p>
-                    </div>
-                    <p className="text-[11px] text-[#212121]/70 dark:text-[#ECECEC]/70 leading-snug">
-                      {tarea.aviso.texto}
-                    </p>
-                  </div>
-                  <Link
-                    to={tarea.ruta}
-                    className="shrink-0 px-3 py-1.5 rounded-xl bg-[#190088] hover:bg-[#190088]/90 text-white text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                  >
-                    <span>{tarea.aviso.accion}</span>
-                    <ChevronRight className="w-3 h-3" />
-                  </Link>
-                </div>
-              ))}
-            </div>
+            )}
 
             {/* 2. CIFRAS: Ventas y Utilidades en UNA SOLA LÍNEA HORIZONTAL (Line Chart 3 - Elements) */}
             <div style={turno(2)} className="dash-pieza p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs">

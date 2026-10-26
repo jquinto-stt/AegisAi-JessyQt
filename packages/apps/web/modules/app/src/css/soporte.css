@@ -48,15 +48,39 @@
 }
 
 .soporte-lanzador {
-  animation: soporte-lanzador-llega 400ms cubic-bezier(0.22, 1, 0.36, 1) 600ms backwards;
   transition:
     transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
     background-color 160ms ease,
     box-shadow 160ms ease;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.soporte-lanzador:not(.ha-entrado):not(.ha-sido-movido) {
+  animation: soporte-lanzador-llega 400ms cubic-bezier(0.22, 1, 0.36, 1) 600ms backwards;
 }
 
 .soporte-lanzador:active {
-  transform: scale(0.94);
+  cursor: grabbing;
+}
+
+.soporte-lanzador.ha-entrado,
+.soporte-lanzador.ha-sido-movido {
+  animation: none !important;
+}
+
+.soporte-lanzador.is-dragging {
+  cursor: grabbing !important;
+  transition: none !important;
+  animation: none !important;
+  box-shadow: 0 18px 36px -4px rgba(255, 63, 26, 0.5) !important;
+}
+
+.soporte-lanzador__grip {
+  pointer-events: none;
+  user-select: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
