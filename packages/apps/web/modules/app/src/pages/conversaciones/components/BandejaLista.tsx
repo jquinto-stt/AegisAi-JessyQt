@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { observer } from "mobx-react-lite";
-import { ViewColumnsIcon } from "@heroicons/react/24/outline";
+import { ViewColumnsIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import { CanalAvatar } from "./CanalAvatar";
 import { Badge } from "@/elements/ui/badge";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
@@ -66,15 +66,29 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
       {/* Cabecera: Título "Chats", Filtros, Recargar y Buscador de contactos */}
       <div className="p-3.5 sm:p-4 pb-3 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center justify-between mb-2.5">
-          <div className="flex items-center gap-2">
-            <h3 className="text-xl font-bold tracking-tight text-[#190088] dark:text-white/90">
-              Chats
-            </h3>
-            {conversacionesStore.totalNoLeidos > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF3F1A] px-1.5 text-[11px] font-bold text-white shadow-theme-xs">
-                {conversacionesStore.totalNoLeidos}
-              </span>
-            )}
+          {/* Segmented Control Necto (Chats / Seguimiento) */}
+          <div className="flex h-10 items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 shadow-2xs shrink-0">
+            <button
+              type="button"
+              className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white cursor-default"
+            >
+              <ChatBubbleLeftRightIcon className="size-4 text-brand-500" />
+              <span>Chats</span>
+              {conversacionesStore.totalNoLeidos > 0 && (
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF3F1A] px-1 text-[10px] font-bold text-white shadow-theme-xs">
+                  {conversacionesStore.totalNoLeidos}
+                </span>
+              )}
+            </button>
+
+            <Link
+              to="/conversaciones/seguimiento"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
+              title="Ir a Seguimiento (Pipeline Kanban)"
+            >
+              <ViewColumnsIcon className="size-4 text-secondary-600 dark:text-accent-400" />
+              <span>Seguimiento</span>
+            </Link>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -204,15 +218,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
               </svg>
             </button>
 
-            {/* Acceso a Seguimiento (Pipeline Kanban) */}
-            <Link
-              to="/conversaciones/seguimiento"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-theme-xs transition-colors hover:bg-gray-50 hover:text-gray-900 active:scale-95 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white cursor-pointer"
-              title="Abrir vista de Seguimiento"
-              aria-label="Abrir vista de Seguimiento"
-            >
-              <ViewColumnsIcon className="h-4 w-4 text-[#190088] dark:text-[#97D6DF]" />
-            </Link>
+
           </div>
         </div>
 
