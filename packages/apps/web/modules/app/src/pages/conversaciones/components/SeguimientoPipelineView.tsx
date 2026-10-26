@@ -273,14 +273,11 @@ const ColumnaPipeline = observer(
         } p-3 shadow-theme-xs`}
       >
         {/* Cabecera de la columna (Idéntica a Pedidos) */}
-        <header className="mb-3 shrink-0 px-1.5 pt-1">
-          <div className="flex items-center gap-2">
-            <span className={`size-2 shrink-0 rounded-full ${config.dotBg}`} />
-            <h3 className="truncate text-sm font-bold text-ink-title dark:text-white">
-              {config.label}
-            </h3>
-          </div>
-          <p className="mt-1 pl-4 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+        <header className="mb-3 shrink-0 px-1 pt-1">
+          <h3 className="truncate text-sm font-bold text-ink-title dark:text-white">
+            {config.label}
+          </h3>
+          <p className="mt-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
             {formatoMoneda(totalDinero)}{" "}
             <span className="font-medium text-gray-400 dark:text-gray-500">
               · {convs.length}
@@ -457,7 +454,6 @@ export const SeguimientoPipelineView = observer(
                         : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium"
                     }`}
                   >
-                    <span className={`size-1.5 shrink-0 rounded-full ${e.dotBg}`} />
                     <span className="whitespace-nowrap">{e.label}</span>
                     <span
                       className={`flex size-5.5 items-center justify-center rounded-full text-xs shrink-0 ${
@@ -476,6 +472,18 @@ export const SeguimientoPipelineView = observer(
 
             {/* Acciones derechas (Idénticas a Pedidos) */}
             <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
+              {/* Aviso del total en dinero del pipeline */}
+              <div className="flex h-10 items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900">
+                <BanknotesIcon className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div className="flex items-center gap-1.5 whitespace-nowrap text-xs">
+                  <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+                    Total en dinero:
+                  </span>
+                  <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+                    {formatoMoneda(totalValorPipeline)}
+                  </span>
+                </div>
+              </div>
               {/* Buscador expandible con botón lupa */}
               {buscadorAbierto ? (
                 <div className="relative h-10 w-48 sm:w-64 shrink-0">
