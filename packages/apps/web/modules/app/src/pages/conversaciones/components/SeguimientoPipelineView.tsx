@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
 import {
   BanknotesIcon,
+  CalculatorIcon,
   MagnifyingGlassIcon,
   ChatBubbleLeftRightIcon,
   ViewColumnsIcon,
@@ -473,15 +474,22 @@ export const SeguimientoPipelineView = observer(
             {/* Acciones derechas (Idénticas a Pedidos) */}
             <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
               {/* Aviso del total en dinero del pipeline */}
-              <div className="flex h-10 items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900">
-                <BanknotesIcon className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div className="flex h-10 items-center gap-2.5 rounded-xl border border-gray-200/90 bg-white px-3 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+                  <CalculatorIcon className="size-4" />
+                </div>
                 <div className="flex items-center gap-1.5 whitespace-nowrap text-xs">
-                  <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-                    Total en dinero:
+                  <span className="font-medium text-gray-500 dark:text-gray-400">
+                    Total en Pipeline:
                   </span>
-                  <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-bold text-gray-900 dark:text-white">
                     {formatoMoneda(totalValorPipeline)}
                   </span>
+                </div>
+                <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
+                  <ChatBubbleLeftRightIcon className="size-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
+                  <span>{totalProspectos}</span>
                 </div>
               </div>
               {/* Buscador expandible con botón lupa */}
