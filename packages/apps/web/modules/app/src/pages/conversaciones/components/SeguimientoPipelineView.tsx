@@ -440,16 +440,49 @@ export const SeguimientoPipelineView = observer(
         {/* ── BARRA SUPERIOR DE FILTROS Y ACCIONES (Idéntica a Pedidos) ── */}
         <header className="mb-4 sm:mb-6 shrink-0">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between min-w-0">
-            {/* Filtro compacto por etiqueta / etapa */}
-            {/* Filtro por etiquetas con botón Filter primero y chips con ✕ a la derecha */}
-            <div className="flex flex-wrap items-center gap-2 min-w-0">
+            {/* Lado izquierdo: Switcher (Chats / Seguimiento) y Filtro por etiquetas */}
+            <div className="flex flex-wrap items-center gap-2.5 min-w-0">
+              {/* Segmented Control Necto (Chats / Seguimiento) */}
+              <div className="flex h-10 items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 shadow-2xs shrink-0">
+                {onCambiarAVistaChats ? (
+                  <button
+                    type="button"
+                    onClick={onCambiarAVistaChats}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
+                    title="Ir a consola de chats"
+                  >
+                    <ChatBubbleLeftRightIcon className="size-4 text-brand-500" />
+                    <span>Chats</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/conversaciones")}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
+                    title="Ir a consola de chats"
+                  >
+                    <ChatBubbleLeftRightIcon className="size-4 text-brand-500" />
+                    <span>Chats</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white cursor-default"
+                >
+                  <ViewColumnsIcon className="size-4 text-secondary-600 dark:text-accent-400" />
+                  <span>Seguimiento</span>
+                </button>
+              </div>
+
+              {/* Botón Filter y chips de etiquetas activas */}
               <div ref={menuEtapasRef} className="relative inline-block text-left shrink-0">
                 <button
                   type="button"
                   onClick={() => setMenuEtapasAbierto((v) => !v)}
                   aria-expanded={menuEtapasAbierto}
                   aria-haspopup="true"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-gray-200/90 bg-white px-2.5 text-xs font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer select-none"
+                  className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-gray-200/90 bg-white px-3 text-xs font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer select-none"
                 >
                   <svg
                     className="size-3.5 text-gray-500 dark:text-gray-400"
@@ -532,7 +565,7 @@ export const SeguimientoPipelineView = observer(
                 return (
                   <span
                     key={clave}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-gray-200/90 bg-white px-2.5 text-xs font-medium text-gray-800 shadow-theme-xs dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-200"
+                    className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-gray-200/90 bg-white px-3 text-xs font-medium text-gray-800 shadow-theme-xs dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-200"
                   >
                     <span>{info.label}</span>
                     <button
@@ -625,39 +658,6 @@ export const SeguimientoPipelineView = observer(
                   }`}
                 />
               </button>
-
-              {/* Segmented Control Necto (Chats / Seguimiento) */}
-              <div className="flex h-10 items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 shadow-2xs">
-                {onCambiarAVistaChats ? (
-                  <button
-                    type="button"
-                    onClick={onCambiarAVistaChats}
-                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
-                    title="Ir a consola de chats"
-                  >
-                    <ChatBubbleLeftRightIcon className="size-4 text-brand-500" />
-                    <span>Chats</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => navigate("/conversaciones")}
-                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
-                    title="Ir a consola de chats"
-                  >
-                    <ChatBubbleLeftRightIcon className="size-4 text-brand-500" />
-                    <span>Chats</span>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white cursor-default"
-                >
-                  <ViewColumnsIcon className="size-4 text-secondary-600 dark:text-accent-400" />
-                  <span>Seguimiento</span>
-                </button>
-              </div>
             </div>
           </div>
         </header>
