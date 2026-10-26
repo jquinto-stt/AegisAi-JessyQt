@@ -100,7 +100,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                 className={`relative inline-flex h-8 w-8 items-center justify-center rounded-lg border text-xs shadow-theme-xs transition-colors cursor-pointer ${
                   conversacionesStore.filtro !== "todas" || conversacionesStore.filtroFecha !== "todas"
                     ? "border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-500/30 dark:bg-brand-500/15 dark:text-brand-400"
-                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
+                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
                 }`}
                 title="Filtrar conversaciones"
                 aria-label="Filtrar conversaciones"
@@ -199,7 +199,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
             <button
               type="button"
               onClick={handleRecargar}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-theme-xs transition-colors hover:bg-gray-50 hover:text-gray-900 active:scale-95 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-theme-xs transition-colors hover:bg-gray-50 hover:text-gray-900 active:scale-95 dark:border-gray-800 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
               title="Recargar conversaciones"
               aria-label="Recargar conversaciones"
             >
@@ -244,7 +244,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
             value={conversacionesStore.busqueda}
             onChange={(e) => conversacionesStore.setBusqueda(e.target.value)}
             placeholder="Buscar chat, teléfono o ID..."
-            className="h-9 w-full rounded-xl border border-gray-200 bg-[#ECECEC]/40 py-1.5 pl-9 pr-8 text-xs text-[#212121] placeholder:text-gray-400 transition-colors focus:border-[#FF3F1A] focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#FF3F1A]/10 dark:border-gray-800 dark:bg-white/[0.04] dark:text-white/90 dark:placeholder:text-gray-500 dark:focus:border-[#FF3F1A] dark:focus:bg-transparent"
+            className="h-9 w-full rounded-xl border border-gray-200 bg-[#ECECEC]/40 py-1.5 pl-9 pr-8 text-xs text-[#212121] placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-gray-200/50 dark:border-gray-800 dark:bg-gray-800/70 dark:text-white/90 dark:placeholder:text-gray-500 dark:focus:border-gray-700 dark:focus:bg-gray-800 dark:focus:ring-gray-700/50"
           />
           {conversacionesStore.busqueda && (
             <button
@@ -335,7 +335,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                   } ${
                     seleccionada
                       ? "bg-brand-500/10 dark:bg-brand-500/15"
-                      : "hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-800/60"
                   }`}
                 >
                   {/* Avatar con foto o canal WhatsApp/Telegram y presencia */}

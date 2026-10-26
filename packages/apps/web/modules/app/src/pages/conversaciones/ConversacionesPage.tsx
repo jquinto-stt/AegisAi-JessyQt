@@ -111,7 +111,7 @@ export const ConversacionesPage = observer(() => {
         {/* ── Columna izquierda: Chats Sidebar ── */}
         <aside
           aria-label="Bandeja de chats"
-          className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:bg-white/[0.03] ${
+          className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:bg-gray-900 ${
             bandejaExpandida
               ? "flex w-full sm:w-[320px] xl:w-[350px] border border-gray-200 opacity-100 mr-0 dark:border-gray-800"
               : "flex w-0 max-w-0 border-0 p-0 opacity-0 pointer-events-none -mr-4 sm:-mr-5"
@@ -125,7 +125,7 @@ export const ConversacionesPage = observer(() => {
         </aside>
 
         {/* ── Columna central: Chat View o Estado Vacío Limpio ── */}
-        <section className="flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-white/[0.03]">
+        <section className="flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900">
           {seleccionadaId !== null ? (
             <>
               <ChatView
@@ -148,7 +148,7 @@ export const ConversacionesPage = observer(() => {
         {/* ── Columna derecha: Panel de Información del Pedido (Opcional) ── */}
         <aside
           aria-label="Panel de información del pedido"
-          className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:bg-white/[0.03] ${
+          className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:bg-gray-900 ${
             panelExpandido && seleccionadaId !== null
               ? "flex w-72 border border-gray-200 p-0 opacity-100 2xl:w-80 dark:border-gray-800"
               : "flex w-0 max-w-0 border-0 p-0 opacity-0 pointer-events-none -ml-4 sm:-ml-5"
