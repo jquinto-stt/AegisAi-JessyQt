@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
 import {
@@ -9,6 +9,9 @@ import {
   ViewColumnsIcon,
   XMarkIcon,
   ArrowPathIcon,
+  TagIcon,
+  ChevronDownIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 
 import { Badge } from "@/elements/ui/badge";
@@ -324,10 +327,24 @@ export const SeguimientoPipelineView = observer(
     const [buscadorAbierto, setBuscadorAbierto] = useState(false);
     const [recargando, setRecargando] = useState(false);
     const [filtroEtapa, setFiltroEtapa] = useState<EtapaSeguimiento | "todas">("todas");
+    const [menuEtapasAbierto, setMenuEtapasAbierto] = useState(false);
+    const menuEtapasRef = useRef<HTMLDivElement>(null);
     const [etapasMap, setEtapasMap] = useState<Record<string, EtapaSeguimiento>>(
       leerEtapasPersonalizadas
     );
     const [chatSeleccionadoId, setChatSeleccionadoId] = useState<string | null>(null);
+
+    // Cierre al hacer click fuera del menú de etapas
+    useEffect(() => {
+      if (!menuEtapasAbierto) return;
+      const handleClickFuera = (e: MouseEvent) => {
+        if (menuEtapasRef.current && !menuEtapasRef.current.contains(e.target as Node)) {
+          setMenuEtapasAbierto(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClickFuera);
+      return () => document.removeEventListener("mousedown", handleClickFuera);
+    }, [menuEtapasAbierto]);
 
     // Todas las conversaciones activas del store
     const conversaciones = conversacionesStore.conversaciones;
@@ -374,6 +391,10 @@ export const SeguimientoPipelineView = observer(
       );
     }, [filtroEtapa]);
 
+    const etapaActivaInfo = useMemo(() => {
+      return ETAPAS_PIPELINE.find((e) => e.clave === filtroEtapa);
+    }, [filtroEtapa]);
+
     // Métricas totales del pipeline
     const { totalValorPipeline, totalProspectos } = useMemo(() => {
       let suma = 0;
@@ -415,60 +436,141 @@ export const SeguimientoPipelineView = observer(
         {/* ── BARRA SUPERIOR DE FILTROS Y ACCIONES (Idéntica a Pedidos) ── */}
         <header className="mb-4 sm:mb-6 shrink-0">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between min-w-0">
-            <div className="flex min-w-0 flex-col gap-2">
-              {/* Píldoras de filtro por etapa Necto */}
-              <div className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 min-w-0">
+            {/* Filtro compacto por etiqueta / etapa */}
+            <div ref={menuEtapasRef} className="relative inline-block text-left shrink-0">
               <button
                 type="button"
-                onClick={() => setFiltroEtapa("todas")}
-                aria-pressed={filtroEtapa === "todas"}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
+                onClick={() => setMenuEtapasAbierto((v) => !v)}
+                aria-expanded={menuEtapasAbierto}
+                aria-haspopup="true"
+                className={`flex h-10 items-center gap-2 rounded-xl border px-3.5 shadow-theme-xs transition-colors cursor-pointer select-none ${
                   filtroEtapa === "todas"
-                    ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
-                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium"
+                    ? "border-gray-200/90 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                    : "border-secondary-200/90 bg-secondary-50/40 text-secondary-800 hover:bg-secondary-50 dark:border-accent-800/80 dark:bg-accent-950/40 dark:text-accent-300 dark:hover:bg-accent-950/70"
                 }`}
               >
-                <span className="whitespace-nowrap">Todos</span>
-                <span
-                  className={`flex size-5.5 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
+                <TagIcon
+                  className={`size-4 ${
                     filtroEtapa === "todas"
-                      ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400"
-                      : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300 font-semibold"
+                      ? "text-gray-400 dark:text-gray-500"
+                      : "text-secondary-600 dark:text-accent-400"
+                  }`}
+                />
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Etiqueta:
+                </span>
+                <span className="text-xs font-bold text-gray-900 dark:text-white">
+                  {filtroEtapa === "todas" ? "Todas" : etapaActivaInfo?.label}
+                </span>
+                <span
+                  className={`flex size-5.5 items-center justify-center rounded-full text-xs font-bold ${
+                    filtroEtapa === "todas"
+                      ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                      : "bg-secondary-100 text-secondary-700 dark:bg-accent-900/60 dark:text-accent-300"
                   }`}
                 >
-                  {totalProspectos}
+                  {filtroEtapa === "todas"
+                    ? totalProspectos
+                    : conversacionesPorEtapa[filtroEtapa]?.length || 0}
                 </span>
+                {filtroEtapa !== "todas" && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFiltroEtapa("todas");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.stopPropagation();
+                        setFiltroEtapa("todas");
+                      }
+                    }}
+                    title="Limpiar filtro"
+                    className="ml-0.5 rounded p-0.5 text-gray-400 hover:bg-gray-200/70 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                  >
+                    <XMarkIcon className="size-3.5" />
+                  </span>
+                )}
+                <ChevronDownIcon
+                  className={`size-3.5 text-gray-400 transition-transform ${
+                    menuEtapasAbierto ? "rotate-180" : ""
+                  }`}
+                />
               </button>
 
-              {ETAPAS_PIPELINE.map((e) => {
-                const activa = filtroEtapa === e.clave;
-                const count = conversacionesPorEtapa[e.clave]?.length || 0;
-                return (
+              {menuEtapasAbierto && (
+                <div className="absolute left-0 top-full z-50 mt-1.5 w-60 rounded-2xl border border-gray-200/90 bg-white p-1.5 shadow-theme-lg dark:border-gray-700 dark:bg-gray-900">
+                  <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                    Filtrar por etiqueta
+                  </div>
                   <button
-                    key={e.clave}
                     type="button"
-                    onClick={() => setFiltroEtapa(activa ? "todas" : e.clave)}
-                    aria-pressed={activa}
-                    className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm transition-all whitespace-nowrap shrink-0 cursor-pointer select-none ${
-                      activa
-                        ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white font-semibold"
-                        : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium"
+                    onClick={() => {
+                      setFiltroEtapa("todas");
+                      setMenuEtapasAbierto(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs transition-colors cursor-pointer ${
+                      filtroEtapa === "todas"
+                        ? "bg-gray-100 font-bold text-gray-900 dark:bg-gray-800 dark:text-white"
+                        : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/60 font-medium"
                     }`}
                   >
-                    <span className="whitespace-nowrap">{e.label}</span>
-                    <span
-                      className={`flex size-5.5 items-center justify-center rounded-full text-xs shrink-0 ${
-                        activa
-                          ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400 font-bold"
-                          : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300 font-semibold"
-                      }`}
-                    >
-                      {count}
+                    <div className="flex items-center gap-2">
+                      {filtroEtapa === "todas" ? (
+                        <CheckIcon className="size-3.5 text-secondary-600 dark:text-accent-400" />
+                      ) : (
+                        <span className="size-3.5" />
+                      )}
+                      <span>Todas</span>
+                    </div>
+                    <span className="rounded-full bg-gray-200/70 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      {totalProspectos}
                     </span>
                   </button>
-                );
-              })}
-              </div>
+
+                  <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+
+                  {ETAPAS_PIPELINE.map((e) => {
+                    const activa = filtroEtapa === e.clave;
+                    const count = conversacionesPorEtapa[e.clave]?.length || 0;
+                    return (
+                      <button
+                        key={e.clave}
+                        type="button"
+                        onClick={() => {
+                          setFiltroEtapa(e.clave);
+                          setMenuEtapasAbierto(false);
+                        }}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs transition-colors cursor-pointer ${
+                          activa
+                            ? "bg-secondary-50 font-bold text-secondary-700 dark:bg-accent-950/50 dark:text-accent-300"
+                            : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/60 font-medium"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {activa ? (
+                            <CheckIcon className="size-3.5 text-secondary-600 dark:text-accent-400" />
+                          ) : (
+                            <span className="size-3.5" />
+                          )}
+                          <span>{e.label}</span>
+                        </div>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                            activa
+                              ? "bg-secondary-100 text-secondary-700 dark:bg-accent-900/60 dark:text-accent-300"
+                              : "bg-gray-200/70 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Acciones derechas (Idénticas a Pedidos) */}
