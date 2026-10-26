@@ -440,7 +440,7 @@ export const SeguimientoPipelineView = observer(
         {/* ── BARRA SUPERIOR DE FILTROS Y ACCIONES (Idéntica a Pedidos) ── */}
         <header className="mb-4 sm:mb-6 shrink-0">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between min-w-0">
-            {/* Lado izquierdo: Switcher (Chats / Seguimiento) y Filtro por etiquetas */}
+            {/* Lado izquierdo: Switcher, Buscador, Restablecer y Filtro por etiquetas */}
             <div className="flex flex-wrap items-center gap-2.5 min-w-0">
               {/* Segmented Control Necto (Chats / Seguimiento) */}
               <div className="flex h-10 items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 shadow-2xs shrink-0">
@@ -474,6 +474,63 @@ export const SeguimientoPipelineView = observer(
                   <span>Seguimiento</span>
                 </button>
               </div>
+
+              {/* Buscador expandible con botón lupa */}
+              {buscadorAbierto ? (
+                <div className="relative h-10 w-48 sm:w-64 shrink-0">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    placeholder="Buscar prospecto o teléfono…"
+                    className="h-full w-full rounded-xl border border-brand-500 bg-brand-50/40 py-2 pl-9 pr-8 text-xs text-gray-900 placeholder-gray-400 focus:outline-none dark:border-brand-500 dark:bg-brand-950/40 dark:text-white"
+                  />
+                  <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-500" />
+                  {busqueda && (
+                    <button
+                      type="button"
+                      onClick={() => setBusqueda("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                    >
+                      <XMarkIcon className="size-3.5" />
+                    </button>
+                  )}
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (buscadorAbierto) setBusqueda("");
+                  setBuscadorAbierto((v) => !v);
+                }}
+                aria-expanded={buscadorAbierto}
+                aria-label={buscadorAbierto ? "Ocultar el buscador" : "Buscar prospectos"}
+                title={buscadorAbierto ? "Ocultar el buscador" : "Buscar prospectos"}
+                className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
+                  buscadorAbierto
+                    ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300"
+                    : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                }`}
+              >
+                <MagnifyingGlassIcon className="size-4" />
+              </button>
+
+              {/* Botón Restablecer / Refrescar */}
+              <button
+                type="button"
+                onClick={handleRecargar}
+                aria-label="Restablecer pipeline"
+                title="Restablecer pipeline"
+                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-gray-200/90 bg-white text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-50 cursor-pointer dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                <ArrowPathIcon
+                  className={`size-4 text-gray-600 dark:text-gray-400 ${
+                    recargando ? "animate-spin" : ""
+                  }`}
+                />
+              </button>
 
               {/* Botón Filter y chips de etiquetas activas */}
               <div ref={menuEtapasRef} className="relative inline-block text-left shrink-0">
@@ -581,7 +638,7 @@ export const SeguimientoPipelineView = observer(
               })}
             </div>
 
-            {/* Acciones derechas (Idénticas a Pedidos) */}
+            {/* Acciones derechas (Total en Pipeline) */}
             <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
               {/* Aviso del total en dinero del pipeline */}
               <div className="flex h-10 items-center gap-2.5 rounded-xl border border-gray-200/90 bg-white px-3 shadow-theme-xs dark:border-gray-700 dark:bg-gray-900">
@@ -602,62 +659,6 @@ export const SeguimientoPipelineView = observer(
                   <span>{totalProspectos}</span>
                 </div>
               </div>
-              {/* Buscador expandible con botón lupa */}
-              {buscadorAbierto ? (
-                <div className="relative h-10 w-48 sm:w-64 shrink-0">
-                  <input
-                    autoFocus
-                    type="text"
-                    value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
-                    placeholder="Buscar prospecto o teléfono…"
-                    className="h-full w-full rounded-xl border border-brand-500 bg-brand-50/40 py-2 pl-9 pr-8 text-xs text-gray-900 placeholder-gray-400 focus:outline-none dark:border-brand-500 dark:bg-brand-950/40 dark:text-white"
-                  />
-                  <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-500" />
-                  {busqueda && (
-                    <button
-                      type="button"
-                      onClick={() => setBusqueda("")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-                    >
-                      <XMarkIcon className="size-3.5" />
-                    </button>
-                  )}
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (buscadorAbierto) setBusqueda("");
-                  setBuscadorAbierto((v) => !v);
-                }}
-                aria-expanded={buscadorAbierto}
-                aria-label={buscadorAbierto ? "Ocultar el buscador" : "Buscar prospectos"}
-                title={buscadorAbierto ? "Ocultar el buscador" : "Buscar prospectos"}
-                className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
-                  buscadorAbierto
-                    ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300"
-                    : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-                }`}
-              >
-                <MagnifyingGlassIcon className="size-4" />
-              </button>
-
-              {/* Botón Refrescar */}
-              <button
-                type="button"
-                onClick={handleRecargar}
-                aria-label="Recargar pipeline"
-                title="Recargar pipeline"
-                className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-gray-200/90 bg-white text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-50 cursor-pointer dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-                <ArrowPathIcon
-                  className={`size-4 text-gray-600 dark:text-gray-400 ${
-                    recargando ? "animate-spin" : ""
-                  }`}
-                />
-              </button>
             </div>
           </div>
         </header>
