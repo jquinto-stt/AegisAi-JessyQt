@@ -1,4 +1,5 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { observer } from "mobx-react-lite";
 import { useFlipLista } from "@/hooks/useFlipLista";
 import { retardoEscalonado } from "@/utils";
@@ -8,6 +9,7 @@ import { organizacionStore, pedidosStore, sessionStore, puedeCancelarPedido } fr
 import type { Pedido, PedidoEstado } from "@/stores/pedidos.store";
 import { transportadoraPorNombre } from "@/domain/pedidos/transportadoras.catalogo";
 import { DetallePedidoModal } from "./DetallePedidoModal";
+import { construirAcciones, repartirAcciones, type AccionFila } from "./acciones-fila";
 import { ProgramarModal } from "./ProgramarModal";
 import { money, ListaVacia } from "./widgets";
 import { Modal } from "@/elements/ui/modal";
@@ -30,6 +32,7 @@ import {
   CheckCircleIcon,
   ClockIcon,
   CurrencyDollarIcon,
+  EllipsisHorizontalIcon,
   EyeIcon,
   InformationCircleIcon,
   ShoppingCartIcon,
@@ -144,6 +147,198 @@ const horaISO = (iso: string) => {
   } catch {
     return "—";
   }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ACCIONES DE FILA
+// ═══════════════════════════════════════════════════════════════════════════
+
+const TONO_ACCION: Record<AccionFila["tono"], string> = {
+  neutral: "hover:bg-gray-100 hover:text-ink-body dark:hover:bg-gray-800 dark:hover:text-white",
+  marca: "hover:bg-brand-500/10 hover:text-brand-500",
+  exito: "hover:bg-success-500/10 hover:text-success-500",
+  error: "hover:bg-error-500/10 hover:text-error-500",
+};
+
+/** Estilo del tooltip: mismo en el botón de acción y en el de «Más». */
+const TIP =
+  "pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 -translate-x-1/2 translate-y-1 " +
+  "whitespace-nowrap rounded-md bg-[#212121] px-2 py-1 text-[10.5px] font-semibold text-white " +
+  "opacity-0 shadow-theme-md transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 " +
+  "group-focus-visible:translate-y-0 group-focus-visible:opacity-100 dark:bg-white dark:text-[#212121]";
+
+/**
+ * Botón de icono de la columna «Acciones»: 32 × 32, radio 8, icono de 16.
+ *
+ * El nombre va en un tooltip propio y en `aria-label`, no en `title`: el nativo
+ * tarda casi un segundo en salir, no se puede estilar y en una tabla de cuarenta
+ * filas se lee como que el botón no tiene nombre. El tono solo aparece al pasar
+ * el cursor — en reposo todos son neutros, porque una tabla no puede ser un
+ * semáforo de seis colores.
+ */
+const BotonAccion = ({ accion }: { accion: AccionFila }) => (
+  <button
+    type="button"
+    aria-label={accion.titulo}
+    onClick={(e) => {
+      e.stopPropagation();
+      accion.onClick();
+    }}
+    className={`group relative inline-flex size-8 items-center justify-center rounded-lg text-ink-body/55 transition-colors cursor-pointer dark:text-white/55 ${TONO_ACCION[accion.tono]}`}
+  >
+    {accion.icono}
+    <span role="tooltip" aria-hidden="true" className={TIP}>
+      {accion.titulo}
+    </span>
+  </button>
+);
+
+/** Una fila de la tarjeta de acciones: icono + nombre. */
+const ItemAccion = ({
+  accion,
+  onCerrar,
+}: {
+  accion: AccionFila;
+  onCerrar: () => void;
+}) => (
+  <button
+    type="button"
+    role="menuitem"
+    onClick={() => {
+      onCerrar();
+      accion.onClick();
+    }}
+    className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-theme-xs font-medium transition-colors cursor-pointer ${
+      accion.destructivo
+        ? "text-error-500 hover:bg-error-500/10"
+        : "text-ink-body hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+    }`}
+  >
+    <span className={accion.destructivo ? "text-error-500" : "text-ink-body/45 dark:text-white/45"}>
+      {accion.icono}
+    </span>
+    <span className="flex-1">{accion.titulo}</span>
+  </button>
+);
+
+/**
+ * Celda de acciones de una fila: **un solo control** («⋯») que abre la tarjeta
+ * con las acciones de ESE pedido.
+ *
+ * Antes la celda pintaba hasta seis iconos en línea, y después tres más «Más».
+ * La decisión del 27/10 es esconderlas todas: la fila vuelve a leerse como dato,
+ * el destructivo deja de estar a un dedo del de avanzar y la columna ocupa 32 px
+ * en cualquier estado. El costo está asumido y escrito — confirmar un pedido
+ * pasa de uno a dos clics — y se revierte cambiando `MAX_ACCIONES_VISIBLES` en
+ * `acciones-fila.tsx`, que es el único número que decide cuántos iconos van
+ * sueltos en la celda.
+ *
+ * La tarjeta se pinta en un portal con `position: fixed` porque el contenedor de
+ * la tabla recorta (`overflow-x-auto`): un panel absoluto quedaría cortado justo
+ * por el borde donde vive la columna.
+ */
+const AccionesFila = ({ acciones }: { acciones: AccionFila[] }) => {
+  const [abierto, setAbierto] = useState(false);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const botonRef = useRef<HTMLButtonElement>(null);
+  const tarjetaRef = useRef<HTMLDivElement>(null);
+
+  const { visibles, resto } = repartirAcciones(acciones);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const alPulsar = (e: MouseEvent) => {
+      const destino = e.target as Node;
+      if (tarjetaRef.current?.contains(destino) || botonRef.current?.contains(destino)) return;
+      setAbierto(false);
+    };
+    const alTeclear = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAbierto(false);
+    };
+    // La tarjeta está anclada a coordenadas fijas: si la tabla se desplaza o la
+    // ventana cambia de tamaño, se quedaría flotando sobre otra fila.
+    const alMover = () => setAbierto(false);
+
+    document.addEventListener("mousedown", alPulsar);
+    document.addEventListener("keydown", alTeclear);
+    window.addEventListener("scroll", alMover, true);
+    window.addEventListener("resize", alMover);
+    return () => {
+      document.removeEventListener("mousedown", alPulsar);
+      document.removeEventListener("keydown", alTeclear);
+      window.removeEventListener("scroll", alMover, true);
+      window.removeEventListener("resize", alMover);
+    };
+  }, [abierto]);
+
+  const abrir = () => {
+    const caja = botonRef.current?.getBoundingClientRect();
+    if (caja) setPos({ top: caja.bottom + 6, right: window.innerWidth - caja.right });
+    setAbierto(true);
+  };
+
+  const cerrar = () => setAbierto(false);
+
+  return (
+    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+      {visibles.map((accion) => (
+        <BotonAccion key={accion.clave} accion={accion} />
+      ))}
+
+      {resto.length > 0 && (
+        <button
+          ref={botonRef}
+          type="button"
+          aria-label="Acciones del pedido"
+          aria-haspopup="menu"
+          aria-expanded={abierto}
+          onClick={() => (abierto ? cerrar() : abrir())}
+          className={`group relative inline-flex size-8 items-center justify-center rounded-lg transition-colors cursor-pointer dark:text-white/55 ${
+            abierto
+              ? "bg-gray-100 text-ink-body dark:bg-gray-800 dark:text-white"
+              : "text-ink-body/55 hover:bg-gray-100 hover:text-ink-body dark:hover:bg-gray-800 dark:hover:text-white"
+          }`}
+        >
+          <EllipsisHorizontalIcon className="size-4" />
+          <span role="tooltip" aria-hidden="true" className={TIP}>
+            Acciones
+          </span>
+        </button>
+      )}
+
+      {abierto &&
+        pos &&
+        createPortal(
+          <div
+            ref={tarjetaRef}
+            role="menu"
+            aria-label="Acciones del pedido"
+            style={{ position: "fixed", top: pos.top, right: pos.right }}
+            className="z-[9999] w-52 origin-top-right rounded-xl border border-gray-200 bg-white p-1.5 shadow-theme-xl animate-entrada-menu dark:border-gray-800 dark:bg-gray-900"
+          >
+            {resto
+              .filter((accion) => !accion.destructivo)
+              .map((accion) => (
+                <ItemAccion key={accion.clave} accion={accion} onCerrar={cerrar} />
+              ))}
+
+            {/* El destructivo va al final y separado: en la tarjeta hay sitio para
+                avisar de que cierra el pedido, y no se pulsa de paso. */}
+            {resto.some((accion) => accion.destructivo) && (
+              <>
+                <div className="my-1 h-px bg-gray-100 dark:bg-gray-800" />
+                {resto
+                  .filter((accion) => accion.destructivo)
+                  .map((accion) => (
+                    <ItemAccion key={accion.clave} accion={accion} onCerrar={cerrar} />
+                  ))}
+              </>
+            )}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
 };
 
 export interface ResumenPedidosVistaProps {
@@ -477,48 +672,18 @@ export const ResumenPedidosVista = observer(
     };
 
     /**
-     * Botón de acción compacto para la columna «Acciones». Cada uno lleva
-     * tooltip + `aria-label` (nada de íconos mudos) y un color de acento al hover
-     * según la intención: marca para avanzar/reprogramar, verde para reintentar,
-     * rojo para cancelar, neutro para ver detalle. El `stopPropagation` evita que
-     * el clic abra el detalle de la fila.
+     * Las acciones de UNA fila. El orden y el corte viven en
+     * `acciones-fila.tsx`; aquí solo se conectan los manejadores.
      */
-    const BotonAccion = ({
-      titulo,
-      onClick,
-      children,
-      tono = "neutral",
-    }: {
-      titulo: string;
-      onClick: () => void;
-      children: React.ReactNode;
-      tono?: "neutral" | "marca" | "exito" | "error";
-    }) => {
-      const tonos: Record<string, string> = {
-        neutral:
-          "hover:bg-[#ECECEC]/60 hover:text-[#212121] dark:hover:bg-gray-800 dark:hover:text-white",
-        marca:
-          "hover:bg-[#FF3F1A]/10 hover:text-[#FF3F1A] dark:hover:bg-[#FF3F1A]/15 dark:hover:text-[#FF3F1A]",
-        exito:
-          "hover:bg-[#16A34A]/10 hover:text-[#16A34A] dark:hover:bg-[#16A34A]/15 dark:hover:text-[#4ADE80]",
-        error:
-          "hover:bg-[#EF4444]/10 hover:text-[#EF4444] dark:hover:bg-[#EF4444]/15 dark:hover:text-[#F87171]",
-      };
-      return (
-        <button
-          type="button"
-          title={titulo}
-          aria-label={titulo}
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick();
-          }}
-          className={`inline-flex size-7 items-center justify-center rounded-lg text-[#212121]/55 transition-colors cursor-pointer ${tonos[tono]} dark:text-white/55`}
-        >
-          {children}
-        </button>
-      );
-    };
+    const accionesFila = (p: Pedido): AccionFila[] =>
+      construirAcciones(pedidosStore.accionesDePedido(p), {
+        avanzar: () => avanzarFila(p),
+        detalle: () => setDetalleId(p.id),
+        reprogramar: () => setProgramarId(p.id),
+        reintentar: () => reintentarFila(p),
+        quitarRepartidor: () => quitarRepartidorFila(p),
+        cancelar: () => setCancelarId(p.id),
+      });
 
     return (
       <div className="flex flex-col gap-5 font-sans">
@@ -636,7 +801,6 @@ export const ResumenPedidosVista = observer(
                   const seleccionado = seleccionados.has(p.id);
                   const transportadora = transportadoraDe(p);
                   const motivoCancelacion = motivoCancelacionDe(p);
-                  const acc = pedidosStore.accionesDePedido(p);
 
                   return (
                     <tr
@@ -827,71 +991,9 @@ export const ResumenPedidosVista = observer(
                         </span>
                       </td>
 
-                      {/* Acciones contextuales — solo lo válido para el estado de la fila */}
-                      <td className="px-3 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex flex-wrap items-center justify-center gap-1">
-                          {acc.puedeAvanzar && (
-                            <BotonAccion
-                              tono="marca"
-                              titulo={acc.etiquetaAvanzar}
-                              onClick={() => avanzarFila(p)}
-                            >
-                              {acc.esActivarAhora ? (
-                                <BoltIcon className="size-4" />
-                              ) : (
-                                <CheckCircleIcon className="size-4" />
-                              )}
-                            </BotonAccion>
-                          )}
-
-                          {acc.puedeReprogramar && (
-                            <BotonAccion
-                              tono="marca"
-                              titulo="Reprogramar"
-                              onClick={() => setProgramarId(p.id)}
-                            >
-                              <ClockIcon className="size-4" />
-                            </BotonAccion>
-                          )}
-
-                          {acc.puedeReintentar && (
-                            <BotonAccion
-                              tono="exito"
-                              titulo="Reintentar entrega"
-                              onClick={() => reintentarFila(p)}
-                            >
-                              <ArrowPathIcon className="size-4" />
-                            </BotonAccion>
-                          )}
-
-                          {acc.puedeQuitarRepartidor && (
-                            <BotonAccion
-                              tono="neutral"
-                              titulo="Quitar repartidor"
-                              onClick={() => quitarRepartidorFila(p)}
-                            >
-                              <UserMinusIcon className="size-4" />
-                            </BotonAccion>
-                          )}
-
-                          {acc.puedeCancelar && (
-                            <BotonAccion
-                              tono="error"
-                              titulo="Cancelar pedido"
-                              onClick={() => setCancelarId(p.id)}
-                            >
-                              <XCircleIcon className="size-4" />
-                            </BotonAccion>
-                          )}
-
-                          <BotonAccion
-                            tono="neutral"
-                            titulo="Ver detalle del pedido"
-                            onClick={() => setDetalleId(p.id)}
-                          >
-                            <EyeIcon className="size-4" />
-                          </BotonAccion>
-                        </div>
+                      {/* Acciones contextuales — tres visibles, el resto en «Más» */}
+                      <td className="px-3 py-4">
+                        <AccionesFila acciones={accionesFila(p)} />
                       </td>
                     </tr>
                   );
