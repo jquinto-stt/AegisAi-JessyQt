@@ -13,17 +13,20 @@ interface TableRowProps {
   style?: CSSProperties;
   /** Opcional: hace la fila interactiva (por ejemplo, abrir un detalle al hacer click). */
   onClick?: MouseEventHandler<HTMLTableRowElement>;
+  /** Clave estable de la fila para `useFlipLista` (se escribe como `data-flip` en el `<tr>`). */
+  "data-flip"?: string;
 }
 
 /**
  * @kgId 4b752e440474
  */
-const TableRow: React.FC<TableRowProps> = ({ children, className = "", style, onClick }) => {
+const TableRow: React.FC<TableRowProps> = ({ children, className = "", style, onClick, "data-flip": dataFlip }) => {
   return (
     <tr
       className={`border-b border-gray-200/70 dark:border-white/5 ${className}`}
       style={style}
       onClick={onClick}
+      data-flip={dataFlip}
     >
       {children}
     </tr>

@@ -7,3 +7,4 @@ export { AnaliticaPage } from "./AnaliticaPage";
 export { ConfigPage } from "./ConfigPage";
 export { DisplayPedidosScreen } from "./DisplayPedidosScreen";
 export { CatalogoPage } from "./CatalogoPage";
+export { TransportadorasPage } from "./TransportadorasPage";

@@ -40,6 +40,7 @@ import {
   AlertHexaIcon,
   CheckLineIcon,
   CartIcon,
+  TruckDelivery,
   CloseIcon,
 } from "@/icons";
 
@@ -274,6 +275,7 @@ const ITEMS_MODULO: Record<Modulo, { seccionId: string; Icono: React.FC<React.SV
   pedidos: [
     { seccionId: "inicio", Icono: GridIcon },
     { seccionId: "tablero", Icono: ListIcon },
+    { seccionId: "transportadoras", Icono: TruckDelivery },
     { seccionId: "catalogo", Icono: TableIcon },
     { seccionId: "crear", Icono: PlusIcon },
     { seccionId: "chats", Icono: ChatIcon },

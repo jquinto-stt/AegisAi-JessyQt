@@ -9,6 +9,7 @@ import {
 import { toOrderCore, toLegacyPedido } from "../domain/pedidos/pedidos.adapters.js";
 import type { OrderCore } from "../domain/pedidos/pedidos.domain.js";
 import { sessionStore } from "./session.store";
+import { puedeCancelarPedido } from "./acceso.utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -345,6 +346,17 @@ export interface PedidosConfig {
   columnasPersonalizadas?: ColumnaPersonalizada[];
   /** Cuentas bancarias y medios de cobro manual para transferencias (Nequi, Daviplata, Bancolombia, etc.). */
   datosBancarios?: DatosBancariosConfig;
+  /**
+   * Transportadoras habilitadas, por id.
+   *
+   * Se guarda lo APAGADO y no lo encendido: una transportadora que no aparece en
+   * el mapa está disponible, así que añadir una al catálogo mañana no obliga a
+   * migrar la configuración de nadie. `false` explícito es la única forma de
+   * decir «esta no».
+   */
+  transportadorasHabilitadas?: Record<string, boolean>;
+  /** Id de la transportadora favorita para envíos, o `null` si no hay ninguna. */
+  transportadoraFavorita?: string | null;
 }
 
 /** Configuración de cuentas bancarias y medios de cobro del negocio. */
@@ -734,6 +746,10 @@ const DEFAULT_CONFIG: PedidosConfig = {
     linkPagoTipo: "globalpay",
     linkPagoUrl: "",
   },
+  // Sin apagadas y sin favorita: el catálogo entero está disponible hasta que el
+  // negocio diga lo contrario.
+  transportadorasHabilitadas: {},
+  transportadoraFavorita: null,
 };
 
 // ── Proyección del catálogo ──────────────────────────────────────────────────
@@ -1964,6 +1980,64 @@ export class PedidosStore {
     const to = pipeline.indexOf(destino);
     if (from === -1 || to === -1) return false;
     return to === from + 1;
+  }
+
+  /**
+   * Acciones contextuales válidas para un pedido, derivadas del pipeline REAL
+   * (`siguienteEstado`, `esTerminal`) y del permiso de cancelación.
+   *
+   * ── Por qué existe ──────────────────────────────────────────────────────────
+   * Es la ÚNICA fuente de «qué botones muestra la columna Acciones de la lista».
+   * La vista no adivina estados: pide aquí las acciones y pinta solo las que
+   * vienen como `true`. Así un botón nunca ofrece una transición que
+   * `transicionValida` rechazaría —la regla de negocio vive en un solo sitio.
+   *
+   * La etiqueta del avance es dinámica: «Confirmar» en `nuevo`, «Activar ahora»
+   * en `programado` (su avance es activarse, no correr el pipeline), y
+   * «Avanzar a <estado>» en el resto. El botón de avance llama a `activarAhora`
+   * cuando `esActivarAhora`, y a `avanzar` en los demás casos.
+   */
+  accionesDePedido(p: Pedido): {
+    /** Hay un paso siguiente válido (el pedido no está en terminal). */
+    puedeAvanzar: boolean;
+    /** Etiqueta del botón de avance: «Confirmar» / «Activar ahora» / «Avanzar a X». */
+    etiquetaAvanzar: string;
+    /** El avance de este pedido es activarlo (solo en `programado`). */
+    esActivarAhora: boolean;
+    /** Reprogramar la fecha de activación (solo en `programado`). */
+    puedeReprogramar: boolean;
+    /** Devolver a la hoja de ruta tras entrega fallida (`en_camino`/`listo`). */
+    puedeReintentar: boolean;
+    /** Cancelar (no terminal Y permiso `orders.cancel`). */
+    puedeCancelar: boolean;
+    /** Quitar el repartidor asignado (hay repartidor Y está en tránsito). */
+    puedeQuitarRepartidor: boolean;
+  } {
+    const terminal = this.esTerminal(p.estado);
+    const siguiente = this.siguienteEstado(p);
+    const puedeAvanzar = !terminal && siguiente !== null;
+    const esActivarAhora = p.estado === "programado";
+    const etiquetaAvanzar = esActivarAhora
+      ? "Activar ahora"
+      : p.estado === "nuevo"
+        ? "Confirmar"
+        : puedeAvanzar
+          ? `Avanzar a ${this.estadoLabel(siguiente as PedidoEstado)}`
+          : "Avanzar";
+    const puedeReprogramar = p.estado === "programado";
+    const puedeReintentar = p.estado === "en_camino" || p.estado === "listo";
+    const puedeCancelar = !terminal && puedeCancelarPedido();
+    const puedeQuitarRepartidor =
+      !!p.repartidor && (p.estado === "en_camino" || p.estado === "listo");
+    return {
+      puedeAvanzar,
+      etiquetaAvanzar,
+      esActivarAhora,
+      puedeReprogramar,
+      puedeReintentar,
+      puedeCancelar,
+      puedeQuitarRepartidor,
+    };
   }
 
   // ── Lookups / agrupación ──────────────────────────────────────────────────

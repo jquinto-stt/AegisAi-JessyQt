@@ -5,9 +5,11 @@ import { useState } from "react";
  *
  * - `"blue"` — Brand blue track (`bg-brand-500`)
  * - `"gray"` — Neutral dark track (`bg-gray-800`)
+ * - `"orange"` — Brand orange track (`#FF3F1A`)
+ * - `"success"` — Green track (`bg-success-500`), para confirmar una elección
  * @kgId ee266f1cc67b
  */
-export type SwitchColor = "blue" | "gray" | "orange";
+export type SwitchColor = "blue" | "gray" | "orange" | "success";
 
 /**
  * Props for the Switch component.
@@ -85,7 +87,8 @@ export interface SwitchProps {
  *
  * Renders a pill-shaped track with a sliding knob. Supports both
  * controlled (`checked` + `onChange`) and uncontrolled (`defaultChecked`)
- * modes. Two color themes are available: `"blue"` (brand) and `"gray"`.
+ * modes. Cuatro temas de color: `"blue"` (marca), `"gray"`, `"orange"` y
+ * `"success"` (verde).
  *
  * Uses a hidden `<input type="checkbox" role="switch">` for accessibility —
  * screen readers and keyboard navigation work natively.
@@ -145,6 +148,15 @@ const Switch: React.FC<SwitchProps> = ({
       ? {
           background: isChecked
             ? "bg-[#FF3F1A]"
+            : "bg-gray-200 dark:bg-white/10",
+          knob: isChecked
+            ? "translate-x-full bg-white"
+            : "translate-x-0 bg-white",
+        }
+      : color === "success"
+      ? {
+          background: isChecked
+            ? "bg-success-500"
             : "bg-gray-200 dark:bg-white/10",
           knob: isChecked
             ? "translate-x-full bg-white"

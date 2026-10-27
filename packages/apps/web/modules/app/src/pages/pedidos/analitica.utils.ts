@@ -416,6 +416,59 @@ export function nombreArchivoCsv(ref: Date = new Date()): string {
 }
 
 /**
+ * Columnas de la hoja de guías, en orden.
+ *
+ * No es el mismo archivo que `CSV_ENCABEZADOS`: ese es un export de pedidos
+ * (canal, modalidad, monto) y este es la hoja que se lleva a la transportadora
+ * para despachar. Mezclarlos obligaba a borrar columnas a mano antes de
+ * imprimir.
+ */
+export const CSV_GUIAS_ENCABEZADOS = [
+  "N° Orden",
+  "Transportadora",
+  "N° Guía",
+  "Cliente",
+  "Teléfono",
+  "Dirección",
+  "Barrio",
+  "Ciudad",
+  "Estado",
+  "Fecha",
+] as const;
+
+/**
+ * Mapea pedidos a filas de la hoja de guías.
+ *
+ * La transportadora es `repartidor` y la guía es `numeroGuia`: dos campos
+ * distintos (ver `Pedido`), y aquí se leen por separado. Cuando todavía no hay
+ * guía se escribe «Sin asignar» en vez de dejar la celda vacía — una celda en
+ * blanco se lee como un archivo roto, y lo que pasa es que ese pedido aún no se
+ * ha despachado.
+ */
+export function filasCsvGuias(
+  pedidos: Pedido[],
+  etiquetas: { estadoLabel: (e: PedidoEstado) => string },
+): (string | number)[][] {
+  return pedidos.map((p) => [
+    p.numero,
+    p.repartidor?.trim() || "Sin transportadora",
+    p.numeroGuia?.trim() || "Sin asignar",
+    p.cliente,
+    p.telefono,
+    p.direccionEntrega?.calle ?? "",
+    p.direccionEntrega?.barrio ?? "",
+    p.direccionEntrega?.ciudad ?? "",
+    etiquetas.estadoLabel(p.estado),
+    fechaLegibleCsv(p.createdAt),
+  ]);
+}
+
+/** Nombre de archivo de la hoja de guías: `guias-YYYY-MM-DD.csv`. */
+export function nombreArchivoGuias(ref: Date = new Date()): string {
+  return `guias-${ymdLocal(ref)}.csv`;
+}
+
+/**
  * Prefijo que Excel/LibreOffice necesitan para no reinterpretar los acentos al
  * abrir un CSV UTF-8 sin BOM (típico con "Teléfono" o "En preparación").
  */

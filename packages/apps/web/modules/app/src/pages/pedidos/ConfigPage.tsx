@@ -63,6 +63,12 @@ import {
   BUSINESS_PROFILES,
   type BusinessProfileType,
 } from "@/domain/pedidos/pedidos.profiles";
+import { TRANSPORTADORAS } from "@/domain/pedidos/transportadoras.catalogo";
+import {
+  estaHabilitada,
+  transportadoraFavorita,
+} from "@/domain/pedidos/transportadoras.seleccion";
+import { TransportadorasAjustes } from "./TransportadorasAjustes";
 import { enlaceDePago, mensajeDeCobro } from "./cobros";
 import {
   BloqueConfig,
@@ -152,11 +158,19 @@ function FacebookIcon({ className = "h-5 w-5" }: { className?: string }) {
 
 
 
-type ClaveSeccion = "flujo" | "pagos" | "perfil" | "tiempos" | "sonidos" | "integraciones";
+type ClaveSeccion =
+  | "flujo"
+  | "transportadoras"
+  | "pagos"
+  | "perfil"
+  | "tiempos"
+  | "sonidos"
+  | "integraciones";
 
 /** Orden de la columna de secciones. `flujo` primero: es la seccion por defecto. */
 const ORDEN_SECCIONES: ClaveSeccion[] = [
   "flujo",
+  "transportadoras",
   "pagos",
   "perfil",
   "tiempos",
@@ -182,6 +196,11 @@ const META_SECCION: Record<
     label: "Operación y flujo",
     hint: "Modalidades de entrega, nombres de etapas y personalización de columnas del tablero.",
     icono: BoltIcon,
+  },
+  transportadoras: {
+    label: "Transportadoras",
+    hint: "Elige con qué transportadoras despachas y cuál se propone primero al cotizar un envío. Una transportadora deshabilitada deja de aparecer en las cotizaciones.",
+    icono: TruckDelivery,
   },
   pagos: {
     label: "Cuentas y cobros",
@@ -212,6 +231,7 @@ const META_SECCION: Record<
 
 const PALABRAS_CLAVE_SECCION: Record<ClaveSeccion, string[]> = {
   flujo: ["etapas", "columnas", "tablero", "kanban", "entrega", "domicilio", "retiro", "en sitio", "pipeline", "operacion"],
+  transportadoras: ["transportadora", "transportadoras", "envio", "envios", "mensajeria", "cotizacion", "cotizar", "favorita", "despacho", "servientrega", "coordinadora", "envia", "tcc", "interrapidisimo", "habilitar", "deshabilitar"],
   pagos: ["cuentas", "bancos", "transferencias", "nequi", "daviplata", "bancolombia", "instrucciones", "cobro", "link", "tarjeta", "pse"],
   perfil: ["perfil", "negocio", "rubro", "categoria", "terminologia", "catalogo base"],
   tiempos: ["horario", "atencion", "sla", "demoras", "urgente", "tiempo", "dias", "horas", "24/7"],
@@ -222,6 +242,11 @@ const PALABRAS_CLAVE_SECCION: Record<ClaveSeccion, string[]> = {
 /** Los ajustes que hay dentro de cada sección, con el nombre que llevan en ella. */
 const AJUSTES_SECCION: Record<ClaveSeccion, string[]> = {
   flujo: ["Modalidades de entrega", "Nombres de etapas", "Columnas del tablero"],
+  transportadoras: [
+    "Habilitar / deshabilitar",
+    "Favorita para envíos",
+    "Cotizaciones de envío",
+  ],
   pagos: ["Medios de pago", "Cuentas para transferencias", "Pasarela de pago", "Mensaje de cobro"],
   perfil: ["Tipo de negocio", "Catálogo base", "Terminología"],
   tiempos: ["Horario de atención", "Tiempo máximo por etapa", "Aviso fuera de horario"],
@@ -231,6 +256,7 @@ const AJUSTES_SECCION: Record<ClaveSeccion, string[]> = {
 
 const ACCION_SECCION: Record<ClaveSeccion, string> = {
   flujo: "Configurar",
+  transportadoras: "Configurar",
   pagos: "Configurar",
   perfil: "Configurar",
   tiempos: "Configurar",
@@ -261,6 +287,7 @@ function copiaDe(cfg: PedidosConfig): PedidosConfig {
     alertaAtencion: { ...cfg.alertaAtencion },
     avisoFueraHorario: { ...cfg.avisoFueraHorario },
     datosBancarios: { ...cfg.datosBancarios },
+    transportadorasHabilitadas: { ...cfg.transportadorasHabilitadas },
     columnasPersonalizadas: cfg.columnasPersonalizadas?.map((c) => ({ ...c })),
     capacidadesActivas: cfg.capacidadesActivas ? [...cfg.capacidadesActivas] : undefined,
   };
@@ -954,6 +981,25 @@ export const ConfigPage = observer(() => {
     flujo: {
       texto: `${cfg.modalidades.length} ${cfg.modalidades.length === 1 ? "modalidad activa" : "modalidades activas"} · ${columnas.length} columnas`,
     },
+    transportadoras: (() => {
+      // Se lee de las mismas reglas que usan las cotizaciones, no de un
+      // recuento propio: si la tarjeta del hub dijera «5 disponibles» y el
+      // formulario ofreciera 4, la que miente es la tarjeta.
+      const prefs = {
+        habilitadas: cfg.transportadorasHabilitadas,
+        favorita: cfg.transportadoraFavorita,
+      };
+      const disponibles = TRANSPORTADORAS.filter((t) => estaHabilitada(prefs, t.id)).length;
+      const favorita = transportadoraFavorita(prefs);
+      if (disponibles === 0) {
+        return { texto: "Sin transportadoras disponibles", aviso: true };
+      }
+      return {
+        texto: `${disponibles} de ${TRANSPORTADORAS.length} disponibles${
+          favorita ? ` · ${favorita.nombre} favorita` : ""
+        }`,
+      };
+    })(),
     pagos:
       mediosPago.length > 0
         ? { texto: `Acepta ${mediosPago.join(", ")}` }
@@ -1417,6 +1463,35 @@ export const ConfigPage = observer(() => {
                   </p>
                 </section>
               </>
+            )}
+
+            {/* ═════════════════════════════════════════════════════════════════════
+                SECCIÓN: TRANSPORTADORAS (¿CON QUIÉN DESPACHO?)
+               ═════════════════════════════════════════════════════════════════════ */}
+            {seccion === "transportadoras" && (
+              <BloqueConfig
+                icono={TruckDelivery}
+                pregunta="¿Con qué transportadoras despachas?"
+                descripcion="Enciende las que quieres ofrecer al cotizar un envío y marca una como favorita con el engranaje. Una transportadora apagada deja de aparecer en las cotizaciones."
+              >
+                <TransportadorasAjustes
+                  prefs={{
+                    habilitadas: draft.transportadorasHabilitadas,
+                    favorita: draft.transportadoraFavorita,
+                  }}
+                  onCambio={(prefs) => {
+                    // Se escribe en el BORRADOR, no en el store: «Descartar
+                    // cambios» tiene que poder deshacer esto como cualquier otro
+                    // ajuste de la pantalla.
+                    setDraft((prev) => ({
+                      ...prev,
+                      transportadorasHabilitadas: prefs.habilitadas ?? {},
+                      transportadoraFavorita: prefs.favorita ?? null,
+                    }));
+                    setGuardado(false);
+                  }}
+                />
+              </BloqueConfig>
             )}
 
             {/* ═════════════════════════════════════════════════════════════════════

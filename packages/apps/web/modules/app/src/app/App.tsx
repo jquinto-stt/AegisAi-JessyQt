@@ -10,6 +10,7 @@ import {
   ConfigPage as PedidosConfigPage,
   DisplayPedidosScreen,
   CatalogoPage,
+  TransportadorasPage,
 } from "@/pages/pedidos";
 import { PerfilOperadorPage, EquipoPage } from "@/pages/equipo";
 import {
@@ -169,6 +170,7 @@ export default function App() {
         {/* Módulo Pedidos (condicionado a que esté activo en plataforma) */}
         <Route path="/pedidos/inicio" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><PedidosInicioPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><TableroPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/transportadoras" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><TransportadorasPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/catalogo" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><CatalogoPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/crear" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><CrearPedidoPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/historial" element={<Navigate to="/pedidos/analitica?vista=historial" replace />} />

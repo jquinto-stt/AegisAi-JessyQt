@@ -27,6 +27,11 @@ import {
 } from "@/stores";
 import type { ModalidadPedido, PedidoItem, MetodoPago, DireccionEntrega } from "@/stores";
 import { ProgramarModal } from "./ProgramarModal";
+import { TRANSPORTADORAS } from "@/domain/pedidos/transportadoras.catalogo";
+import {
+  transportadorasDisponibles,
+  transportadoraFavorita,
+} from "@/domain/pedidos/transportadoras.seleccion";
 import {
   datosParaTransferir,
   mediosDeCobroHabilitados,
@@ -103,50 +108,19 @@ const formatFechaHora = (iso: string) => {
 /**
  * Transportadoras que el operador puede asignar al despacho.
  *
- * Llevan NOMBRE y LOGO, nada más: NECTO todavía no cotiza tarifas ni emite
- * guías, así que el valor del flete lo escribe quien despacha. El día que exista
- * la integración, esta tabla pasa a traer tarifa y guía en vez de un nombre.
+ * La lista ya NO se declara aquí: vive en `domain/pedidos/transportadoras.catalogo`
+ * porque la comparten esta pantalla, la tabla de pedidos y las recolecciones, y
+ * una copia local se desactualizaba en dos de los tres sitios. Tampoco se pinta
+ * el catálogo entero: se pintan las que el negocio dejó encendidas en Ajustes de
+ * pedidos → Transportadoras, que es lo que hace que apagar una la saque de las
+ * cotizaciones de envío.
  *
- * `fondoLogo` existe por una razón concreta: los logos vienen en dos familias.
- * Unos son tinta oscura sobre transparente o blanco (Coordinadora, TCC, Envía) y
- * otros son blancos (Interrapidísimo) o ya vienen dentro de su propio recuadro
- * de marca (Servientrega). Pintar el recuadro del color correcto es lo que evita
- * que el logo desaparezca —en modo oscuro el blanco se pierde y el negro también.
+ * `fondoLogo` sigue importando: los logos vienen en dos familias. Unos son tinta
+ * oscura sobre transparente o blanco (Coordinadora, TCC, Envía) y otros son
+ * blancos (Interrapidísimo) o ya vienen dentro de su propio recuadro de marca
+ * (Servientrega). Pintar el recuadro del color correcto es lo que evita que el
+ * logo desaparezca —en modo oscuro el blanco se pierde y el negro también.
  */
-const TRANSPORTADORAS: {
-  id: string;
-  nombre: string;
-  logo?: string;
-  fondoLogo?: "claro" | "oscuro";
-}[] = [
-  { id: "propio", nombre: "Envío propio" },
-  {
-    id: "envia",
-    nombre: "Envía",
-    logo: "/images/logo_transportadoras/envia-mensajeria-vector-logo-seeklogo/envia-mensajeria-seeklogo.png",
-  },
-  {
-    id: "coordinadora",
-    nombre: "Coordinadora",
-    logo: "/images/logo_transportadoras/coordinadora-vector-logo-seeklogo/coordinadora-seeklogo.png",
-  },
-  {
-    id: "servientrega",
-    nombre: "Servientrega",
-    logo: "/images/logo_transportadoras/servientrega-vector-logo-seeklogo/servientrega-seeklogo.png",
-  },
-  {
-    id: "tcc",
-    nombre: "TCC",
-    logo: "/images/logo_transportadoras/tcc-vector-logo-seeklogo/tcc-seeklogo.png",
-  },
-  {
-    id: "interrapidisimo",
-    nombre: "Interrapidísimo",
-    logo: "/images/logo_transportadoras/interrapidisimo/interrapidisimo-logo.webp",
-    fondoLogo: "oscuro",
-  },
-];
 
 /** Prefijo telefónico del país de la organización. Colombia por defecto. */
 const PREFIJO_PAIS: Record<string, string> = {
@@ -379,7 +353,34 @@ export const CrearPedidoPage = observer(() => {
   const [ciudad, setCiudad] = useState(() => initialCiudad);
   const [departamento, setDepartamento] = useState(() => initialDepartamento);
   const [costoEnvio, setCostoEnvio] = useState<number>(0);
-  const [transporte, setTransporte] = useState<string>("propio");
+  /**
+   * Transportadoras que este negocio dejó encendidas.
+   *
+   * No es el catálogo: es el catálogo menos las que se apagaron en Ajustes de
+   * pedidos → Transportadoras. Se lee del store en cada render (el store muta en
+   * sitio, así que memoizar por identidad dejaría la lista congelada).
+   *
+   * Si el negocio las apagó TODAS, la lista queda vacía y se dice en pantalla:
+   * rellenarla con el catálogo entero sería deshacer en silencio el ajuste que
+   * el usuario acaba de guardar.
+   */
+  const prefsTransportadoras = {
+    habilitadas: pedidosStore.config.transportadorasHabilitadas,
+    favorita: pedidosStore.config.transportadoraFavorita,
+  };
+  const transportadorasDisponiblesHoy = transportadorasDisponibles(prefsTransportadoras);
+  /**
+   * Con qué transportadora nace el formulario.
+   *
+   * La favorita que el negocio marcó en Ajustes; si no hay —o está apagada— la
+   * primera disponible. Nunca un id fijo: «propio» puede ser una de las que se
+   * apagaron, y entonces el formulario arrancaría en una opción que no se pinta.
+   */
+  const transportePorDefecto =
+    transportadoraFavorita(prefsTransportadoras)?.id ??
+    transportadorasDisponiblesHoy[0]?.id ??
+    "";
+  const [transporte, setTransporte] = useState<string>(transportePorDefecto);
   const [mensajero, setMensajero] = useState<string>("");
   const [mesa, setMesa] = useState<string>("");
 
@@ -626,8 +627,18 @@ export const CrearPedidoPage = observer(() => {
     }
   }, [metodoPago, opcionesPago]);
 
-  const transportadora = TRANSPORTADORAS.find((t) => t.id === transporte) ?? TRANSPORTADORAS[0];
-  const repartidorFinal = transporte === "propio" ? mensajero.trim() : transportadora.nombre;
+  const transportadora =
+    transportadorasDisponiblesHoy.find((t) => t.id === transporte) ??
+    transportadorasDisponiblesHoy[0] ??
+    TRANSPORTADORAS[0];
+  // Sin ninguna transportadora encendida no hay despacho que asignar: el
+  // resumen dice «Sin asignar» en vez de inventar la primera del catálogo.
+  const repartidorFinal =
+    transportadorasDisponiblesHoy.length === 0
+      ? ""
+      : transporte === "propio"
+        ? mensajero.trim()
+        : transportadora.nombre;
   const pagoLabel = opcionesPago.find((o) => o.id === metodoPago)?.label ?? "";
 
   const pais = organizacionStore.organizacion?.pais ?? "Colombia";
@@ -780,7 +791,8 @@ export const CrearPedidoPage = observer(() => {
     setCiudad("");
     setDepartamento("");
     setCostoEnvio(0);
-    setTransporte("propio");
+    // El formulario limpio vuelve a la preferencia del negocio, no a un id fijo.
+    setTransporte(transportePorDefecto);
     setMensajero("");
     setMetodoPago(opcionesPago[0]?.id ?? "efectivo");
     setPagaCon("");
@@ -1398,7 +1410,13 @@ export const CrearPedidoPage = observer(() => {
                 </div>
 
                 <div className="mt-2 grid grid-cols-2 gap-2">
-                  {TRANSPORTADORAS.map((t) => {
+                  {transportadorasDisponiblesHoy.length === 0 && (
+                    <p className="col-span-2 rounded-xl border border-dashed border-[#ECECEC] px-3 py-2.5 text-[12px] font-normal leading-snug text-[#212121]/60 dark:border-white/15 dark:text-white/50">
+                      No tienes transportadoras habilitadas. Enciende al menos una en Ajustes de
+                      pedidos → Transportadoras para poder asignar el despacho.
+                    </p>
+                  )}
+                  {transportadorasDisponiblesHoy.map((t) => {
                     const activo = transporte === t.id;
                     return (
                       <button

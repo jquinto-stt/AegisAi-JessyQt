@@ -7,6 +7,8 @@ import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
 import { Modal } from "@/elements/ui/modal";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
+import { useFlipLista } from "@/hooks/useFlipLista";
+import { retardoEscalonado } from "@/utils";
 import { MagnifyingGlassIcon, CalenderIcon } from "@/icons";
 import { CalendarioRangoDropdown } from "./CalendarioRangoDropdown";
 import { pedidosStore, ETIQUETA_PAGO, puedeEscribirCliente } from "@/stores";
@@ -478,6 +480,7 @@ export const HistorialPage = observer(
 
   const terminales = pedidosStore.historial;
   const resultado = filtrarHistorial(terminales, filtros);
+  const tablaRef = useFlipLista<HTMLDivElement>(resultado.map((p) => p.id).join("|"));
   const detalle = detalleId ? pedidosStore.getPedido(detalleId) ?? null : null;
 
   const set = <K extends keyof HistorialFiltros>(k: K, v: HistorialFiltros[K]) =>
@@ -637,41 +640,45 @@ export const HistorialPage = observer(
         </Card>
       ) : (
         <Card className="p-0 sm:p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableCell header>Pedido</TableCell>
-                <TableCell header>Cliente</TableCell>
-                <TableCell header>Modalidad</TableCell>
-                <TableCell header>Estado</TableCell>
-                <TableCell header>Cerrado</TableCell>
-                <TableCell header className="text-right">Acciones</TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {resultado.map((p) => (
-                // Fila entera clicable → abre el detalle (mismo patrón que el tablero en Lista).
-                <TableRow
-                  key={p.id}
-                  onClick={() => setDetalleId(p.id)}
-                  className="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.03]"
-                >
-                  <TableCell className="font-medium text-gray-800 dark:text-white/90">{p.numero}</TableCell>
-                  <TableCell className="text-gray-500 dark:text-gray-400">{p.cliente}</TableCell>
-                  <TableCell className="text-gray-500 dark:text-gray-400">{pedidosStore.modalidadLabel(p.modalidad)}</TableCell>
-                  <TableCell>
-                    <Badge color={pedidosStore.estadoBadgeColor(p.estado)} size="sm">
-                      {pedidosStore.estadoLabel(p.estado)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-gray-500 dark:text-gray-400">{fechaLegible(p.finishedAt ?? p.createdAt)}</TableCell>
-                  <TableCell className="text-right">
-                    <AccionesMenu pedido={p} onDetalle={(id) => setDetalleId(id)} />
-                  </TableCell>
+          <div ref={tablaRef}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableCell header>Pedido</TableCell>
+                  <TableCell header>Cliente</TableCell>
+                  <TableCell header>Modalidad</TableCell>
+                  <TableCell header>Estado</TableCell>
+                  <TableCell header>Cerrado</TableCell>
+                  <TableCell header className="text-right">Acciones</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {resultado.map((p, i) => (
+                  // Fila entera clicable → abre el detalle (mismo patrón que el tablero en Lista).
+                  <TableRow
+                    key={p.id}
+                    data-flip={p.id}
+                    onClick={() => setDetalleId(p.id)}
+                    style={{ animationDelay: retardoEscalonado(i) }}
+                    className="animate-entrada-lista cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                  >
+                    <TableCell className="font-medium text-gray-800 dark:text-white/90">{p.numero}</TableCell>
+                    <TableCell className="text-gray-500 dark:text-gray-400">{p.cliente}</TableCell>
+                    <TableCell className="text-gray-500 dark:text-gray-400">{pedidosStore.modalidadLabel(p.modalidad)}</TableCell>
+                    <TableCell>
+                      <Badge color={pedidosStore.estadoBadgeColor(p.estado)} size="sm">
+                        {pedidosStore.estadoLabel(p.estado)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-gray-500 dark:text-gray-400">{fechaLegible(p.finishedAt ?? p.createdAt)}</TableCell>
+                    <TableCell className="text-right">
+                      <AccionesMenu pedido={p} onDetalle={(id) => setDetalleId(id)} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       )}
 

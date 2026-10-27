@@ -139,4 +139,7 @@ export type {
   AlertaInventario,
   CapaCosto,
 } from '@/stores/inventario.store';
+
+// Recolecciones de transportadora — citas de recogida (en memoria, sin backend).
+export { recoleccionesStore, RecoleccionesStore } from '@/stores/recolecciones.store';
 export * from '@/domain/inventario/inventario.domain';

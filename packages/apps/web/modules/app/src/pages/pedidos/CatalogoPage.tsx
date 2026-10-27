@@ -22,6 +22,8 @@ import { getSupabase, ESQUEMA } from '@/lib/supabase';
 import { PageMeta } from '@/shell/meta';
 import { Skeleton, SkeletonGrupo } from '@/elements';
 import { pedidosStore } from '@/stores';
+import { retardoEscalonado } from '@/utils';
+import { useFlipLista } from '@/hooks/useFlipLista';
 
 export interface ProductoCatalogoItem {
   id: string;
@@ -518,6 +520,13 @@ export const CatalogoPage: React.FC = observer(() => {
       return matchCat && matchBusq;
     });
   }, [productos, categoriaActiva, busqueda]);
+
+  // Al cambiar de categoría o buscar, los productos que siguen visibles se
+  // desplazan a su nuevo lugar; los que aparecen entran escalonados. El modo de
+  // vista va en la firma porque al alternar cuadrícula/tabla se remontan todos.
+  const listaRef = useFlipLista<HTMLDivElement>(
+    `${vistaModo}:${productosFiltrados.map((p) => p.id).join('|')}`,
+  );
 
   const hayCambiosPendientes = useMemo(() => {
     return JSON.stringify(productos) !== JSON.stringify(originalProductos);
@@ -1111,12 +1120,14 @@ export const CatalogoPage: React.FC = observer(() => {
             </div>
           </div>
         ) : vistaModo === 'cuadricula' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4">
-            {productosFiltrados.map((item) => (
+          <div ref={listaRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4">
+            {productosFiltrados.map((item, i) => (
               <div
                 key={item.id}
+                data-flip={item.id}
                 onClick={() => abrirModalEditar(item)}
-                className={`group bg-white dark:bg-gray-900 rounded-2xl border transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer overflow-hidden flex flex-col justify-between ${
+                style={{ animationDelay: retardoEscalonado(i) }}
+                className={`animate-entrada-lista group bg-white dark:bg-gray-900 rounded-2xl border transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer overflow-hidden flex flex-col justify-between ${
                   item.disponible
                     ? 'border-gray-200/80 dark:border-gray-800'
                     : 'border-gray-200/60 dark:border-gray-800/60 opacity-60'
@@ -1194,7 +1205,7 @@ export const CatalogoPage: React.FC = observer(() => {
         ) : (
           /* ── Vista en Lista / Tabla Operativa ── */
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
+            <div ref={listaRef} className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/75 dark:bg-gray-800/50 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -1206,11 +1217,13 @@ export const CatalogoPage: React.FC = observer(() => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
-                  {productosFiltrados.map((item) => (
+                  {productosFiltrados.map((item, i) => (
                     <tr
                       key={item.id}
+                      data-flip={item.id}
                       onClick={() => abrirModalEditar(item)}
-                      className="hover:bg-gray-50/80 dark:hover:bg-gray-800/40 cursor-pointer transition-colors group"
+                      style={{ animationDelay: retardoEscalonado(i) }}
+                      className="animate-entrada-lista hover:bg-gray-50/80 dark:hover:bg-gray-800/40 cursor-pointer transition-colors group"
                     >
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">

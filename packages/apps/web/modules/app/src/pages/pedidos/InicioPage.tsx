@@ -4,7 +4,8 @@ import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 
 import { PageMeta } from "@/shell/meta";
-import { cn } from "@/utils";
+import { cn, retardoEscalonado } from "@/utils";
+import { useFlipLista } from "@/hooks/useFlipLista";
 import { Badge } from "@/elements/ui/badge";
 import { Modal } from "@/elements/ui/modal";
 import { Button } from "@/elements/ui/button";
@@ -350,6 +351,8 @@ const ClientesModal = observer(
         normalizarTelefono(f.conv.contacto.telefono).includes(query),
     );
 
+    const listaRef = useFlipLista<HTMLDivElement>(lista.map((f) => f.conv.id).join("|"));
+
     const countSeg = (s: Segmento) => filtrarSegmento(base, s).length;
 
     return (
@@ -395,17 +398,23 @@ const ClientesModal = observer(
           ))}
         </div>
 
-        <div className="max-h-[52vh] space-y-0.5 overflow-y-auto pr-1">
+        <div ref={listaRef} className="max-h-[52vh] space-y-0.5 overflow-y-auto pr-1">
           {lista.length === 0 ? (
             <ListaVacia>Sin clientes en este filtro.</ListaVacia>
           ) : (
-            lista.map((f) => (
-              <ClienteRow
+            lista.map((f, i) => (
+              <div
                 key={f.conv.id}
-                fila={f}
-                onClick={() => onChat(f.conv.id)}
-                showWhatsApp={puedeEscribirEnConversaciones()}
-              />
+                data-flip={f.conv.id}
+                style={{ animationDelay: retardoEscalonado(i) }}
+                className="animate-entrada-lista"
+              >
+                <ClienteRow
+                  fila={f}
+                  onClick={() => onChat(f.conv.id)}
+                  showWhatsApp={puedeEscribirEnConversaciones()}
+                />
+              </div>
             ))
           )}
         </div>
@@ -443,6 +452,9 @@ const ClientesCardWidget = observer(
       .filter((f) => estadoAtencionDe(f.conv) !== "pide_asesor")
       .sort((a, b) => b.conv.ultimaActividad.localeCompare(a.conv.ultimaActividad));
     const items = [...urgentes, ...resto].slice(0, 4);
+    // Cuando un chat cambia de puesto (nuevo mensaje, pide asesor) se desplaza
+    // hasta él en vez de saltar.
+    const itemsRef = useFlipLista<HTMLDivElement>(items.map((f) => f.conv.id).join("|"));
 
     const numNotificaciones = urgentes.length;
 
@@ -500,8 +512,8 @@ const ClientesCardWidget = observer(
               <ListaVacia>Sin conversaciones activas.</ListaVacia>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 dark:divide-gray-800/60 my-2 space-y-1">
-              {items.map((f) => {
+            <div ref={itemsRef} className="divide-y divide-slate-100 dark:divide-gray-800/60 my-2 space-y-1">
+              {items.map((f, i) => {
                 const { conv, pedido } = f;
                 const atencion = estadoAtencionDe(conv);
                 const subtitulo = pedido
@@ -511,8 +523,10 @@ const ClientesCardWidget = observer(
                 return (
                   <div
                     key={conv.id}
+                    data-flip={conv.id}
                     onClick={() => onChat(conv.id)}
-                    className="py-3 px-2 rounded-2xl hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors cursor-pointer flex items-center justify-between gap-3 group"
+                    style={{ animationDelay: retardoEscalonado(i) }}
+                    className="animate-entrada-lista py-3 px-2 rounded-2xl hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors cursor-pointer flex items-center justify-between gap-3 group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="relative shrink-0">
@@ -578,6 +592,7 @@ const PedidosEnCursoCard = observer(({ onVerPedido }: { onVerPedido: (id: string
     .slice()
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 3);
+  const tablaRef = useFlipLista<HTMLDivElement>(tabla.map((p) => p.id).join("|"));
 
   const puedeVerMontos = sessionStore.hasPermission("team.read");
 
@@ -588,7 +603,7 @@ const PedidosEnCursoCard = observer(({ onVerPedido }: { onVerPedido: (id: string
           <ListaVacia>Sin pedidos registrados.</ListaVacia>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div ref={tablaRef} className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -601,11 +616,13 @@ const PedidosEnCursoCard = observer(({ onVerPedido }: { onVerPedido: (id: string
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tabla.map((p) => (
+              {tabla.map((p, i) => (
                 <TableRow
                   key={p.id}
+                  data-flip={p.id}
                   onClick={() => onVerPedido(p.id)}
-                  className="cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                  style={{ animationDelay: retardoEscalonado(i) }}
+                  className="animate-entrada-lista cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.03]"
                 >
                   <TableCell className="font-semibold text-gray-800 dark:text-white/90">{p.numero}</TableCell>
                   <TableCell className="text-gray-600 dark:text-gray-300 font-medium">{p.cliente}</TableCell>

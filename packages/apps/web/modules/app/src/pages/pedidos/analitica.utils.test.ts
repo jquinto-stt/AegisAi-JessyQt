@@ -19,6 +19,9 @@ import {
   nombreArchivoCsv,
   fechaLegibleCsv,
   CSV_ENCABEZADOS,
+  CSV_GUIAS_ENCABEZADOS,
+  filasCsvGuias,
+  nombreArchivoGuias,
   TAMANOS_PAGINA,
   diasDelRango,
   diasCubiertos,
@@ -353,6 +356,64 @@ describe("analitica.utils — CSV", () => {
     expect(header!.split(",")).toHaveLength(8);
     // La coma y las comillas del cliente quedan dentro de un único campo.
     expect(fila).toContain('"Pérez, ""el jefe"""');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HOJA DE GUÍAS — el atajo de «En preparación»
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("analitica.utils — hoja de guías", () => {
+  it("CSV_GUIAS_ENCABEZADOS no es el export de pedidos", () => {
+    expect([...CSV_GUIAS_ENCABEZADOS]).toEqual([
+      "N° Orden",
+      "Transportadora",
+      "N° Guía",
+      "Cliente",
+      "Teléfono",
+      "Dirección",
+      "Barrio",
+      "Ciudad",
+      "Estado",
+      "Fecha",
+    ]);
+    expect([...CSV_GUIAS_ENCABEZADOS]).not.toEqual([...CSV_ENCABEZADOS]);
+  });
+
+  it("lee la guía de `numeroGuia` y la transportadora de `repartidor`", () => {
+    const p = makePedido({
+      numero: "P-077",
+      cliente: "Elba",
+      telefono: "+573001234567",
+      repartidor: "TCC",
+      numeroGuia: "616440642",
+      direccionEntrega: { calle: "Calle 9a", barrio: "Granada", ciudad: "Cali" },
+      estado: "listo",
+    });
+    const [fila] = filasCsvGuias([p], etiquetas);
+    expect(fila).toEqual([
+      "P-077",
+      "TCC",
+      "616440642",
+      "Elba",
+      "+573001234567",
+      "Calle 9a",
+      "Granada",
+      "Cali",
+      "listo",
+      fechaLegibleCsv(p.createdAt),
+    ]);
+  });
+
+  it("dice «Sin asignar» cuando todavía no hay guía, en vez de dejar la celda vacía", () => {
+    const p = makePedido({ repartidor: "", numeroGuia: undefined, estado: "en_preparacion" });
+    const [fila] = filasCsvGuias([p], etiquetas);
+    expect(fila![1]).toBe("Sin transportadora");
+    expect(fila![2]).toBe("Sin asignar");
+  });
+
+  it("nombra el archivo guias-YYYY-MM-DD.csv", () => {
+    expect(nombreArchivoGuias(new Date(2026, 9, 27, 12, 0))).toBe("guias-2026-10-27.csv");
   });
 });
 

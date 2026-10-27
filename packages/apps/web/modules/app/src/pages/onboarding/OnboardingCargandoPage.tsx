@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { animate } from "motion/react";
 import { PageMeta } from "@/shell/meta";
 import { organizacionStore, PAISES_CONFIG } from "@/stores/organizacion.store";
 import { sessionStore } from "@/stores/session.store";
@@ -8,6 +9,14 @@ import { completarAltaOrganizacion } from "@/lib/auth.service";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
 import { DecorativeCircles } from "@/elements/common/DecorativeCircles";
 import { usePasoOnboardingMontado } from "./useTransicionOnboarding";
+
+/**
+ * Barra de progreso: el contador usa la misma curva, retardo y duración que
+ * `.anim-necto-progress` para que el número y el ancho avancen a la par.
+ */
+const PROGRESO_RETARDO_S = 1.6;
+const PROGRESO_DURACION_S = 4.5;
+const PROGRESO_CURVA: [number, number, number, number] = [0.2, 0.1, 0.25, 1];
 
 /**
  * OnboardingCargandoPage
@@ -24,6 +33,27 @@ export function OnboardingCargandoPage() {
   usePasoOnboardingMontado();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/inicio";
+  const barraRef = useRef<HTMLDivElement | null>(null);
+  const contadorRef = useRef<HTMLSpanElement | null>(null);
+
+  // Contador 0 → 100 %. Escribe directo en el nodo en vez de pasar por el estado
+  // de React: así no hay un render por fotograma mientras corre la animación.
+  useEffect(() => {
+    const barra = barraRef.current;
+    const contador = contadorRef.current;
+    if (!barra || !contador) return;
+    const control = animate(0, 100, {
+      duration: PROGRESO_DURACION_S,
+      delay: PROGRESO_RETARDO_S,
+      ease: PROGRESO_CURVA,
+      onUpdate: (valor) => {
+        const entero = Math.round(valor);
+        contador.textContent = `${entero}%`;
+        barra.setAttribute("aria-valuenow", String(entero));
+      },
+    });
+    return () => control.stop();
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -220,6 +250,7 @@ export function OnboardingCargandoPage() {
 
         .anim-necto-progress {
           width: 0%;
+          /* Mantener en sincronía con PROGRESO_* (contador de porcentaje). */
           animation: nectoProgressBarProgress 4.5s cubic-bezier(0.2, 0.1, 0.25, 1) 1.6s forwards;
           will-change: width;
         }
@@ -393,12 +424,29 @@ export function OnboardingCargandoPage() {
           {/* 2. Base de la Pirámide: Barra de carga 100% simétrica con el ancho del logo */}
           <div className="mt-7 sm:mt-8 flex flex-col items-center anim-necto-loader">
             {/* Barra horizontal perfectamente simétrica alineada a los extremos del logo (N a O) */}
-            <div className="w-56 sm:w-64 md:w-72 h-[3px] rounded-full bg-white/35 overflow-hidden">
+            <div
+              ref={barraRef}
+              role="progressbar"
+              aria-label="Progreso de carga"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={0}
+              className="w-56 sm:w-64 md:w-72 h-[3px] rounded-full bg-white/35 overflow-hidden"
+            >
               <div className="h-full bg-[#190088] rounded-full anim-necto-progress shadow-[0_0_8px_rgba(25,0,136,0.5)]" />
             </div>
 
+            {/* Contador de carga 0 % → 100 %, sincronizado con la barra */}
+            <span
+              ref={contadorRef}
+              aria-hidden="true"
+              className="mt-3 text-[14px] font-bold tabular-nums text-white drop-shadow-md"
+            >
+              0%
+            </span>
+
             {/* 3. Subtítulo: "Conectando tu negocio" en tipografía nítida y destacada */}
-            <p className="mt-4 text-base sm:text-lg md:text-xl font-bold tracking-wider text-white drop-shadow-md">
+            <p className="mt-2 text-base sm:text-lg md:text-xl font-bold tracking-wider text-white drop-shadow-md">
               Conectando tu negocio
             </p>
           </div>

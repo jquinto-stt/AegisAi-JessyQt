@@ -37,6 +37,7 @@ import {
   ArrowLeftIcon,
   ArrowPathIcon,
   ArrowRightIcon,
+  ArrowsUpDownIcon,
   CalendarDaysIcon,
   CheckIcon,
   EllipsisHorizontalIcon,
@@ -46,6 +47,7 @@ import {
   TrashIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { CSV_ENCABEZADOS, construirCsv, descargarCsv, filasCsv } from "./analitica.utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // AUTORIZACIÓN DE ACCIONES (contrato §1.4 / §2)
@@ -1109,6 +1111,19 @@ export const TableroPage = observer(() => {
   const menuFiltrosRef = useRef<HTMLDivElement>(null);
   const [recargando, setRecargando] = useState(false);
   const [etapasFiltro, setEtapasFiltro] = useState<EtapaInicio[]>([]);
+  const [ordenDescendente, setOrdenDescendente] = useState(true);
+
+  const handleDescargar = () => {
+    const csv = construirCsv(
+      [...CSV_ENCABEZADOS],
+      filasCsv(pedidosStore.pedidos, {
+        origenLabel: (o) => pedidosStore.origenLabel(o),
+        modalidadLabel: (m) => pedidosStore.modalidadLabel(m),
+        estadoLabel: (e) => pedidosStore.estadoLabel(e),
+      }),
+    );
+    descargarCsv(csv, `pedidos_${new Date().toISOString().slice(0, 10)}.csv`);
+  };
 
   // Cierre al hacer click fuera del menú de filtros
   useEffect(() => {
@@ -1172,6 +1187,11 @@ export const TableroPage = observer(() => {
   const cambiarVista = (v: VistaTablero) => {
     setVista(v);
     saveVista(v);
+    // La lista filtra de UNA etapa a la vez: si se llega desde el tablero con
+    // tres etapas marcadas se conserva la primera. Dejar tres marcadas pintaría
+    // tres sub-barras que el menú de la lista ya no puede representar — el
+    // filtro diría una cosa y la tabla mostraría otra.
+    if (v === "lista") setEtapasFiltro((prev) => (prev.length > 1 ? [prev[0]] : prev));
   };
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1207,6 +1227,11 @@ export const TableroPage = observer(() => {
       setDetalleId(det);
       next.delete("detalle");
       cambiar = true;
+    }
+
+    const vistaParam = searchParams.get("vista") as VistaTablero | null;
+    if (vistaParam === "inicio" || vistaParam === "lista") {
+      setVista(vistaParam);
     }
 
     // ?estado=<estado> → filtra la columna o conjunto de estados en el tablero.
@@ -1314,12 +1339,23 @@ export const TableroPage = observer(() => {
     (e) => e.estados.join(",") === columnaFiltroActiva,
   );
 
+  /**
+   * Marca o desmarca una etapa del filtro «Estados».
+   *
+   * **En la vista Lista es de UNO a la vez** (decisión del usuario, 27/10): la
+   * tabla es una hoja de trabajo —se mira una etapa, se marcan filas, se
+   * descarga o se cancela— y con cuatro etapas juntas la columna central dejaba
+   * de ser la de la etapa y pasaba a un «Estado» genérico. El indicador del
+   * menú también es un círculo, no una casilla.
+   *
+   * En el tablero sigue siendo múltiple: ahí las columnas ya son las etapas y
+   * el filtro solo apaga las que no se quieren ver.
+   */
   const toggleEtapaFiltro = (clave: EtapaInicio) => {
-    setEtapasFiltro((prev) =>
-      prev.includes(clave)
-        ? prev.filter((k) => k !== clave)
-        : [...prev, clave],
-    );
+    setEtapasFiltro((prev) => {
+      if (vista === "lista") return prev.includes(clave) ? [] : [clave];
+      return prev.includes(clave) ? prev.filter((k) => k !== clave) : [...prev, clave];
+    });
   };
 
   const limpiarFiltros = () => {
@@ -1342,11 +1378,6 @@ export const TableroPage = observer(() => {
       setTimeout(() => setRecargando(false), 500);
     }
   };
-
-  // Los contadores de cobro salen del store: eran un `filter` local con la misma
-  // regla escrita dos veces, y el getter del store tenía otra distinta.
-  const totalPorCobrar = pedidosStore.totalPorCobrar;
-  const totalPagados = pedidosStore.totalPagados;
 
   const totalFiltrosActivos =
     etapasFiltro.length +
@@ -1484,7 +1515,7 @@ export const TableroPage = observer(() => {
               />
             </button>
 
-            {/* Menú Dropdown Filter con Popover estilo Seguimiento */}
+            {/* Menú «Estados»: filtra la vista por etapa del pipeline */}
             <div ref={menuFiltrosRef} className="relative inline-block text-left shrink-0">
               <button
                 type="button"
@@ -1503,7 +1534,7 @@ export const TableroPage = observer(() => {
                 >
                   <path d="M4 7h16M7 12h10M10 17h4" />
                 </svg>
-                <span>Filter</span>
+                <span>Estados</span>
                 {totalFiltrosActivos > 0 && (
                   <span className="flex size-4.5 items-center justify-center rounded-full bg-secondary-100 text-[10px] font-bold text-secondary-700 dark:bg-accent-900/60 dark:text-accent-300">
                     {totalFiltrosActivos}
@@ -1514,7 +1545,7 @@ export const TableroPage = observer(() => {
               {menuFiltrosAbierto && (
                 <div className="absolute left-0 top-full z-50 mt-1.5 w-60 rounded-xl border border-gray-200/90 bg-white p-1.5 shadow-theme-lg dark:border-gray-700 dark:bg-gray-900">
                   <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                    Filtrar por etapa
+                    Filtrar por estado
                   </div>
                   {ETAPAS_INICIO.map((e) => {
                     const seleccionada = etapasFiltro.includes(e.clave);
@@ -1532,13 +1563,20 @@ export const TableroPage = observer(() => {
                       >
                         <div className="flex items-center gap-2">
                           <div
-                            className={`flex size-4 items-center justify-center rounded border ${
+                            className={`flex size-4 items-center justify-center ${
+                              vista === "lista" ? "rounded-full" : "rounded"
+                            } border ${
                               seleccionada
                                 ? "border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-900"
                                 : "border-gray-300 dark:border-gray-600"
                             }`}
                           >
-                            {seleccionada && <CheckIcon className="size-3 stroke-[3]" />}
+                            {seleccionada &&
+                              (vista === "lista" ? (
+                                <div className="size-1.5 rounded-full bg-white dark:bg-gray-900" />
+                              ) : (
+                                <CheckIcon className="size-3 stroke-[3]" />
+                              ))}
                           </div>
                           <span>{e.label}</span>
                         </div>
@@ -1548,67 +1586,6 @@ export const TableroPage = observer(() => {
                       </button>
                     );
                   })}
-
-                  <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
-                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                    Filtrar por pago
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFiltroPago((prev) => (prev === "pendientes" ? "todos" : "pendientes"))
-                    }
-                    className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors cursor-pointer ${
-                      filtroPago === "pendientes"
-                        ? "bg-gray-100 font-semibold text-gray-900 dark:bg-gray-800 dark:text-white"
-                        : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/60"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`flex size-4 items-center justify-center rounded border ${
-                          filtroPago === "pendientes"
-                            ? "border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-900"
-                            : "border-gray-300 dark:border-gray-600"
-                        }`}
-                      >
-                        {filtroPago === "pendientes" && <CheckIcon className="size-3 stroke-[3]" />}
-                      </div>
-                      <span>{ETIQUETA_PAGO.sinPagar}</span>
-                    </div>
-                    <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500">
-                      {totalPorCobrar}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFiltroPago((prev) => (prev === "pagados" ? "todos" : "pagados"))
-                    }
-                    className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors cursor-pointer ${
-                      filtroPago === "pagados"
-                        ? "bg-gray-100 font-semibold text-gray-900 dark:bg-gray-800 dark:text-white"
-                        : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/60"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`flex size-4 items-center justify-center rounded border ${
-                          filtroPago === "pagados"
-                            ? "border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-900"
-                            : "border-gray-300 dark:border-gray-600"
-                        }`}
-                      >
-                        {filtroPago === "pagados" && <CheckIcon className="size-3 stroke-[3]" />}
-                      </div>
-                      <span>Pagados</span>
-                    </div>
-                    <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500">
-                      {totalPagados}
-                    </span>
-                  </button>
 
                   {totalFiltrosActivos > 0 && (
                     <>
@@ -1625,6 +1602,28 @@ export const TableroPage = observer(() => {
                 </div>
               )}
             </div>
+
+            {/* Botón Ordenar */}
+            <button
+              type="button"
+              onClick={() => setOrdenDescendente((prev) => !prev)}
+              title={ordenDescendente ? "Orden: Más recientes primero" : "Orden: Más antiguos primero"}
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-gray-200/90 bg-white px-3 text-xs font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer select-none"
+            >
+              <ArrowsUpDownIcon className="size-3.5 text-gray-500 dark:text-gray-400" />
+              <span>Ordenar</span>
+            </button>
+
+            {/* Botón Descargar */}
+            <button
+              type="button"
+              onClick={handleDescargar}
+              title="Descargar pedidos (CSV)"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-gray-200/90 bg-white px-3 text-xs font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer select-none"
+            >
+              <ArrowDownTrayIcon className="size-3.5 text-gray-500 dark:text-gray-400" />
+              <span>Descargar</span>
+            </button>
 
             {/* Separador vertical si hay filtros activos */}
             {totalFiltrosActivos > 0 && (
@@ -1726,6 +1725,7 @@ export const TableroPage = observer(() => {
             pendiente={pendienteInicio}
             filtroPago={filtroPago}
             etapasFiltro={etapasFiltro}
+            orden={ordenDescendente ? "desc" : "asc"}
           />
         </div>
       ) : (

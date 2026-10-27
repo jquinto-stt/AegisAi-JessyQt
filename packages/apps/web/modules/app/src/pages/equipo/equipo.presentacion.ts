@@ -73,7 +73,7 @@ export function nivelDeArea(capacidades: Capacidad[], capacidadesDelArea: Capaci
  */
 export const AREA_COPY: Record<string, { label: string; resumen: string }> = {
   ordenes: {
-    label: "Gestión de pedidos",
+    label: "Pedidos",
     resumen: "Los pedidos que entran y todo su recorrido hasta la entrega.",
   },
   preparacion: {
