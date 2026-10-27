@@ -6,81 +6,22 @@ import { pedidosStore } from "@/stores/pedidos.store";
 import type { ConversacionCanal } from "@/stores";
 import { formatoMoneda, inicialesDe, retardoEscalonado } from "@/utils";
 import { formatearFechaListaChat, ultimoTexto } from "@/pages/conversaciones/conversaciones.utils";
+import {
+  ETAPAS_SEGUIMIENTO,
+  conversacionesDeEtapa,
+  type EtapaSeguimiento,
+} from "@/pages/conversaciones/seguimiento.etapas";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ETAPAS DEL FLUJO EN VIVO
 // ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Las cinco etapas del pipeline de conversaciones, en el orden en que el
- * contacto las recorre: del primer «hola» al pago validado.
- */
-export type EtapaChat =
-  | "contacto_inicial"
-  | "oferta_enviada"
-  | "seguimiento"
-  | "en_cierre"
-  | "validacion_pago";
-
-/**
- * Catálogo de las columnas: clave, rótulo y color del punto.
- *
- * El punto de color no es decoración: con cinco columnas, el ojo necesita
- * anclar cada tarjeta a su etapa cuando la columna se sale de pantalla, y el
- * color viaja con la ETAPA, no con la tarjeta.
- */
-export const ETAPAS_CHAT: ReadonlyArray<{
-  clave: EtapaChat;
-  label: string;
-  punto: string;
-}> = [
-  { clave: "contacto_inicial", label: "Contacto Inicial", punto: "bg-accent-500" },
-  { clave: "oferta_enviada", label: "Oferta Enviada", punto: "bg-brand-500" },
-  { clave: "seguimiento", label: "Seguimiento", punto: "bg-secondary-500" },
-  { clave: "en_cierre", label: "En Cierre", punto: "bg-success-500" },
-  { clave: "validacion_pago", label: "Validación de pago", punto: "bg-warning-500" },
-];
-
-/**
- * En qué etapa cae un hilo.
- *
- * Se DERIVA de lo que ya se sabe del hilo —su estado de atención y si el
- * contacto tiene un pedido activo—, no de un campo nuevo que habría que
- * mantener sincronizado con el store. La regla es una PARTICIÓN: cada hilo cae
- * en una sola etapa, así que los contadores de las columnas suman el total.
- *
- *   1. `atendida`           → En Cierre            un asesor lo está cerrando
- *   2. `en_espera`          → Seguimiento          pidió asesor y espera respuesta
- *   3. `cerrada`            → Validación de pago   el hilo terminó; queda el cobro
- *   4. `abierta` con pedido → Oferta Enviada       el bot ya armó la oferta
- *   5. `abierta` sin pedido → Contacto Inicial     todavía solo conversa
- *
- * El orden importa: es el que resuelve los empates (un hilo `atendida` con
- * pedido es «En Cierre», no «Oferta Enviada»).
- */
-export function etapaChatDe(conv: ConversacionCanal): EtapaChat {
-  if (conv.estado === "atendida") return "en_cierre";
-  if (conv.estado === "en_espera") return "seguimiento";
-  if (conv.estado === "cerrada") return "validacion_pago";
-  return pedidosStore.pedidoActivoDe(conv.contacto.telefono)
-    ? "oferta_enviada"
-    : "contacto_inicial";
-}
-
-/** Hilos de una etapa, del más reciente al más viejo. */
-export function conversacionesDeEtapa(
-  convs: ConversacionCanal[],
-  etapa: EtapaChat,
-): ConversacionCanal[] {
-  return convs
-    .filter((c) => etapaChatDe(c) === etapa)
-    .sort((a, b) => b.ultimaActividad.localeCompare(a.ultimaActividad));
-}
-
-/** Cuántos hilos hay en una etapa. Lo consumen las píldoras de filtro. */
-export function contarEtapaChat(convs: ConversacionCanal[], etapa: EtapaChat): number {
-  return convs.filter((c) => etapaChatDe(c) === etapa).length;
-}
+//
+// Las etapas y la regla que decide en cuál cae cada hilo viven en UN solo sitio:
+// `pages/conversaciones/seguimiento.etapas.ts`. Este archivo tenía su propia
+// copia (`ETAPAS_CHAT` + `etapaChatDe`) con la misma regla —incluido el
+// `cerrada → Validación de pago`— y por eso el tablero de Pedidos y el de
+// Seguimiento podían contar cosas distintas del mismo hilo. Dos copias de una
+// regla son dos reglas en cuanto alguien toca una.
 
 /** Fondo del avatar por contacto. Estable por índice, no por hash aleatorio. */
 const PALETA_AVATAR = [
@@ -239,7 +180,7 @@ const ColumnaChat = observer(({ label, punto, convs, onAbrirChat }: ColumnaChatP
 
 interface ChatEnVivoBoardProps {
   /** Etapa filtrada desde la barra. `"todas"` = las cinco columnas. */
-  filtro: EtapaChat | "todas";
+  filtro: EtapaSeguimiento | "todas";
   /** Texto del buscador de la barra (nombre o teléfono del contacto). */
   busqueda: string;
   /** Abre el hilo del contacto. Lo resuelve el contenedor, no el tablero. */
@@ -254,9 +195,10 @@ interface ChatEnVivoBoardProps {
  * conmigo ahora y en qué punto quedó?». Los dos leen el mismo negocio, pero no
  * la misma pregunta, y por eso no comparten columnas ni tarjetas.
  *
- * No hay arrastre entre columnas a propósito: la etapa se deriva del estado del
- * hilo y de si tiene pedido, así que soltar una tarjeta en otra columna no
- * tendría a quién escribirle el cambio — sería un gesto que no hace nada.
+ * No hay arrastre entre columnas a propósito: la etapa se deriva del PEDIDO —y
+ * del hilo solo mientras no haya pedido—, así que soltar una tarjeta en otra
+ * columna no tendría a quién escribirle el cambio: sería un gesto que no hace
+ * nada.
  */
 export const ChatEnVivoBoard = observer(({ filtro, busqueda, onAbrirChat }: ChatEnVivoBoardProps) => {
   const q = busqueda.trim().toLowerCase();
@@ -269,7 +211,7 @@ export const ChatEnVivoBoard = observer(({ filtro, busqueda, onAbrirChat }: Chat
     );
   });
 
-  const columnas = ETAPAS_CHAT.filter((e) => filtro === "todas" || e.clave === filtro);
+  const columnas = ETAPAS_SEGUIMIENTO.filter((e) => filtro === "todas" || e.clave === filtro);
 
   return (
     <div className="flex h-full min-h-0 flex-1 gap-4 overflow-x-auto pb-1">

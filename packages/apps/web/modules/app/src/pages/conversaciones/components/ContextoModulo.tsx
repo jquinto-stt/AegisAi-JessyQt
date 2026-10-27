@@ -151,8 +151,14 @@ const ContextoPedidos = observer(
                           {pedidosStore.estadoLabel(p.estado)}
                         </Badge>
 
-                        {/* Badge de pago SOLO si está pagado o si el estado no es ya 'nuevo' (Pendiente de pago) */}
-                        {!esCancelado && p.estado !== "nuevo" && (
+                        {/* Badge de pago. Se ocultaba en `nuevo` porque el
+                            PROPIO estado se llamaba «Pendiente de pago» y el
+                            badge repetía la etiqueta. Desde el 26/10 el estado
+                            es «Nuevo» (META_ESTADO_PEDIDO) y el pago es
+                            información que ya no está en ninguna otra parte de
+                            la tarjeta, así que se pinta siempre —salvo en un
+                            pedido cancelado, donde el cobro ya no aplica. */}
+                        {!esCancelado && (
                           <Badge color={p.pagado ? "success" : "warning"} size="xs">
                             {p.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
                           </Badge>

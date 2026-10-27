@@ -15,7 +15,7 @@ import {
 } from "@/stores";
 
 const MODULO_LABEL: Record<Modulo, string> = {
-  pedidos: "Pedidos",
+  pedidos: "Gestión de pedidos",
   inventarios: "Inventario",
 };
 

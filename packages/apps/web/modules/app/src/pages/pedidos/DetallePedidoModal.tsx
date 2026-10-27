@@ -108,6 +108,7 @@ export const DetallePedidoModal = observer(
   }) => {
     const [tab, setTab] = useState<TabId>("resumen");
     const [repartidorInput, setRepartidorInput] = useState(pedido.repartidor ?? "");
+    const [guiaInput, setGuiaInput] = useState(pedido.numeroGuia ?? "");
 
     const subtotal = pedidosStore.subtotalItems(pedido);
     const total = pedidosStore.totalPedido(pedido);
@@ -120,7 +121,6 @@ export const DetallePedidoModal = observer(
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryMaps)}`;
 
     const confirmado = pedido.estado !== "nuevo" && pedido.estado !== "programado";
-    const conRecaudo = pedido.metodoPago === "efectivo" || pedido.metodoPago === "contra_entrega";
 
     // Alertas: solo las que el pedido puede sostener con datos. Una lista de
     // alertas inventadas enseña a ignorar la sección.
@@ -128,7 +128,19 @@ export const DetallePedidoModal = observer(
     if (pedido.modalidad === "domicilio" && !pedido.direccionEntrega?.calle) {
       alertas.push("El pedido no tiene dirección de entrega.");
     }
-    if (!pedido.pagado) alertas.push(`Pago ${ETIQUETA_PAGO.sinPagar.toLowerCase()}.`);
+    // «Pago pendiente de pago» era el texto anterior: la etiqueta del eje de
+    // pago metida dentro de una frase que ya hablaba de pago. El estado del
+    // pedido ya no se llama así (ver META_ESTADO_PEDIDO), y la frase se lee.
+    if (!pedido.pagado) alertas.push("El pedido no tiene pago registrado.");
+    // La guía es lo que el cliente necesita para rastrear un envío con courier:
+    // si el perfil cobra con transportadora y no hay número, falta un dato.
+    if (
+      pedido.modalidad === "domicilio" &&
+      pedidosStore.tieneCapacidad("carrier_shipment") &&
+      !pedido.numeroGuia?.trim()
+    ) {
+      alertas.push("Falta el número de guía de la transportadora.");
+    }
     if (pedidosStore.esUrgente(pedido)) {
       alertas.push(
         `Lleva ${pedidosStore.minutosEnEstado(pedido)} min en «${etiquetaEstado}», por encima del objetivo.`,
@@ -204,16 +216,26 @@ export const DetallePedidoModal = observer(
 
               {/* Cuatro datos del envío */}
               <div className="mt-6 grid grid-cols-2 gap-y-5 sm:grid-cols-4">
+                {/* «Confirmación manual» es una pregunta de SÍ/NO, no otro
+                    nombre del estado. Antes esta casilla decía «Para
+                    confirmación manual», que era el quinto alias de `nuevo` —el
+                    badge de arriba ya dice «Nuevo»—. */}
                 <BloqueDato
                   icono={<ClipboardDocumentCheckIcon className="size-8" />}
-                  label="Estado de confirmación"
-                  valor={confirmado ? "Confirmado" : "Para confirmación manual"}
+                  label="Confirmación manual"
+                  valor={confirmado ? "No" : "Sí"}
+                  nota={confirmado ? "Ya confirmado" : "Espera al operador"}
                 />
+                {/* «Con recaudo» significaba dos cosas: aquí, cobrar al
+                    entregar; en la lista, estar pagado. Un pedido pagado por
+                    transferencia salía «Sin recaudo» en el detalle y «Con
+                    recaudo / Pagado» en la lista. Ahora el bloque dice el MEDIO
+                    y, debajo, el ESTADO del cobro: dos hechos, dos líneas. */}
                 <BloqueDato
                   icono={<ShoppingBagIcon className="size-8" />}
-                  label="Tipo de envío"
-                  valor={conRecaudo ? "Con recaudo" : "Sin recaudo"}
-                  nota={pedidosStore.modalidadLabel(pedido.modalidad)}
+                  label="Cobro"
+                  valor={pedidosStore.medioPagoLabel(pedido.metodoPago)}
+                  nota={pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
                 />
                 <BloqueDato
                   icono={<CalendarDaysIcon className="size-8" />}
@@ -245,6 +267,13 @@ export const DetallePedidoModal = observer(
                       <p className="font-semibold text-gray-800 dark:text-white">
                         {pedido.direccionEntrega.calle}
                       </p>
+                      {(pedido.direccionEntrega.ciudad || pedido.direccionEntrega.departamento) && (
+                        <p className="text-gray-500 dark:text-gray-400">
+                          {[pedido.direccionEntrega.ciudad, pedido.direccionEntrega.departamento]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </p>
+                      )}
                       {(pedido.direccionEntrega.barrio || pedido.direccionEntrega.referencia) && (
                         <p className="text-gray-500 dark:text-gray-400">
                           {[pedido.direccionEntrega.barrio, pedido.direccionEntrega.referencia]
@@ -298,35 +327,76 @@ export const DetallePedidoModal = observer(
                 </div>
               </div>
 
-              {/* Guía / repartidor: es una ESCRITURA sobre la logística, así que
-                  exige `orders.edit`. Sin la capacidad se muestra el valor como
-                  texto, que es información y no una promesa. */}
+              {/* Logística: QUIÉN lleva el pedido y con qué NÚMERO se rastrea.
+                  Eran el mismo campo de texto hasta el 26/10 —la guía se
+                  escribía dentro de `repartidor`—, así que un domicilio con
+                  «Javier Moto 04» se leía como «Pedido con guía generada» y el
+                  número de una transportadora se guardaba como si fuera el
+                  nombre de una persona. Ahora son dos campos.
+
+                  Escribir aquí es una ESCRITURA sobre el pedido, así que exige
+                  `orders.edit`. Sin la capacidad se muestra el valor como
+                  texto, que es información y no una promesa.
+
+                  Se guarda al SALIR del campo (blur o Enter), no en cada tecla:
+                  antes cada pulsación escribía en el store y disparaba un
+                  update a la base por carácter. */}
               {pedido.modalidad === "domicilio" && (
-                <div className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3.5 py-2.5 dark:border-gray-800">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                    {pedidosStore.tieneCapacidad("carrier_shipment")
-                      ? "Courier / Guía de envío:"
-                      : "Repartidor asignado:"}
-                  </span>
-                  {puedeEditarPedido() ? (
-                    <input
-                      type="text"
-                      placeholder={
-                        pedidosStore.tieneCapacidad("carrier_shipment")
-                          ? "Ej: Servientrega Guía #1234"
-                          : "Nombre o empresa de mensajería"
-                      }
-                      value={repartidorInput}
-                      onChange={(e) => {
-                        setRepartidorInput(e.target.value);
-                        pedidosStore.asignarRepartidor(pedido.id, e.target.value);
-                      }}
-                      className="h-7.5 w-52 rounded-lg border border-gray-200 bg-white px-2.5 text-right text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                    />
-                  ) : (
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                      {pedido.repartidor?.trim() ? pedido.repartidor : "Sin asignar"}
+                <div className="mt-5 space-y-2">
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3.5 py-2.5 dark:border-gray-800">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      {pedidosStore.tieneCapacidad("carrier_shipment")
+                        ? "Transportadora / repartidor:"
+                        : "Repartidor asignado:"}
                     </span>
+                    {puedeEditarPedido() ? (
+                      <input
+                        type="text"
+                        placeholder={
+                          pedidosStore.tieneCapacidad("carrier_shipment")
+                            ? "Ej: Servientrega"
+                            : "Nombre o empresa de mensajería"
+                        }
+                        value={repartidorInput}
+                        onChange={(e) => setRepartidorInput(e.target.value)}
+                        onBlur={(e) =>
+                          pedidosStore.asignarRepartidor(pedido.id, e.target.value)
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur();
+                        }}
+                        className="h-7.5 w-52 rounded-lg border border-gray-200 bg-white px-2.5 text-right text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                      />
+                    ) : (
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {pedido.repartidor?.trim() ? pedido.repartidor : "Sin asignar"}
+                      </span>
+                    )}
+                  </div>
+
+                  {pedidosStore.tieneCapacidad("carrier_shipment") && (
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3.5 py-2.5 dark:border-gray-800">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        N° de guía:
+                      </span>
+                      {puedeEditarPedido() ? (
+                        <input
+                          type="text"
+                          placeholder="Ej: SE-12345"
+                          value={guiaInput}
+                          onChange={(e) => setGuiaInput(e.target.value)}
+                          onBlur={(e) => pedidosStore.asignarGuia(pedido.id, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") e.currentTarget.blur();
+                          }}
+                          className="h-7.5 w-52 rounded-lg border border-gray-200 bg-white px-2.5 text-right text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                        />
+                      ) : (
+                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                          {pedido.numeroGuia?.trim() ? pedido.numeroGuia : "Sin asignar"}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

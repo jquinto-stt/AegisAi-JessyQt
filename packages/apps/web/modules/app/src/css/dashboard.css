@@ -71,3 +71,136 @@
     animation-delay: 0ms;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DASHBOARD — motion de las gráficas (`pages/inicio/GraficasAnimadas.tsx`)
+   ══════════════════════════════════════════════════════════════════════════
+
+   Cada gráfica se anima según lo que representa: las series temporales se
+   trazan de izquierda a derecha, las barras crecen desde su base (animación
+   propia de ApexCharts) y los medidores se llenan. Las entradas solo existen en
+   la primera visita de la sesión; `--retardo` lo calcula el componente para no
+   adelantarse a la tarjeta que aún está aterrizando.
+   Lo interactivo usa transiciones de opacidad: informa sin mover los datos. */
+
+@keyframes grafica-trazo {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+.grafica-revelada {
+  position: relative;
+}
+
+.grafica-revelada--trazo > :first-child {
+  animation: grafica-trazo 900ms cubic-bezier(0.23, 1, 0.32, 1) var(--retardo, 0ms) backwards;
+}
+
+/* Foco de series: la leyenda pone `data-foco` (1-based, igual que el `rel` que
+   ApexCharts escribe en cada `.apexcharts-series`) y el resto se atenúa. */
+.grafica-series .apexcharts-series {
+  transition: opacity 200ms ease;
+}
+
+.grafica-series[data-foco="1"] .apexcharts-series:not([rel="1"]),
+.grafica-series[data-foco="2"] .apexcharts-series:not([rel="2"]) {
+  opacity: 0.15;
+}
+
+.leyenda-serie {
+  transition:
+    transform 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 200ms ease,
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.leyenda-serie:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .leyenda-serie:hover {
+    border-color: #ff3f1a;
+  }
+}
+
+/* ── Ticks: el medidor se llena de izquierda a derecha ────────────────── */
+
+@keyframes tick-llena {
+  from {
+    opacity: 0;
+  }
+}
+
+.mini-ticks > span {
+  transition: opacity 200ms ease;
+}
+
+.mini-ticks--espera > span {
+  opacity: 0;
+}
+
+.mini-ticks--intro > span {
+  animation: tick-llena 240ms ease-out backwards;
+  animation-delay: calc(var(--retardo, 0ms) + var(--i) * 16ms);
+}
+
+.mini-ticks[data-foco="0"] > span:not([data-grupo="0"]),
+.mini-ticks[data-foco="1"] > span:not([data-grupo="1"]),
+.mini-ticks[data-foco="2"] > span:not([data-grupo="2"]) {
+  opacity: 0.3;
+}
+
+/* ── Pastillas: la barra se llena segmento a segmento ─────────────────── */
+
+@keyframes pastilla-crece {
+  from {
+    clip-path: inset(0 100% 0 0 round 6px);
+  }
+}
+
+.mini-pastillas > div {
+  transition:
+    opacity 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.mini-pastillas--espera > div {
+  opacity: 0;
+}
+
+.mini-pastillas--intro > div {
+  animation: pastilla-crece 500ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+  animation-delay: calc(var(--retardo, 0ms) + var(--i) * 80ms);
+}
+
+.mini-pastillas[data-foco] > div:not([data-activa]) {
+  opacity: 0.3;
+}
+
+.mini-pastillas > div:focus-visible {
+  box-shadow: 0 0 0 2px #ff3f1a;
+}
+
+/* Lectura bajo las mini-gráficas. */
+.mini-lectura {
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.mini-lectura--visible {
+  opacity: 1;
+}
+
+/* Movimiento reducido: sin trazos ni llenados; las gráficas aparecen con un
+   fundido y el foco sigue funcionando por opacidad. */
+@media (prefers-reduced-motion: reduce) {
+  .grafica-revelada--trazo > :first-child,
+  .mini-ticks--intro > span,
+  .mini-pastillas--intro > div {
+    animation: aparecer 160ms ease-out backwards;
+    animation-delay: 0ms;
+  }
+}

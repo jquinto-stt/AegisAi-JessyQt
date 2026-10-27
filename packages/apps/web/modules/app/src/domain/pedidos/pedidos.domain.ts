@@ -108,6 +108,8 @@ export interface FulfillmentAddress {
   street: string;
   neighborhood?: string;
   city?: string;
+  /** Departamento / estado / provincia del destino. */
+  state?: string;
   reference?: string;
   instructions?: string;
 }

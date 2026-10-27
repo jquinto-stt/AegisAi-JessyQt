@@ -65,6 +65,9 @@ export const HistorialEstadosTab = ({ pedido }: { pedido: Pedido }) => {
           : "No se ha calculado",
     },
     { label: "Transportadora", valor: pedido.repartidor?.trim() || "Sin asignar" },
+    // La guía va en su propia fila: es el número con el que el cliente rastrea
+    // el envío, no el nombre de quien lo lleva.
+    { label: "N° de guía", valor: pedido.numeroGuia?.trim() || "Sin asignar" },
   ];
 
   return (

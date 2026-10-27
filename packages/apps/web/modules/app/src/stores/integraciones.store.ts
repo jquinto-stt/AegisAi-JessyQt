@@ -142,7 +142,7 @@ export const MODULOS_INTEGRABLES: Record<ModuloIntegrable, EntradaModuloIntegrab
     disponible: true,
     modulo: "pedidos",
     capacidad: "orders.read",
-    label: "Pedidos",
+    label: "Gestión de pedidos",
     descripcion: "Gestiona pedidos desde la IA.",
     ejemplos: [
       "Consultar pedidos y su estado",

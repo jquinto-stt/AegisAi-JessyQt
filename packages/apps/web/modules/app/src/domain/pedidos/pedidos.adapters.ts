@@ -156,6 +156,8 @@ export function toOrderCore(legacy: Pedido): OrderCore {
     destination: legacy.direccionEntrega ? {
       street: legacy.direccionEntrega.calle,
       neighborhood: legacy.direccionEntrega.barrio,
+      city: legacy.direccionEntrega.ciudad,
+      state: legacy.direccionEntrega.departamento,
       reference: legacy.direccionEntrega.referencia,
       instructions: legacy.direccionEntrega.indicaciones,
     } : undefined,
@@ -212,6 +214,8 @@ export function toLegacyPedido(core: OrderCore): Pedido {
     direccionEntrega: core.fulfillment.destination ? {
       calle: core.fulfillment.destination.street,
       barrio: core.fulfillment.destination.neighborhood,
+      ciudad: core.fulfillment.destination.city,
+      departamento: core.fulfillment.destination.state,
       referencia: core.fulfillment.destination.reference,
       indicaciones: core.fulfillment.destination.instructions,
     } : undefined,

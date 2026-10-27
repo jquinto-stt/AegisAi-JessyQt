@@ -71,8 +71,8 @@ export const IDS_CONECTORES: IdConector[] = ["necto_ia", "whatsapp"];
 export const CATALOGO_MODULOS: Record<IdModuloNegocio, InfoModuloNegocio> = {
   pedidos: {
     id: "pedidos",
-    nombre: "Pedidos",
-    nombreCorto: "Pedidos",
+    nombre: "Gestión de pedidos",
+    nombreCorto: "Gestión de pedidos",
     tagline: "Ventas y Operaciones",
     descripcion: "Tablero de pedidos, preparación y despacho, envíos, estados en tiempo real y analítica de ventas.",
     rutaPrincipal: "/pedidos/inicio",

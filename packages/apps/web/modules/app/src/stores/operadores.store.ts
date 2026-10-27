@@ -86,13 +86,13 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
   // Cada sección declara la capacidad mínima para ENTRAR. Las acciones de dentro
   // se gobiernan aparte con `hasPermission()`.
   pedidos: [
-    { id: "inicio", label: "Inicio", path: "/pedidos/inicio", capacidad: "orders.create" },
-    { id: "tablero", label: "Pedidos", path: "/pedidos", capacidad: "orders.read" },
+    { id: "inicio", label: "Dashboard", path: "/pedidos/inicio", capacidad: "orders.create" },
+    { id: "tablero", label: "Gestión de pedidos", path: "/pedidos", capacidad: "orders.read" },
     { id: "catalogo", label: "Catálogo", path: "/pedidos/catalogo", capacidad: "orders.create" },
     { id: "crear", label: "Crear pedido", path: "/pedidos/crear", capacidad: "orders.create" },
     { id: "chats", label: "Conversaciones", path: "/conversaciones", capacidad: "channels.read" },
     { id: "analitica", label: "Analítica", path: "/pedidos/analitica", capacidad: "team.read" },
-    { id: "configuracion", label: "Configuración", path: "/pedidos/config", capacidad: "settings.read" },
+    { id: "configuracion", label: "Ajuste de Pedidos", path: "/pedidos/config", capacidad: "settings.read" },
     { id: "operadores", label: "Operadores", path: "/pedidos/operadores", capacidad: "team.read" },
     { id: "asistente", label: "Asistente", path: "/asistente", capacidad: "assistant.use" },
   ],

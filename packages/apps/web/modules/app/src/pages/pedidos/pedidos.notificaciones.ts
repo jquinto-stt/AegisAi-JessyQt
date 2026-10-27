@@ -68,6 +68,31 @@ export type ResultadoNotificacion =
   | "plantilla_vacia";
 
 /**
+ * Rellena los marcadores de una plantilla con datos del pedido.
+ *
+ * ── Por qué existe (26/10) ────────────────────────────────────────────────
+ *
+ * Las plantillas de la configuración de Notificaciones ya hablaban de `{guia}`
+ * y `{cliente}`, pero el puente enviaba el texto TAL CUAL: el cliente recibía
+ * literalmente «tu pedido ya tiene guía {guia}». El marcador viajaba hasta el
+ * chat. Aquí se rellena, en el único punto por el que pasan los avisos.
+ *
+ * Marcadores soportados: `{cliente}`, `{numero}` y `{guia}`. Un marcador sin
+ * dato se sustituye por vacío y se limpia la puntuación que quedaría colgando
+ * («Guía .» → «Guía.»): es preferible una frase corta a una con un hueco.
+ */
+export function interpolarPlantilla(texto: string, pedido: Pedido): string {
+  const relleno = texto
+    .replace(/\{cliente\}/gi, pedido.cliente)
+    .replace(/\{numero\}/gi, pedido.numero)
+    .replace(/\{guia\}/gi, pedido.numeroGuia?.trim() ?? "");
+  return relleno
+    .replace(/[ \t]+([.,;:!?])/g, "$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+/**
  * Publica en el hilo del cliente la plantilla del estado al que acaba de llegar
  * un pedido. NO muta el pedido: solo lee su estado actual y escribe en el canal.
  *
@@ -94,7 +119,12 @@ export function notificarCambioDeEstado(pedido: Pedido): ResultadoNotificacion {
   const conv = conversacionesStore.porTelefono(pedido.telefono);
   if (!conv) return "sin_conversacion";
 
-  conversacionesStore.agregarMensajeBot(conv.id, texto, { pedidoId: pedido.id }, "pedidos");
+  conversacionesStore.agregarMensajeBot(
+    conv.id,
+    interpolarPlantilla(texto, pedido),
+    { pedidoId: pedido.id },
+    "pedidos",
+  );
   return "enviado";
 }
 

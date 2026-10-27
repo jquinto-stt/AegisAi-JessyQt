@@ -181,6 +181,10 @@ export const AppShell = () => {
   const esSinMarco =
     esChatAsistente ||
     esChatConversaciones ||
+    // «Nuevo pedido» se dibuja como un lienzo propio de dos columnas (captura +
+    // pedido). Dentro del panel blanco quedaba una tarjeta dentro de otra y el
+    // resumen no tenía ancho para ser una tabla de verdad.
+    location.pathname === "/pedidos/crear" ||
     location.pathname === "/sugerencias" ||
     location.pathname === "/tutoriales" ||
     location.pathname === "/novedades";

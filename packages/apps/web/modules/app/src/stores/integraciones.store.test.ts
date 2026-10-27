@@ -218,7 +218,7 @@ describe("estado de conexión", () => {
     // `modulosConContexto` es el insumo de las pestañas del chat: solo módulos
     // conectados Y disponibles, con su etiqueta y su capacidad.
     expect(integracionesStore.modulosConContexto).toEqual([
-      { id: "pedidos", label: "Pedidos", capacidad: "orders.read" },
+      { id: "pedidos", label: "Gestión de pedidos", capacidad: "orders.read" },
     ]);
   });
 

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
 
-import { organizacionStore, pedidosStore, sessionStore } from "@/stores";
+import { ETIQUETA_PAGO, organizacionStore, pedidosStore, sessionStore } from "@/stores";
 import type { Pedido, PedidoEstado } from "@/stores/pedidos.store";
 import { DetallePedidoModal } from "./DetallePedidoModal";
 import { money, ListaVacia } from "./widgets";
@@ -148,8 +148,8 @@ export const ResumenPedidosVista = observer(
                 <th className="px-5 py-3.5">Producto</th>
                 <th className="px-5 py-3.5">Fecha</th>
                 <th className="px-5 py-3.5">Comprador</th>
-                <th className="px-5 py-3.5">Estado de Confirmación</th>
-                <th className="px-5 py-3.5">Tipo de Pedido</th>
+                <th className="px-5 py-3.5">Estado</th>
+                <th className="px-5 py-3.5">Cobro</th>
                 {puedeVerMontos && <th className="px-5 py-3.5 text-right">Valor</th>}
                 <th className="px-5 py-3.5 text-center">Acciones</th>
               </tr>
@@ -207,27 +207,31 @@ export const ResumenPedidosVista = observer(
                         )}
                       </td>
 
-                      {/* Estado de Confirmación */}
+                      {/* Estado — UN nombre. Antes `nuevo` se rotulaba «Para
+                          Confirmación Manual» en esta columna y «Pendiente de
+                          pago» en el tablero: el mismo estado con dos nombres,
+                          según dónde lo miraras. */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300 font-medium">
                           <UserIcon className="size-3.5 text-gray-400 shrink-0" />
-                          <span>
-                            {p.estado === "nuevo"
-                              ? "Para Confirmación Manual"
-                              : pedidosStore.estadoLabel(p.estado)}
-                          </span>
+                          <span>{pedidosStore.estadoLabel(p.estado)}</span>
                         </div>
                       </td>
 
-                      {/* Tipo de Pedido */}
+                      {/* Cobro — el MEDIO y, debajo, el ESTADO del pago.
+                          «Con recaudo» significaba dos cosas (cobrar al
+                          entregar / estar pagado) y esta fila contradecía al
+                          detalle del pedido: uno pagado por transferencia salía
+                          «Sin recaudo» allí y «Con recaudo / Pagado» aquí. */}
                       <td className="px-5 py-4">
                         <div className="flex flex-col gap-0.5 text-xs text-gray-700 dark:text-gray-300">
                           <div className="flex items-center gap-1 font-medium">
                             <ShoppingBagIcon className="size-3.5 text-gray-400 shrink-0" />
-                            <span>{p.pagado ? "Con recaudo / Pagado" : "Sin recaudo"}</span>
+                            <span>{pedidosStore.medioPagoLabel(p.metodoPago)}</span>
                           </div>
                           <span className="text-[11px] text-gray-400 dark:text-gray-500">
-                            Modalidad: {pedidosStore.modalidadLabel(p.modalidad)}
+                            {p.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar} ·{" "}
+                            {pedidosStore.modalidadLabel(p.modalidad)}
                           </span>
                         </div>
                       </td>

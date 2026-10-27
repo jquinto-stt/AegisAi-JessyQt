@@ -381,7 +381,7 @@ const PedidoCard = observer(
               }`}
             >
               <span className={`size-1.5 rounded-full ${pedido.pagado ? "bg-accent-500" : "bg-brand-500"}`} />
-              <span>{pedido.pagado ? "Pagado" : "Por cobrar"}</span>
+              <span>{pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}</span>
             </button>
 
             {puedeEscribir && (
@@ -1146,8 +1146,12 @@ export const TableroPage = observer(() => {
   // llegar aquí significa que el destino cambió mientras se arrastraba.
   const handleMoverPedido = (id: string, destino: PedidoEstado) => {
     if (!puedeMoverA(destino)) return;
+    // `moverAColumna` ahora valida la transición (antes no comprobaba nada), así
+    // que puede rechazar el destino. Si lo rechaza no se marca «recién movido»:
+    // la tarjeta se quedaba con el pulso de «acabo de moverme» sin haberse
+    // movido, que es peor que no hacer nada.
+    if (!pedidosStore.moverAColumna(id, destino)) return;
     setRecienMovidoId(id);
-    pedidosStore.moverAColumna(id, destino);
     setTimeout(() => {
       setRecienMovidoId(null);
     }, 1200);
@@ -1339,8 +1343,10 @@ export const TableroPage = observer(() => {
     }
   };
 
-  const totalPorCobrar = pedidosStore.pedidos.filter((p) => !p.pagado).length;
-  const totalPagados = pedidosStore.pedidos.filter((p) => Boolean(p.pagado)).length;
+  // Los contadores de cobro salen del store: eran un `filter` local con la misma
+  // regla escrita dos veces, y el getter del store tenía otra distinta.
+  const totalPorCobrar = pedidosStore.totalPorCobrar;
+  const totalPagados = pedidosStore.totalPagados;
 
   const totalFiltrosActivos =
     etapasFiltro.length +
@@ -1569,7 +1575,7 @@ export const TableroPage = observer(() => {
                       >
                         {filtroPago === "pendientes" && <CheckIcon className="size-3 stroke-[3]" />}
                       </div>
-                      <span>Por cobrar</span>
+                      <span>{ETIQUETA_PAGO.sinPagar}</span>
                     </div>
                     <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500">
                       {totalPorCobrar}
@@ -1649,7 +1655,7 @@ export const TableroPage = observer(() => {
 
             {filtroPago !== "todos" && (
               <span className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-gray-200/90 bg-white px-3 text-xs font-medium text-gray-800 shadow-theme-xs dark:border-gray-700/80 dark:bg-gray-900/80 dark:text-gray-200">
-                <span>Pago: {filtroPago === "pagados" ? "Pagados" : "Por cobrar"}</span>
+                <span>Pago: {filtroPago === "pagados" ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}</span>
                 <button
                   type="button"
                   onClick={() => setFiltroPago("todos")}

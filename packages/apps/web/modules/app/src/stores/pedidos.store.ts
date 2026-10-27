@@ -93,6 +93,19 @@ type ColorEstadoPedido =
  * alerta. `en_preparacion` sí es `warning`: hay una tarea en curso que reclama al
  * operador.
  *
+ * ── `nuevo` se llama «Nuevo», no «Pendiente de pago» (26/10) ──────────────
+ *
+ * El nombre anterior metía el PAGO dentro del ESTADO. Son dos ejes: un pedido
+ * puede estar «En camino» y sin pagar, y puede estar «Nuevo» ya pagado.
+ * Al llamar al estado «Pendiente de pago», la misma frase rotulaba dos cosas
+ * distintas —la columna del tablero y `ETIQUETA_PAGO.sinPagar`— y el resultado
+ * era un pedido en `en_preparacion` sin pagar que NO estaba en la columna
+ * «Pendiente de pago» mientras su alerta decía «Pago pendiente de pago».
+ *
+ * El estado dice dónde está el pedido («Nuevo»); si el cobro está
+ * validado lo dice `pagado`, y si el cobro está EN TRÁMITE lo dice
+ * `esperaValidacionPago()`. Ver `ETIQUETA_PAGO`.
+ *
  * El `Record<PedidoEstado, …>` ancla la cobertura al tipo: un estado sin sus tres
  * caras es un error de compilación, no una celda que alguien descubre en pantalla.
  */
@@ -101,7 +114,7 @@ export const META_ESTADO_PEDIDO: Record<
   { label: string; badge: ColorEstadoPedido; punto: string }
 > = {
   programado: { label: "Programado", badge: "light", punto: "bg-gray-400" },
-  nuevo: { label: "Pendiente de pago", badge: "warning", punto: "bg-brand-500" },
+  nuevo: { label: "Nuevo", badge: "warning", punto: "bg-brand-500" },
   confirmado: { label: "Confirmado", badge: "primary", punto: "bg-brand-500" },
   en_preparacion: { label: "En preparación", badge: "warning", punto: "bg-brand-500" },
   listo: { label: "Listo", badge: "success", punto: "bg-accent-500" },
@@ -162,6 +175,13 @@ export interface DireccionEntrega {
   barrio?: string;          // Ej: "El Poblado"
   referencia?: string;      // Ej: "Edificio Santillana, Apto 501"
   indicaciones?: string;    // Ej: "Timbre dañado, llamar al llegar"
+  /**
+   * Ciudad/municipio y departamento del destino. Opcionales porque las
+   * direcciones guardadas antes de esta separación solo traen la calle; el
+   * operador los captura en «Nuevo pedido» y el detalle los pinta cuando están.
+   */
+  ciudad?: string;          // Ej: "Cali"
+  departamento?: string;    // Ej: "Valle del Cauca"
 }
 
 /** Métodos de pago disponibles para el pedido. */
@@ -204,6 +224,18 @@ export interface Pedido {
   metodoPago?: MetodoPago;
   pagaCon?: number;          // Monto con el que abona para calcular el vuelto/cambio
   repartidor?: string;       // Nombre o alias del mensajero/repartidor asignado
+  /**
+   * Número de guía / tracking de la transportadora. SOLO aplica a envíos con
+   * courier (`carrier_shipment`), no al reparto local.
+   *
+   * Es un campo PROPIO y no una parte del texto de `repartidor`: hasta el 26/10
+   * la guía se escribía dentro de `repartidor`, que es el nombre del mensajero.
+   * Consecuencia real: un domicilio con «Javier Moto 04» aparecía en el detalle
+   * como «Pedido con guía generada», y el número de una transportadora se leía
+   * como el nombre de una persona. Son dos hechos distintos y ahora tienen dos
+   * campos distintos.
+   */
+  numeroGuia?: string;
   /** Registro de trazabilidad y eventos de auditoría por operador */
   auditoria?: EventoAuditoria[];
 }
@@ -353,11 +385,42 @@ export interface ColumnaPersonalizada {
  * el dominio —está tomada por el estado del hilo y por la etapa del CRM—, y una
  * casilla que dice «Pendiente» junto a un badge de estado que también dice
  * «Pendiente» no distingue qué está pendiente.
+ *
+ * Desde el 26/10 esta frase ya no la usa ningún ESTADO: `nuevo` se llama «Por
+ * confirmar» (ver `META_ESTADO_PEDIDO`). «Pendiente de pago» describe solo el
+ * eje de pago, y por eso puede convivir con cualquier estado sin ambigüedad.
  */
 export const ETIQUETA_PAGO = {
   pagado: "Pagado",
   sinPagar: "Pendiente de pago",
 } as const;
+
+/**
+ * ¿El cobro está EN TRÁMITE (esperando que alguien lo valide)?
+ *
+ * Es la pregunta que da sentido a la etapa «Validación de pago» del CRM, y por
+ * eso vive aquí y no en la vista: la misma duda la hace el tablero de
+ * seguimiento, el detalle y los avisos.
+ *
+ * ── Por qué no basta `!pagado` ────────────────────────────────────────────
+ *
+ * `pagado === false` incluye pedidos que NO necesitan validación: los que se
+ * cobran al entregar (contra entrega) y los de efectivo, donde el cobro ocurre
+ * en el mostrador o en la puerta. Mandarlos a «Validación de pago» los dejaría
+ * ahí para siempre, porque nunca habrá una transferencia que validar. Lo que
+ * espera validación es un pago que el cliente dice haber hecho y que el negocio
+ * todavía no ve en su cuenta: transferencia y tarjeta.
+ *
+ * Fail-closed: si el método no está registrado, se asume que HAY algo que
+ * validar. Es preferible que un pedido sin método pase un rato por la cola de
+ * validación a que un cobro pendiente se dé por cobrado sin que nadie mire.
+ */
+export function esperaValidacionPago(
+  p: Pick<Pedido, "pagado" | "metodoPago">
+): boolean {
+  if (p.pagado) return false;
+  return p.metodoPago !== "contra_entrega" && p.metodoPago !== "efectivo";
+}
 
 /** Configuración de la alerta sonora y notificaciones del módulo de pedidos. */
 export interface AlertaAtencion {
@@ -439,6 +502,35 @@ const MODALIDAD_LABEL: Record<Modalidad, string> = {
   domicilio: "Domicilio",
   en_sitio: "En sitio",
 };
+
+/**
+ * Nombre de cada medio de cobro. UN dueño por nombre.
+ *
+ * El detalle del pedido decía «Con recaudo / Sin recaudo» sin decir con qué se
+ * cobraba, y la lista usaba esa misma frase para otra cosa (`pagado`). Con un
+ * catálogo, la superficie puede nombrar el medio y el estado de pago por
+ * separado: «Contra entrega · Pendiente de pago» ya no se lee como una
+ * contradicción.
+ */
+export const MEDIO_PAGO_LABEL: Record<MetodoPago, string> = {
+  efectivo: "Efectivo",
+  transferencia: "Transferencia",
+  tarjeta: "Tarjeta o PSE",
+  contra_entrega: "Contra entrega",
+};
+
+/**
+ * ¿El valor que vino de la base es un medio de cobro que el dominio conoce?
+ *
+ * La base admite `otro` (vocabulario suyo, más pobre que el del frontend) y
+ * puede traer nulo. Sin este filtro, `cargarDesdeBase` metía `otro` dentro de
+ * `MetodoPago` con un cast y la etiqueta del medio salía vacía en pantalla; y
+ * si no había ninguno, lo daba por «efectivo» — una suposición sobre cómo cobra
+ * el negocio, que es justo lo que no se puede suponer.
+ */
+function esMetodoPago(valor: unknown): valor is MetodoPago {
+  return typeof valor === "string" && Object.prototype.hasOwnProperty.call(MEDIO_PAGO_LABEL, valor);
+}
 
 /**
  * Origen del pedido: por dónde entró. Es vocabulario de dominio propio, distinto
@@ -735,10 +827,21 @@ function loadConfig(): PedidosConfig {
         capacidadesActivas: Array.isArray(parsed.capacidadesActivas)
           ? parsed.capacidadesActivas
           : [...preset.defaultCapabilities],
+        // Semilla del editor de columnas. El estado `nuevo` se llamó «Nuevo» y
+        // luego «Pendiente de pago»; desde el 26/10 vuelve a llamarse «Nuevo»
+        // (ver `META_ESTADO_PEDIDO`). Se migran todas las semillas viejas —una
+        // de ellas, «Por confirmar», existió unas horas— para que el editor no
+        // siga mostrando un nombre retirado. `estadoLabel()` no lee este campo
+        // para las etapas del sistema —manda el alias—, así que esto solo afecta
+        // al texto inicial del editor.
         columnasPersonalizadas: Array.isArray(parsed.columnasPersonalizadas)
           ? parsed.columnasPersonalizadas.map((c) =>
-              c.id === "nuevo" && (c.label === "Nuevo" || !c.label)
-                ? { ...c, label: "Pendiente de pago" }
+              c.id === "nuevo" &&
+              (c.label === "Nuevo" ||
+                c.label === "Pendiente de pago" ||
+                c.label === "Por confirmar" ||
+                !c.label)
+                ? { ...c, label: META_ESTADO_PEDIDO.nuevo.label }
                 : c
             )
           : undefined,
@@ -1253,6 +1356,22 @@ export class PedidosStore {
           : undefined;
 
         const idStr = String(p.id || "");
+        // ── El eje de pago NO se inventa (26/10) ───────────────────────────
+        //
+        // `necto.pedido` no tenía columna `pagado` (el `alter table` que la
+        // añade está en Docs/07-ddl-necto.sql; una base sin migrar puede no
+        // tenerla). Antes esta carga lo FABRICABA —listo, entregado, o pagado
+        // por transferencia/tarjeta contaban como pagados—, así que cada
+        // recarga daba por cobrados pedidos que nadie había cobrado y vaciaba
+        // sola la cola de «Pendiente de pago».
+        //
+        // Ahora manda la base si la trae, y si no, se conserva lo que la sesión
+        // ya sabía. Sin memoria previa (primer arranque) el pedido entra como NO
+        // pagado: es la única lectura honesta de una base que no guarda el dato.
+        const previo = this.pedidos.find((x) => x.id === idStr);
+        const pagado =
+          typeof p.pagado === "boolean" ? p.pagado : (previo?.pagado ?? false);
+
         return {
           id: idStr,
           numero: String(p.numero || (idStr ? `WEB-${idStr.slice(0, 4)}` : "WEB-0000")),
@@ -1263,16 +1382,17 @@ export class PedidosStore {
           notas: p.notas ? String(p.notas) : (dirObj ? `Dirección: ${dirObj.calle}` : undefined),
           estado: (p.estado as PedidoEstado) || "nuevo",
           origen: (p.origen as Origen) || "whatsapp",
-          pagado: Boolean(p.pagado ?? (p.estado === "entregado" || p.estado === "listo" || p.metodo_pago === "transferencia" || p.metodo_pago === "tarjeta")),
+          pagado,
           createdAt: String(p.creado_en || nowIso()),
           estadoDesde: String(p.estado_desde || p.creado_en || nowIso()),
           finishedAt: p.finished_at ? String(p.finished_at) : undefined,
           programadoPara: p.programado_para ? String(p.programado_para) : undefined,
           direccionEntrega: dirObj,
           costoEnvio: p.costo_envio !== undefined ? Number(p.costo_envio) : (p.modalidad === "domicilio" ? 5000 : 0),
-          metodoPago: (p.metodo_pago as MetodoPago) || "efectivo",
+          metodoPago: esMetodoPago(p.metodo_pago) ? p.metodo_pago : undefined,
           pagaCon: p.pago_con ? Number(p.pago_con) : undefined,
           repartidor: p.repartidor ? String(p.repartidor) : undefined,
+          numeroGuia: p.numero_guia ? String(p.numero_guia) : previo?.numeroGuia,
         };
       });
 
@@ -1311,6 +1431,30 @@ export class PedidosStore {
       if (error) {
         console.warn("[pedidosStore] Error al sincronizar pedido en Supabase:", error.message);
       }
+
+      // ── Pago y guía van en un UPDATE APARTE (26/10) ────────────────────
+      //
+      // `pagado` y `numero_guia` son columnas NUEVAS (`alter table` en
+      // Docs/07-ddl-necto.sql). Si el entorno todavía no las tiene, este update
+      // falla con «column does not exist»… y si fuera el mismo update que el
+      // estado, se llevaría por delante el cambio de estado: un pedido que
+      // avanza se quedaría sin avanzar por una guía. Separarlo deja que el
+      // pipeline siga funcionando en una base sin migrar, y que pago y guía se
+      // pierdan solos —con su aviso— hasta que las columnas existan.
+      const { error: errorExtra } = await sb
+        .schema(ESQUEMA)
+        .from("pedido")
+        .update({
+          pagado: pedido.pagado ?? false,
+          numero_guia: pedido.numeroGuia ?? null,
+        })
+        .eq("id", pedido.id);
+      if (errorExtra) {
+        console.warn(
+          "[pedidosStore] No se pudieron guardar pago/guía (¿faltan las columnas pagado y numero_guia?):",
+          errorExtra.message,
+        );
+      }
     } catch (err) {
       console.warn("[pedidosStore] Excepción al sincronizar pedido con Supabase:", err);
     }
@@ -1319,17 +1463,34 @@ export class PedidosStore {
   /**
    * Marca un pedido como pagado y lo avanza de estado si estaba en 'nuevo'.
    * Persiste de inmediato tanto en memoria como en Supabase.
+   *
+   * ── El avance respeta `usarConfirmado` (26/10) ───────────────────────────
+   *
+   * Antes escribía `estado = "confirmado"` a pelo. Con el estado `confirmado`
+   * apagado en Configuración, confirmar el pago metía el pedido en una etapa
+   * que NO tiene columna: la tarjeta desaparecía del tablero y no volvía hasta
+   * el siguiente cambio de configuración (`migrarPedidosVarados`). Un pedido
+   * pagado se esfumaba, que es el peor final posible para la acción de cobrar.
+   *
+   * Si `confirmado` está apagado, el pedido se queda en `nuevo` —ya pagado— y
+   * el operador lo avanza al siguiente estado activo con el botón de siempre.
    */
   async confirmarPago(id: string, metodoPago: MetodoPago = "transferencia"): Promise<boolean> {
     const p = this.getPedido(id);
     if (!p) return false;
+    const avanzaAConfirmado =
+      p.estado === "nuevo" && this.estadosActivos.includes("confirmado");
     runInAction(() => {
       p.pagado = true;
       p.metodoPago = metodoPago;
-      if (p.estado === "nuevo") {
+      if (avanzaAConfirmado) {
         p.estado = "confirmado";
         p.estadoDesde = nowIso();
       }
+      this.registrarAuditoria(
+        p.id,
+        avanzaAConfirmado ? "Pago confirmado · pasa a Confirmado" : "Pago confirmado",
+      );
     });
     await this.sincronizarPedidoBase(p);
     return true;
@@ -1436,7 +1597,7 @@ export class PedidosStore {
         estado: "listo", origen: "whatsapp", pagado: true,
         createdAt: minutesAgoIso(140), estadoDesde: minutesAgoIso(12),
         direccionEntrega: { calle: "Calle 10 # 36-24", barrio: "Laureles" },
-        costoEnvio: 10000, metodoPago: "transferencia", repartidor: "Coordinadora Guía #CO-99881",
+        costoEnvio: 10000, metodoPago: "transferencia", repartidor: "Coordinadora", numeroGuia: "CO-99881",
       },
       {
         id: "pd-f5", numero: "P-005", cliente: "Andrés Gil", telefono: "+573005556677", modalidad: "domicilio",
@@ -1444,7 +1605,7 @@ export class PedidosStore {
         estado: "en_camino", origen: "whatsapp", pagado: true,
         createdAt: minutesAgoIso(60), estadoDesde: minutesAgoIso(15),
         direccionEntrega: { calle: "Av. Las Vegas # 7-45", barrio: "Envigado" },
-        costoEnvio: 8000, metodoPago: "contra_entrega", repartidor: "Servientrega Guía #SE-12345",
+        costoEnvio: 8000, metodoPago: "contra_entrega", repartidor: "Servientrega", numeroGuia: "SE-12345",
       },
     ];
   }
@@ -1693,19 +1854,28 @@ export class PedidosStore {
     this.updateConfig({ columnasPersonalizadas: reordenadas });
   }
 
-  /** Mueve un pedido directamente a cualquier columna (drag & drop o acción rápida) */
+  /**
+   * Mueve un pedido directamente a cualquier columna (drag & drop o acción rápida).
+   *
+   * Valida con `transicionValida`, igual que `moverEstado`: hasta el 26/10 esta
+   * era la ÚNICA puerta que no comprobaba nada, así que el arrastre permitía
+   * saltarse el pipeline entero (de `nuevo` a `listo`) mientras el botón
+   * «Avanzar» sí lo respetaba. Dos caminos, dos reglas.
+   */
   moverAColumna(id: string, destinoColumna: string): boolean {
     const p = this.getPedido(id);
     if (!p) return false;
+    const destino = destinoColumna as PedidoEstado;
+    if (!this.transicionValida(p, destino)) return false;
     const previo = p.estado;
-    p.estado = destinoColumna as PedidoEstado;
+    p.estado = destino;
     p.estadoDesde = nowIso();
-    if (this.esTerminal(destinoColumna as PedidoEstado)) {
+    if (this.esTerminal(destino)) {
       p.finishedAt = nowIso();
     }
     this.registrarAuditoria(
       p.id,
-      `Estado cambiado: ${this.estadoLabel(previo)} → ${this.estadoLabel(destinoColumna as PedidoEstado)}`
+      `Estado cambiado: ${this.estadoLabel(previo)} → ${this.estadoLabel(destino)}`
     );
     void this.sincronizarPedidoBase(p);
     return true;
@@ -1724,17 +1894,32 @@ export class PedidosStore {
     return TERMINALES.includes(estado);
   }
 
-  /** Siguiente estado válido para un pedido, o null si ya está en un estado terminal/final. */
+  /**
+   * Siguiente estado válido para un pedido, o null si ya está en un estado terminal/final.
+   *
+   * ── El orden de las COLUMNAS ya no decide el del pipeline (26/10) ────────
+   *
+   * Antes, en cuanto existía una lista de columnas personalizada, «siguiente»
+   * era `cols[idx + 1]`: el orden VISUAL mandaba sobre el del negocio. Si
+   * alguien reordenaba las columnas para que se vieran mejor, el botón
+   * «Avanzar» empezaba a proponer estados que no eran el paso siguiente del
+   * pipeline —y con la validación de un paso, a no proponer nada—. Un ajuste
+   * estético cambiaba el flujo.
+   *
+   * Ahora el orden visual solo manda desde una columna PROPIA (que no
+   * pertenece al pipeline y no tiene otro orden del que tirar). Desde un estado
+   * del sistema, el siguiente es el del pipeline, que es la verdad del negocio.
+   */
   siguienteEstado(p: Pedido): PedidoEstado | null {
     if (this.esTerminal(p.estado)) return null;
-    if (this.config.columnasPersonalizadas && this.config.columnasPersonalizadas.length > 0) {
+
+    if (esColumnaPropiaDe(p.estado)) {
       const cols = this.columnasTablero;
       const idx = cols.indexOf(p.estado);
-      if (idx !== -1) {
-        if (idx < cols.length - 1) return cols[idx + 1];
-        return "entregado";
-      }
+      if (idx !== -1 && idx < cols.length - 1) return cols[idx + 1];
+      return "entregado";
     }
+
     const pipeline = this.pipelineDe(p);
     const idxPipe = pipeline.indexOf(p.estado);
     if (idxPipe === -1 || idxPipe >= pipeline.length - 1) return null;
@@ -1746,14 +1931,34 @@ export class PedidosStore {
    * Reglas: no partir de terminal; destino debe pertenecer al pipeline efectivo;
    * solo se avanza un paso hacia adelante. `cancelado` es válido desde cualquier
    * estado no terminal.
+   *
+   * ── Las columnas propias ya no eximen de la regla (26/10) ────────────────
+   *
+   * Antes, en cuanto existía UNA columna propia —y basta abrir el editor de
+   * columnas para que la lista se siembre—, la comprobación era
+   * `cols.includes(destino)` y devolvía `true` para cualquier etapa del tablero.
+   * Como `columnasTablero` siempre contiene las etapas activas, la regla de «un
+   * paso» dejaba de aplicarse para todo el mundo: se podía saltar de `nuevo` a
+   * `listo` (o meter un pedido de retiro en `en_camino`, que su pipeline ni
+   * siquiera incluye). Eso rompía los tiempos por estado y la analítica, que
+   * asumen un recorrido.
+   *
+   * La exención se reduce a lo que de verdad es libre: las columnas PROPIAS,
+   * que no son estados del pipeline y no tienen orden. Los estados del sistema
+   * vuelven a recorrer su pipeline de uno en uno.
    */
   private transicionValida(p: Pedido, destino: PedidoEstado): boolean {
     if (this.esTerminal(p.estado)) return false;
     if (destino === "cancelado") return true;
-    if (this.config.columnasPersonalizadas && this.config.columnasPersonalizadas.length > 0) {
-      const cols = this.columnasTablero;
-      if (cols.includes(destino) || destino === "entregado") return true;
-    }
+    if (p.estado === destino) return false;
+
+    // Una columna PROPIA es una etiqueta inventada por el negocio: no hay orden
+    // que respetar, así que se puede soltar ahí desde cualquier punto vivo.
+    if (esColumnaPropiaDe(destino)) return true;
+    // Y desde una columna propia se puede volver a cualquier estado del
+    // pipeline: si no, un pedido aparcado ahí quedaría atrapado.
+    if (esColumnaPropiaDe(p.estado)) return true;
+
     const pipeline = this.pipelineDe(p);
     const from = pipeline.indexOf(p.estado);
     const to = pipeline.indexOf(destino);
@@ -1936,14 +2141,25 @@ export class PedidosStore {
     return this.programados.length;
   }
 
-  /** Total de pedidos activos sin pagar (para filtros de cobro). */
+  /**
+   * Pedidos sin pago registrado, para los filtros de cobro.
+   *
+   * ── Mismo criterio que la pantalla (26/10) ────────────────────────────────
+   *
+   * Antes excluía los terminales, mientras el chip del tablero y la vista de
+   * lista contaban TODOS los impagos. Tres cifras para la misma pregunta: el
+   * getter decía 4, el chip 6 y la tabla 6 filas. El filtro que el usuario
+   * aplica es «lo que no está pagado», y eso es lo que devuelve esto. Si algún
+   * día hace falta «solo lo que aún puede cobrarse», será un getter con otro
+   * nombre, no este con otra regla.
+   */
   get totalPorCobrar(): number {
-    return this.pedidos.filter((p) => !this.esTerminal(p.estado) && !p.pagado).length;
+    return this.pedidos.filter((p) => !p.pagado).length;
   }
 
-  /** Total de pedidos activos ya pagados (para filtros de cobro). */
+  /** Pedidos con pago registrado. Complemento exacto de `totalPorCobrar`. */
   get totalPagados(): number {
-    return this.pedidos.filter((p) => !this.esTerminal(p.estado) && Boolean(p.pagado)).length;
+    return this.pedidos.filter((p) => Boolean(p.pagado)).length;
   }
 
   /** Pedidos en curso que ya superaron su tiempo objetivo (urgentes ahora). */
@@ -2390,11 +2606,61 @@ export class PedidosStore {
     return p.items.map((it) => `${it.cantidad}× ${it.nombre}`).join(", ");
   }
 
-  /** Asigna o actualiza el mensajero/repartidor responsable de la entrega. */
+  /**
+   * Asigna o actualiza el mensajero/repartidor responsable de la entrega.
+   *
+   * Es QUIÉN lleva el pedido, no el número con el que la transportadora lo
+   * rastrea: eso es `asignarGuia`. Hasta el 26/10 las dos cosas se escribían en
+   * este campo, y un domicilio con «Javier Moto 04» se leía en el detalle como
+   * «Pedido con guía generada».
+   *
+   * Persiste y deja rastro: antes el cambio se quedaba en memoria y la
+   * siguiente carga lo pisaba con lo que hubiera en la base.
+   */
   asignarRepartidor(id: string, repartidor: string): boolean {
     const p = this.getPedido(id);
     if (!p) return false;
-    p.repartidor = repartidor.trim() || undefined;
+    const limpio = repartidor.trim();
+    const nuevo = limpio || undefined;
+    if (p.repartidor === nuevo) return false;
+    runInAction(() => {
+      p.repartidor = nuevo;
+      this.registrarAuditoria(
+        p.id,
+        limpio ? `Repartidor asignado: ${limpio}` : "Repartidor retirado",
+      );
+    });
+    void this.sincronizarPedidoBase(p);
+    return true;
+  }
+
+  /**
+   * Registra el número de guía de la transportadora.
+   *
+   * ── Por qué es una acción propia y no un campo de texto más ──────────────
+   *
+   * La guía es el hecho que marca el paso de «listo» a «en camino»: el paquete
+   * ya tiene un identificador con el que el cliente puede rastrearlo. Escribirla
+   * dentro de `repartidor` la dejaba sin evento, sin auditoría, sin aviso y sin
+   * persistencia — se perdía al recargar. Aquí deja las tres cosas.
+   *
+   * Devuelve `false` si el valor no cambió (el llamador puede evitar avisos
+   * duplicados) y `true` si se registró.
+   */
+  asignarGuia(id: string, numeroGuia: string): boolean {
+    const p = this.getPedido(id);
+    if (!p) return false;
+    const limpio = numeroGuia.trim();
+    const nuevo = limpio || undefined;
+    if (p.numeroGuia === nuevo) return false;
+    runInAction(() => {
+      p.numeroGuia = nuevo;
+      this.registrarAuditoria(
+        p.id,
+        limpio ? `Guía registrada: ${limpio}` : "Guía retirada",
+      );
+    });
+    void this.sincronizarPedidoBase(p);
     return true;
   }
 
@@ -2639,6 +2905,11 @@ export class PedidosStore {
   modalidadLabel(m: Modalidad): string {
     const alias = this.config.aliasModalidades[m];
     return alias && alias.trim() ? alias.trim() : MODALIDAD_LABEL[m];
+  }
+
+  /** Nombre del medio de cobro registrado, o «Sin definir» si no hay ninguno. */
+  medioPagoLabel(m?: MetodoPago): string {
+    return m ? MEDIO_PAGO_LABEL[m] : "Sin definir";
   }
 
   /**

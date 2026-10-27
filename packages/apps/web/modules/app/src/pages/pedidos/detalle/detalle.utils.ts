@@ -46,7 +46,7 @@ export function fechaCorta(iso?: string | null): string {
 /**
  * Los cuatro hitos del envío, en orden.
  *
- * Se DERIVAN del pedido —su estado, su guía y su repartidor—, no de una tabla
+ * Se DERIVAN del pedido —su estado y su número de guía—, no de una tabla
  * paralela que habría que mantener: si mañana se añade un estado al pipeline,
  * el hito que dependa de él cambia aquí y en ningún otro sitio.
  *
@@ -57,7 +57,12 @@ export function fechaCorta(iso?: string | null): string {
 export function hitosDe(pedido: Pedido): HitoEnvio[] {
   const cancelado = pedido.estado === "cancelado";
   const confirmado = !cancelado && pedido.estado !== "nuevo" && pedido.estado !== "programado";
-  const conGuia = Boolean(pedido.repartidor?.trim());
+  // La guía es `numeroGuia`, NO `repartidor`. Hasta el 26/10 este hito se daba
+  // por cumplido con solo tener repartidor, así que un domicilio con «Javier
+  // Moto 04» anunciaba «Pedido con guía generada» sin que existiera guía
+  // ninguna. El repartidor dice QUIÉN lleva el pedido; la guía, con qué número
+  // lo rastrea la transportadora.
+  const conGuia = Boolean(pedido.numeroGuia?.trim());
   const enTransito = pedido.estado === "en_camino" || pedido.estado === "entregado";
   const finalizado = pedido.estado === "entregado";
 
@@ -78,13 +83,13 @@ export function hitosDe(pedido: Pedido): HitoEnvio[] {
     {
       clave: "confirmado",
       titulo: "Pedido confirmado",
-      detalle: confirmado ? fechaCorta(pedido.createdAt) : "Para confirmación manual",
+      detalle: confirmado ? fechaCorta(pedido.createdAt) : "Sin confirmar todavía",
       estado: estadoDe(0),
     },
     {
       clave: "guia",
       titulo: "Pedido con guía generada",
-      detalle: conGuia ? pedido.repartidor!.trim() : "Sin guía todavía",
+      detalle: conGuia ? pedido.numeroGuia!.trim() : "Sin guía todavía",
       estado: estadoDe(1),
     },
     {

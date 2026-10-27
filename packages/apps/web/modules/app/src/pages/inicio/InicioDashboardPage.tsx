@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import {
@@ -8,6 +8,10 @@ import {
   ChevronUp,
   Calendar,
   ArrowUpRight,
+  ArrowUp,
+  CircleDollarSign,
+  LineChart as LineChartIcon,
+  Calculator,
   Bell,
   Package,
   ShoppingBag,
@@ -23,9 +27,17 @@ import { PageMeta } from "@/shell/meta";
 import { organizacionStore } from "@/stores/organizacion.store";
 import { uiStore, pedidosStore } from "@/stores";
 import { LineChart } from "@/elements/ui/line-chart";
+import { BarChart } from "@/elements/ui/bar-chart";
 import type { ApexOptions } from "apexcharts";
 import { tareasDeInicio } from "./tareas-inicio";
 import { CifraAnimada, formatoEntero, formatoPesos } from "./CifraAnimada";
+import {
+  GraficaRevelada,
+  HorizontalPillBar,
+  LeyendaSeries,
+  SegmentedTickBar,
+  useSeriesInteractivas,
+} from "./GraficasAnimadas";
 import { inicialesDe } from "@/utils";
 import { InsigniaVerificada } from "@/icons";
 
@@ -412,6 +424,17 @@ const BannerCarrusel = observer(function BannerCarrusel({ onIr, visible }: { onI
 // CONFIGURACIÓN LINE CHART 2 (ELEMENTS)
 // ═══════════════════════════════════════════════════════════════════════════
 
+const ID_GRAFICA_VENTAS = "dash-ventas-utilidades";
+const ID_GRAFICA_INVENTARIO = "dash-inventario";
+
+/** Línea guía punteada NECTO bajo el cursor, compartida por las gráficas del panel. */
+const guiaCursor = {
+  show: true,
+  width: 1,
+  position: "front",
+  stroke: { color: "#FF3F1A", width: 1, dashArray: 4 },
+} as const;
+
 const lineChartTwoOptions: ApexOptions = {
   legend: {
     show: false,
@@ -420,6 +443,7 @@ const lineChartTwoOptions: ApexOptions = {
   },
   colors: ["#465FFF", "#97D6DF"],
   chart: {
+    id: ID_GRAFICA_VENTAS,
     fontFamily: "DM Sans, sans-serif",
     height: 310,
     type: "area",
@@ -443,9 +467,14 @@ const lineChartTwoOptions: ApexOptions = {
   },
   markers: {
     size: 0,
+    strokeColors: "#FFFFFF",
+    strokeWidth: 2,
     hover: {
-      size: 5,
+      size: 6,
     },
+  },
+  states: {
+    hover: { filter: { type: "none" } },
   },
   grid: {
     borderColor: "rgba(255, 255, 255, 0.06)",
@@ -469,20 +498,8 @@ const lineChartTwoOptions: ApexOptions = {
   },
   xaxis: {
     type: "category",
-    categories: [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ],
+    categories: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+    crosshairs: guiaCursor,
     axisBorder: {
       show: false,
     },
@@ -514,13 +531,18 @@ const lineChartTwoOptions: ApexOptions = {
   },
 };
 
+const SERIES_VENTAS = [
+  { nombre: "Ventas", color: "#465FFF" },
+  { nombre: "Utilidades", color: "#97D6DF" },
+];
+
 const lineChartTwoSeries = [
   {
-    name: "Series 1",
+    name: "Ventas",
     data: [180, 190, 170, 160, 175, 165, 170, 205, 230, 210, 240, 235],
   },
   {
-    name: "Series 2",
+    name: "Utilidades",
     data: [40, 30, 50, 40, 55, 40, 70, 100, 110, 120, 150, 140],
   },
 ];
@@ -562,6 +584,8 @@ const sparklineVentasOptions: ApexOptions = {
     width: 2,
   },
   colors: ["#465FFF"],
+  markers: { size: 0, strokeColors: "#FFFFFF", strokeWidth: 2, hover: { size: 4 } },
+  xaxis: { crosshairs: guiaCursor },
   fill: {
     type: "gradient",
     gradient: {
@@ -599,6 +623,8 @@ const sparklineUtilidadesOptions: ApexOptions = {
     width: 2,
   },
   colors: ["#97D6DF"],
+  markers: { size: 0, strokeColors: "#FFFFFF", strokeWidth: 2, hover: { size: 4 } },
+  xaxis: { crosshairs: guiaCursor },
   fill: {
     type: "gradient",
     gradient: {
@@ -618,6 +644,106 @@ const sparklineUtilidadesOptions: ApexOptions = {
     },
   },
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIGURACIÓN HORIZONTAL GROUPED BAR CHART (MÓDULO DE INVENTARIO)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const inventarioBarSeries = [
+  {
+    name: "Inventario 1",
+    data: [618, 502, 480, 615, 620],
+  },
+  {
+    name: "Inventario 2",
+    data: [350, 508, 395, 205, 350],
+  },
+];
+
+const SERIES_INVENTARIO = [
+  { nombre: "Inventario 1", color: "#465FFF" },
+  { nombre: "Inventario 2", color: "#94A3B8" },
+];
+
+const getInventarioBarOptions = (isDark: boolean): ApexOptions => ({
+  chart: {
+    id: ID_GRAFICA_INVENTARIO,
+    fontFamily: "DM Sans, sans-serif",
+    type: "bar",
+    height: 310,
+    toolbar: {
+      show: false,
+    },
+  },
+  colors: ["#465FFF", isDark ? "#E2E8F0" : "#94A3B8"],
+  plotOptions: {
+    bar: {
+      horizontal: true,
+      barHeight: "38%",
+      borderRadius: 4,
+      borderRadiusApplication: "end",
+    },
+  },
+  states: {
+    hover: { filter: { type: "lighten" } },
+    active: { filter: { type: "none" } },
+  },
+  dataLabels: {
+    enabled: false,
+  },
+  legend: {
+    show: false,
+  },
+  grid: {
+    borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
+    strokeDashArray: 0,
+    xaxis: {
+      lines: {
+        show: true,
+      },
+    },
+    yaxis: {
+      lines: {
+        show: false,
+      },
+    },
+  },
+  xaxis: {
+    type: "category",
+    categories: ["Jan", "Feb", "Mar", "Apr", "May"],
+    min: 0,
+    max: 700,
+    tickAmount: 7,
+    axisBorder: {
+      show: false,
+    },
+    axisTicks: {
+      show: false,
+    },
+    labels: {
+      style: {
+        colors: "#94a3b8",
+        fontSize: "12px",
+        fontFamily: "DM Sans, sans-serif",
+      },
+    },
+  },
+  yaxis: {
+    labels: {
+      style: {
+        colors: "#94a3b8",
+        fontSize: "12px",
+        fontFamily: "DM Sans, sans-serif",
+      },
+    },
+  },
+  tooltip: {
+    theme: isDark ? "dark" : "light",
+    y: {
+      formatter: (val) => `${val} unidades`,
+    },
+  },
+});
 
 export const InicioDashboardPage = observer(() => {
   const navigate = useNavigate();
@@ -641,11 +767,22 @@ export const InicioDashboardPage = observer(() => {
     setLogoError(false);
   }, [logoNegocio]);
 
+  const isDark = uiStore.theme === "dark";
+  const inventarioBarOptions = useMemo(() => getInventarioBarOptions(isDark), [isDark]);
+
   const tareasPendientes = tareasDeInicio().filter((t) => !t.completada);
   const pedidosAtencion = pedidosStore.enCurso().length;
   const hayNotificacionesGestion =
     pedidosAtencion > 0 || tareasPendientes.length > 0;
   const intro = usePrimeraVisitaDeSesion();
+  // Referencia de tiempo para que cada gráfica no arranque antes de que aterrice su tarjeta.
+  const [t0] = useState(() => performance.now());
+  const ventas = useSeriesInteractivas(ID_GRAFICA_VENTAS, SERIES_VENTAS.length, isDark);
+  const inventario = useSeriesInteractivas(ID_GRAFICA_INVENTARIO, SERIES_INVENTARIO.length, isDark);
+  const seriesInventarioLeyenda = useMemo(
+    () => SERIES_INVENTARIO.map((s, i) => (i === 1 && isDark ? { ...s, color: "#E2E8F0" } : s)),
+    [isDark],
+  );
 
   return (
     <>
@@ -811,48 +948,87 @@ export const InicioDashboardPage = observer(() => {
             </div>
 
             {/* Tarjeta con Gráfica Principal de Ventas y Utilidades (Line Chart 2 - Elements) */}
-            <div style={turno(3)} className="dash-pieza p-6 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs space-y-4">
-
+            <div style={turno(3)} className="dash-pieza relative p-6 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs space-y-4">
+              <div className="relative flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-[#FF3F1A]" />
+                  <h3 className="text-[16px] font-bold text-[#190088] dark:text-white">Ventas y utilidades</h3>
+                </div>
+                <LeyendaSeries
+                  series={SERIES_VENTAS}
+                  ocultas={ventas.ocultas}
+                  onFoco={ventas.setFoco}
+                  onAlternar={ventas.alternar}
+                />
+              </div>
 
               {/* Contenedor del gráfico LineChart de Elements */}
-              <div className="w-full -ml-3 sm:-ml-2">
+              <GraficaRevelada
+                intro={intro}
+                orden={3}
+                t0={t0}
+                alto={310}
+                trazar
+                className="grafica-series w-full -ml-3 sm:-ml-2"
+                foco={ventas.foco}
+              >
                 <LineChart
                   series={lineChartTwoSeries}
                   options={lineChartTwoOptions}
                   height={310}
                 />
-              </div>
+              </GraficaRevelada>
+            </div>
 
-              {/* Indicadores de resumen al pie de la gráfica */}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#ECECEC] dark:border-white/10">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#465FFF]/10 text-[#465FFF] flex items-center justify-center shrink-0">
-                    <Package className="w-5 h-5" />
+            {/* Tarjeta 2: Módulo de Inventario (Horizontal Grouped Bar Chart) */}
+            <div style={turno(4)} className="dash-pieza relative p-6 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs space-y-4">
+              <div className="relative flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Package className="w-5 h-5 text-[#465FFF]" />
+                    <h3 className="text-[18px] sm:text-[20px] font-bold text-[#190088] dark:text-white">
+                      Módulo de Inventario
+                    </h3>
                   </div>
-                  <div>
-                    <p className="text-[12px] font-semibold text-[#212121]/60 dark:text-[#ECECEC]/60">
-                      Productos Vendidos
-                    </p>
-                    <p className="text-[20px] font-bold text-[#212121] dark:text-white">
-                      <CifraAnimada valor={2053} formato={formatoEntero} animar={intro} retardo={0.8} />
-                    </p>
-                  </div>
+                  <p className="text-[12px] text-[#212121]/60 dark:text-[#ECECEC]/60 mt-0.5">
+                    Comparativa de existencias por período
+                  </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF] flex items-center justify-center shrink-0">
-                    <ShoppingBag className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-[12px] font-semibold text-[#212121]/60 dark:text-[#ECECEC]/60">
-                      Total de Pedidos
-                    </p>
-                    <p className="text-[20px] font-bold text-[#212121] dark:text-white">
-                      <CifraAnimada valor={1388} formato={formatoEntero} animar={intro} retardo={0.8} />
-                    </p>
-                  </div>
-                </div>
+                <Link
+                  to="/inventarios"
+                  className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[#465FFF] dark:text-[#97D6DF] hover:underline"
+                >
+                  <span>Ver inventario</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
               </div>
+
+              {/* Leyenda interactiva: enfoca u oculta cada inventario */}
+              <div className="relative pt-1">
+                <LeyendaSeries
+                  series={seriesInventarioLeyenda}
+                  ocultas={inventario.ocultas}
+                  onFoco={inventario.setFoco}
+                  onAlternar={inventario.alternar}
+                />
+              </div>
+
+              {/* Contenedor del gráfico BarChart */}
+              <GraficaRevelada
+                intro={intro}
+                orden={4}
+                t0={t0}
+                alto={310}
+                className="grafica-series w-full -ml-3 sm:-ml-2"
+                foco={inventario.foco}
+              >
+                <BarChart
+                  series={inventarioBarSeries}
+                  options={inventarioBarOptions}
+                  height={310}
+                />
+              </GraficaRevelada>
             </div>
           </div>
 
@@ -942,72 +1118,134 @@ export const InicioDashboardPage = observer(() => {
               </div>
             )}
 
-            {/* 2. CIFRAS: Ventas y Utilidades en UNA SOLA LÍNEA HORIZONTAL (Line Chart 3 - Elements) */}
-            <div style={turno(2)} className="dash-pieza p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs">
-              <div className="grid grid-cols-2 gap-4 divide-x divide-[#ECECEC] dark:divide-gray-800">
-                {/* Columna Ventas */}
-                <div className="space-y-1.5 pr-2">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#212121]/70 dark:text-[#ECECEC]/70">
-                      <span className="w-3.5 h-3.5 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-[9px] font-bold text-[#212121] dark:text-white">
-                        $
-                      </span>
-                      <span>Ventas</span>
-                    </span>
-                    <span className="dash-insignia inline-flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1 py-0.5 rounded">
-                      <ArrowUpRight className="w-3 h-3" />
-                      <span>18.73%</span>
-                    </span>
+            {/* 2. TARJETAS VERTICALES DE RESUMEN (Ventas, Utilidades, Productos Vendidos, Total de Pedidos) */}
+            <div className="space-y-3.5">
+              {/* Tarjeta 1: Ventas */}
+              <div
+                style={turno(2)}
+                className="dash-pieza p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[13px] font-medium text-[#212121]/60 dark:text-[#ECECEC]/60">
+                    <CircleDollarSign className="w-4 h-4 text-gray-400 dark:text-gray-500" strokeWidth={1.75} />
+                    <span>Ventas</span>
                   </div>
+                  <span className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-emerald-500 dark:text-emerald-400">
+                    <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>100.00%</span>
+                  </span>
+                </div>
 
-                  <p className="text-[16px] sm:text-[18px] font-bold text-[#212121] dark:text-white tracking-tight">
+                <div className="my-2">
+                  <p className="text-[22px] sm:text-[24px] font-bold text-[#212121] dark:text-white tracking-tight">
                     <CifraAnimada valor={307711012.94} formato={formatoPesos} animar={intro} retardo={0.7} />
                   </p>
-
-                  {/* Sparkline Line Chart 3 */}
-                  <div className="w-full -mx-1 py-0.5 overflow-hidden">
-                    <LineChart
-                      series={[{ name: "Ventas", data: lineChartThreeVentasData }]}
-                      options={sparklineVentasOptions}
-                      height={52}
-                    />
-                  </div>
-
-                  <p className="text-[10px] text-[#212121]/50 dark:text-[#ECECEC]/50 font-medium">
-                    Últimos 30 días
-                  </p>
                 </div>
 
-                {/* Columna Utilidades */}
-                <div className="space-y-1.5 pl-4">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#212121]/70 dark:text-[#ECECEC]/70">
-                      <TrendingUp className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />
-                      <span>Utilidades</span>
-                    </span>
-                    <span className="dash-insignia inline-flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1 py-0.5 rounded">
-                      <ArrowUpRight className="w-3 h-3" />
-                      <span>16.87%</span>
-                    </span>
-                  </div>
+                {/* Sparkline Ventas */}
+                <GraficaRevelada intro={intro} orden={2} t0={t0} alto={52} trazar className="w-full -mx-1 py-0.5 overflow-hidden">
+                  <LineChart
+                    series={[{ name: "Ventas", data: lineChartThreeVentasData }]}
+                    options={sparklineVentasOptions}
+                    height={52}
+                  />
+                </GraficaRevelada>
 
-                  <p className="text-[16px] sm:text-[18px] font-bold text-[#212121] dark:text-white tracking-tight">
+                <div className="flex justify-end pt-1">
+                  <span className="text-[11px] text-[#212121]/50 dark:text-[#ECECEC]/50 font-normal">
+                    Últimos 7 días
+                  </span>
+                </div>
+              </div>
+
+              {/* Tarjeta 2: Utilidades */}
+              <div
+                style={turno(3)}
+                className="dash-pieza p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[13px] font-medium text-[#212121]/60 dark:text-[#ECECEC]/60">
+                    <LineChartIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" strokeWidth={1.75} />
+                    <span>Utilidades</span>
+                  </div>
+                  <span className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-emerald-500 dark:text-emerald-400">
+                    <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>100.00%</span>
+                  </span>
+                </div>
+
+                <div className="my-2">
+                  <p className="text-[22px] sm:text-[24px] font-bold text-[#212121] dark:text-white tracking-tight">
                     <CifraAnimada valor={214838216.94} formato={formatoPesos} animar={intro} retardo={0.7} />
                   </p>
+                </div>
 
-                  {/* Sparkline Line Chart 3 */}
-                  <div className="w-full -mx-1 py-0.5 overflow-hidden">
-                    <LineChart
-                      series={[{ name: "Utilidades", data: lineChartThreeUtilidadesData }]}
-                      options={sparklineUtilidadesOptions}
-                      height={52}
-                    />
+                {/* Sparkline Utilidades */}
+                <GraficaRevelada intro={intro} orden={3} t0={t0} alto={52} trazar className="w-full -mx-1 py-0.5 overflow-hidden">
+                  <LineChart
+                    series={[{ name: "Utilidades", data: lineChartThreeUtilidadesData }]}
+                    options={sparklineUtilidadesOptions}
+                    height={52}
+                  />
+                </GraficaRevelada>
+
+                <div className="flex justify-end pt-1">
+                  <span className="text-[11px] text-[#212121]/50 dark:text-[#ECECEC]/50 font-normal">
+                    Últimos 7 días
+                  </span>
+                </div>
+              </div>
+
+              {/* Tarjeta 3: Productos Vendidos */}
+              <div
+                style={turno(4)}
+                className="dash-pieza p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[13px] font-medium text-[#212121]/60 dark:text-[#ECECEC]/60">
+                    <ShoppingBag className="w-4 h-4 text-gray-400 dark:text-gray-500" strokeWidth={1.75} />
+                    <span>Productos Vendidos</span>
                   </div>
+                  <span className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-emerald-500 dark:text-emerald-400">
+                    <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>100.00%</span>
+                  </span>
+                </div>
 
-                  <p className="text-[10px] text-[#212121]/50 dark:text-[#ECECEC]/50 font-medium">
-                    Últimos 30 días
+                <div className="my-2">
+                  <p className="text-[22px] sm:text-[24px] font-bold text-[#212121] dark:text-white tracking-tight">
+                    <CifraAnimada valor={2053} formato={formatoEntero} animar={intro} retardo={0.8} />
                   </p>
                 </div>
+
+                {/* Sparkline Bar Chart 3 (Ticks) */}
+                <SegmentedTickBar intro={intro} orden={4} t0={t0} periodo="Últimos 7 días" />
+              </div>
+
+              {/* Tarjeta 4: Total de Pedidos */}
+              <div
+                style={turno(5)}
+                className="dash-pieza p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c101d] border border-[#ECECEC] dark:border-white/[0.08] shadow-xs flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[13px] font-medium text-[#212121]/60 dark:text-[#ECECEC]/60">
+                    <Calculator className="w-4 h-4 text-gray-400 dark:text-gray-500" strokeWidth={1.75} />
+                    <span>Total de Pedidos</span>
+                  </div>
+                  <span className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-emerald-500 dark:text-emerald-400">
+                    <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>100.00%</span>
+                  </span>
+                </div>
+
+                <div className="my-2">
+                  <p className="text-[22px] sm:text-[24px] font-bold text-[#212121] dark:text-white tracking-tight">
+                    <CifraAnimada valor={1388} formato={formatoEntero} animar={intro} retardo={0.8} />
+                  </p>
+                </div>
+
+                {/* Sparkline Horizontal Bar Chart (Pills) */}
+                <HorizontalPillBar intro={intro} orden={5} t0={t0} periodo="Últimos 7 días" />
               </div>
             </div>
 

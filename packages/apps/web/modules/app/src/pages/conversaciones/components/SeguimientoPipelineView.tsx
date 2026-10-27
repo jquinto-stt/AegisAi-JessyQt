@@ -16,65 +16,74 @@ import {
 
 import { Badge } from "@/elements/ui/badge";
 import { conversacionesStore, presenciaDe } from "@/stores/conversaciones.store";
-import { pedidosStore } from "@/stores/pedidos.store";
+import { ETIQUETA_PAGO, pedidosStore } from "@/stores/pedidos.store";
 import type { ConversacionCanal } from "@/stores";
 import { formatoMoneda, inicialesDe, retardoEscalonado } from "@/utils";
 import { ultimoTexto } from "@/pages/conversaciones/conversaciones.utils";
+import {
+  ETAPAS_SEGUIMIENTO,
+  etapaDe,
+  type EtapaSeguimiento,
+  type EtapaSeguimientoConfig,
+} from "@/pages/conversaciones/seguimiento.etapas";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ETAPAS DEL PIPELINE DE SEGUIMIENTO
+// ETAPAS Y ANCLAJES MANUALES
 // ═══════════════════════════════════════════════════════════════════════════
+//
+// La etapa de cada tarjeta NO se decide aquí: la decide `etapaDe()` en
+// `seguimiento.etapas.ts`, que la deriva del PEDIDO —y del estado del hilo solo
+// cuando todavía no hay pedido—. Esta vista añade una sola cosa encima: el
+// anclaje manual que produce el arrastre.
 
-export type EtapaSeguimiento =
-  | "contacto_inicial"
-  | "oferta_enviada"
-  | "seguimiento"
-  | "en_cierre"
-  | "validacion_pago";
-
-export interface ColumnaEtapaConfig {
-  clave: EtapaSeguimiento;
-  label: string;
-  dotColor: string;
-  dotBg: string;
+/**
+ * Un anclaje manual: la etapa a la que el operador arrastró la tarjeta y la
+ * etapa AUTOMÁTICA que tenía en ese momento.
+ *
+ * `base` es lo que hace caducar el anclaje. Antes se guardaba solo la etapa
+ * destino, así que una tarjeta arrastrada una vez se quedaba en esa columna
+ * PARA SIEMPRE —aunque el pedido se pagara, avanzara o se entregara—, y el
+ * botón «Restablecer» tampoco la devolvía porque no limpia este mapa. Con la
+ * base guardada, el anclaje vale mientras la realidad no cambie: en cuanto el
+ * pedido entra en otra etapa, el anclaje deja de aplicar y manda el dato.
+ */
+interface AnclajeManual {
+  etapa: EtapaSeguimiento;
+  base: EtapaSeguimiento;
 }
 
-export const ETAPAS_PIPELINE: ColumnaEtapaConfig[] = [
-  { clave: "contacto_inicial", label: "Contacto Inicial", dotColor: "#0284C7", dotBg: "bg-accent-500" },
-  { clave: "oferta_enviada", label: "Oferta Enviada", dotColor: "#FF3F1A", dotBg: "bg-brand-500" },
-  { clave: "seguimiento", label: "Seguimiento", dotColor: "#190088", dotBg: "bg-secondary-500" },
-  { clave: "en_cierre", label: "En Cierre", dotColor: "#10B981", dotBg: "bg-success-500" },
-  { clave: "validacion_pago", label: "Validación de pago", dotColor: "#F59E0B", dotBg: "bg-warning-500" },
-];
+/**
+ * v2 y no v1: el formato cambió (v1 guardaba solo la etapa) y migrarlo sería
+ * heredar justo el defecto que se corrige. Se empieza limpio.
+ */
+const LOCAL_STORAGE_STAGES_KEY = "necto_seguimiento_etapas_v2";
 
-const LOCAL_STORAGE_STAGES_KEY = "necto_seguimiento_etapas_v1";
-
-function leerEtapasPersonalizadas(): Record<string, EtapaSeguimiento> {
+function leerAnclajes(): Record<string, AnclajeManual> {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_STAGES_KEY);
-    return raw ? JSON.parse(raw) : {};
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const limpio: Record<string, AnclajeManual> = {};
+    for (const [id, valor] of Object.entries(parsed)) {
+      const v = valor as Partial<AnclajeManual> | undefined;
+      if (v && typeof v.etapa === "string" && typeof v.base === "string") {
+        limpio[id] = {
+          etapa: v.etapa as EtapaSeguimiento,
+          base: v.base as EtapaSeguimiento,
+        };
+      }
+    }
+    return limpio;
   } catch {
     return {};
   }
 }
 
-function guardarEtapasPersonalizadas(mapa: Record<string, EtapaSeguimiento>) {
+function guardarAnclajes(mapa: Record<string, AnclajeManual>) {
   try {
     localStorage.setItem(LOCAL_STORAGE_STAGES_KEY, JSON.stringify(mapa));
   } catch {}
-}
-
-/**
- * Deriva la etapa inicial de una conversación si no ha sido movida manualmente.
- */
-function calcularEtapaPorDefecto(conv: ConversacionCanal): EtapaSeguimiento {
-  if (conv.estado === "atendida") return "en_cierre";
-  if (conv.estado === "en_espera") return "seguimiento";
-  if (conv.estado === "cerrada") return "validacion_pago";
-  return pedidosStore.pedidoActivoDe(conv.contacto.telefono)
-    ? "oferta_enviada"
-    : "contacto_inicial";
 }
 
 /** Formateador de fecha amigable integrado con el estilo Necto */
@@ -194,6 +203,27 @@ const TarjetaPipeline = observer(({ conv, indice, onAbrir, onDragStart }: Tarjet
         </div>
       </div>
 
+      {/* ── Los DOS ejes, a la vista ──
+          Antes esta tarjeta solo decía «Cliente» o «Lead», y el estado del
+          pedido había que adivinarlo. Por eso el tablero se leía como si
+          «Validación de pago» fuera un estado del pedido: no había nada que
+          dijera en cuál está. Ahora van los dos hechos, separados y con su
+          color: dónde va el pedido y si el dinero entró. */}
+      {pedido && (
+        <div className="mt-2 flex flex-wrap items-center gap-1">
+          <Badge color={pedidosStore.estadoBadgeColor(pedido.estado)} size="xs">
+            {pedidosStore.estadoLabel(pedido.estado)}
+          </Badge>
+          {/* El pago va en gris cuando falta: con `warning` quedaban dos
+              pastillas amarillas seguidas («Nuevo» + «Pendiente de pago») que se
+              leían como una sola. El color de alarma lo lleva el estado; el pago
+              es un hecho, y cuando de verdad urge lo dice la columna. */}
+          <Badge color={pedido.pagado ? "success" : "light"} size="xs">
+            {pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
+          </Badge>
+        </div>
+      )}
+
       {/* ── Fila inferior: Valor y Badges Necto ── */}
       <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2.5 dark:border-gray-800">
         <span
@@ -212,9 +242,13 @@ const TarjetaPipeline = observer(({ conv, indice, onAbrir, onDragStart }: Tarjet
               {conv.noLeidos}
             </span>
           )}
-          <Badge color={pedido ? "success" : "light"} size="sm">
-            {pedido ? "Cliente" : "Lead"}
-          </Badge>
+          {/* «Cliente» sobraba cuando ya se pinta el estado del pedido; «Lead»
+              sigue diciendo algo que ningún otro badge dice: no hay pedido. */}
+          {!pedido && (
+            <Badge color="light" size="sm">
+              Lead
+            </Badge>
+          )}
         </div>
       </div>
     </div>
@@ -226,7 +260,7 @@ const TarjetaPipeline = observer(({ conv, indice, onAbrir, onDragStart }: Tarjet
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface ColumnaPipelineProps {
-  config: ColumnaEtapaConfig;
+  config: EtapaSeguimientoConfig;
   convs: ConversacionCanal[];
   onAbrir: (convId: string) => void;
   onDropConv: (convId: string, nuevaEtapa: EtapaSeguimiento) => void;
@@ -279,7 +313,7 @@ const ColumnaPipeline = observer(
         {/* Cabecera de la columna */}
         <header className="mb-3 shrink-0 px-1.5 pt-1">
           <div className="flex items-center gap-2">
-            <span className={`size-2 shrink-0 rounded-full ${config.dotBg}`} />
+            <span className={`size-2 shrink-0 rounded-full ${config.punto}`} />
             <h3 className="truncate text-sm font-bold text-ink-title dark:text-white">
               {config.label}
             </h3>
@@ -332,9 +366,7 @@ export const SeguimientoPipelineView = observer(
     const [etapasFiltro, setEtapasFiltro] = useState<EtapaSeguimiento[]>([]);
     const [menuEtapasAbierto, setMenuEtapasAbierto] = useState(false);
     const menuEtapasRef = useRef<HTMLDivElement>(null);
-    const [etapasMap, setEtapasMap] = useState<Record<string, EtapaSeguimiento>>(
-      leerEtapasPersonalizadas
-    );
+    const [anclajes, setAnclajes] = useState<Record<string, AnclajeManual>>(leerAnclajes);
     const [chatSeleccionadoId, setChatSeleccionadoId] = useState<string | null>(null);
 
     // Cierre al hacer click fuera del menú de etapas
@@ -358,72 +390,90 @@ export const SeguimientoPipelineView = observer(
     // Todas las conversaciones activas del store
     const conversaciones = conversacionesStore.conversaciones;
 
-    // Asignación de etapas combinando lo automático con lo manual del usuario
-    const conversacionesPorEtapa = useMemo(() => {
-      const q = busqueda.trim().toLowerCase();
-      const resultado: Record<EtapaSeguimiento, ConversacionCanal[]> = {
-        contacto_inicial: [],
-        oferta_enviada: [],
-        seguimiento: [],
-        en_cierre: [],
-        validacion_pago: [],
-      };
+    /**
+     * Reparto de las tarjetas entre las cinco etapas.
+     *
+     * La etapa sale de `etapaDe()` —del pedido, no del hilo— y las que devuelven
+     * `null` NO se pintan: ya salieron del embudo (venta ganada o hilo resuelto
+     * sin compra). Es lo que impide que los pedidos entregados y las consultas
+     * cerradas se acumulen en «Validación de pago».
+     *
+     * Encima de eso va el anclaje manual, y solo si sigue vigente: el operador
+     * puede arrastrar una tarjeta, pero en cuanto el pedido cambia de etapa por
+     * su cuenta el anclaje caduca y vuelve a mandar el dato.
+     *
+     * ── Sin `useMemo` a propósito (26/10) ────────────────────────────────────
+     *
+     * Estaba memorizado con `[conversaciones, anclajes, busqueda]`, y el store
+     * MUTA los objetos que hay dentro del array en vez de reemplazarlo. Con la
+     * referencia del array intacta, el memo devolvía el reparto viejo: cerrar un
+     * hilo no lo sacaba del tablero, y avanzar un pedido no movía su tarjeta,
+     * hasta que cambiaba cualquier otra cosa. Un memo sobre identidad no sirve
+     * cuando la fuente muta en sitio. Son diez conversaciones: recalcular el
+     * reparto en cada render cuesta nada y no puede quedar desfasado.
+     */
+    const conversacionesPorEtapa: Record<EtapaSeguimiento, ConversacionCanal[]> = {
+      contacto_inicial: [],
+      oferta_enviada: [],
+      seguimiento: [],
+      en_cierre: [],
+      validacion_pago: [],
+    };
 
-      for (const conv of conversaciones) {
-        if (q) {
-          const coincideNombre = conv.contacto.nombre.toLowerCase().includes(q);
-          const coincideTel = conv.contacto.telefono.includes(q);
-          const coincideId = conv.id.toLowerCase().includes(q);
-          if (!coincideNombre && !coincideTel && !coincideId) continue;
-        }
+    const q = busqueda.trim().toLowerCase();
 
-        const etapa = etapasMap[conv.id] || calcularEtapaPorDefecto(conv);
-        if (resultado[etapa]) {
-          resultado[etapa].push(conv);
-        } else {
-          resultado.contacto_inicial.push(conv);
-        }
+    for (const conv of conversaciones) {
+      if (q) {
+        const coincideNombre = conv.contacto.nombre.toLowerCase().includes(q);
+        const coincideTel = conv.contacto.telefono.includes(q);
+        const coincideId = conv.id.toLowerCase().includes(q);
+        if (!coincideNombre && !coincideTel && !coincideId) continue;
       }
 
-      // Ordenar cada columna por última actividad descendente
-      for (const k of Object.keys(resultado) as EtapaSeguimiento[]) {
-        resultado[k].sort((a, b) => b.ultimaActividad.localeCompare(a.ultimaActividad));
-      }
+      const automatica = etapaDe(conv);
+      if (!automatica) continue;
 
-      return resultado;
-    }, [conversaciones, etapasMap, busqueda]);
+      const anclaje = anclajes[conv.id];
+      const etapa = anclaje && anclaje.base === automatica ? anclaje.etapa : automatica;
+      conversacionesPorEtapa[etapa].push(conv);
+    }
+
+    // Ordenar cada columna por última actividad descendente
+    for (const k of Object.keys(conversacionesPorEtapa) as EtapaSeguimiento[]) {
+      conversacionesPorEtapa[k].sort((a, b) => b.ultimaActividad.localeCompare(a.ultimaActividad));
+    }
 
     // Columnas visibles según el filtro seleccionado (o todas si no hay filtro activo)
     const columnasVisibles = useMemo(() => {
-      if (etapasFiltro.length === 0) return ETAPAS_PIPELINE;
-      return ETAPAS_PIPELINE.filter((e) => etapasFiltro.includes(e.clave));
+      if (etapasFiltro.length === 0) return ETAPAS_SEGUIMIENTO;
+      return ETAPAS_SEGUIMIENTO.filter((e) => etapasFiltro.includes(e.clave));
     }, [etapasFiltro]);
 
-    // Métricas totales del pipeline
-    const { totalValorPipeline, totalProspectos } = useMemo(() => {
-      let suma = 0;
-      let cantidad = 0;
-
-      for (const k of Object.keys(conversacionesPorEtapa) as EtapaSeguimiento[]) {
-        const lista = conversacionesPorEtapa[k];
-        cantidad += lista.length;
-        for (const conv of lista) {
-          const p = pedidosStore.pedidoActivoDe(conv.contacto.telefono);
-          if (p) suma += pedidosStore.totalPedido(p);
-        }
+    // Métricas totales del pipeline (mismo criterio: sin memo, ver arriba)
+    let totalValorPipeline = 0;
+    let totalProspectos = 0;
+    for (const k of Object.keys(conversacionesPorEtapa) as EtapaSeguimiento[]) {
+      const lista = conversacionesPorEtapa[k];
+      totalProspectos += lista.length;
+      for (const conv of lista) {
+        const p = pedidosStore.pedidoActivoDe(conv.contacto.telefono);
+        if (p) totalValorPipeline += pedidosStore.totalPedido(p);
       }
-
-      return { totalValorPipeline: suma, totalProspectos: cantidad };
-    }, [conversacionesPorEtapa]);
+    }
 
     const handleDragStart = (e: React.DragEvent, convId: string) => {
       e.dataTransfer.setData("text/plain", convId);
     };
 
     const handleDropConv = (convId: string, nuevaEtapa: EtapaSeguimiento) => {
-      const nuevoMapa = { ...etapasMap, [convId]: nuevaEtapa };
-      setEtapasMap(nuevoMapa);
-      guardarEtapasPersonalizadas(nuevoMapa);
+      const conv = conversaciones.find((c) => c.id === convId);
+      const base = conv ? etapaDe(conv) : null;
+      // Sin etapa automática la tarjeta no está en el tablero, así que no hay
+      // nada que anclar: no se puede arrastrar lo que no se pinta.
+      if (!base) return;
+      const nuevo = { ...anclajes, [convId]: { etapa: nuevaEtapa, base } };
+      setAnclajes(nuevo);
+      guardarAnclajes(nuevo);
     };
 
     const handleRecargar = async () => {
@@ -432,6 +482,11 @@ export const SeguimientoPipelineView = observer(
       setEtapasFiltro([]);
       setBusqueda("");
       setBuscadorAbierto(false);
+      // Y los anclajes manuales: el botón se llama «Restablecer» y hasta ahora
+      // no los tocaba, así que una tarjeta arrastrada seguía fuera de su sitio
+      // para siempre aunque se pulsara.
+      setAnclajes({});
+      guardarAnclajes({});
       try {
         await conversacionesStore.cargarDesdeBase();
       } finally {
@@ -568,7 +623,7 @@ export const SeguimientoPipelineView = observer(
                     <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                       Filtrar por etiqueta
                     </div>
-                    {ETAPAS_PIPELINE.map((e) => {
+                    {ETAPAS_SEGUIMIENTO.map((e) => {
                       const seleccionada = etapasFiltro.includes(e.clave);
                       const count = conversacionesPorEtapa[e.clave]?.length || 0;
                       return (
@@ -621,7 +676,7 @@ export const SeguimientoPipelineView = observer(
               )}
 
               {etapasFiltro.map((clave) => {
-                const info = ETAPAS_PIPELINE.find((e) => e.clave === clave);
+                const info = ETAPAS_SEGUIMIENTO.find((e) => e.clave === clave);
                 if (!info) return null;
                 return (
                   <span
@@ -686,6 +741,14 @@ export const SeguimientoPipelineView = observer(
             </div>
           ))}
         </main>
+
+        {/* El embudo termina en el cobro: lo que ya se vendió no se queda en la
+            última columna. Se dice aquí, en una línea, porque una tarjeta que
+            desaparece sin explicación se lee como un fallo. */}
+        <p className="mt-1 shrink-0 px-1 text-[11px] text-gray-400 dark:text-gray-500">
+          Las ventas ya confirmadas y los hilos resueltos sin compra salen del embudo: se
+          consultan en Pedidos y en Chats.
+        </p>
 
         {/* ── SLIDE-OVER / DRAWER NECTO PARA RESPONDER CHATS SIN SALIR ── */}
         {chatSeleccionadoId && (

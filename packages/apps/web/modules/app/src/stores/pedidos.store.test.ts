@@ -786,7 +786,7 @@ describe("PedidosStore — alias de estados y modalidades (C)", () => {
     expect(store.estadoLabel("en_camino")).toBe("En reparto");
     expect(store.modalidadLabel("en_sitio")).toBe("Comer aquí");
     // Sin alias, cae en la etiqueta por defecto.
-    expect(store.estadoLabel("nuevo")).toBe("Pendiente de pago");
+    expect(store.estadoLabel("nuevo")).toBe("Nuevo");
     expect(store.modalidadLabel("retiro")).toBe("Retiro");
   });
 });
@@ -1396,7 +1396,7 @@ describe("PedidosStore — Logística de entrega, CRM de direcciones y pagos", (
 
       // La lista guarda una COPIA del nombre que la etapa tenía al sembrarse.
       const congelado = store.config.columnasPersonalizadas!.find((c) => c.id === "nuevo")!.label;
-      expect(congelado).toBe("Pendiente de pago");
+      expect(congelado).toBe("Nuevo");
 
       store.updateConfig({ aliasEstados: { nuevo: "Por pagar" } });
 
@@ -1404,7 +1404,7 @@ describe("PedidosStore — Logística de entrega, CRM de direcciones y pagos", (
       // se pinta: el nombre lo fija el alias, que es el campo que el usuario
       // acaba de escribir.
       expect(store.config.columnasPersonalizadas!.find((c) => c.id === "nuevo")!.label).toBe(
-        "Pendiente de pago",
+        "Nuevo",
       );
       expect(store.estadoLabel("nuevo")).toBe("Por pagar");
     });

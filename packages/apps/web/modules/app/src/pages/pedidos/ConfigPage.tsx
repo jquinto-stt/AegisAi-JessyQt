@@ -303,7 +303,11 @@ const ESTILOS_ETAPA_SLA: Record<
   }
 > = {
   nuevo: {
-    subtitulo: "Espera de validación bancaria",
+    // Decía «Espera de validación bancaria», que solo describe el caso de
+    // transferencia: un pedido contra entrega también está en `nuevo` y no
+    // espera ningún banco. La validación del cobro es un eje aparte
+    // (`esperaValidacionPago`), no el significado del estado.
+    subtitulo: "Espera de confirmación del pedido",
     dotColor: "bg-accent-500",
     badgeClass: "text-accent-700 bg-accent-100/70 dark:text-accent-300 dark:bg-accent-950/60",
     hoverBorder: "hover:border-accent-300 dark:hover:border-accent-700",

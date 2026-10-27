@@ -231,7 +231,7 @@ export const MODULO_DESTINO_LABEL: Record<
   ModuloDestino,
   { etiqueta: string; disponible: boolean }
 > = {
-  pedidos: { etiqueta: "Pedidos", disponible: true },
+  pedidos: { etiqueta: "Gestión de pedidos", disponible: true },
   inventario: { etiqueta: "Inventario", disponible: true },
   general: { etiqueta: "General", disponible: true },
 };

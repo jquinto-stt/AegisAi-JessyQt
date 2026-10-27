@@ -56,6 +56,10 @@ interface EtapaMeta {
 const ETAPAS: EtapaMeta[] = [
   {
     id: "nuevos",
+    // El nombre de la tarjeta es el del ESTADO (`META_ESTADO_PEDIDO.nuevo`), no
+    // un alias propio: decía «Nuevos» mientras el tablero decía «Pendiente de
+    // pago» y la lista «Para Confirmación Manual». Tres nombres para la misma
+    // casilla en la misma sesión.
     nombre: "Nuevos",
     estados: ["nuevo"],
     icon: InboxStackIcon,

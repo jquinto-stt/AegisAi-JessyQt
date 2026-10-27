@@ -1,4 +1,4 @@
-import type { DatosBancariosConfig, MetodoPago } from "@/stores/pedidos.store";
+import { MEDIO_PAGO_LABEL, type DatosBancariosConfig, type MetodoPago } from "@/stores/pedidos.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // COBROS — de la configuración a lo que de verdad se le enseña al cliente
@@ -59,25 +59,25 @@ export function mediosDeCobroHabilitados(
   const todos: (MedioDeCobro & { encendido: boolean })[] = [
     {
       id: "efectivo",
-      label: "Efectivo",
+      label: MEDIO_PAGO_LABEL.efectivo,
       descripcion: "Cobro en caja al retirar o consumir en el local.",
       encendido: encendido(c.efectivoActivo),
     },
     {
       id: "transferencia",
-      label: "Transferencia",
+      label: MEDIO_PAGO_LABEL.transferencia,
       descripcion: "El cliente transfiere a tus cuentas y envía el comprobante.",
       encendido: encendido(c.transferenciaActivo),
     },
     {
       id: "contra_entrega",
-      label: "Contra entrega",
+      label: MEDIO_PAGO_LABEL.contra_entrega,
       descripcion: "El cliente paga al recibir su pedido.",
       encendido: encendido(c.contraEntregaActivo),
     },
     {
       id: "tarjeta",
-      label: "Tarjeta o PSE",
+      label: MEDIO_PAGO_LABEL.tarjeta,
       descripcion: "Pago en línea con el enlace de cobro.",
       encendido: encendido(c.linkPagoActivo),
     },
