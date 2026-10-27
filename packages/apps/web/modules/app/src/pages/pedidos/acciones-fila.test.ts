@@ -19,6 +19,7 @@ import {
 const MANOS: ManosFila = {
   avanzar: () => {},
   detalle: () => {},
+  abrirChat: () => {},
   reprogramar: () => {},
   reintentar: () => {},
   quitarRepartidor: () => {},
@@ -34,6 +35,7 @@ const BASE: PermisosFila = {
   puedeReintentar: false,
   puedeCancelar: true,
   puedeQuitarRepartidor: false,
+  puedeAbrirChat: false,
 };
 
 const CASOS: Array<{ estado: string; permisos: PermisosFila; esperadas: number }> = [
@@ -120,6 +122,43 @@ describe("construirAcciones", () => {
     const [avanzar] = construirAcciones(programado.permisos, MANOS);
     expect(avanzar.clave).toBe("avanzar");
     expect(avanzar.titulo).toBe("Activar ahora");
+  });
+});
+
+describe("acción de WhatsApp", () => {
+  it("no aparece si el contacto no tiene hilo", () => {
+    const claves = construirAcciones({ ...BASE, puedeAbrirChat: false }, MANOS).map((a) => a.clave);
+    expect(claves).not.toContain("chat");
+  });
+
+  it("aparece justo después de «detalle» cuando hay hilo", () => {
+    const claves = construirAcciones({ ...BASE, puedeAbrirChat: true }, MANOS).map((a) => a.clave);
+    expect(claves).toEqual(["avanzar", "detalle", "chat", "cancelar"]);
+  });
+
+  it("un pedido cerrado con hilo conserva detalle y conversación", () => {
+    const cerrado: PermisosFila = {
+      ...BASE,
+      puedeAvanzar: false,
+      puedeCancelar: false,
+      puedeAbrirChat: true,
+    };
+    expect(construirAcciones(cerrado, MANOS).map((a) => a.clave)).toEqual(["detalle", "chat"]);
+  });
+
+  it("se llama «Abrir conversación», no «WhatsApp»", () => {
+    const chat = construirAcciones({ ...BASE, puedeAbrirChat: true }, MANOS).find(
+      (a) => a.clave === "chat",
+    );
+    expect(chat?.titulo).toBe("Abrir conversación");
+  });
+
+  it("no altera el orden del resto de acciones", () => {
+    const sinChat = construirAcciones(BASE, MANOS).map((a) => a.clave);
+    const conChat = construirAcciones({ ...BASE, puedeAbrirChat: true }, MANOS)
+      .map((a) => a.clave)
+      .filter((c) => c !== "chat");
+    expect(conChat).toEqual(sinChat);
   });
 });
 

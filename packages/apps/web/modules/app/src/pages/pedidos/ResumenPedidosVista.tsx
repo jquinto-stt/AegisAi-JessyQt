@@ -5,7 +5,13 @@ import { useFlipLista } from "@/hooks/useFlipLista";
 import { retardoEscalonado } from "@/utils";
 import { useNavigate } from "react-router";
 
-import { organizacionStore, pedidosStore, sessionStore, puedeCancelarPedido } from "@/stores";
+import {
+  conversacionesStore,
+  organizacionStore,
+  pedidosStore,
+  sessionStore,
+  puedeCancelarPedido,
+} from "@/stores";
 import type { Pedido, PedidoEstado } from "@/stores/pedidos.store";
 import { transportadoraPorNombre } from "@/domain/pedidos/transportadoras.catalogo";
 import { DetallePedidoModal } from "./DetallePedidoModal";
@@ -350,6 +356,12 @@ export interface ResumenPedidosVistaProps {
   filtroPago?: "todos" | "pendientes" | "pagados";
   etapasFiltro?: EtapaInicio[];
   orden?: "asc" | "desc";
+  /**
+   * Abre el hilo de WhatsApp del pedido. Lo provee quien monta la vista (el
+   * tablero, con su `ChatDrawer`); si no llega, la acción no se ofrece: un botón
+   * que no lleva a ningún sitio es peor que no tenerlo.
+   */
+  onAbrirChat?: (pedidoId: string) => void;
 }
 
 export const ResumenPedidosVista = observer(
@@ -362,6 +374,7 @@ export const ResumenPedidosVista = observer(
     filtroPago = "todos",
     etapasFiltro = [],
     orden = "desc",
+    onAbrirChat,
   }: ResumenPedidosVistaProps) => {
     const navigate = useNavigate();
 
@@ -676,14 +689,25 @@ export const ResumenPedidosVista = observer(
      * `acciones-fila.tsx`; aquí solo se conectan los manejadores.
      */
     const accionesFila = (p: Pedido): AccionFila[] =>
-      construirAcciones(pedidosStore.accionesDePedido(p), {
-        avanzar: () => avanzarFila(p),
-        detalle: () => setDetalleId(p.id),
-        reprogramar: () => setProgramarId(p.id),
-        reintentar: () => reintentarFila(p),
-        quitarRepartidor: () => quitarRepartidorFila(p),
-        cancelar: () => setCancelarId(p.id),
-      });
+      construirAcciones(
+        {
+          ...pedidosStore.accionesDePedido(p),
+          // Tres condiciones, no una: hay superficie que abre el hilo, el pedido
+          // tiene teléfono y ese teléfono TIENE conversación. Sin la tercera, el
+          // botón abriría un hilo vacío para un cliente que nunca escribió.
+          puedeAbrirChat:
+            !!onAbrirChat && !!p.telefono && conversacionesStore.tieneConversacion(p.telefono),
+        },
+        {
+          avanzar: () => avanzarFila(p),
+          detalle: () => setDetalleId(p.id),
+          abrirChat: () => onAbrirChat?.(p.id),
+          reprogramar: () => setProgramarId(p.id),
+          reintentar: () => reintentarFila(p),
+          quitarRepartidor: () => quitarRepartidorFila(p),
+          cancelar: () => setCancelarId(p.id),
+        },
+      );
 
     return (
       <div className="flex flex-col gap-5 font-sans">

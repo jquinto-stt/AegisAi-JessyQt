@@ -1726,6 +1726,9 @@ export const TableroPage = observer(() => {
             filtroPago={filtroPago}
             etapasFiltro={etapasFiltro}
             orden={ordenDescendente ? "desc" : "asc"}
+            // El mismo cajón de chat que abre la tarjeta del tablero: la acción
+            // de la fila no inventa otra superficie de conversación.
+            onAbrirChat={(id) => setChatDrawerPedidoId(id)}
           />
         </div>
       ) : (

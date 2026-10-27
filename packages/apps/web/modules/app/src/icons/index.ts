@@ -156,4 +156,6 @@ export {
 
 export { PanelToggleIcon } from "./PanelToggleIcon";
 export { InsigniaVerificada } from "./InsigniaVerificada";
+// Marca de un tercero: no está en Heroicons y no debe estarlo. Ver el archivo.
+export { WhatsAppIcon } from "./WhatsAppIcon";
 

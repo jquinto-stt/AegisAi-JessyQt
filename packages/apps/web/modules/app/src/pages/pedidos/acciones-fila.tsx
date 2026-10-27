@@ -23,6 +23,7 @@ import {
   UserMinusIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
+import { WhatsAppIcon } from "@/icons/WhatsAppIcon";
 
 /** Una acción concreta sobre un pedido. */
 export type AccionFila = {
@@ -50,7 +51,7 @@ export type AccionFila = {
  */
 export const MAX_ACCIONES_VISIBLES = 0;
 
-/** Lo que `accionesDePedido()` responde para una fila. */
+/** Lo que `accionesDePedido()` responde para una fila, más el cruce con el chat. */
 export type PermisosFila = {
   puedeAvanzar: boolean;
   etiquetaAvanzar: string;
@@ -59,12 +60,22 @@ export type PermisosFila = {
   puedeReintentar: boolean;
   puedeCancelar: boolean;
   puedeQuitarRepartidor: boolean;
+  /**
+   * Hay un hilo de WhatsApp para el teléfono de ESTE pedido.
+   *
+   * No es un permiso del pipeline: no depende del estado, depende del contacto.
+   * Un pedido creado por el operador para un cliente que nunca escribió no tiene
+   * conversación, y ofrecer «Abrir conversación» ahí abriría un hilo vacío. Por
+   * eso la acción solo se pinta cuando `tieneConversacion()` dice que existe.
+   */
+  puedeAbrirChat: boolean;
 };
 
 /** Lo que hace cada acción. Se inyecta para que el módulo no conozca el store. */
 export type ManosFila = {
   avanzar: () => void;
   detalle: () => void;
+  abrirChat: () => void;
   reprogramar: () => void;
   reintentar: () => void;
   quitarRepartidor: () => void;
@@ -107,6 +118,20 @@ export function construirAcciones(
     icono: <EyeIcon className="size-4" />,
     onClick: manos.detalle,
   });
+
+  // Va después de «detalle»: las dos son «ir a mirar», y el chat es la que más
+  // se usa en un negocio que atiende por WhatsApp.
+  if (permisos.puedeAbrirChat) {
+    lista.push({
+      clave: "chat",
+      titulo: "Abrir conversación",
+      tono: "neutral",
+      // El verde es de WhatsApp, no de NECTO: se pinta en el icono y no en la
+      // fila de la tarjeta, para que no compita con el rojo del destructivo.
+      icono: <WhatsAppIcon className="size-4 text-[#25D366]" />,
+      onClick: manos.abrirChat,
+    });
+  }
 
   if (permisos.puedeReprogramar) {
     lista.push({
