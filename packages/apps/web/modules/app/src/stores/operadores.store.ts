@@ -88,6 +88,7 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
   pedidos: [
     { id: "inicio", label: "Dashboard", path: "/pedidos/inicio", capacidad: "orders.create" },
     { id: "tablero", label: "Gestión de pedidos", path: "/pedidos", capacidad: "orders.read" },
+    { id: "novedades", label: "Gestión de novedades", path: "/pedidos/novedades", capacidad: "orders.read" },
     { id: "transportadoras", label: "Transportadoras", path: "/pedidos/transportadoras", capacidad: "orders.read" },
     { id: "catalogo", label: "Catálogo", path: "/pedidos/catalogo", capacidad: "orders.create" },
     { id: "crear", label: "Crear pedido", path: "/pedidos/crear", capacidad: "orders.create" },

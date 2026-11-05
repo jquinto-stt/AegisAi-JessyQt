@@ -142,4 +142,5 @@ export type {
 
 // Recolecciones de transportadora — citas de recogida (en memoria, sin backend).
 export { recoleccionesStore, RecoleccionesStore } from '@/stores/recolecciones.store';
+export { novedadesStore, NovedadesStore } from '@/stores/novedades.store';
 export * from '@/domain/inventario/inventario.domain';

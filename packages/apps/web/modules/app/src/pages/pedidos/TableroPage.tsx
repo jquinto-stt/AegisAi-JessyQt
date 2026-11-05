@@ -1690,7 +1690,7 @@ export const TableroPage = observer(() => {
 
           </div>
 
-          {/* Bloque derecho: Botón "+ Añadir pedido" */}
+          {/* Bloque derecho: Botón «Nuevo pedido» — la entrada a `/pedidos/crear` */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
             {puedeCrearPedido() && (
               <button
@@ -1699,7 +1699,10 @@ export const TableroPage = observer(() => {
                 className="flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white px-4 text-xs sm:text-sm font-semibold shadow-theme-xs transition-colors cursor-pointer shrink-0"
               >
                 <PlusIcon className="size-4 stroke-2" />
-                <span>Añadir pedido</span>
+                {/* Se llama como la pantalla a la que lleva («Nuevo pedido»), no
+                    «Añadir»: es la única entrada a `/pedidos/crear` desde la
+                    navegación, ahora que el sidebar ya no tiene ese ítem. */}
+                <span>Nuevo pedido</span>
               </button>
             )}
           </div>

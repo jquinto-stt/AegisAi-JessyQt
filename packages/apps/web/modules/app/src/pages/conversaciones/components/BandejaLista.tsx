@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { observer } from "mobx-react-lite";
 import { ViewColumnsIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
@@ -19,6 +19,7 @@ import {
   statusDe,
   formatearFechaListaChat,
   ultimoTexto,
+  ultimoAutor,
 } from "../conversaciones.utils";
 
 const FILTROS_FECHA: ReadonlyArray<{ valor: FiltroFecha; etiqueta: string }> = [
@@ -52,10 +53,19 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
   const [menuFiltrosOpen, setMenuFiltrosOpen] = useState(false);
   const [recargando, setRecargando] = useState(false);
 
+  useEffect(() => {
+    if (conversacionesStore.conversaciones.length === 0) {
+      conversacionesStore.restaurarSeed();
+    }
+  }, []);
+
   const handleRecargar = async () => {
     setRecargando(true);
     try {
       await conversacionesStore.cargarDesdeBase();
+      if (conversacionesStore.conversaciones.length === 0) {
+        conversacionesStore.restaurarSeed();
+      }
     } finally {
       setTimeout(() => setRecargando(false), 500);
     }
@@ -291,9 +301,18 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                 Ningún chat coincide con "{conversacionesStore.busqueda}".
               </p>
             ) : (
-              <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500 max-w-[200px]">
-                Tus conversaciones activas aparecerán aquí.
-              </p>
+              <>
+                <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500 max-w-[200px]">
+                  Tus conversaciones activas aparecerán aquí.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => conversacionesStore.restaurarSeed()}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#FF3F1A] px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs hover:bg-[#FF3F1A]/90 active:scale-95 transition-all cursor-pointer"
+                >
+                  Cargar conversaciones
+                </button>
+              </>
             )}
             {(conversacionesStore.busqueda || conversacionesStore.filtro !== "todas" || conversacionesStore.filtroFecha !== "todas") && (
               <button
@@ -314,6 +333,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
             {bandeja.map((conv, i) => {
               const seleccionada = seleccionadaId === conv.id;
               const preview = ultimoTexto(conv.id) || conv.contacto.telefono || "Sin mensajes";
+              const autorUltimo = ultimoAutor(conv.id);
               const pedidoVivo = pedidosStore.pedidoActivoDe(conv.contacto.telefono);
               const idPedido = pedidoVivo?.numero || (pedidoVivo?.id ? pedidoVivo.id.slice(0, 6) : "");
               const intencion = intencionDe(conv.id);
@@ -384,11 +404,38 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                       </span>
                     </div>
 
-                    {/* Fila 2: Teléfono + Preview del mensaje */}
+                    {/* Fila 2: Teléfono + Preview del mensaje con distintivo Bot / Operador */}
                     <div className="mt-0.5 flex items-center justify-between gap-2">
-                      <p className="truncate text-xs text-gray-500 dark:text-gray-400 font-normal">
-                        {conv.contacto.telefono ? `${conv.contacto.telefono} · ` : ""}
-                        {preview}
+                      <p className="flex min-w-0 items-center gap-1 truncate text-xs text-gray-500 dark:text-gray-400 font-normal">
+                        {autorUltimo === "bot" && (
+                          <span
+                            className="inline-flex shrink-0 items-center gap-0.5 rounded bg-emerald-100 px-1 py-0.2 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                            title="Último mensaje enviado por el Bot IA"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="11" width="18" height="10" rx="2" />
+                              <circle cx="12" cy="5" r="2" />
+                              <path d="M12 7v4" />
+                            </svg>
+                            <span>Bot</span>
+                          </span>
+                        )}
+                        {autorUltimo === "negocio" && (
+                          <span
+                            className="inline-flex shrink-0 items-center gap-0.5 rounded bg-brand-500/15 px-1 py-0.2 text-[10px] font-semibold text-brand-600 dark:bg-brand-500/20 dark:text-brand-300"
+                            title="Último mensaje enviado por un Operador"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                              <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+                            </svg>
+                            <span>Operador</span>
+                          </span>
+                        )}
+                        <span className="truncate">
+                          {conv.contacto.telefono ? `${conv.contacto.telefono} · ` : ""}
+                          {preview}
+                        </span>
                       </p>
                       {conv.noLeidos > 0 && (
                         <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white shadow-theme-xs">

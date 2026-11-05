@@ -74,6 +74,18 @@ export const ultimoTexto = (convId: string): string => {
 };
 
 /** Formatea una fecha para el listado de chats al estilo WhatsApp/MasterShop (ej: "11:30", "martes", "1/7/2025") */
+/** Devuelve el autor del último mensaje real del hilo ("cliente" | "bot" | "negocio" | null) */
+export const ultimoAutor = (convId: string): "cliente" | "bot" | "negocio" | null => {
+  const items = conversacionesStore.lineaDeTiempo(convId);
+  for (let i = items.length - 1; i >= 0; i--) {
+    const it = items[i];
+    if (it.clase === "mensaje" && !it.data.esNotaInterna && it.data.contenido.texto) {
+      return it.data.autor;
+    }
+  }
+  return null;
+};
+
 export const formatearFechaListaChat = (iso: string): string => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";

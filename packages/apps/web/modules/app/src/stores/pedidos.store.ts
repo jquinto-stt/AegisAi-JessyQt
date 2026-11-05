@@ -8,6 +8,8 @@ import {
 } from "../domain/pedidos/pedidos.profiles.js";
 import { toOrderCore, toLegacyPedido } from "../domain/pedidos/pedidos.adapters.js";
 import type { OrderCore } from "../domain/pedidos/pedidos.domain.js";
+import type { ReglasConfirmacion } from "../domain/pedidos/confirmacion.reglas.js";
+import { REGLAS_CONFIRMACION_INICIAL } from "../domain/pedidos/confirmacion.reglas.js";
 import { sessionStore } from "./session.store";
 import { puedeCancelarPedido } from "./acceso.utils";
 
@@ -357,6 +359,15 @@ export interface PedidosConfig {
   transportadorasHabilitadas?: Record<string, boolean>;
   /** Id de la transportadora favorita para envíos, o `null` si no hay ninguna. */
   transportadoraFavorita?: string | null;
+  /**
+   * Reglas de confirmación de las órdenes que entran (Ajustes → Reglas de
+   * confirmación).
+   *
+   * Opcional para que una configuración guardada antes de que existiera la
+   * sección siga cargando: sin el campo rigen las reglas de fábrica
+   * (`reglasVigentes`), no «todo apagado».
+   */
+  reglasConfirmacion?: ReglasConfirmacion;
 }
 
 /** Configuración de cuentas bancarias y medios de cobro del negocio. */
@@ -750,6 +761,15 @@ const DEFAULT_CONFIG: PedidosConfig = {
   // negocio diga lo contrario.
   transportadorasHabilitadas: {},
   transportadoraFavorita: null,
+  // Las opciones conservadoras: tope de envío vigilado, revisar a mano lo
+  // riesgoso y confirmar a mano todo lo demás. Ver
+  // `REGLAS_CONFIRMACION_INICIAL`. El tope se copia en profundidad para que el
+  // objeto de fábrica no se comparta entre configuraciones.
+  reglasConfirmacion: {
+    presupuestoEnvio: { ...REGLAS_CONFIRMACION_INICIAL.presupuestoEnvio },
+    riesgosas: REGLAS_CONFIRMACION_INICIAL.riesgosas,
+    forma: REGLAS_CONFIRMACION_INICIAL.forma,
+  },
 };
 
 // ── Proyección del catálogo ──────────────────────────────────────────────────
@@ -862,6 +882,19 @@ function loadConfig(): PedidosConfig {
             )
           : undefined,
         datosBancarios: { ...DEFAULT_CONFIG.datosBancarios, ...(parsed.datosBancarios ?? {}) },
+        // Se fusiona con las de fábrica por el mismo motivo que `horario`: una
+        // configuración guardada con media regla no puede dejar la sección con
+        // la mitad de los interruptores en un estado que nadie eligió.
+        reglasConfirmacion: {
+          ...REGLAS_CONFIRMACION_INICIAL,
+          ...(parsed.reglasConfirmacion ?? {}),
+          // El tope de envío también se fusiona: una config guardada antes de
+          // que existiera no puede dejar `presupuestoEnvio` sin campos.
+          presupuestoEnvio: {
+            ...REGLAS_CONFIRMACION_INICIAL.presupuestoEnvio,
+            ...(parsed.reglasConfirmacion?.presupuestoEnvio ?? {}),
+          },
+        },
       };
     }
   } catch {
@@ -876,6 +909,10 @@ function loadConfig(): PedidosConfig {
     capacidadesActivas: [...DEFAULT_CONFIG.capacidadesActivas!],
     columnasPersonalizadas: undefined,
     datosBancarios: { ...DEFAULT_CONFIG.datosBancarios },
+    reglasConfirmacion: {
+      ...REGLAS_CONFIRMACION_INICIAL,
+      presupuestoEnvio: { ...REGLAS_CONFIRMACION_INICIAL.presupuestoEnvio },
+    },
   };
 }
 
@@ -1069,6 +1106,7 @@ function persistDireccionesCRM(data: Record<string, DireccionEntrega[]>): void {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const seed = (): Pedido[] => [
+  // ── P-001 a P-010 (Base operativa y de pruebas) ──────────────────────────
   {
     id: "pd1", numero: "P-001", cliente: "Ana Silva", telefono: "+573001112233", modalidad: "domicilio",
     items: [{ nombre: "Combo clásico", cantidad: 2, precio: 25000 }, { nombre: "Bebida 350ml", cantidad: 2, precio: 4000 }],
@@ -1158,38 +1196,12 @@ const seed = (): Pedido[] => [
     costoEnvio: 4500,
     metodoPago: "transferencia",
     repartidor: "Carlos Mensajería",
-    auditoria: [
-      {
-        id: "aud-pd4-2",
-        fecha: minutesAgoIso(12),
-        accion: "Marcado como Listo y asignado mensajero",
-        operadorNombre: "Camila Ortiz",
-        operadorCargo: "Supervisor de operaciones",
-      },
-      {
-        id: "aud-pd4-1",
-        fecha: minutesAgoIso(140),
-        accion: "Pedido recibido por WhatsApp",
-        operadorNombre: "Mateo Vargas",
-        operadorCargo: "Operador de ventas",
-      },
-    ],
   },
   {
     id: "pd5", numero: "P-005", cliente: "Andrés Gil", telefono: "+573005556677", modalidad: "domicilio",
     items: [{ nombre: "Bebida 350ml", cantidad: 4, precio: 4000 }],
     estado: "en_camino", origen: "whatsapp", pagado: false,
     createdAt: minutesAgoIso(60), estadoDesde: minutesAgoIso(15),
-    // Este pedido SÍ trae notas del cliente, a propósito.
-    //
-    // Sin una nota previa, «anexar» y «pisar» producen el MISMO resultado y
-    // ninguna comprobación puede distinguirlos. Es exactamente lo que pasó: el
-    // sabotaje D (`p.notas = texto` en vez de anexar) se aplicó al bundle, se
-    // comprobó que el binario servido era distinto (453ccb0b7e46 vs
-    // 4a7dc2a43416) y la corrida salió VERDE igual — porque el pedido objetivo
-    // no tenía nada que perder.
-    //
-    // Con esta nota, «pisar» borra la indicación del cliente y el arnés lo ve.
     notas: "Dejar en portería, el cliente trabaja hasta las 6.",
     direccionEntrega: {
       calle: "Av. Las Vegas # 7-45",
@@ -1214,10 +1226,7 @@ const seed = (): Pedido[] => [
     items: [{ nombre: "Postre del día", cantidad: 2, precio: 8000 }],
     notas: "Cliente no respondió.", estado: "cancelado", origen: "whatsapp",
     createdAt: minutesAgoIso(300), estadoDesde: minutesAgoIso(260), finishedAt: minutesAgoIso(260),
-    direccionEntrega: {
-      calle: "Transversal 39 # 74-12",
-      barrio: "Conquistadores",
-    },
+    direccionEntrega: { calle: "Transversal 39 # 74-12", barrio: "Conquistadores" },
     costoEnvio: 4000,
     metodoPago: "contra_entrega",
   },
@@ -1230,18 +1239,9 @@ const seed = (): Pedido[] => [
     estado: "listo", origen: "whatsapp", pagado: true,
     metodoPago: "tarjeta",
     createdAt: minutesAgoIso(25), estadoDesde: minutesAgoIso(8),
-    auditoria: [
-      {
-        id: "aud-pd8-1",
-        fecha: minutesAgoIso(8),
-        accion: "Avanzado a: Listo para entrega",
-        operadorNombre: "Andrés Molina",
-        operadorCargo: "Jefe de cocina",
-      },
-    ],
   },
   {
-    id: "pd9", numero: "P-009", cliente: "David Restrepo", telefono: "+573021112233", modalidad: "domicilio",
+    id: "pd9", numero: "P-009", cliente: "David Restrepo", telefono: "+573029991122", modalidad: "domicilio",
     items: [
       { nombre: "Combo Alitas BBQ", cantidad: 2, precio: 32000 },
       { nombre: "Porción de Papas Francesa", cantidad: 2, precio: 9000 },
@@ -1249,22 +1249,9 @@ const seed = (): Pedido[] => [
     ],
     notas: "Salsa BBQ extra por favor.", estado: "en_preparacion", origen: "operador", pagado: true,
     createdAt: minutesAgoIso(28), estadoDesde: minutesAgoIso(15),
-    direccionEntrega: {
-      calle: "Circular 4 # 71-45",
-      barrio: "Laureles",
-      referencia: "Edificio Palmeras Apto 302",
-    },
+    direccionEntrega: { calle: "Circular 4 # 71-45", barrio: "Laureles", referencia: "Edificio Palmeras Apto 302" },
     costoEnvio: 5000,
     metodoPago: "transferencia",
-    auditoria: [
-      {
-        id: "aud-pd9-1",
-        fecha: minutesAgoIso(15),
-        accion: "Enviado a cocina para preparación",
-        operadorNombre: "Andrés Molina",
-        operadorCargo: "Jefe de cocina",
-      },
-    ],
   },
   {
     id: "pd10", numero: "P-010", cliente: "Alejandro Vélez", telefono: "+573023334455", modalidad: "domicilio",
@@ -1274,13 +1261,132 @@ const seed = (): Pedido[] => [
     ],
     estado: "confirmado", origen: "whatsapp", pagado: false,
     createdAt: minutesAgoIso(10), estadoDesde: minutesAgoIso(5),
-    direccionEntrega: {
-      calle: "Carrera 80 # 32-15",
-      barrio: "Belén Rosales",
-    },
+    direccionEntrega: { calle: "Carrera 80 # 32-15", barrio: "Belén Rosales" },
     costoEnvio: 4500,
     metodoPago: "efectivo",
     pagaCon: 100000,
+  },
+
+  // ── OFERTA ENVIADA (Pedidos programados / agendados) ─────────────────────
+  {
+    id: "pd11", numero: "P-011", cliente: "Camila Restrepo", telefono: "+573004567890", modalidad: "domicilio",
+    items: [{ nombre: "Bandeja Paisa Gourmet", cantidad: 2, precio: 38000 }, { nombre: "Jugo Natural de Maracuyá", cantidad: 2, precio: 7500 }],
+    estado: "programado", origen: "whatsapp", pagado: true, metodoPago: "transferencia",
+    createdAt: minutesAgoIso(15), estadoDesde: minutesAgoIso(15), programadoPara: minutesAgoIso(-180),
+    direccionEntrega: { calle: "Cl. 10 # 43E-12", barrio: "El Poblado", referencia: "Apto 601 Torre B" },
+    costoEnvio: 5000,
+  },
+  {
+    id: "pd12", numero: "P-012", cliente: "Esteban Morales", telefono: "+573105678901", modalidad: "retiro",
+    items: [{ nombre: "Ceviche Mixto Peruano", cantidad: 2, precio: 42000 }, { nombre: "Tostones con Hogao", cantidad: 1, precio: 12000 }],
+    estado: "programado", origen: "operador", pagado: false, metodoPago: "efectivo", pagaCon: 100000,
+    createdAt: minutesAgoIso(30), estadoDesde: minutesAgoIso(30), programadoPara: minutesAgoIso(-300),
+  },
+  {
+    id: "pd13", numero: "P-013", cliente: "Valeria Gómez", telefono: "+573206789012", modalidad: "domicilio",
+    items: [{ nombre: "Pizza Cuatro Quesos Grande", cantidad: 3, precio: 40000 }],
+    estado: "programado", origen: "whatsapp", pagado: true, metodoPago: "tarjeta",
+    createdAt: minutesAgoIso(45), estadoDesde: minutesAgoIso(45), programadoPara: minutesAgoIso(-360),
+    direccionEntrega: { calle: "Cra. 70 # 32B-50", barrio: "Laureles" }, costoEnvio: 4500,
+  },
+
+  // ── EN CIERRE (Pedidos nuevos o confirmados con pago contra entrega / efectivo) ──
+  {
+    id: "pd14", numero: "P-014", cliente: "Santiago Arango", telefono: "+573154567890", modalidad: "domicilio",
+    items: [{ nombre: "Costillas BBQ San Luis", cantidad: 1, precio: 39000 }, { nombre: "Cerveza Club Colombia", cantidad: 2, precio: 6500 }],
+    estado: "nuevo", origen: "whatsapp", pagado: false, metodoPago: "efectivo", pagaCon: 60000,
+    createdAt: minutesAgoIso(22), estadoDesde: minutesAgoIso(22),
+    direccionEntrega: { calle: "Cra 43A # 19A-40", barrio: "Envigado" }, costoEnvio: 5000,
+  },
+  {
+    id: "pd15", numero: "P-015", cliente: "Felipe Henao", telefono: "+573137890123", modalidad: "retiro",
+    items: [{ nombre: "Burrito Tex-Mex Res Desmechada", cantidad: 2, precio: 25000 }, { nombre: "Limonada de Coco", cantidad: 2, precio: 8500 }],
+    estado: "confirmado", origen: "whatsapp", pagado: false, metodoPago: "efectivo", pagaCon: 70000,
+    createdAt: minutesAgoIso(18), estadoDesde: minutesAgoIso(10),
+  },
+
+  // ── VALIDACIÓN DE PAGO (Transferencias / links de tarjeta pendientes de verificar) ──
+  {
+    id: "pd16", numero: "P-016", cliente: "Juliana Pineda", telefono: "+573026789012", modalidad: "domicilio",
+    items: [{ nombre: "Ramen Tonkotsu Tradicional", cantidad: 2, precio: 34000 }, { nombre: "Gyozas de Cerdo (6 uds)", cantidad: 1, precio: 18000 }],
+    estado: "nuevo", origen: "whatsapp", pagado: false, metodoPago: "transferencia",
+    createdAt: minutesAgoIso(15), estadoDesde: minutesAgoIso(15),
+    direccionEntrega: { calle: "Calle 14 # 30-112", barrio: "El Poblado" }, costoEnvio: 4500,
+  },
+  {
+    id: "pd17", numero: "P-017", cliente: "Daniela Salazar", telefono: "+573113456789", modalidad: "retiro",
+    items: [{ nombre: "Bowl de Pollo Teriyaki & Quinoa", cantidad: 1, precio: 27000 }, { nombre: "Té Helado Matcha", cantidad: 1, precio: 9000 }],
+    estado: "nuevo", origen: "whatsapp", pagado: false, metodoPago: "transferencia",
+    createdAt: minutesAgoIso(18), estadoDesde: minutesAgoIso(18),
+  },
+  {
+    id: "pd18", numero: "P-018", cliente: "Diana Bustamante", telefono: "+573148901234", modalidad: "domicilio",
+    items: [{ nombre: "Sushi Combo Roll (20 piezas)", cantidad: 1, precio: 52000 }, { nombre: "Kushiages de Queso", cantidad: 1, precio: 16000 }],
+    estado: "confirmado", origen: "whatsapp", pagado: false, metodoPago: "transferencia",
+    createdAt: minutesAgoIso(25), estadoDesde: minutesAgoIso(12),
+    direccionEntrega: { calle: "Transversal 39 # 74-88", barrio: "Belén" }, costoEnvio: 4000,
+  },
+  {
+    id: "pd19", numero: "P-019", cliente: "Mateo Cárdenas", telefono: "+573012345678", modalidad: "domicilio",
+    items: [{ nombre: "Hamburguesa Doble Angus BBQ", cantidad: 2, precio: 29000 }, { nombre: "Papas Rústicas Trufadas", cantidad: 1, precio: 14000 }],
+    estado: "nuevo", origen: "whatsapp", pagado: false, metodoPago: "tarjeta",
+    createdAt: minutesAgoIso(12), estadoDesde: minutesAgoIso(12),
+    direccionEntrega: { calle: "Av. Nutibara # 73-10", barrio: "Laureles", referencia: "Oficina 302" }, costoEnvio: 4000,
+  },
+
+  // ── OPERACIÓN EN CURSO Y ENTREGADOS (En cocina, salón, en camino, entregados) ──
+  {
+    id: "pd20", numero: "P-020", cliente: "Alejandro Quintero", telefono: "+573169012345", modalidad: "en_sitio",
+    items: [{ nombre: "Ojo de Bife 400g Angus", cantidad: 1, precio: 58000 }, { nombre: "Copa Malbec Reserva", cantidad: 2, precio: 22000 }],
+    notas: "Mesa 8 - Interior.", estado: "en_preparacion", origen: "operador", pagado: true, metodoPago: "tarjeta",
+    createdAt: minutesAgoIso(30), estadoDesde: minutesAgoIso(14),
+  },
+  {
+    id: "pd21", numero: "P-021", cliente: "Carolina Méndez", telefono: "+573185678901", modalidad: "en_sitio",
+    items: [{ nombre: "Nachos Supremos con Guacamole", cantidad: 1, precio: 26000 }, { nombre: "Margarita Clásica", cantidad: 2, precio: 24000 }],
+    notas: "Mesa 4 - Terraza.", estado: "en_preparacion", origen: "operador", pagado: true, metodoPago: "tarjeta",
+    createdAt: minutesAgoIso(16), estadoDesde: minutesAgoIso(8),
+  },
+  {
+    id: "pd22", numero: "P-022", cliente: "Natalia Villegas", telefono: "+573170123456", modalidad: "domicilio",
+    items: [{ nombre: "Pizza Napolitana Prosciutto", cantidad: 1, precio: 44000 }, { nombre: "Tiramisú Clásico", cantidad: 2, precio: 15000 }],
+    estado: "en_preparacion", origen: "whatsapp", pagado: true, metodoPago: "transferencia",
+    createdAt: minutesAgoIso(28), estadoDesde: minutesAgoIso(16),
+    direccionEntrega: { calle: "Circular 2 # 70-34", barrio: "Laureles" }, costoEnvio: 4500,
+  },
+  {
+    id: "pd23", numero: "P-023", cliente: "Mariana Duque", telefono: "+573256789012", modalidad: "domicilio",
+    items: [{ nombre: "Pizza Pepperoni & Jalapeño", cantidad: 1, precio: 42000 }, { nombre: "Dips de Ajo", cantidad: 2, precio: 4000 }],
+    estado: "en_camino", origen: "whatsapp", pagado: true, metodoPago: "transferencia", repartidor: "Diego R. Moto 12",
+    createdAt: minutesAgoIso(50), estadoDesde: minutesAgoIso(15),
+    direccionEntrega: { calle: "Calle 33 # 76-20", barrio: "Laureles" }, costoEnvio: 4000,
+  },
+  {
+    id: "pd24", numero: "P-024", cliente: "Cristian Rendón", telefono: "+573267890123", modalidad: "domicilio",
+    items: [{ nombre: "Tacos Birria con Consomé", cantidad: 2, precio: 26000 }],
+    estado: "en_camino", origen: "whatsapp", pagado: false, metodoPago: "efectivo", pagaCon: 60000, repartidor: "Javier Moto 05",
+    createdAt: minutesAgoIso(48), estadoDesde: minutesAgoIso(18),
+    direccionEntrega: { calle: "Cra 48 # 20 Sur-55", barrio: "El Poblado" }, costoEnvio: 4500,
+  },
+  {
+    id: "pd25", numero: "P-025", cliente: "Paola Zuleta", telefono: "+573278901234", modalidad: "domicilio",
+    items: [{ nombre: "Lasagna de Carne Bolognesa", cantidad: 2, precio: 28000 }, { nombre: "Pan de Ajo", cantidad: 1, precio: 10000 }],
+    estado: "en_camino", origen: "whatsapp", pagado: true, metodoPago: "tarjeta", repartidor: "Esteban Mensajería",
+    createdAt: minutesAgoIso(55), estadoDesde: minutesAgoIso(20),
+    direccionEntrega: { calle: "Av. Las Palmas Km 4", barrio: "Palmas" }, costoEnvio: 6000,
+  },
+  {
+    id: "pd26", numero: "P-026", cliente: "Sebastián Betancur", telefono: "+573223456789", modalidad: "retiro",
+    items: [{ nombre: "Sandwich de Pastrami Artesanal", cantidad: 2, precio: 31000 }, { nombre: "Papas chips", cantidad: 2, precio: 6000 }],
+    estado: "entregado", origen: "whatsapp", pagado: true, metodoPago: "transferencia",
+    createdAt: minutesAgoIso(210), estadoDesde: minutesAgoIso(180), finishedAt: minutesAgoIso(180),
+  },
+  {
+    id: "pd27", numero: "P-027", cliente: "Clara Tamayo", telefono: "+573290123456", modalidad: "domicilio",
+    items: [{ nombre: "Pollo Asado Clásico Criollo", cantidad: 1, precio: 36000 }, { nombre: "Arepas con Queso", cantidad: 1, precio: 8000 }],
+    estado: "entregado", origen: "whatsapp", pagado: true, metodoPago: "transferencia", repartidor: "Carlos P.",
+    createdAt: minutesAgoIso(120), estadoDesde: minutesAgoIso(60), finishedAt: minutesAgoIso(60),
+    direccionEntrega: { calle: "Cra 76 # 33-10", barrio: "Laureles" }, costoEnvio: 4000,
   },
 ];
 

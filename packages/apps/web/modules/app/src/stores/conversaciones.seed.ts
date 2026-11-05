@@ -107,138 +107,50 @@ export interface ConversacionesSeed {
 // resueltas (8) y una que requiere humano (5).
 
 const CONVERSACIONES: Conversacion[] = [
-  // ── 1. CONSULTA DE PRODUCTO — bot, sin pedido ─────────────────────────────
-  //     Primer contacto puro: nadie quiere comprar todavía. El bot informa con
-  //     el catálogo y NO abre ningún pedido. Es el hilo más reciente de todos
-  //     (hace 6 min) para que encabece la bandeja como atención viva.
-  {
-    id: "conv-1",
-    canal: "whatsapp",
-    contacto: { telefono: "+57 300 555 1122", nombre: "Juan Carlos", origen: "whatsapp" },
-    estado: "abierta",
-    atencion: "bot",
-    operadorAsignadoId: null,
-    noLeidos: 1,
-    ultimaActividad: haceMin(6),
-  },
+  // ── ETAPA 1: CONTACTO INICIAL (4 hilos abiertos con bot, consultando menú/precios, sin pedido aún) ──
+  { id: "conv-1", canal: "whatsapp", contacto: { telefono: "+57 300 555 1122", nombre: "Juan Carlos Pérez", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 1, ultimaActividad: haceMin(3) },
+  { id: "conv-2", canal: "whatsapp", contacto: { telefono: "+57 301 222 3344", nombre: "Carlos Mendoza", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(14) },
+  { id: "conv-26", canal: "whatsapp", contacto: { telefono: "+57 304 888 1100", nombre: "Andrea Peña", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 1, ultimaActividad: haceMin(6) },
+  { id: "conv-27", canal: "telegram", contacto: { telefono: "+57 305 999 2211", nombre: "Mauricio Cano", origen: "telegram" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(19) },
 
-  // ── 2. CONSULTA DE DISPONIBILIDAD — bot, sin pedido ───────────────────────
-  //     Pregunta de existencias. El bot responde con disponibilidad, no con un
-  //     número exacto: dice lo que puede comprobar y ofrece alternativas, y no
-  //     promete una reserva. Ese es el comportamiento honesto y el que se quiere
-  //     demostrar.
-  {
-    id: "conv-2",
-    canal: "whatsapp",
-    contacto: { telefono: "+57 301 222 3344", nombre: "Carlos Mendoza", origen: "whatsapp" },
-    estado: "abierta",
-    atencion: "bot",
-    operadorAsignadoId: null,
-    noLeidos: 0,
-    ultimaActividad: haceMin(52),
-  },
+  // ── ETAPA 2: OFERTA ENVIADA (4 hilos con cotización formal enviada o pedido programado) ──
+  { id: "conv-9", canal: "whatsapp", contacto: { telefono: "+573004567890", nombre: "Camila Restrepo", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(25) },
+  { id: "conv-17", canal: "whatsapp", contacto: { telefono: "+573105678901", nombre: "Esteban Morales", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(28) },
+  { id: "conv-18", canal: "whatsapp", contacto: { telefono: "+573206789012", nombre: "Valeria Gómez", origen: "whatsapp" }, estado: "atendida", atencion: "humano", operadorAsignadoId: OPERADOR_ATENDIDA_ID, noLeidos: 0, ultimaActividad: haceMin(40) },
+  { id: "conv-28", canal: "whatsapp", contacto: { telefono: "+57 306 777 4455", nombre: "Laura Aristizábal", origen: "whatsapp" }, estado: "atendida", atencion: "humano", operadorAsignadoId: OPERADOR_ATENDIDA_ID, noLeidos: 0, ultimaActividad: haceMin(32) },
 
-  // ── 3. CREAR PEDIDO — pedido + confirmación explícita ─────────────────────
-  //     El hilo SÍ llega a crear el pedido, pero el valor de la demo está en el
-  //     camino: el bot pide lo que falta, resume, pide confirmación y solo
-  //     entonces registra. El pedido `pd1` existe en el seed de pedidos con
-  //     estado `nuevo` y `pagado:false` → alimenta a la vez "crear pedido" y
-  //     "pago pendiente" sin duplicar nada.
-  //     Está `atendida`/`humano` porque un operador la tomó DESPUÉS de que el
-  //     pedido quedara registrado (seguimiento, no rescate).
-  {
-    id: "conv-3",
-    canal: "whatsapp",
-    contacto: { telefono: "+57 300 111 2233", nombre: "Ana Silva", origen: "whatsapp" },
-    estado: "atendida",
-    atencion: "humano",
-    operadorAsignadoId: OPERADOR_ATENDIDA_ID,
-    noLeidos: 0,
-    ultimaActividad: haceMin(38),
-  },
+  // ── ETAPA 3: SEGUIMIENTO (4 hilos en_espera de humano sin pedido cerrado aún) ──
+  { id: "conv-29", canal: "whatsapp", contacto: { telefono: "+57 304 123 9876", nombre: "Sofía Morales", origen: "whatsapp" }, estado: "en_espera", atencion: "humano", operadorAsignadoId: null, noLeidos: 1, ultimaActividad: haceMin(11) },
+  { id: "conv-30", canal: "whatsapp", contacto: { telefono: "+57 312 456 7890", nombre: "Roberto Mejía", origen: "whatsapp" }, estado: "en_espera", atencion: "humano", operadorAsignadoId: null, noLeidos: 2, ultimaActividad: haceMin(7) },
+  { id: "conv-31", canal: "whatsapp", contacto: { telefono: "+57 314 555 6677", nombre: "Patricia Londoño", origen: "whatsapp" }, estado: "en_espera", atencion: "humano", operadorAsignadoId: null, noLeidos: 1, ultimaActividad: haceMin(16) },
+  { id: "conv-32", canal: "telegram", contacto: { telefono: "+57 315 888 3322", nombre: "Tomás Giraldo", origen: "telegram" }, estado: "en_espera", atencion: "humano", operadorAsignadoId: null, noLeidos: 1, ultimaActividad: haceMin(21) },
 
-  // ── 4. CONSULTAR PEDIDO EXISTENTE — sigue el pedido, no lo recrea ─────────
-  //     Sofía sigue el pedido `pd6` (categoría 4 y 7 a la vez: "¿dónde va mi
-  //     pedido?"). El contexto del pedido aparece en el panel de contexto
-  //     derivado por teléfono. Ninguna recreación del pedido.
-  {
-    id: "conv-4",
-    canal: "whatsapp",
-    contacto: { telefono: "+57 301 777 3344", nombre: "Sofía Díaz", origen: "whatsapp" },
-    estado: "abierta",
-    atencion: "bot",
-    operadorAsignadoId: null,
-    noLeidos: 2,
-    ultimaActividad: haceMin(17),
-  },
+  // ── ETAPA 4: EN CIERRE (4 hilos con pedido nuevo/confirmado en efectivo o contra entrega) ──
+  { id: "conv-3", canal: "whatsapp", contacto: { telefono: "+57 300 111 2233", nombre: "Ana Silva", origen: "whatsapp" }, estado: "atendida", atencion: "humano", operadorAsignadoId: OPERADOR_ATENDIDA_ID, noLeidos: 0, ultimaActividad: haceMin(38) },
+  { id: "conv-12", canal: "whatsapp", contacto: { telefono: "+573137890123", nombre: "Felipe Henao", origen: "whatsapp" }, estado: "atendida", atencion: "humano", operadorAsignadoId: OPERADOR_ATENDIDA_ID, noLeidos: 0, ultimaActividad: haceMin(22) },
+  { id: "conv-20", canal: "whatsapp", contacto: { telefono: "+573154567890", nombre: "Santiago Arango", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(20) },
+  { id: "conv-33", canal: "whatsapp", contacto: { telefono: "+573023334455", nombre: "Alejandro Vélez", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(5) },
 
-  // ── 5. PROBLEMA CON PEDIDO — escala correctamente ─────────────────────────
-  //     Lucía quiere cambiar la dirección de `pd4`, que ya está `listo`. El bot
-  //     no puede modificar un pedido en curso, así que ESCALA: lo correcto no es
-  //     fingir que lo hizo. Queda `en_espera` (requiere humano, nadie la tomó)
-  //     con su evento de sistema. Es el único hilo con evento por diseño.
-  {
-    id: "conv-5",
-    canal: "whatsapp",
-    contacto: { telefono: "+57 300 444 5566", nombre: "Lucía Torres", origen: "whatsapp" },
-    estado: "en_espera",
-    atencion: "humano",
-    operadorAsignadoId: null,
-    noLeidos: 2,
-    ultimaActividad: haceMin(9),
-  },
+  // ── ETAPA 5: VALIDACIÓN DE PAGO (4 hilos con pedido pendiente de validar transferencia/link) ──
+  { id: "conv-10", canal: "whatsapp", contacto: { telefono: "+573012345678", nombre: "Mateo Cárdenas", origen: "whatsapp" }, estado: "en_espera", atencion: "humano", operadorAsignadoId: null, noLeidos: 2, ultimaActividad: haceMin(8) },
+  { id: "conv-11", canal: "whatsapp", contacto: { telefono: "+573026789012", nombre: "Juliana Pineda", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 1, ultimaActividad: haceMin(10) },
+  { id: "conv-19", canal: "whatsapp", contacto: { telefono: "+573113456789", nombre: "Daniela Salazar", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 1, ultimaActividad: haceMin(15) },
+  { id: "conv-22", canal: "whatsapp", contacto: { telefono: "+573148901234", nombre: "Diana Bustamante", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 1, ultimaActividad: haceMin(12) },
 
-  // ── 6. PAGO PENDIENTE — el estado de pago vive en el PEDIDO ───────────────
-  //     Andrés pregunta por su pedido `pd5` (va en camino, `pagado:false`). El
-  //     bot explica el estado real del pedido. Nótese lo que NO se hace: la
-  //     conversación no se marca como "pendiente de pago". Sigue `abierta`+`bot`;
-  //     el pago se lee del pedido en el panel de contexto.
-  {
-    id: "conv-6",
-    canal: "whatsapp",
-    contacto: { telefono: "+57 300 555 6677", nombre: "Andrés Gil", origen: "whatsapp" },
-    estado: "abierta",
-    atencion: "bot",
-    operadorAsignadoId: null,
-    noLeidos: 1,
-    ultimaActividad: haceMin(5),
-  },
-
-  // ── 7. HANDOFF A HUMANO — ciclo completo, sin bucles ──────────────────────
-  //     El cliente pide una persona por un motivo legítimo (un reclamo que el
-  //     bot no debe resolver solo), se registra el evento, un operador la toma Y
-  //     RESPONDE. Termina `atendida`: no hay "tomada → devuelta al bot → tomada"
-  //     porque eso es exactamente el bucle artificial que se quiere eliminar.
-  {
-    id: "conv-7",
-    canal: "whatsapp",
-    contacto: { telefono: "+57 301 888 9900", nombre: "Valentina Ríos", origen: "whatsapp" },
-    estado: "atendida",
-    atencion: "humano",
-    operadorAsignadoId: OPERADOR_ATENDIDA_ID,
-    noLeidos: 0,
-    ultimaActividad: haceMin(96),
-  },
-
-  // ── 8. CONSULTA GENERAL — cierra sin pedido ───────────────────────────────
-  //     Horarios y retiro. Pregunta de información pura, resuelta de forma
-  //     natural y CERRADA. Es el hilo más antiguo (ayer) y alimenta la tarjeta
-  //     "Resueltos" del historial. Demuestra que un hilo puede terminar sin
-  //     que nadie compre nada.
-  {
-    id: "conv-8",
-    canal: "whatsapp",
-    contacto: { telefono: "+57 302 111 2233", nombre: "Diego Ramírez", origen: "whatsapp" },
-    estado: "cerrada",
-    atencion: "bot",
-    operadorAsignadoId: null,
-    noLeidos: 0,
-    // Debe ser EXACTAMENTE el timestamp de `msg-8-5` (el último ítem del hilo):
-    // `ultimaActividad` es la clave de orden de la bandeja, así que un valor
-    // redondeado "hacia delante" adelantaría el hilo por delante de mensajes
-    // que en realidad ocurrieron después. ~17 h → ayer.
-    ultimaActividad: haceMin(1_027),
-  },
+  // ── OPERACIÓN EN CURSO Y CERRADOS (Bandeja de Chats activa e historial) ──
+  { id: "conv-4", canal: "whatsapp", contacto: { telefono: "+57 301 777 3344", nombre: "Sofía Díaz", origen: "whatsapp" }, estado: "cerrada", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(170) },
+  { id: "conv-5", canal: "whatsapp", contacto: { telefono: "+57 300 444 5566", nombre: "Lucía Torres", origen: "whatsapp" }, estado: "en_espera", atencion: "humano", operadorAsignadoId: null, noLeidos: 2, ultimaActividad: haceMin(9) },
+  { id: "conv-6", canal: "whatsapp", contacto: { telefono: "+57 300 555 6677", nombre: "Andrés Gil", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 1, ultimaActividad: haceMin(5) },
+  { id: "conv-7", canal: "whatsapp", contacto: { telefono: "+57 301 888 9900", nombre: "Valentina Ríos", origen: "whatsapp" }, estado: "cerrada", atencion: "humano", operadorAsignadoId: OPERADOR_ATENDIDA_ID, noLeidos: 0, ultimaActividad: haceMin(96) },
+  { id: "conv-8", canal: "whatsapp", contacto: { telefono: "+57 302 111 2233", nombre: "Diego Ramírez", origen: "whatsapp" }, estado: "cerrada", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(1027) },
+  { id: "conv-13", canal: "whatsapp", contacto: { telefono: "+573256789012", nombre: "Mariana Duque", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(8) },
+  { id: "conv-14", canal: "whatsapp", contacto: { telefono: "+573267890123", nombre: "Cristian Rendón", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(11) },
+  { id: "conv-15", canal: "telegram", contacto: { telefono: "+573169012345", nombre: "Alejandro Quintero", origen: "telegram" }, estado: "atendida", atencion: "humano", operadorAsignadoId: OPERADOR_ATENDIDA_ID, noLeidos: 0, ultimaActividad: haceMin(12) },
+  { id: "conv-16", canal: "whatsapp", contacto: { telefono: "+573290123456", nombre: "Clara Tamayo", origen: "whatsapp" }, estado: "cerrada", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(60) },
+  { id: "conv-21", canal: "whatsapp", contacto: { telefono: "+573185678901", nombre: "Carolina Méndez", origen: "whatsapp" }, estado: "atendida", atencion: "humano", operadorAsignadoId: OPERADOR_ATENDIDA_ID, noLeidos: 0, ultimaActividad: haceMin(7) },
+  { id: "conv-23", canal: "whatsapp", contacto: { telefono: "+573170123456", nombre: "Natalia Villegas", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(16) },
+  { id: "conv-24", canal: "whatsapp", contacto: { telefono: "+573223456789", nombre: "Sebastián Betancur", origen: "whatsapp" }, estado: "cerrada", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(180) },
+  { id: "conv-25", canal: "whatsapp", contacto: { telefono: "+573278901234", nombre: "Paola Zuleta", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(24) },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -674,6 +586,130 @@ const MENSAJES: Mensaje[] = [
     contenido: texto("perfecto, gracias"),
     timestamp: haceMin(1_027),
   },
+      // ── Hilo 9: Camila Restrepo (Oferta Enviada / Programado P-011) ──────────
+  { id: "msg-9-1", conversacionId: "conv-9", autor: "cliente", contenido: { tipo: "texto", texto: "Hola buenas tardes, ¿puedo dejar programado un almuerzo para las 3:00 PM?" }, timestamp: haceMin(35) },
+  { id: "msg-9-2", conversacionId: "conv-9", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Camila! Claro que sí. Te enviamos la propuesta: 2 Bandejas Paisa Gourmet + 2 Jugos de Maracuyá + envío a El Poblado por $91.000." }, timestamp: haceMin(30) },
+  { id: "msg-9-3", conversacionId: "conv-9", autor: "cliente", contenido: { tipo: "texto", texto: "Perfecto, ya realicé el pago para dejarlo agendado a las 3:00 PM." }, timestamp: haceMin(27) },
+  { id: "msg-9-4", conversacionId: "conv-9", autor: "bot", contenido: { tipo: "texto", texto: "¡Agendado como pedido P-011! A las 2:30 PM entra a preparación para llegar puntual." }, timestamp: haceMin(25) },
+
+  // ── Hilo 10: Mateo Cárdenas (Validación de pago - P-019) ────────────────
+  { id: "msg-10-1", conversacionId: "conv-10", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, hice el pedido P-019 de las 2 Hamburguesas Angus ($76.000 con domicilio)." }, timestamp: haceMin(15) },
+  { id: "msg-10-2", conversacionId: "conv-10", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Mateo! Tu pedido está pendiente de validación del pago con tarjeta/link para pasar a cocina." }, timestamp: haceMin(12) },
+  { id: "msg-10-3", conversacionId: "conv-10", autor: "cliente", contenido: { tipo: "texto", texto: "Ya me descontó del banco, les dejé captura del voucher. ¿Me ayudan a validarlo por favor?" }, timestamp: haceMin(8) },
+
+  // ── Hilo 11: Juliana Pineda (Validación de pago - P-016) ────────────────
+  { id: "msg-11-1", conversacionId: "conv-11", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, acabo de hacer el pedido P-016 de los 2 Ramen Tonkotsu y Gyozas." }, timestamp: haceMin(18) },
+  { id: "msg-11-2", conversacionId: "conv-11", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Juliana! Recibimos tu orden por $90.500. Quedamos atentos al comprobante de transferencia para validarlo en caja." }, timestamp: haceMin(15) },
+  { id: "msg-11-3", conversacionId: "conv-11", autor: "cliente", contenido: { tipo: "texto", texto: "Listo, acabo de transferir desde Bancolombia. Quedo atenta a la validación 🙏" }, timestamp: haceMin(10) },
+
+  // ── Hilo 12: Felipe Henao (En Cierre - P-015) ───────────────────────────
+  { id: "msg-12-1", conversacionId: "conv-12", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, quiero confirmar el pedido P-015 de 2 Burritos Tex-Mex y 2 Limonadas de Coco para recoger." }, timestamp: haceMin(30) },
+  { id: "msg-12-2", conversacionId: "conv-12", autor: "negocio", contenido: { tipo: "texto", texto: "Hola Felipe, te atiende Camila. El total es $67.000 y veo que pagas en efectivo con $70.000 al retirar. ¿Confirmamos para pasar la orden a cocina?" }, timestamp: haceMin(25) },
+  { id: "msg-12-3", conversacionId: "conv-12", autor: "cliente", contenido: { tipo: "texto", texto: "¡Confirmadísimo Camila! Paso en media hora por el local." }, timestamp: haceMin(22) },
+
+  // ── Hilo 13: Mariana Duque (En camino - P-023) ──────────────────────────
+  { id: "msg-13-1", conversacionId: "conv-13", autor: "bot", contenido: { tipo: "texto", texto: "🛵 ¡Buenas noticias Mariana! Tu pedido P-023 (Pizza Pepperoni) ya va en camino con el repartidor Diego R." }, timestamp: haceMin(15) },
+  { id: "msg-13-2", conversacionId: "conv-13", autor: "cliente", contenido: { tipo: "texto", texto: "Súper, gracias por avisar. Por favor pídele que timbre al apto 402 cuando llegue." }, timestamp: haceMin(10) },
+  { id: "msg-13-3", conversacionId: "conv-13", autor: "bot", contenido: { tipo: "texto", texto: "Anotado en la guía de despacho: timbrar al apto 402 al llegar." }, timestamp: haceMin(8) },
+
+  // ── Hilo 14: Cristian Rendón (En camino - P-024) ────────────────────────
+  { id: "msg-14-1", conversacionId: "conv-14", autor: "bot", contenido: { tipo: "texto", texto: "🛵 Tu orden P-024 de Tacos Birria fue despachada. Repartidor: Javier (Moto 05). Pago en efectivo al recibir." }, timestamp: haceMin(18) },
+  { id: "msg-14-2", conversacionId: "conv-14", autor: "cliente", contenido: { tipo: "texto", texto: "Perfecto, acá lo estoy esperando en portería." }, timestamp: haceMin(11) },
+
+  // ── Hilo 15: Alejandro Quintero (En preparación salón - P-020) ──────────
+  { id: "msg-15-1", conversacionId: "conv-15", autor: "cliente", contenido: { tipo: "texto", texto: "Buenas tardes, estamos en la Mesa 8 del salón interior. ¿Nos pueden traer hielo extra y chimichurri?" }, timestamp: haceMin(16) },
+  { id: "msg-15-2", conversacionId: "conv-15", autor: "negocio", contenido: { tipo: "texto", texto: "Con mucho gusto señor Alejandro, el mesero ya va en camino a su mesa." }, timestamp: haceMin(14) },
+  { id: "msg-15-3", conversacionId: "conv-15", autor: "cliente", contenido: { tipo: "texto", texto: "Muchas gracias, excelente atención." }, timestamp: haceMin(12) },
+
+  // ── Hilo 16: Clara Tamayo (Entregado / Cerrado - P-027) ──────────────────
+  { id: "msg-16-1", conversacionId: "conv-16", autor: "bot", contenido: { tipo: "texto", texto: "Tu pedido P-027 ha sido entregado en Cra 76 # 33-10 Laureles. ¡Buen provecho!" }, timestamp: haceMin(75) },
+  { id: "msg-16-2", conversacionId: "conv-16", autor: "cliente", contenido: { tipo: "texto", texto: "¡Muchas gracias! Ya llegó todo completo y caliente. 10/10." }, timestamp: haceMin(65) },
+  { id: "msg-16-3", conversacionId: "conv-16", autor: "bot", contenido: { tipo: "texto", texto: "¡Qué alegría saberlo Clara! Feliz tarde y gracias por preferirnos." }, timestamp: haceMin(60) },
+
+  // ── Hilo 17: Esteban Morales (Oferta Enviada / Programado - P-012) ──────
+  { id: "msg-17-1", conversacionId: "conv-17", autor: "cliente", contenido: { tipo: "texto", texto: "Buenas, quisiera cotizar y dejar encargado 2 Ceviches Mixtos y tostones para retirar a las 5:00 PM." }, timestamp: haceMin(40) },
+  { id: "msg-17-2", conversacionId: "conv-17", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Esteban! Te enviamos la cotización de tu orden programada P-012: 2× Ceviche Mixto ($84.000) + 1× Tostones ($12.000) = Total $96.000 para las 5:00 PM." }, timestamp: haceMin(35) },
+  { id: "msg-17-3", conversacionId: "conv-17", autor: "cliente", contenido: { tipo: "texto", texto: "Excelente, me sirve la oferta. Pago en efectivo allá en caja con $100.000." }, timestamp: haceMin(28) },
+
+  // ── Hilo 18: Valeria Gómez (Oferta Enviada / Programado - P-013) ────────
+  { id: "msg-18-1", conversacionId: "conv-18", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, ¿tienen paquete especial de pizzas grandes para una reunión hoy a las 6:30 PM?" }, timestamp: haceMin(55) },
+  { id: "msg-18-2", conversacionId: "conv-18", autor: "negocio", contenido: { tipo: "texto", texto: "¡Hola Valeria! Te habla Camila. Te armé esta oferta especial: 3 Pizzas Cuatro Quesos Grandes en masa delgada por $120.000 (ahorras $24.000)." }, timestamp: haceMin(45) },
+  { id: "msg-18-3", conversacionId: "conv-18", autor: "cliente", contenido: { tipo: "texto", texto: "¡Super bien! Agéndamelo entonces bajo esa oferta para Laureles (P-013)." }, timestamp: haceMin(40) },
+
+  // ── Hilo 19: Daniela Salazar (Validación de pago - P-017) ───────────────
+  { id: "msg-19-1", conversacionId: "conv-19", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, hice el pedido P-017 del Bowl Teriyaki y Té Matcha por $36.000." }, timestamp: haceMin(25) },
+  { id: "msg-19-2", conversacionId: "conv-19", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Daniela! Tu orden está esperando validación de transferencia en tesorería." }, timestamp: haceMin(20) },
+  { id: "msg-19-3", conversacionId: "conv-19", autor: "cliente", contenido: { tipo: "texto", texto: "Ya transferí a la cuenta de Nequi terminada en 4410, les dejé el comprobante arriba. ¿Me confirman el pago?" }, timestamp: haceMin(15) },
+
+  // ── Hilo 20: Santiago Arango (En Cierre - P-014) ────────────────────────
+  { id: "msg-20-1", conversacionId: "conv-20", autor: "cliente", contenido: { tipo: "texto", texto: "Buenas tardes, quiero cerrar el pedido de Costillas BBQ San Luis y 2 Club Colombia para Envigado." }, timestamp: haceMin(30) },
+  { id: "msg-20-2", conversacionId: "conv-20", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Santiago! Resumen de cierre (P-014): 1× Costillas BBQ + 2× Cerveza + Envío a Cra 43A # 19A-40 = $57.000 en efectivo." }, timestamp: haceMin(24) },
+  { id: "msg-20-3", conversacionId: "conv-20", autor: "cliente", contenido: { tipo: "texto", texto: "Todo correcto, pago en efectivo con billete de $60.000 al recibir." }, timestamp: haceMin(20) },
+
+  // ── Hilo 21: Carolina Méndez (En preparación salón - P-021) ─────────────
+  { id: "msg-21-1", conversacionId: "conv-21", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, estamos en la Mesa 4 de la terraza. ¿Nos recuerdas cuánto demoran los Nachos y Margaritas?" }, timestamp: haceMin(12) },
+  { id: "msg-21-2", conversacionId: "conv-21", autor: "negocio", contenido: { tipo: "texto", texto: "¡Hola Carolina! Tu comanda P-021 ya está pagada y en preparación en barra; en 5 minutos sale a tu mesa." }, timestamp: haceMin(9) },
+  { id: "msg-21-3", conversacionId: "conv-21", autor: "cliente", contenido: { tipo: "texto", texto: "Mil gracias, quedamos pendientes acá." }, timestamp: haceMin(7) },
+
+  // ── Hilo 22: Diana Bustamante (Validación de pago - P-018) ──────────────
+  { id: "msg-22-1", conversacionId: "conv-22", autor: "cliente", contenido: { tipo: "texto", texto: "Buenas tardes, envié el pago por PSE de $72.000 para el Sushi Combo Roll (pedido P-018 en Belén)." }, timestamp: haceMin(28) },
+  { id: "msg-22-2", conversacionId: "conv-22", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Diana! Recibimos la notificación del pedido P-018. Nuestro equipo está verificando la acreditación bancaria." }, timestamp: haceMin(20) },
+  { id: "msg-22-3", conversacionId: "conv-22", autor: "cliente", contenido: { tipo: "texto", texto: "Vale, el CUS de la transacción es 9948123 por si lo necesitan para validar el pago." }, timestamp: haceMin(12) },
+
+  // ── Hilo 23: Natalia Villegas (En preparación - P-022) ───────────────────
+  { id: "msg-23-1", conversacionId: "conv-23", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, ¿ya entró al horno la Pizza Napolitana del pedido P-022?" }, timestamp: haceMin(22) },
+  { id: "msg-23-2", conversacionId: "conv-23", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Natalia! Sí, tu pizza y los 2 tiramisús están en preparación en cocina. Tiempo estimado: 12 minutos." }, timestamp: haceMin(18) },
+  { id: "msg-23-3", conversacionId: "conv-23", autor: "cliente", contenido: { tipo: "texto", texto: "Perfecto, muchas gracias por la rapidez." }, timestamp: haceMin(16) },
+
+  // ── Hilo 24: Sebastián Betancur (Entregado / Cerrado - P-026) ────────────
+  { id: "msg-24-1", conversacionId: "conv-24", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Sebastián! Tu pedido P-026 (Sandwiches de Pastrami) está empacado y listo en mostrador." }, timestamp: haceMin(210) },
+  { id: "msg-24-2", conversacionId: "conv-24", autor: "cliente", contenido: { tipo: "texto", texto: "Ya lo recogí en caja, todo súper bien empacado." }, timestamp: haceMin(195) },
+  { id: "msg-24-3", conversacionId: "conv-24", autor: "bot", contenido: { tipo: "texto", texto: "¡Entregado! Gracias por tu visita Sebastián, que disfrutes el almuerzo." }, timestamp: haceMin(180) },
+
+  // ── Hilo 25: Paola Zuleta (En camino - P-025) ───────────────────────────
+  { id: "msg-25-1", conversacionId: "conv-25", autor: "bot", contenido: { tipo: "texto", texto: "🛵 ¡Hola Paola! Tu orden P-025 (Lasagnas de Carne) va en camino hacia Las Palmas con el mensajero Esteban." }, timestamp: haceMin(35) },
+  { id: "msg-25-2", conversacionId: "conv-25", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, ¿más o menos cuánto tarda en subir por Las Palmas?" }, timestamp: haceMin(28) },
+  { id: "msg-25-3", conversacionId: "conv-25", autor: "bot", contenido: { tipo: "texto", texto: "Calculamos unos 10 a 15 minutos según el tráfico actual." }, timestamp: haceMin(24) },
+
+  // ── Hilo 26: Andrea Peña (Contacto Inicial - Sin pedido) ────────────────
+  { id: "msg-26-1", conversacionId: "conv-26", autor: "cliente", contenido: { tipo: "texto", texto: "Hola buenas tardes, ¿me regalan la carta actualizada y precios de las pizzas artesanales?" }, timestamp: haceMin(8) },
+  { id: "msg-26-2", conversacionId: "conv-26", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Andrea! 👋 Claro que sí. Nuestras pizzas artesanales van desde $38.000 hasta $48.000 (Napolitana, Cuatro Quesos y Pepperoni). ¿Buscas alguna en especial?" }, timestamp: haceMin(7) },
+  { id: "msg-26-3", conversacionId: "conv-26", autor: "cliente", contenido: { tipo: "texto", texto: "¿Tienen cobertura de domicilio hasta Sabaneta?" }, timestamp: haceMin(6) },
+
+  // ── Hilo 27: Mauricio Cano (Contacto Inicial - Sin pedido) ──────────────
+  { id: "msg-27-1", conversacionId: "conv-27", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, ¿ustedes manejan opciones sin gluten o keto en el menú de almuerzos?" }, timestamp: haceMin(23) },
+  { id: "msg-27-2", conversacionId: "conv-27", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Mauricio! Sí, contamos con el Ojo de Bife Angus con ensalada fresca y el Bowl de Pollo con base de vegetales sin arroz." }, timestamp: haceMin(20) },
+  { id: "msg-27-3", conversacionId: "conv-27", autor: "cliente", contenido: { tipo: "texto", texto: "Genial, voy a mirarlo con calma y ya les escribo." }, timestamp: haceMin(19) },
+
+  // ── Hilo 28: Laura Aristizábal (Oferta Enviada - Cotización corporativa) ──
+  { id: "msg-28-1", conversacionId: "conv-28", autor: "cliente", contenido: { tipo: "texto", texto: "Buenas tardes, necesito una cotización formal de 15 almuerzos ejecutivos para un evento de oficina mañana." }, timestamp: haceMin(42) },
+  { id: "msg-28-2", conversacionId: "conv-28", autor: "negocio", contenido: { tipo: "texto", texto: "Hola Laura, soy Camila. Te acabo de enviar la propuesta comercial por 15 Bowls Teriyaki + bebida + postre en $495.000 (10% de descuento corporativo incluido)." }, timestamp: haceMin(35) },
+  { id: "msg-28-3", conversacionId: "conv-28", autor: "cliente", contenido: { tipo: "texto", texto: "Recibida la oferta Camila, ya la pasé a compras para aprobación y te confirmo en un rato." }, timestamp: haceMin(32) },
+
+  // ── Hilo 29: Sofía Morales (Seguimiento - Esperando asesor) ──────────────
+  { id: "msg-29-1", conversacionId: "conv-29", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, estuve revisando las opciones que me dio el bot ayer pero necesito armar un pedido combinado con factura electrónica." }, timestamp: haceMin(15) },
+  { id: "msg-29-2", conversacionId: "conv-29", autor: "bot", contenido: { tipo: "texto", texto: "Entendido Sofía. Te derivo con un asesor comercial para hacer seguimiento a tu solicitud y tomar los datos de facturación." }, timestamp: haceMin(13) },
+  { id: "msg-29-3", conversacionId: "conv-29", autor: "cliente", contenido: { tipo: "texto", texto: "Perfecto, quedo atenta para definir las cantidades con el asesor." }, timestamp: haceMin(11) },
+
+  // ── Hilo 30: Roberto Mejía (Seguimiento - Esperando asesor) ──────────────
+  { id: "msg-30-1", conversacionId: "conv-30", autor: "cliente", contenido: { tipo: "texto", texto: "Buenas, ayer pregunté por el menú de parrilladas para 8 personas y quedé de confirmar hoy." }, timestamp: haceMin(10) },
+  { id: "msg-30-2", conversacionId: "conv-30", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola de nuevo Roberto! Paso tu conversación a seguimiento con un asesor humano para ayudarte a cerrar los detalles de tu reserva/pedido." }, timestamp: haceMin(8) },
+  { id: "msg-30-3", conversacionId: "conv-30", autor: "cliente", contenido: { tipo: "texto", texto: "Listo, además quiero saber si podemos cambiar una guarnición por papas trufadas." }, timestamp: haceMin(7) },
+
+  // ── Hilo 31: Patricia Londoño (Seguimiento - Esperando asesor) ───────────
+  { id: "msg-31-1", conversacionId: "conv-31", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, tengo una duda sobre los ingredientes del Ramen porque mi hijo es alérgico al maní." }, timestamp: haceMin(20) },
+  { id: "msg-31-2", conversacionId: "conv-31", autor: "bot", contenido: { tipo: "texto", texto: "Por seguridad alimentaria ante alergias, transfiero tu chat a un supervisor para confirmarte directamente con cocina antes de que realices el pedido." }, timestamp: haceMin(18) },
+  { id: "msg-31-3", conversacionId: "conv-31", autor: "cliente", contenido: { tipo: "texto", texto: "Muchas gracias, espero la confirmación para pedir." }, timestamp: haceMin(16) },
+
+  // ── Hilo 32: Tomás Giraldo (Seguimiento - Esperando asesor) ──────────────
+  { id: "msg-32-1", conversacionId: "conv-32", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, me interesa pedir para un cumpleaños esta noche pero quería saber si tienen algún descuento por pedir 6 combos." }, timestamp: haceMin(25) },
+  { id: "msg-32-2", conversacionId: "conv-32", autor: "bot", contenido: { tipo: "texto", texto: "¡Hola Tomás! Te asigno con un asesor de ventas para que revise tu caso y te brinde seguimiento personalizado." }, timestamp: haceMin(23) },
+  { id: "msg-32-3", conversacionId: "conv-32", autor: "cliente", contenido: { tipo: "texto", texto: "Dale, quedo en línea esperando." }, timestamp: haceMin(21) },
+
+  // ── Hilo 33: Alejandro Vélez (En Cierre - P-010) ─────────────────────────
+  { id: "msg-33-1", conversacionId: "conv-33", autor: "cliente", contenido: { tipo: "texto", texto: "Hola, acabo de confirmar las 2 Hamburguesas Clásicas y 2 Malteadas de Arequipe para Belén Rosales." }, timestamp: haceMin(9) },
+  { id: "msg-33-2", conversacionId: "conv-33", autor: "bot", contenido: { tipo: "texto", texto: "¡Excelente Alejandro! Tu pedido P-010 por $76.500 (incluye domicilio) quedó confirmado con pago en efectivo ($100.000)." }, timestamp: haceMin(6) },
+  { id: "msg-33-3", conversacionId: "conv-33", autor: "cliente", contenido: { tipo: "texto", texto: "Listo, muchas gracias, quedo atento a cuando pase a cocina." }, timestamp: haceMin(5) },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════

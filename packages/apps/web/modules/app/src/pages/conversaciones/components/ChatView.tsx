@@ -349,18 +349,39 @@ export const ChatView = observer(({
                 : undefined;
 
               return (
-                <div key={m.id} className="animate-entrada-lista flex justify-end">
-                  <div className="flex flex-col items-end max-w-[85%] sm:max-w-lg lg:max-w-xl">
+                <div key={m.id} className="animate-entrada-lista flex items-start justify-end gap-2.5 sm:gap-3">
+                  <div className="flex flex-col items-end max-w-[82%] sm:max-w-lg lg:max-w-xl">
                     {/* Burbuja del bot: verde WhatsApp / TailAdmin en la derecha */}
                     <div className="w-fit min-w-0 max-w-full rounded-2xl rounded-tr-xs border border-emerald-200/60 bg-[#E7FEDB] px-4 py-3 text-sm leading-relaxed text-gray-900 shadow-xs break-words [overflow-wrap:anywhere] dark:border-emerald-800/40 dark:bg-[#005C4B] dark:text-gray-100">
                       {/* Cabecera sutil: Identidad IA + Botón discreto de trazabilidad on-demand */}
                       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-emerald-200/60 pb-1.5 dark:border-emerald-700/60">
                         <div className="flex items-center gap-1.5 shrink-0">
+                          <span
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-emerald-600/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-200"
+                            title="Respuesta automática del Bot IA"
+                          >
+                            <svg
+                              width="13"
+                              height="13"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <rect x="3" y="11" width="18" height="10" rx="2" />
+                              <circle cx="12" cy="5" r="2" />
+                              <path d="M12 7v4" />
+                              <line x1="8" y1="16" x2="8.01" y2="16" strokeWidth="2.5" />
+                              <line x1="16" y1="16" x2="16.01" y2="16" strokeWidth="2.5" />
+                            </svg>
+                          </span>
                           <span className="text-xs font-semibold text-emerald-900 dark:text-emerald-200">
                             {traza.nombreBot}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-emerald-200/70 border border-emerald-300 px-1.5 py-0.2 text-[10px] font-bold text-emerald-800 dark:bg-emerald-900/50 dark:border-emerald-700 dark:text-emerald-300">
-                            IA
+                          <span className="inline-flex items-center rounded-full bg-emerald-200/80 border border-emerald-300 px-1.5 py-0.2 text-[10px] font-bold text-emerald-800 dark:bg-emerald-900/60 dark:border-emerald-700 dark:text-emerald-300">
+                            BOT · IA
                           </span>
                         </div>
                         <button
@@ -455,6 +476,7 @@ export const ChatView = observer(({
                       )}
                     </div>
                   </div>
+                  <BotAvatar />
                 </div>
               );
             }
@@ -494,13 +516,35 @@ export const ChatView = observer(({
 
             // ── 3. ASESOR HUMANO (Equipo): DERECHA con Naranja NECTO (bg-brand-500) según Repo-prueba-master ──
             return (
-              <div key={m.id} className="animate-entrada-lista flex justify-end">
-                <div className="flex flex-col items-end max-w-[85%] sm:max-w-lg lg:max-w-xl">
+              <div key={m.id} className="animate-entrada-lista flex items-start justify-end gap-2.5 sm:gap-3">
+                <div className="flex flex-col items-end max-w-[82%] sm:max-w-lg lg:max-w-xl">
                   <div className="w-fit max-w-full rounded-2xl rounded-tr-sm bg-brand-500 dark:bg-brand-500 px-4 py-3 text-left text-sm leading-relaxed text-white shadow-theme-xs">
-                    {/* Distintivo claro de Asesor Humano */}
-                    <div className="mb-1 flex items-center justify-end gap-1.5 text-xs font-medium text-white/90">
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-white" />
-                      <span>Asesor</span>
+                    {/* Distintivo claro de Operador Humano */}
+                    <div className="mb-2 flex items-center justify-between gap-3 border-b border-white/20 pb-1.5 text-xs font-semibold text-white">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-white/20 text-white"
+                          title="Atendido por un operador humano"
+                        >
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+                          </svg>
+                        </span>
+                        <span>Operador</span>
+                      </div>
+                      <span className="inline-flex items-center rounded-full bg-white/20 border border-white/30 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                        HUMANO
+                      </span>
                     </div>
                     <TextoMensajeFormateado texto={m.contenido.texto} className="text-white" />
                   </div>
@@ -508,6 +552,7 @@ export const ChatView = observer(({
                     {horaDe(m.timestamp)}
                   </p>
                 </div>
+                <OperadorAvatar />
               </div>
             );
           })
@@ -749,6 +794,48 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
 /**
  * BotAvatar — Avatar distintivo de robot con indicador IA en la esquina inferior.
  */
+/**
+ * OperadorAvatar — Avatar distintivo de asesor humano con auricular de soporte.
+ */
+function OperadorAvatar() {
+  return (
+    <div className="relative h-9 w-9 shrink-0 sm:h-10 sm:w-10" title="Respuesta de Operador Humano">
+      <div className="flex h-full w-full items-center justify-center rounded-full bg-brand-500/15 text-brand-600 shadow-theme-xs ring-1 ring-brand-500/30 dark:bg-brand-500/20 dark:text-brand-300 dark:ring-brand-400/30">
+        <svg
+          width="19"
+          height="19"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+          <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+        </svg>
+      </div>
+      <div
+        className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#190088] text-white shadow-theme-xs ring-2 ring-white dark:bg-[#97D6DF] dark:text-[#190088] dark:ring-gray-900"
+        title="Operador en línea"
+      >
+        <svg
+          className="h-2.5 w-2.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 function BotAvatar() {
   return (
     <div className="relative h-9 w-9 shrink-0 sm:h-10 sm:w-10">

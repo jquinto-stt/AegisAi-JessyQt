@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { observer } from 'mobx-react-lite';
 import { Link } from 'react-router';
 import {
@@ -20,6 +21,21 @@ import {
 } from '@/icons';
 import { getSupabase, ESQUEMA } from '@/lib/supabase';
 import { PageMeta } from '@/shell/meta';
+import { AdministradorArchivos } from './AdministradorArchivos';
+import {
+  BoltIcon,
+  BookOpenIcon,
+  CloudArrowUpIcon,
+  HeartIcon,
+  HomeIcon,
+  PuzzlePieceIcon,
+  ShoppingBagIcon,
+  SparklesIcon,
+  Squares2X2Icon,
+  TrophyIcon,
+  TruckIcon,
+  WrenchScrewdriverIcon,
+} from '@heroicons/react/24/outline';
 import { Skeleton, SkeletonGrupo } from '@/elements';
 import { pedidosStore } from '@/stores';
 import { retardoEscalonado } from '@/utils';
@@ -32,6 +48,8 @@ export interface ProductoCatalogoItem {
   descripcion: string;
   precio: number;
   imagen?: string;
+  /** Galería secundaria. La principal sigue siendo `imagen`. */
+  imagenesExtra?: string[];
   disponible: boolean;
 }
 
@@ -80,6 +98,85 @@ const FOTOS_TEMATICAS: { palabrasClave: string[]; url: string }[] = [
 ];
 
 const FOTO_POR_DEFECTO = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80';
+
+/**
+ * Las categorías que se ofrecen al crear un producto.
+ *
+ * Lista cerrada y no texto libre: la categoría es lo que agrupa el catálogo y
+ * lo que filtra el cliente, y «Bebidas», «bebidas» y «Bebida» son tres
+ * categorías distintas para el filtro. Es un catálogo de arranque; el nombre se
+ * guarda tal cual en `ProductoCatalogoItem.categoria`.
+ */
+const CATEGORIAS_PRODUCTO: { label: string; icono: React.FC<React.SVGProps<SVGSVGElement>> }[] = [
+  { label: 'Salud, belleza y cuidado personal', icono: SparklesIcon },
+  { label: 'Hogar, Muebles, Cocina', icono: HomeIcon },
+  { label: 'Tecnología y electrodomésticos', icono: BoltIcon },
+  { label: 'Moda, Ropa y Accesorios', icono: ShoppingBagIcon },
+  { label: 'Bebés, Juguetes y Juegos', icono: PuzzlePieceIcon },
+  { label: 'Animales y Mascotas', icono: HeartIcon },
+  { label: 'Deportes y Fitness', icono: TrophyIcon },
+  { label: 'Vehículos', icono: TruckIcon },
+  { label: 'Librería y papelería', icono: BookOpenIcon },
+  { label: 'Herramientas', icono: WrenchScrewdriverIcon },
+  { label: 'Otros', icono: Squares2X2Icon },
+];
+
+/**
+ * Caja de carga de imágenes.
+ *
+ * El botón no abre el selector nativo: abre el `AdministradorArchivos`, donde
+ * el negocio organiza las fotos en carpetas. Sin servidor de archivos, lo
+ * elegido se guarda como data URL en el producto, igual que el resto del
+ * catálogo, que vive en el store.
+ */
+const ZonaCarga: React.FC<{
+  imagenes: string[];
+  onAbrir: () => void;
+  onQuitar: (indice: number) => void;
+}> = ({ imagenes, onAbrir, onQuitar }) => {
+  return (
+    <div className="rounded-xl border border-dashed border-gray-300 px-6 py-6 text-center dark:border-gray-700">
+      {imagenes.length > 0 ? (
+        <div className="flex flex-wrap justify-center gap-2">
+          {imagenes.map((url, i) => (
+            <div
+              key={`${i}-${url.slice(-12)}`}
+              className="group relative h-20 w-20 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800"
+            >
+              <img src={url} alt={`Imagen ${i + 1}`} className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => onQuitar(i)}
+                aria-label={`Quitar imagen ${i + 1}`}
+                className="absolute right-1 top-1 rounded-md bg-black/60 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+              >
+                <CloseLineIcon className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          <CloudArrowUpIcon className="mx-auto h-6 w-6 text-gray-400" aria-hidden="true" />
+          <p className="mt-1.5 text-[12px] font-normal text-gray-600 dark:text-gray-300">
+            Selecciona la imagen para subir a tu catálogo
+          </p>
+          <p className="mt-0.5 text-[11px] font-normal text-gray-400">
+            Selecciona uno o más archivos. Tamaño máximo: 10 MB.
+          </p>
+        </>
+      )}
+
+      <button
+        type="button"
+        onClick={onAbrir}
+        className="mt-3 rounded-md bg-[#212121] px-3 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-black dark:bg-white dark:text-[#212121] dark:hover:bg-gray-200"
+      >
+        Seleccionar archivos
+      </button>
+    </div>
+  );
+};
 
 // Asigna una foto profesional automáticamente analizando el texto del producto
 export const asignarFotoInteligente = (nombre: string, categoria: string = ''): string => {
@@ -216,6 +313,8 @@ export const CatalogoPage: React.FC = observer(() => {
 
   // Modal de Edición de Producto
   const [productoEnEdicion, setProductoEnEdicion] = useState<ProductoCatalogoItem | null>(null);
+  /** Qué caja de imágenes abrió el administrador de archivos. */
+  const [gestorImagen, setGestorImagen] = useState<'principal' | 'adicionales' | null>(null);
   const [esNuevoProducto, setEsNuevoProducto] = useState<boolean>(false);
 
   // Menú desplegable "Agregar productos"
@@ -474,11 +573,27 @@ export const CatalogoPage: React.FC = observer(() => {
       categoria: categoriaActiva !== 'Todas' ? categoriaActiva : 'General',
       descripcion: '',
       precio: 18000,
-      imagen: FOTO_POR_DEFECTO,
+      // Sin foto asignada: la referencia deja la caja de carga vacía y una
+      // imagen de stock precargada se lee como si el negocio ya la hubiera
+      // elegido.
+      imagenesExtra: [],
       disponible: true,
     };
     setProductoEnEdicion(nuevo);
     setEsNuevoProducto(true);
+  };
+
+  /** Guarda en el producto las imágenes elegidas en el administrador de archivos. */
+  const agregarImagenes = (urls: string[], adicionales: boolean) => {
+    if (urls.length === 0) return;
+    setProductoEnEdicion((prev) => {
+      if (!prev) return prev;
+      if (!adicionales) return { ...prev, imagen: urls[0] };
+      return {
+        ...prev,
+        imagenesExtra: [...(prev.imagenesExtra ?? []), ...urls].slice(0, 6),
+      };
+    });
   };
 
   const abrirModalEditar = (prod: ProductoCatalogoItem) => {
@@ -1298,144 +1413,205 @@ export const CatalogoPage: React.FC = observer(() => {
           </div>
         )}
 
-      {/* ── Modal de Edición Visual de Producto con Galería de Fotos Sugeridas ── */}
-      {productoEnEdicion && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-3xl p-6 shadow-theme-lg border border-gray-200 dark:border-gray-800 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
-              <h3 className="text-base font-bold text-ink-title dark:text-white">
-                {esNuevoProducto ? 'Nuevo producto' : 'Editar producto'}
-              </h3>
-              <button
-                onClick={() => setProductoEnEdicion(null)}
-                className="p-1.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+      {/* Va en un portal al `body`: dentro del contenedor animado de la página,
+          `fixed` se resuelve contra ese ancestro y la ficha quedaba recortada. */}
+      {productoEnEdicion &&
+        createPortal(
+          <div className="fixed inset-0 z-[60] overflow-y-auto bg-white dark:bg-gray-950">
+            <div className="mx-auto w-full max-w-6xl px-6 pb-16 pt-6 sm:px-10">
+            {/* Barra superior */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="text-[16px] font-bold text-[#212121] dark:text-white">
+                  {esNuevoProducto ? 'Nuevo producto' : 'Editar producto'}
+                </h2>
+                <p className="mt-0.5 text-[12px] font-normal text-gray-500 dark:text-gray-400">
+                  Completa los datos del producto. Aparecerá en tu catálogo apenas lo guardes.
+                </p>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setProductoEnEdicion(null)}
+                  className="h-9 rounded-lg px-3 text-[13px] font-bold text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={guardarProductoModal}
+                  disabled={!productoEnEdicion.nombre.trim()}
+                  className="h-9 rounded-lg bg-[#212121] px-4 text-[13px] font-bold text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#212121] dark:hover:bg-gray-200"
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+
+            {/* Nombre */}
+            <div className="mt-7">
+              <label
+                htmlFor="prod-nombre"
+                className="block text-[13px] font-bold text-[#212121] dark:text-white"
               >
-                <CloseLineIcon className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Vista previa de imagen y selector rápido */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                Foto del producto
+                Nombre del producto
               </label>
-              <div className="h-40 w-full rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 relative">
-                <img
-                  src={productoEnEdicion.imagen}
-                  alt="Vista previa"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Galería de fotos sugeridas */}
-              <div className="space-y-1">
-                <span className="text-[11px] text-gray-400">Selecciona una imagen sugerida:</span>
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                  {FOTOS_TEMATICAS.map((tema, i) => (
-                    <img
-                      key={i}
-                      src={tema.url}
-                      alt="Opción"
-                      onClick={() => setProductoEnEdicion({ ...productoEnEdicion, imagen: tema.url })}
-                      className={`w-12 h-12 rounded-xl object-cover cursor-pointer border-2 transition-all shrink-0 ${
-                        productoEnEdicion.imagen === tema.url
-                          ? 'border-brand-500 scale-105'
-                          : 'border-transparent hover:opacity-80'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
+              <p className="mt-0.5 text-[12px] font-normal text-gray-500 dark:text-gray-400">
+                Con este nombre verás el producto en el catálogo. Es el nombre visible para tus
+                clientes.
+              </p>
+              <input
+                id="prod-nombre"
+                type="text"
+                value={productoEnEdicion.nombre}
+                onChange={(e) =>
+                  setProductoEnEdicion({ ...productoEnEdicion, nombre: e.target.value })
+                }
+                placeholder="Escribe aquí el nombre de tu producto"
+                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-[13px] font-normal text-[#212121] outline-none transition-colors placeholder:text-gray-400 focus:border-[#FF3F1A] focus:ring-1 focus:ring-[#FF3F1A]/30 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+              />
             </div>
 
-            {/* Formulario */}
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  Nombre del producto
-                </label>
-                <input
-                  type="text"
-                  value={productoEnEdicion.nombre}
-                  onChange={(e) => {
-                    const nuevoNombre = e.target.value;
-                    const autoFoto = esNuevoProducto
-                      ? asignarFotoInteligente(nuevoNombre, productoEnEdicion.categoria)
-                      : productoEnEdicion.imagen;
-                    setProductoEnEdicion({
-                      ...productoEnEdicion,
-                      nombre: nuevoNombre,
-                      imagen: autoFoto,
-                    });
-                  }}
-                  placeholder="Ej: Hamburguesa Doble Carne con Queso"
-                  className="w-full px-3.5 py-2 mt-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-sm font-semibold text-gray-900 dark:text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    Categoría
-                  </label>
-                  <input
-                    type="text"
-                    value={productoEnEdicion.categoria}
-                    onChange={(e) =>
-                      setProductoEnEdicion({ ...productoEnEdicion, categoria: e.target.value })
-                    }
-                    placeholder="Ej: Hamburguesas, Bebidas"
-                    className="w-full px-3.5 py-2 mt-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    Precio ($COP)
-                  </label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">
-                      $
-                    </span>
-                    <input
-                      type="number"
-                      value={productoEnEdicion.precio}
-                      onChange={(e) =>
-                        setProductoEnEdicion({
-                          ...productoEnEdicion,
-                          precio: parseInt(e.target.value, 10) || 0,
-                        })
-                      }
-                      className="w-full pl-7 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-sm font-bold text-gray-900 dark:text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  Descripción o Ingredientes
-                </label>
+            {/* Descripción */}
+            <div className="mt-5">
+              <label
+                htmlFor="prod-descripcion"
+                className="block text-[13px] font-bold text-[#212121] dark:text-white"
+              >
+                Descripción
+              </label>
+              <p className="mt-0.5 text-[12px] font-normal text-gray-500 dark:text-gray-400">
+                Escribe aquí la descripción de tu producto
+              </p>
+              <div className="relative mt-2">
                 <textarea
-                  rows={3}
+                  id="prod-descripcion"
+                  rows={5}
+                  maxLength={2000}
                   value={productoEnEdicion.descripcion}
                   onChange={(e) =>
                     setProductoEnEdicion({ ...productoEnEdicion, descripcion: e.target.value })
                   }
-                  placeholder="Describe los ingredientes o acompañamientos..."
-                  className="w-full px-3.5 py-2 mt-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none resize-none"
+                  placeholder="Describe el producto, sus materiales o sus especificaciones"
+                  className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 pb-7 text-[13px] font-normal text-[#212121] outline-none transition-colors placeholder:text-gray-400 focus:border-[#FF3F1A] focus:ring-1 focus:ring-[#FF3F1A]/30 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
                 />
+                <span className="pointer-events-none absolute bottom-2 right-3 text-[11px] tabular-nums text-gray-400">
+                  {productoEnEdicion.descripcion.length} / 2000
+                </span>
+              </div>
+            </div>
+
+            {/* Categorías */}
+            <div className="mt-5">
+              <span className="block text-[13px] font-bold text-[#212121] dark:text-white">
+                Categorías
+              </span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {CATEGORIAS_PRODUCTO.map(({ label, icono: Icono }) => {
+                  const activa = productoEnEdicion.categoria === label;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      aria-pressed={activa}
+                      onClick={() =>
+                        setProductoEnEdicion({
+                          ...productoEnEdicion,
+                          categoria: activa ? '' : label,
+                        })
+                      }
+                      className={
+                        activa
+                          ? 'inline-flex h-8 items-center gap-1.5 rounded-full border border-[#FF3F1A] bg-[#FF3F1A]/10 px-3 text-[12px] font-bold text-[#FF3F1A] transition-colors'
+                          : 'inline-flex h-8 items-center gap-1.5 rounded-full border border-gray-200 px-3 text-[12px] font-normal text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5'
+                      }
+                    >
+                      <Icono className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Imágenes */}
+            <div className="mt-6 grid gap-6 sm:grid-cols-2">
+              <div>
+                <span className="block text-[13px] font-bold text-[#212121] dark:text-white">
+                  Imagen principal
+                </span>
+                <div className="mt-2">
+                  <ZonaCarga
+                    imagenes={productoEnEdicion.imagen ? [productoEnEdicion.imagen] : []}
+                    onAbrir={() => setGestorImagen('principal')}
+                    onQuitar={() => setProductoEnEdicion({ ...productoEnEdicion, imagen: undefined })}
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl">
-                <div>
-                  <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
-                    Disponible en el catálogo
-                  </p>
-                  <p className="text-[11px] text-gray-400">
-                    Si se agota, apágalo para que tus clientes no lo pidan.
-                  </p>
+              <div>
+                <span className="block text-[13px] font-bold text-[#212121] dark:text-white">
+                  Imágenes adicionales
+                </span>
+                <div className="mt-2">
+                  <ZonaCarga
+                    imagenes={productoEnEdicion.imagenesExtra ?? []}
+                    onAbrir={() => setGestorImagen('adicionales')}
+                    onQuitar={(indice) =>
+                      setProductoEnEdicion({
+                        ...productoEnEdicion,
+                        imagenesExtra: (productoEnEdicion.imagenesExtra ?? []).filter(
+                          (_, i) => i !== indice,
+                        ),
+                      })
+                    }
+                  />
                 </div>
+              </div>
+            </div>
+
+            {/* Precio y disponibilidad: no están en la referencia, pero un
+                producto sin precio no se puede vender. Van al final para no
+                romper el orden de llenado. */}
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="prod-precio"
+                  className="block text-[13px] font-bold text-[#212121] dark:text-white"
+                >
+                  Precio
+                </label>
+                <p className="mt-0.5 text-[12px] font-normal text-gray-500 dark:text-gray-400">
+                  Lo que paga el cliente, en pesos colombianos.
+                </p>
+                <div className="relative mt-2">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-normal text-gray-400">
+                    $
+                  </span>
+                  <input
+                    id="prod-precio"
+                    type="number"
+                    min={0}
+                    value={productoEnEdicion.precio}
+                    onChange={(e) =>
+                      setProductoEnEdicion({
+                        ...productoEnEdicion,
+                        precio: parseInt(e.target.value, 10) || 0,
+                      })
+                    }
+                    className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-7 pr-3 text-[13px] font-bold tabular-nums text-[#212121] outline-none transition-colors focus:border-[#FF3F1A] focus:ring-1 focus:ring-[#FF3F1A]/30 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-[13px] font-bold text-[#212121] dark:text-white">
+                  Disponibilidad
+                </span>
+                <p className="mt-0.5 text-[12px] font-normal text-gray-500 dark:text-gray-400">
+                  Si se agota, apágalo para que tus clientes no lo pidan.
+                </p>
                 <button
                   type="button"
                   onClick={() =>
@@ -1444,36 +1620,40 @@ export const CatalogoPage: React.FC = observer(() => {
                       disponible: !productoEnEdicion.disponible,
                     })
                   }
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  aria-pressed={productoEnEdicion.disponible}
+                  className={
                     productoEnEdicion.disponible
-                      ? 'bg-accent-500 text-white'
-                      : 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
+                      ? 'mt-2 inline-flex h-10 items-center gap-2 rounded-lg border border-[#97D6DF] bg-[#97D6DF]/20 px-3 text-[13px] font-bold text-[#190088] dark:text-[#97D6DF]'
+                      : 'mt-2 inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 px-3 text-[13px] font-bold text-gray-500 dark:border-gray-800 dark:text-gray-400'
+                  }
                 >
-                  {productoEnEdicion.disponible ? 'Activo' : 'Agotado'}
+                  <span
+                    className={
+                      productoEnEdicion.disponible
+                        ? 'h-1.5 w-1.5 rounded-full bg-[#190088] dark:bg-[#97D6DF]'
+                        : 'h-1.5 w-1.5 rounded-full bg-gray-400'
+                    }
+                    aria-hidden="true"
+                  />
+                  {productoEnEdicion.disponible ? 'Disponible' : 'Agotado'}
                 </button>
               </div>
             </div>
-
-            {/* Botones de acción modal */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <button
-                onClick={() => setProductoEnEdicion(null)}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={guardarProductoModal}
-                className="px-5 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold shadow-theme-xs"
-              >
-                Guardar producto
-              </button>
-            </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
       </div>
+
+      <AdministradorArchivos
+        abierto={gestorImagen !== null}
+        seleccionUnica={gestorImagen === 'principal'}
+        onCerrar={() => setGestorImagen(null)}
+        onSeleccionar={(imagenes) => {
+          agregarImagenes(imagenes, gestorImagen === 'adicionales');
+          setGestorImagen(null);
+        }}
+      />
     </>
   );
 });

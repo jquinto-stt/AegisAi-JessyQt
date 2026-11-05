@@ -7,7 +7,7 @@ import {
   MenuItem,
 } from "@/shell";
 import { useSidebarContext } from "@/shell/sidebar/SidebarContext";
-import { sessionStore, organizacionStore, inventarioStore, SECCIONES, modulosOperablesDeSesion } from "@/stores";
+import { sessionStore, organizacionStore, inventarioStore, novedadesStore, SECCIONES, modulosOperablesDeSesion } from "@/stores";
 import { cerrarSesion } from "@/lib/auth.service";
 import type { Modulo, Seccion } from "@/stores";
 import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
@@ -28,7 +28,6 @@ import {
   PlugInIcon,
   InfoIcon,
   ArrowRightIcon,
-  PlusIcon,
   ChatIcon,
   PieChartIcon,
   BoxIconLine,
@@ -241,7 +240,7 @@ const SimulacionBanner = observer(() => {
           className="flex w-full items-center justify-center text-brand-600 dark:text-brand-400"
           title={`Viendo como ${rol} — salir`}
         >
-          <ArrowRightIcon />
+          <ArrowRightIcon className="size-5" />
         </button>
       )}
     </div>
@@ -275,9 +274,14 @@ const ITEMS_MODULO: Record<Modulo, { seccionId: string; Icono: React.FC<React.SV
   pedidos: [
     { seccionId: "inicio", Icono: GridIcon },
     { seccionId: "tablero", Icono: ListIcon },
+    { seccionId: "novedades", Icono: AlertHexaIcon },
+    // `crear` NO está: crear un pedido no es un destino de navegación, es una
+    // acción de Gestión de pedidos. Se entra por el botón «Nuevo pedido» de la
+    // cabecera del tablero, que es donde el operador ya está mirando la lista.
+    // Su sección sigue en `SECCIONES` porque ahí vive la capacidad que la
+    // gobierna (`orders.create`) y el catálogo de destinos del módulo.
     { seccionId: "transportadoras", Icono: TruckDelivery },
     { seccionId: "catalogo", Icono: TableIcon },
-    { seccionId: "crear", Icono: PlusIcon },
     { seccionId: "chats", Icono: ChatIcon },
     { seccionId: "analitica", Icono: PieChartIcon },
     { seccionId: "configuracion", Icono: PlugInIcon },
@@ -314,6 +318,13 @@ function seccionDe(modulo: Modulo, seccionId: string): Seccion | null {
  * lleva número: un contador en todo deja de señalar nada.
  */
 function cuentaDeSeccion(modulo: Modulo, seccionId: string): number | undefined {
+  // «Gestión de novedades 3» son tres pedidos que no se entregaron y esperan una
+  // decisión del negocio. Es exactamente el caso para el que existe este número:
+  // una cola que pide acción. En cero no se pinta —un contador que siempre está
+  // deja de señalar nada—.
+  if (modulo === "pedidos" && seccionId === "novedades") {
+    return novedadesStore.pendientes || undefined;
+  }
   if (modulo !== "inventarios") return undefined;
   if (seccionId === "reorden") return inventarioStore.colaReorden.length;
   if (seccionId === "conteos") return inventarioStore.resumen.conteosAbiertos;
@@ -499,7 +510,7 @@ const SidebarContent = observer(() => {
               {/* Contenido del banner: Icono y Nombre */}
               <div className="relative z-1 flex flex-col gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 shadow-2xs border border-black/5 dark:border-white/10 flex items-center justify-center text-gray-900 dark:text-white">
-                  <bannerConfig.Icono className="h-4.5 w-4.5" />
+                  <bannerConfig.Icono className="size-4" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-gray-900 dark:text-white tracking-tight leading-tight">
@@ -527,7 +538,7 @@ const SidebarContent = observer(() => {
                     }`}
                   >
                     <span
-                      className={`text-base transition-transform duration-150 group-hover:scale-110 ${
+                      className={`flex size-5 shrink-0 items-center justify-center transition-transform duration-150 group-hover:scale-110 ${
                         active ? "text-brand-500" : "text-gray-500 dark:text-gray-400"
                       }`}
                     >
@@ -557,8 +568,12 @@ const SidebarContent = observer(() => {
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
                       }`}
                     >
-                      <span className={`text-base transition-transform duration-150 group-hover:scale-110 ${active ? "text-brand-500" : "text-gray-500 dark:text-gray-400"}`}>
-                        <Icono />
+                      <span
+                        className={`flex size-5 shrink-0 items-center justify-center transition-transform duration-150 group-hover:scale-110 ${
+                          active ? "text-brand-500" : "text-gray-500 dark:text-gray-400"
+                        }`}
+                      >
+                        <Icono className="size-5" />
                       </span>
                       <span className="truncate">{seccion.label}</span>
                     </Link>
@@ -620,7 +635,7 @@ const SidebarContent = observer(() => {
                     {visibles.map(({ seccionId, Icono, seccion }) => (
                       <MenuItem
                         key={seccionId}
-                        icon={<Icono />}
+                        icon={<Icono className="size-5" />}
                         name={seccion.label}
                         path={seccion.path}
                         isActive={isActive}

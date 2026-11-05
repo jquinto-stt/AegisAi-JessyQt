@@ -39,7 +39,7 @@ import type {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Clave propia del módulo en `localStorage` (Req 9.1). Versionada para invalidar mocks viejos. */
-const STORAGE_KEY = "necto.conversaciones_v3";
+const STORAGE_KEY = "necto.conversaciones_v6";
 
 /**
  * Límite de caracteres del mensaje del cliente en `/wa` (Req 6.2/6.3): se
@@ -289,7 +289,7 @@ function loadEstado(): EstadoPersistido | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<EstadoPersistido>;
     if (!parsed || typeof parsed !== "object") return null;
-    if (!Array.isArray(parsed.conversaciones)) return null;
+    if (!Array.isArray(parsed.conversaciones) || parsed.conversaciones.length === 0) return null;
     if (
       typeof parsed.mensajesPorConv !== "object" ||
       parsed.mensajesPorConv === null ||
@@ -298,6 +298,13 @@ function loadEstado(): EstadoPersistido | null {
     ) {
       return null;
     }
+    // Cabeceras sin ningún mensaje = estado a medias (lo dejó una lectura de
+    // Supabase que devolvió cero filas). La bandeja mostraría los hilos y al
+    // abrirlos estarían vacíos: peor que no tener nada. Se descarta y se siembra.
+    const hayMensajes = Object.values(parsed.mensajesPorConv as Record<string, unknown[]>).some(
+      (lista) => Array.isArray(lista) && lista.length > 0,
+    );
+    if (!hayMensajes) return null;
     return {
       conversaciones: parsed.conversaciones,
       mensajesPorConv: parsed.mensajesPorConv as Record<string, Mensaje[]>,
@@ -375,7 +382,7 @@ export class ConversacionesStore {
     // contrario (ausente/corrupto/JSON inválido) → cargar el seed.
     const persistido = loadEstado();
     if (persistido) {
-      this.conversaciones = persistido.conversaciones;
+      this.conversaciones = (persistido.conversaciones && persistido.conversaciones.length > 0) ? persistido.conversaciones : CONVERSACIONES_SEED.conversaciones;
       this.mensajesPorConv = recordToMap(persistido.mensajesPorConv);
       this.eventosPorConv = recordToMap(persistido.eventosPorConv);
       // Ausente en sesiones anteriores al 07/10 ⇒ valor de fábrica (encendido).
@@ -390,10 +397,17 @@ export class ConversacionesStore {
    * Carga el seed inicial en el estado, agrupando mensajes y eventos por
    * `conversacionId` en sus índices internos (Req 9.4).
    */
-  private cargarSeed(seed: ConversacionesSeed): void {
+  cargarSeed(seed: ConversacionesSeed): void {
     this.conversaciones = seed.conversaciones;
     this.mensajesPorConv = agruparPorConversacion(seed.mensajes);
     this.eventosPorConv = agruparPorConversacion(seed.eventos);
+  }
+
+  restaurarSeed(): void {
+    this.cargarSeed(CONVERSACIONES_SEED);
+    this.origenDatos = "seed";
+    this.motivoSeed = "";
+    this.persistir();
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -483,17 +497,30 @@ export class ConversacionesStore {
     const res = await cargarTodo();
 
     runInAction(() => {
+      if (res.estado === "ok" && res.datos.conversaciones.length > 0) {
+        this.conversaciones = res.datos.conversaciones;
+        this.mensajesPorConv = res.datos.mensajesPorConv;
+        this.eventosPorConv = new Map();
+        this.origenDatos = "real";
+        this.motivoSeed = "";
+        this.persistir();
+        return;
+      }
+      if (this.conversaciones.length === 0) {
+        this.cargarSeed(CONVERSACIONES_SEED);
+      }
+      this.origenDatos = "seed";
       switch (res.estado) {
         case "ok":
-          this.conversaciones = res.datos.conversaciones;
-          this.mensajesPorConv = res.datos.mensajesPorConv;
-          // Los eventos de sistema no existen en la base todavía: se vacían para
-          // que no queden mezclados los del seed con datos reales. Mezclar los dos
-          // orígenes sería peor que no tener eventos: una línea de tiempo con
-          // anotaciones inventadas sobre conversaciones reales.
-          this.eventosPorConv = new Map();
-          this.origenDatos = "real";
-          this.motivoSeed = "";
+          // Se llega aquí con la base leída y CERO conversaciones (el caso con
+          // datos salió arriba). Vaciar la bandeja dejaría la consola en blanco
+          // sin explicar nada; se conserva el ejemplo y se dice por qué.
+          if (this.conversaciones.length === 0) {
+            this.cargarSeed(CONVERSACIONES_SEED);
+          }
+          this.origenDatos = "seed";
+          this.motivoSeed =
+            "La base de conversaciones está vacía: mostrando los hilos de ejemplo.";
           break;
 
         case "sin_configuracion":

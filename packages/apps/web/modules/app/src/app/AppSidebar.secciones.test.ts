@@ -35,6 +35,21 @@ const RUTA_SIDEBAR = join(SRC, "app", "AppSidebar.tsx");
 const TRANSVERSALES = new Set(["asistente"]);
 
 /**
+ * Secciones del catálogo que no tienen ítem propio en el sidebar porque **se
+ * entra a ellas desde dentro de otra pantalla**, no desde la navegación.
+ *
+ * - `crear`: «Nuevo pedido» en la cabecera de Gestión de pedidos. Crear un
+ *   pedido no es un destino, es una acción sobre la lista que el operador ya
+ *   está mirando; un ítem de menú para eso gastaba un renglón del sidebar en
+ *   algo que se hace desde donde está el trabajo.
+ *
+ * Excluirlas aquí es una decisión con nombre, no un hueco: si mañana una
+ * sección deja de estar en el sidebar sin entrar en este conjunto, el test se
+ * pone rojo, que es justo lo que se quiere.
+ */
+const SIN_ITEM_PROPIO = new Set(["crear"]);
+
+/**
  * Extrae los `seccionId` declarados para un módulo dentro de `ITEMS_MODULO`.
  *
  * Trabaja sobre el texto del archivo. Un `import` del `.tsx` sería lo natural y
@@ -178,7 +193,7 @@ describe("AppSidebar · ITEMS_MODULO", () => {
       const pintados = new Set(seccionesDelSidebar(fuente, m));
       const sinPintar = SECCIONES[m as keyof typeof SECCIONES]
         .map((s) => s.id)
-        .filter((id) => !TRANSVERSALES.has(id) && !pintados.has(id));
+        .filter((id) => !TRANSVERSALES.has(id) && !SIN_ITEM_PROPIO.has(id) && !pintados.has(id));
       expect(
         sinPintar,
         `módulo «${m}»: secciones del catálogo sin ítem en el sidebar`,

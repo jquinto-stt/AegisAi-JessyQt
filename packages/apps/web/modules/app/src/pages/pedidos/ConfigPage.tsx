@@ -19,8 +19,6 @@ import {
   ArrowUpIcon,
   AudioIcon,
   BoltIcon,
-  BuildingOffice2Icon,
-  DollarLineIcon,
   GridIcon,
   PageIcon,
   PencilIcon,
@@ -69,7 +67,12 @@ import {
   transportadoraFavorita,
 } from "@/domain/pedidos/transportadoras.seleccion";
 import { TransportadorasAjustes } from "./TransportadorasAjustes";
-import { enlaceDePago, mensajeDeCobro } from "./cobros";
+import { ReglasConfirmacionAjustes } from "./ReglasConfirmacionAjustes";
+import {
+  ETIQUETA_FORMA,
+  REGLAS_CONFIRMACION_INICIAL,
+  reglasVigentes,
+} from "@/domain/pedidos/confirmacion.reglas";
 import {
   BloqueConfig,
   CampoConfig,
@@ -160,8 +163,8 @@ function FacebookIcon({ className = "h-5 w-5" }: { className?: string }) {
 
 type ClaveSeccion =
   | "flujo"
+  | "confirmacion"
   | "transportadoras"
-  | "pagos"
   | "perfil"
   | "tiempos"
   | "sonidos"
@@ -170,8 +173,8 @@ type ClaveSeccion =
 /** Orden de la columna de secciones. `flujo` primero: es la seccion por defecto. */
 const ORDEN_SECCIONES: ClaveSeccion[] = [
   "flujo",
+  "confirmacion",
   "transportadoras",
-  "pagos",
   "perfil",
   "tiempos",
   "sonidos",
@@ -197,15 +200,18 @@ const META_SECCION: Record<
     hint: "Modalidades de entrega, nombres de etapas y personalización de columnas del tablero.",
     icono: BoltIcon,
   },
+  confirmacion: {
+    label: "Reglas de confirmación",
+    // El mismo subtítulo de la referencia: la sección son tres reglas
+    // encadenadas, no dos — describirlas como «dos reglas independientes» dejaba
+    // fuera el tope de envío.
+    hint: "Configura y administra las reglas de confirmación para los pedidos de tu negocio.",
+    icono: ShieldCheckIcon,
+  },
   transportadoras: {
     label: "Transportadoras",
     hint: "Elige con qué transportadoras despachas y cuál se propone primero al cotizar un envío. Una transportadora deshabilitada deja de aparecer en las cotizaciones.",
     icono: TruckDelivery,
-  },
-  pagos: {
-    label: "Cuentas y cobros",
-    hint: "Gestiona los métodos de pago disponibles, cuentas bancarias para transferencias, integración de pasarelas de pago digitales y el mensaje con instrucciones que recibe el cliente al confirmar su orden.",
-    icono: DollarLineIcon,
   },
   perfil: {
     label: "Perfil de negocio",
@@ -231,8 +237,8 @@ const META_SECCION: Record<
 
 const PALABRAS_CLAVE_SECCION: Record<ClaveSeccion, string[]> = {
   flujo: ["etapas", "columnas", "tablero", "kanban", "entrega", "domicilio", "retiro", "en sitio", "pipeline", "operacion"],
+  confirmacion: ["confirmacion", "confirmar", "riesgosa", "riesgosas", "riesgo", "fraude", "whatsapp", "automatica", "manual", "aceptacion", "jerarquia", "orden repetida", "inventario", "devoluciones", "presupuesto", "tope", "valor de envio", "envio caro", "rentabilidad"],
   transportadoras: ["transportadora", "transportadoras", "envio", "envios", "mensajeria", "cotizacion", "cotizar", "favorita", "despacho", "servientrega", "coordinadora", "envia", "tcc", "interrapidisimo", "habilitar", "deshabilitar"],
-  pagos: ["cuentas", "bancos", "transferencias", "nequi", "daviplata", "bancolombia", "instrucciones", "cobro", "link", "tarjeta", "pse"],
   perfil: ["perfil", "negocio", "rubro", "categoria", "terminologia", "catalogo base"],
   tiempos: ["horario", "atencion", "sla", "demoras", "urgente", "tiempo", "dias", "horas", "24/7"],
   sonidos: ["sonido", "audio", "alerta", "campana", "timbre", "notificacion", "volumen", "chime", "aviso", "demora", "escritorio"],
@@ -242,12 +248,18 @@ const PALABRAS_CLAVE_SECCION: Record<ClaveSeccion, string[]> = {
 /** Los ajustes que hay dentro de cada sección, con el nombre que llevan en ella. */
 const AJUSTES_SECCION: Record<ClaveSeccion, string[]> = {
   flujo: ["Modalidades de entrega", "Nombres de etapas", "Columnas del tablero"],
+  confirmacion: [
+    "Presupuesto de envío",
+    "Pedidos riesgosos",
+    "Confirmación manual",
+    "Confirmación por WhatsApp",
+    "Confirmación automática",
+  ],
   transportadoras: [
     "Habilitar / deshabilitar",
     "Favorita para envíos",
     "Cotizaciones de envío",
   ],
-  pagos: ["Medios de pago", "Cuentas para transferencias", "Pasarela de pago", "Mensaje de cobro"],
   perfil: ["Tipo de negocio", "Catálogo base", "Terminología"],
   tiempos: ["Horario de atención", "Tiempo máximo por etapa", "Aviso fuera de horario"],
   sonidos: ["Timbre de pedido nuevo", "Alerta de demoras", "Recordatorio", "Notificaciones de escritorio"],
@@ -256,8 +268,8 @@ const AJUSTES_SECCION: Record<ClaveSeccion, string[]> = {
 
 const ACCION_SECCION: Record<ClaveSeccion, string> = {
   flujo: "Configurar",
+  confirmacion: "Configurar",
   transportadoras: "Configurar",
-  pagos: "Configurar",
   perfil: "Configurar",
   tiempos: "Configurar",
   sonidos: "Configurar",
@@ -288,6 +300,18 @@ function copiaDe(cfg: PedidosConfig): PedidosConfig {
     avisoFueraHorario: { ...cfg.avisoFueraHorario },
     datosBancarios: { ...cfg.datosBancarios },
     transportadorasHabilitadas: { ...cfg.transportadorasHabilitadas },
+    reglasConfirmacion: cfg.reglasConfirmacion
+      ? {
+          ...cfg.reglasConfirmacion,
+          // El tope de envío es un objeto anidado: sin copiarlo, el borrador
+          // comparte referencia con el store y «Descartar cambios» no lo
+          // deshace.
+          presupuestoEnvio: { ...reglasVigentes(cfg.reglasConfirmacion).presupuestoEnvio },
+        }
+      : {
+          ...REGLAS_CONFIRMACION_INICIAL,
+          presupuestoEnvio: { ...REGLAS_CONFIRMACION_INICIAL.presupuestoEnvio },
+        },
     columnasPersonalizadas: cfg.columnasPersonalizadas?.map((c) => ({ ...c })),
     capacidadesActivas: cfg.capacidadesActivas ? [...cfg.capacidadesActivas] : undefined,
   };
@@ -514,20 +538,6 @@ export const ConfigPage = observer(() => {
     setGuardado(false);
   };
 
-  const setDatoBancario = <K extends keyof NonNullable<PedidosConfig["datosBancarios"]>>(
-    campo: K,
-    valor: NonNullable<PedidosConfig["datosBancarios"]>[K]
-  ) => {
-    setDraft((prev) => ({
-      ...prev,
-      datosBancarios: {
-        ...(prev.datosBancarios ?? {}),
-        [campo]: valor,
-      },
-    }));
-    setGuardado(false);
-  };
-
   const toggleModalidad = (m: Modalidad) => {
     const activa = draft.modalidades.includes(m);
     if (activa && draft.modalidades.length === 1) return;
@@ -652,16 +662,6 @@ export const ConfigPage = observer(() => {
       setHorario(campo, valor);
     }
     setGuardado(false);
-  };
-
-  const [copiadoCobro, setCopiadoCobro] = useState(false);
-  const copiarMensajeCobro = () => {
-    const txt = mensajeDeCobro(draft.datosBancarios, "P-001", window.location.origin);
-    if (txt) {
-      navigator.clipboard.writeText(txt);
-      setCopiadoCobro(true);
-      setTimeout(() => setCopiadoCobro(false), 2000);
-    }
   };
 
   const setAlertaAtencion = <K extends keyof PedidosConfig["alertaAtencion"]>(
@@ -970,17 +970,25 @@ export const ConfigPage = observer(() => {
   // tarjeta —ni al revés— que es como una navegación se desincroniza del
   // contenido.
   const cfg = pedidosStore.config;
-  const banco = cfg.datosBancarios;
-  const mediosPago = [
-    banco?.efectivoActivo && "efectivo",
-    banco?.transferenciaActivo && "transferencia",
-    banco?.contraEntregaActivo && "contra entrega",
-    banco?.linkPagoActivo && "link de pago",
-  ].filter(Boolean) as string[];
   const estadoSeccion: Record<ClaveSeccion, { texto: string; aviso?: boolean }> = {
     flujo: {
       texto: `${cfg.modalidades.length} ${cfg.modalidades.length === 1 ? "modalidad activa" : "modalidades activas"} · ${columnas.length} columnas`,
     },
+    confirmacion: (() => {
+      // Se lee con las mismas reglas que pinta la sección, no con un `if`
+      // propio: la tarjeta del hub no puede anunciar una forma que el
+      // interruptor de dentro no tenga marcada.
+      const reglas = reglasVigentes(cfg.reglasConfirmacion);
+      if (!reglas.forma) {
+        return { texto: "Sin forma de confirmación elegida", aviso: true };
+      }
+      return {
+        texto: `${ETIQUETA_FORMA[reglas.forma]}${
+          reglas.riesgosas ? " · riesgosas a mano" : " · riesgosas sin filtro"
+        }`,
+        aviso: !reglas.riesgosas,
+      };
+    })(),
     transportadoras: (() => {
       // Se lee de las mismas reglas que usan las cotizaciones, no de un
       // recuento propio: si la tarjeta del hub dijera «5 disponibles» y el
@@ -1000,10 +1008,6 @@ export const ConfigPage = observer(() => {
         }`,
       };
     })(),
-    pagos:
-      mediosPago.length > 0
-        ? { texto: `Acepta ${mediosPago.join(", ")}` }
-        : { texto: "Sin medios de pago configurados", aviso: true },
     perfil: {
       texto: cfg.perfilComercial ? BUSINESS_PROFILES[cfg.perfilComercial].name : "Sin perfil elegido",
     },
@@ -1466,6 +1470,23 @@ export const ConfigPage = observer(() => {
             )}
 
             {/* ═════════════════════════════════════════════════════════════════════
+                SECCIÓN: REGLAS DE CONFIRMACIÓN (¿QUÉ SE CONFIRMA SOLO?)
+               ═════════════════════════════════════════════════════════════════════ */}
+            {seccion === "confirmacion" && (
+              <ReglasConfirmacionAjustes
+                // Se leen con los valores de fábrica rellenados: una config
+                // guardada antes de que existiera esta sección no puede
+                // aparecer con los dos interruptores apagados.
+                reglas={reglasVigentes(draft.reglasConfirmacion)}
+                onCambio={(reglas) => {
+                  // Al BORRADOR, como el resto de la pantalla: «Descartar
+                  // cambios» tiene que poder deshacer esto.
+                  set("reglasConfirmacion", reglas);
+                }}
+              />
+            )}
+
+            {/* ═════════════════════════════════════════════════════════════════════
                 SECCIÓN: TRANSPORTADORAS (¿CON QUIÉN DESPACHO?)
                ═════════════════════════════════════════════════════════════════════ */}
             {seccion === "transportadoras" && (
@@ -1492,572 +1513,6 @@ export const ConfigPage = observer(() => {
                   }}
                 />
               </BloqueConfig>
-            )}
-
-            {/* ═════════════════════════════════════════════════════════════════════
-                SECCIÓN: CUENTAS Y COBROS (PAGOS)
-               ═════════════════════════════════════════════════════════════════════ */}
-            {seccion === "pagos" && (
-              // Sin clase de entrada: la pone `ConfigShell`, que envuelve esta
-              // sección y se remonta con ella. Dos fundidos anidados sobre el
-              // mismo cambio no suman movimiento, solo lo duplican.
-              <div className="space-y-8">
-                {/* ── BLOQUE 1: ¿A qué cuentas te transfieren? ─────────────── */}
-                <section
-                  className="rounded-3xl border border-[#ECECEC] bg-white p-6 shadow-theme-xs sm:p-8 dark:border-gray-800 dark:bg-gray-900"
-                  data-purpose="transfer-accounts-config"
-                >
-                  <div className="flex items-start gap-4 border-b border-[#ECECEC] pb-6 dark:border-gray-800">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#97D6DF]/20 border border-[#97D6DF]/30 text-[#190088] dark:bg-[#97D6DF]/15 dark:text-[#97D6DF]">
-                      <BuildingOffice2Icon className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h2 className="text-[20px] sm:text-[24px] font-bold text-[#190088] dark:text-white leading-tight">
-                        ¿A qué cuentas te transfieren?
-                      </h2>
-                      <p className="mt-1 text-[14px] font-normal text-[#212121] dark:text-gray-400">
-                        Datos compartidos con el cliente al pagar por transferencia. Los campos vacíos se omitirán automáticamente del mensaje final.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 space-y-6">
-                    {/* Beneficiary Name Input */}
-                    <div className="max-w-xl">
-                      <label
-                        className="block text-[12px] font-bold uppercase tracking-wider text-[#212121] dark:text-gray-300"
-                        htmlFor="pago-titular"
-                      >
-                        Titular de la cuenta
-                      </label>
-                      <p className="mb-2 text-[12px] font-normal text-gray-500 dark:text-gray-400">
-                        Nombre de la persona o empresa titular. Se incluye al inicio del comprobante de cobro.
-                      </p>
-                      <div className="relative rounded-xl shadow-theme-xs">
-                        <input
-                          id="pago-titular"
-                          type="text"
-                          value={draft.datosBancarios?.titular ?? ""}
-                          onChange={(e) => setDatoBancario("titular", e.target.value)}
-                          placeholder="Ej. Restaurante Sabor & Leña SAS"
-                          className="block w-full rounded-xl border border-[#ECECEC] bg-white py-2.5 pl-3.5 pr-10 text-[14px] text-[#212121] placeholder:text-gray-400 focus:border-[#FF3F1A] focus:ring-2 focus:ring-[#FF3F1A]/20 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                        />
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                          <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bank Accounts Grid */}
-                    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-                      {/* Nequi Card */}
-                      <div className="rounded-2xl border border-[#ECECEC] bg-gray-50/50 p-4 transition focus-within:border-[#FF3F1A] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#FF3F1A]/20 dark:border-gray-800 dark:bg-gray-950/40 dark:focus-within:bg-gray-900">
-                        <div className="mb-2.5 flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#20002c]/10 px-2.5 py-0.5 text-[12px] font-bold text-[#20002c] dark:bg-[#20002c]/20 dark:text-purple-300">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#20002c] dark:bg-purple-400" />
-                            Nequi
-                          </span>
-                          <span className="text-[12px] font-normal text-gray-400">Celular</span>
-                        </div>
-                        <label className="sr-only" htmlFor="pago-nequi">Número Nequi</label>
-                        <input
-                          id="pago-nequi"
-                          type="text"
-                          value={draft.datosBancarios?.nequi ?? ""}
-                          onChange={(e) => setDatoBancario("nequi", e.target.value)}
-                          placeholder="Ej. 300 123 4567"
-                          className="block w-full rounded-xl border border-[#ECECEC] bg-white px-3 py-2 text-[14px] font-medium tracking-wide text-[#212121] placeholder:text-gray-400 focus:border-[#FF3F1A] focus:ring-2 focus:ring-[#FF3F1A]/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                        />
-                      </div>
-
-                      {/* Daviplata Card */}
-                      <div className="rounded-2xl border border-[#ECECEC] bg-gray-50/50 p-4 transition focus-within:border-[#FF3F1A] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#FF3F1A]/20 dark:border-gray-800 dark:bg-gray-950/40 dark:focus-within:bg-gray-900">
-                        <div className="mb-2.5 flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#ed1c24]/10 px-2.5 py-0.5 text-[12px] font-bold text-[#ed1c24] dark:bg-[#ed1c24]/20 dark:text-red-300">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#ed1c24] dark:bg-red-400" />
-                            Daviplata
-                          </span>
-                          <span className="text-[12px] font-normal text-gray-400">Celular</span>
-                        </div>
-                        <label className="sr-only" htmlFor="pago-daviplata">Número Daviplata</label>
-                        <input
-                          id="pago-daviplata"
-                          type="text"
-                          value={draft.datosBancarios?.daviplata ?? ""}
-                          onChange={(e) => setDatoBancario("daviplata", e.target.value)}
-                          placeholder="Ej. 300 123 4567"
-                          className="block w-full rounded-xl border border-[#ECECEC] bg-white px-3 py-2 text-[14px] font-medium tracking-wide text-[#212121] placeholder:text-gray-400 focus:border-[#FF3F1A] focus:ring-2 focus:ring-[#FF3F1A]/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                        />
-                      </div>
-
-                      {/* Bancolombia / Otros Bancos Card */}
-                      <div className="rounded-2xl border border-[#ECECEC] bg-gray-50/50 p-4 transition focus-within:border-[#FF3F1A] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#FF3F1A]/20 dark:border-gray-800 dark:bg-gray-950/40 dark:focus-within:bg-gray-900">
-                        <div className="mb-2.5 flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#97D6DF]/30 px-2.5 py-0.5 text-[12px] font-bold text-[#190088] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#190088] dark:bg-[#97D6DF]" />
-                            Bancolombia / Otros
-                          </span>
-                          <span className="text-[12px] font-normal text-gray-400">Cuenta</span>
-                        </div>
-                        <label className="sr-only" htmlFor="pago-bancolombia">Cuenta Bancolombia u otros bancos</label>
-                        <input
-                          id="pago-bancolombia"
-                          type="text"
-                          value={draft.datosBancarios?.bancolombia ?? ""}
-                          onChange={(e) => setDatoBancario("bancolombia", e.target.value)}
-                          placeholder="Tipo y # de cuenta"
-                          className="block w-full rounded-xl border border-[#ECECEC] bg-white px-3 py-2 text-[14px] font-medium tracking-wide text-[#212121] placeholder:text-gray-400 focus:border-[#FF3F1A] focus:ring-2 focus:ring-[#FF3F1A]/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* ── BLOQUE 2: ¿Cómo te pueden pagar? ─────────────────────── */}
-                <section
-                  className="rounded-3xl border border-[#ECECEC] bg-white p-6 shadow-theme-xs sm:p-8 dark:border-gray-800 dark:bg-gray-900"
-                  data-purpose="supported-payment-methods"
-                >
-                  <div className="flex items-start gap-4 border-b border-[#ECECEC] pb-6 dark:border-gray-800">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#97D6DF]/20 border border-[#97D6DF]/30 text-[#190088] dark:bg-[#97D6DF]/15 dark:text-[#97D6DF]">
-                      <DollarLineIcon className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h2 className="text-[20px] sm:text-[24px] font-bold text-[#190088] dark:text-white leading-tight">
-                        ¿Cómo te pueden pagar?
-                      </h2>
-                      <p className="mt-1 text-[14px] font-normal text-[#212121] dark:text-gray-400">
-                        Habilita o apaga los medios de pago disponibles. Los métodos inactivos se retirarán de inmediato del selector de pedidos.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 divide-y divide-[#ECECEC] dark:divide-gray-800">
-                    {/* Item 1: Transferencias */}
-                    <div className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
-                      <div className="pr-6">
-                        <span className="text-[14px] font-bold text-[#212121] dark:text-white">
-                          Transferencias (Nequi / Daviplata / Bancos)
-                        </span>
-                        <p className="mt-0.5 text-[12px] font-normal text-gray-500 dark:text-gray-400">
-                          El cliente realiza la transferencia a tus cuentas configuradas y adjunta el comprobante.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={cn(
-                          "hidden text-[12px] font-bold sm:inline-block",
-                          draft.datosBancarios?.transferenciaActivo !== false ? "text-[#FF3F1A]" : "text-gray-400 dark:text-gray-500"
-                        )}>
-                          {draft.datosBancarios?.transferenciaActivo !== false ? "Activo" : "Inactivo"}
-                        </span>
-                        <Switch
-                          checked={draft.datosBancarios?.transferenciaActivo !== false}
-                          color="orange"
-                          onChange={(v) => setDatoBancario("transferenciaActivo", v)}
-                          aria-label="Aceptar transferencias"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Item 2: Contra Entrega */}
-                    <div className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
-                      <div className="pr-6">
-                        <span className="text-[14px] font-bold text-[#212121] dark:text-white">
-                          Pago contra entrega (Domicilio)
-                        </span>
-                        <p className="mt-0.5 text-[12px] font-normal text-gray-500 dark:text-gray-400">
-                          El cliente paga en efectivo o transferencia directamente al domiciliario al recibir su pedido.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={cn(
-                          "hidden text-[12px] font-bold sm:inline-block",
-                          draft.datosBancarios?.contraEntregaActivo !== false ? "text-[#FF3F1A]" : "text-gray-400 dark:text-gray-500"
-                        )}>
-                          {draft.datosBancarios?.contraEntregaActivo !== false ? "Activo" : "Inactivo"}
-                        </span>
-                        <Switch
-                          checked={draft.datosBancarios?.contraEntregaActivo !== false}
-                          color="orange"
-                          onChange={(v) => setDatoBancario("contraEntregaActivo", v)}
-                          aria-label="Aceptar contra entrega"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Item 3: Link Digital */}
-                    <div className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
-                      <div className="pr-6">
-                        <span className="text-[14px] font-bold text-[#212121] dark:text-white">
-                          Link de pago digital (Tarjeta y PSE)
-                        </span>
-                        <p className="mt-0.5 text-[12px] font-normal text-gray-500 dark:text-gray-400">
-                          Genera o envía un enlace digital en línea para pagar con tarjeta de crédito, débito o PSE.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={cn(
-                          "hidden text-[12px] font-bold sm:inline-block",
-                          draft.datosBancarios?.linkPagoActivo !== false ? "text-[#FF3F1A]" : "text-gray-400 dark:text-gray-500"
-                        )}>
-                          {draft.datosBancarios?.linkPagoActivo !== false ? "Activo" : "Inactivo"}
-                        </span>
-                        <Switch
-                          checked={draft.datosBancarios?.linkPagoActivo !== false}
-                          color="orange"
-                          onChange={(v) => setDatoBancario("linkPagoActivo", v)}
-                          aria-label="Aceptar link de pago"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Item 4: Efectivo en Local */}
-                    <div className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
-                      <div className="pr-6">
-                        <span className="text-[14px] font-bold text-[#212121] dark:text-white">
-                          Efectivo en local (Retiro / En sitio)
-                        </span>
-                        <p className="mt-0.5 text-[12px] font-normal text-gray-500 dark:text-gray-400">
-                          Cobro presencial en caja al momento de recoger la orden o consumir dentro del establecimiento.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={cn(
-                          "hidden text-[12px] font-bold sm:inline-block",
-                          draft.datosBancarios?.efectivoActivo !== false ? "text-[#FF3F1A]" : "text-gray-400 dark:text-gray-500"
-                        )}>
-                          {draft.datosBancarios?.efectivoActivo !== false ? "Activo" : "Inactivo"}
-                        </span>
-                        <Switch
-                          checked={draft.datosBancarios?.efectivoActivo !== false}
-                          color="orange"
-                          onChange={(v) => setDatoBancario("efectivoActivo", v)}
-                          aria-label="Aceptar efectivo en local"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* ── BLOQUE 3: ¿Qué pasarela usas para el cobro en línea? ─── */}
-                {draft.datosBancarios?.linkPagoActivo !== false && (
-                  <section
-                    className="rounded-3xl border border-[#ECECEC] bg-white p-6 shadow-theme-xs sm:p-8 dark:border-gray-800 dark:bg-gray-900"
-                    data-purpose="payment-gateway-selection"
-                  >
-                    <div className="flex items-start gap-4 border-b border-[#ECECEC] pb-6 dark:border-gray-800">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#97D6DF]/20 border border-[#97D6DF]/30 text-[#190088] dark:bg-[#97D6DF]/15 dark:text-[#97D6DF]">
-                        <ShieldCheckIcon className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <h2 className="text-[20px] sm:text-[24px] font-bold text-[#190088] dark:text-white leading-tight">
-                          ¿Qué pasarela usas para el cobro en línea?
-                        </h2>
-                        <p className="mt-1 text-[14px] font-normal text-[#212121] dark:text-gray-400">
-                          Con checkout integrado procesas cobros sin salir del flujo. Con enlace externo, cada pedido dirigirá a tu link personalizado.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 space-y-6">
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        {/* Option 1: GlobalPay */}
-                        <button
-                          type="button"
-                          onClick={() => setDatoBancario("linkPagoTipo", "globalpay")}
-                          className={cn(
-                            "group relative flex cursor-pointer flex-col justify-between rounded-2xl border-2 p-5 text-left transition-all",
-                            (draft.datosBancarios?.linkPagoTipo ?? "globalpay") === "globalpay"
-                              ? "border-[#FF3F1A] bg-[#FF3F1A]/[0.04] ring-1 ring-[#FF3F1A]/20 shadow-theme-xs dark:bg-[#FF3F1A]/10"
-                              : "border-[#ECECEC] bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700"
-                          )}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-[16px] font-bold text-[#190088] dark:text-white">
-                                GlobalPay de Redeban
-                              </h3>
-                              <span className="rounded-full bg-[#97D6DF]/30 px-2.5 py-0.5 text-[12px] font-bold text-[#190088] border border-[#97D6DF]/50 dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]">
-                                Recomendado
-                              </span>
-                            </div>
-                            <p className="mt-2 text-[12px] leading-relaxed text-[#212121] dark:text-gray-400">
-                              Checkout propio y transparente dentro de la aplicación. Soporte nativo para tarjetas de crédito, débito y PSE sin redirecciones externas.
-                            </p>
-                          </div>
-                          <div className={cn(
-                            "mt-4 flex items-center gap-2 pt-3 border-t text-[12px] font-bold",
-                            (draft.datosBancarios?.linkPagoTipo ?? "globalpay") === "globalpay"
-                              ? "border-[#FF3F1A]/20 text-[#FF3F1A]"
-                              : "border-gray-100 text-gray-400 dark:border-gray-800 dark:text-gray-500"
-                          )}>
-                            {(draft.datosBancarios?.linkPagoTipo ?? "globalpay") === "globalpay" ? (
-                              <>
-                                <svg className="h-4 w-4 text-[#FF3F1A]" fill="currentColor" viewBox="0 0 20 20">
-                                  <path clipRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" fillRule="evenodd" />
-                                </svg>
-                                <span>Opción activa actualmente</span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-gray-300 dark:border-gray-600" />
-                                <span>Configuración automática</span>
-                              </>
-                            )}
-                          </div>
-                        </button>
-
-                        {/* Option 2: Link Externo */}
-                        <button
-                          type="button"
-                          onClick={() => setDatoBancario("linkPagoTipo", "personalizado")}
-                          className={cn(
-                            "group relative flex cursor-pointer flex-col justify-between rounded-2xl border-2 p-5 text-left transition-all",
-                            draft.datosBancarios?.linkPagoTipo === "personalizado"
-                              ? "border-[#FF3F1A] bg-[#FF3F1A]/[0.04] ring-1 ring-[#FF3F1A]/20 shadow-theme-xs dark:bg-[#FF3F1A]/10"
-                              : "border-[#ECECEC] bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700"
-                          )}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-[16px] font-bold text-[#190088] dark:text-white">
-                                Link externo (Wompi, Bold, Mercado Pago)
-                              </h3>
-                              <span className="rounded-full bg-[#ECECEC] px-2.5 py-0.5 text-[12px] font-bold text-[#212121] dark:bg-gray-800 dark:text-gray-300">
-                                Personalizado
-                              </span>
-                            </div>
-                            <p className="mt-2 text-[12px] leading-relaxed text-[#212121] dark:text-gray-400">
-                              El cliente paga directamente en tu propia cuenta de pasarela. El sistema le envía tu link único para que complete el abono.
-                            </p>
-                          </div>
-                          <div className={cn(
-                            "mt-4 flex items-center gap-2 pt-3 border-t text-[12px] font-bold",
-                            draft.datosBancarios?.linkPagoTipo === "personalizado"
-                              ? "border-[#FF3F1A]/20 text-[#FF3F1A]"
-                              : "border-gray-100 text-gray-400 dark:border-gray-800 dark:text-gray-500"
-                          )}>
-                            {draft.datosBancarios?.linkPagoTipo === "personalizado" ? (
-                              <>
-                                <svg className="h-4 w-4 text-[#FF3F1A]" fill="currentColor" viewBox="0 0 20 20">
-                                  <path clipRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" fillRule="evenodd" />
-                                </svg>
-                                <span>Opción activa actualmente</span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-gray-300 dark:border-gray-600" />
-                                <span>Configuración manual</span>
-                              </>
-                            )}
-                          </div>
-                        </button>
-                      </div>
-
-                      {draft.datosBancarios?.linkPagoTipo === "personalizado" && (
-                        <div className="rounded-2xl border border-[#ECECEC] bg-gray-50/70 p-5 dark:border-gray-800 dark:bg-gray-950/60">
-                          <label
-                            className="block text-[12px] font-bold uppercase tracking-wider text-[#212121] dark:text-gray-300"
-                            htmlFor="external-payment-url"
-                          >
-                            URL o enlace de cobro externo
-                          </label>
-                          <p className="mt-0.5 mb-2.5 text-[12px] font-normal text-gray-500 dark:text-gray-400">
-                            Pega tu enlace de cobro general. Si se deja en blanco, el sistema priorizará el checkout integrado predeterminado.
-                          </p>
-                          <div className="relative rounded-xl shadow-theme-xs">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                              <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            </div>
-                            <input
-                              id="external-payment-url"
-                              type="url"
-                              placeholder="Ej: https://checkout.wompi.co/l/link-de-tu-negocio o https://mpago.li/..."
-                              value={draft.datosBancarios?.linkPagoUrl ?? ""}
-                              onChange={(e) => setDatoBancario("linkPagoUrl", e.target.value)}
-                              className="block w-full rounded-xl border border-[#ECECEC] bg-white py-2.5 pl-10 pr-4 text-[14px] text-[#212121] placeholder:text-gray-400 focus:border-[#FF3F1A] focus:ring-2 focus:ring-[#FF3F1A]/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Preview Callout for Client Link */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#ECECEC] bg-[#EFE6D3] p-3.5 text-[12px] text-[#212121] dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-[#212121] dark:text-gray-300">
-                            Enlace generado que recibirá el cliente:
-                          </span>
-                          <code className="rounded bg-white/90 px-2 py-0.5 font-mono font-bold text-[#190088] select-all border border-[#ECECEC] dark:bg-gray-900 dark:text-[#97D6DF]">
-                            {enlaceDePago(draft.datosBancarios, "P-001", window.location.origin)}
-                          </code>
-                        </div>
-                        <span className="rounded bg-[#97D6DF]/30 px-2 py-0.5 text-[10px] font-bold text-[#190088] uppercase dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]">
-                          Ejemplo pedido #P-001
-                        </span>
-                      </div>
-                    </div>
-                  </section>
-                )}
-
-                {/* ── BLOQUE 4: ¿Qué le dices al cliente para que pague? ───── */}
-                <section
-                  className="rounded-3xl border border-[#ECECEC] bg-white p-6 shadow-theme-xs sm:p-8 dark:border-gray-800 dark:bg-gray-900"
-                  data-purpose="customer-message-preview"
-                >
-                  <div className="flex items-start gap-4 border-b border-[#ECECEC] pb-6 dark:border-gray-800">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#97D6DF]/20 border border-[#97D6DF]/30 text-[#190088] dark:bg-[#97D6DF]/15 dark:text-[#97D6DF]">
-                      <PageIcon className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h2 className="text-[20px] sm:text-[24px] font-bold text-[#190088] dark:text-white leading-tight">
-                        ¿Qué le dices al cliente para que pague?
-                      </h2>
-                      <p className="mt-1 text-[14px] font-normal text-[#212121] dark:text-gray-400">
-                        Texto estructurado que el operador o bot de WhatsApp copia y envía al confirmar el pedido.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
-                    {/* Instructions Form Editor */}
-                    <div className="space-y-4 lg:col-span-5">
-                      <div>
-                        <label
-                          className="block text-[12px] font-bold uppercase tracking-wider text-[#212121] dark:text-gray-300"
-                          htmlFor="pago-instrucciones"
-                        >
-                          Instrucciones finales de cobro
-                        </label>
-                        <p className="mt-1 text-[12px] font-normal text-gray-500 dark:text-gray-400">
-                          Este mensaje cierra la notificación, justo después del resumen de cuentas y el enlace.
-                        </p>
-                      </div>
-                      <div className="relative">
-                        <textarea
-                          id="pago-instrucciones"
-                          rows={5}
-                          value={draft.datosBancarios?.instrucciones ?? ""}
-                          onChange={(e) => setDatoBancario("instrucciones", e.target.value)}
-                          placeholder="Envía el comprobante con tu nombre y número de pedido."
-                          className="block w-full rounded-2xl border border-[#ECECEC] bg-white p-3 font-sans text-[14px] text-[#212121] placeholder:text-gray-400 focus:border-[#FF3F1A] focus:ring-2 focus:ring-[#FF3F1A]/20 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                        />
-                        <div className="mt-2 flex items-center justify-between text-[12px] text-gray-400">
-                          <span>Variables dinámicas aplicadas automáticamente</span>
-                          <span>{(draft.datosBancarios?.instrucciones ?? "").length} caracteres</span>
-                        </div>
-                      </div>
-
-                      {/* Helpful tips badge */}
-                      <div className="rounded-2xl border border-[#ECECEC] bg-[#EFE6D3] p-3.5 text-[12px] text-[#212121] dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-400">
-                        <div className="flex items-center gap-2 font-bold text-[#190088] dark:text-gray-200">
-                          <svg className="h-4 w-4 text-[#190088] dark:text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          Consejo de formato
-                        </div>
-                        <p className="mt-1 text-[#212121] dark:text-gray-400">
-                          Las cuentas en blanco no se listan en el mensaje, evitando líneas vacías o confusiones para el comprador.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Message Live Preview */}
-                    <div className="lg:col-span-7">
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[12px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                          Vista previa interactiva del mensaje
-                        </span>
-                        <button
-                          type="button"
-                          onClick={copiarMensajeCobro}
-                          className="inline-flex cursor-pointer items-center gap-1 text-[12px] font-bold text-[#FF3F1A] hover:text-[#e5351a]"
-                        >
-                          {copiadoCobro ? (
-                            <>
-                              <svg className="h-3.5 w-3.5 text-success-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                <path d="M4.5 12.75l6 6 9-13.5" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                              <span className="font-bold text-success-600 dark:text-success-400">Copiado ✓</span>
-                            </>
-                          ) : (
-                            <>
-                              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                              <span>Copiar texto</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Preview Bubble UI Container */}
-                      <div className="relative overflow-hidden rounded-2xl border border-[#ECECEC] bg-[#212121] shadow-theme-inner dark:border-gray-800">
-                        {/* Mock Header Bar */}
-                        <div className="flex items-center justify-between border-b border-gray-800 bg-[#190088] px-4 py-2.5 text-[12px] text-white">
-                          <div className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-[#97D6DF]" />
-                            <span className="font-bold text-white">Mensaje generado para WhatsApp / SMS</span>
-                          </div>
-                          <span className="font-mono text-[10px] text-gray-200">Formato limpio</span>
-                        </div>
-                        {/* Bubble body */}
-                        <div className="select-all bg-[#212121] p-5 font-mono text-[12px] leading-relaxed text-gray-200">
-                          <div className="space-y-1.5 font-sans">
-                            {draft.datosBancarios?.titular ? (
-                              <>
-                                <p className="text-[12px] font-bold uppercase tracking-wide text-[#97D6DF]">Titular:</p>
-                                <p className="border-b border-gray-800 pb-2 text-[14px] font-bold text-white">
-                                  {draft.datosBancarios.titular}
-                                </p>
-                              </>
-                            ) : null}
-
-                            <div className="space-y-1 py-2 font-mono text-gray-300">
-                              {draft.datosBancarios?.nequi ? (
-                                <p><span className="text-gray-400">Nequi:</span> <span className="font-bold text-white">{draft.datosBancarios.nequi}</span></p>
-                              ) : null}
-                              {draft.datosBancarios?.daviplata ? (
-                                <p><span className="text-gray-400">Daviplata:</span> <span className="font-bold text-white">{draft.datosBancarios.daviplata}</span></p>
-                              ) : null}
-                              {draft.datosBancarios?.bancolombia ? (
-                                <p><span className="text-gray-400">Banco:</span> <span className="font-bold text-white">{draft.datosBancarios.bancolombia}</span></p>
-                              ) : null}
-                              {draft.datosBancarios?.linkPagoActivo !== false ? (
-                                <p className="pt-1.5">
-                                  <span className="text-gray-400">Pago en línea:</span>{" "}
-                                  <span className="break-all font-sans text-[#FF3F1A] underline font-bold">
-                                    {enlaceDePago(draft.datosBancarios, "P-001", window.location.origin)}
-                                  </span>
-                                </p>
-                              ) : null}
-                            </div>
-
-                            {draft.datosBancarios?.instrucciones ? (
-                              <div className="border-t border-gray-800 pt-3 font-sans text-[12px] italic leading-normal text-gray-300">
-                                &ldquo;{draft.datosBancarios.instrucciones}&rdquo;
-                              </div>
-                            ) : null}
-
-                            {!draft.datosBancarios?.titular &&
-                              !draft.datosBancarios?.nequi &&
-                              !draft.datosBancarios?.daviplata &&
-                              !draft.datosBancarios?.bancolombia &&
-                              !draft.datosBancarios?.instrucciones && (
-                                <p className="text-[12px] italic text-gray-500">
-                                  Completa los datos de cobro arriba para previsualizar el mensaje.
-                                </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              </div>
             )}
 
             {/* ═════════════════════════════════════════════════════════════════════
@@ -2530,7 +1985,7 @@ export const ConfigPage = observer(() => {
                ═════════════════════════════════════════════════════════════════════ */}
             {seccion === "sonidos" && (
               // Sin clase de entrada: la pone `ConfigShell`. Ver la sección de
-              // «pagos» para el porqué.
+              // «flujo» para el porqué.
               <div className="space-y-8">
                 {/* ── CARD 1: SISTEMA PRINCIPAL DE CAMPANA Y AVISOS ─────── */}
                 <section
