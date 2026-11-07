@@ -170,7 +170,17 @@ export const CanalAvatar: React.FC<CanalAvatarProps> = ({
         {avatarUrl ? (
           <img src={avatarUrl} alt={nombre} className="h-full w-full object-cover" />
         ) : (
-          <UserSilhouette className={iconSizes} />
+          <span className="font-bold tracking-tight select-none">
+            {nombre
+              ? nombre
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((p) => p[0])
+                  .join("")
+                  .toUpperCase()
+              : "U"}
+          </span>
         )}
       </div>
 

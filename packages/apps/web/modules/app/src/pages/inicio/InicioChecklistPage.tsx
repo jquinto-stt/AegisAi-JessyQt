@@ -43,49 +43,66 @@ const TarjetaTarea = ({
   tarea: TareaInicio;
   recienCompletada: boolean;
   onCompletar: () => void;
-}) => (
-  <div
-    className={`tarea-checklist flex items-center justify-between p-4 sm:p-5 rounded-2xl border border-[#ECECEC] dark:border-white/10 shadow-xs transition-[border-color] ${
-      tarea.completada
-        ? "bg-[#ECECEC]/50 dark:bg-white/[0.04]"
-        : "bg-white dark:bg-[#212121]/60 hover:border-[#97D6DF]/60 dark:hover:border-white/20"
-    } ${recienCompletada ? "tarea-checklist--recien-completada" : ""}`}
-  >
-    <div className="flex items-center gap-3.5">
-      {tarea.completada ? (
-        <div className="tarea-checklist__circulo flex h-6 w-6 items-center justify-center rounded-full bg-[#97D6DF] text-[#190088] shrink-0 shadow-xs">
-          <Check className="w-4 h-4 stroke-[2.8]" />
-        </div>
-      ) : (
-        <div className="h-6 w-6 rounded-full border-2 border-[#ECECEC] dark:border-white/20 shrink-0" />
-      )}
-      <span
-        className={`tarea-checklist__nombre relative inline-block text-[16px] ${
-          tarea.completada
-            ? "font-normal text-[#212121]/40 dark:text-[#ECECEC]/40"
-            : "font-bold text-[#212121] dark:text-white"
-        }`}
-      >
-        {tarea.nombre}
-        {tarea.completada && <span className="tarea-checklist__tachado" aria-hidden="true" />}
-      </span>
-    </div>
+}) => {
+  const Icono = tarea.icono;
 
-    {tarea.completada ? (
-      <span className="tarea-checklist__estado px-4 py-1.5 rounded-xl bg-[#97D6DF]/20 border border-[#97D6DF]/40 text-[#190088] dark:text-[#97D6DF] text-[12px] font-bold tracking-wide select-none">
-        Completado
-      </span>
-    ) : (
-      <button
-        type="button"
-        onClick={onCompletar}
-        className="px-6 py-2 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] active:scale-[0.98] text-white text-[14px] font-bold tracking-wide cursor-pointer transition-[background-color,transform] shadow-md shadow-[#FF3F1A]/25"
-      >
-        Completar
-      </button>
-    )}
-  </div>
-);
+  return (
+    <div
+      className={`tarea-checklist flex items-center justify-between p-4 sm:p-5 rounded-2xl border border-[#ECECEC] dark:border-white/10 shadow-xs transition-[border-color,background-color] ${
+        tarea.completada
+          ? "bg-[#ECECEC]/40 dark:bg-white/[0.03]"
+          : "bg-white dark:bg-[#212121]/60 hover:border-[#97D6DF]/60 dark:hover:border-white/20"
+      } ${recienCompletada ? "tarea-checklist--recien-completada" : ""}`}
+    >
+      <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+        {/* 1. Casilla de verificación estilo checkbox badge (como en el diseño solicitado) */}
+        {tarea.completada ? (
+          <div className="tarea-checklist__circulo flex h-7 w-7 items-center justify-center rounded-lg bg-[#ECECEC] border border-[#d0d5dd] dark:bg-white/10 dark:border-white/20 text-[#190088] dark:text-[#97D6DF] shrink-0 shadow-2xs">
+            <Check className="w-4 h-4 stroke-[3]" />
+          </div>
+        ) : (
+          <div className="h-7 w-7 rounded-lg border-2 border-[#d0d5dd] dark:border-white/25 shrink-0 flex items-center justify-center bg-transparent" />
+        )}
+
+        {/* 2. Icono temático del elemento (Eye, Lightbulb, Handshake, Network, etc.) */}
+        {Icono && (
+          <div className="flex items-center justify-center text-[#212121] dark:text-[#ECECEC] shrink-0 opacity-85">
+            <Icono className="w-5 h-5 stroke-[1.8]" />
+          </div>
+        )}
+
+        {/* 3. Nombre / Título de la tarea */}
+        <span
+          className={`tarea-checklist__nombre relative inline-block text-[15px] sm:text-[16px] truncate ${
+            tarea.completada
+              ? "font-normal text-[#212121]/45 dark:text-[#ECECEC]/40"
+              : "font-semibold text-[#212121] dark:text-white"
+          }`}
+        >
+          {tarea.nombre}
+          {tarea.completada && <span className="tarea-checklist__tachado" aria-hidden="true" />}
+        </span>
+      </div>
+
+      {/* 4. Estado completado o botón de acción */}
+      <div className="shrink-0 ml-3">
+        {tarea.completada ? (
+          <span className="tarea-checklist__estado px-3.5 py-1.5 rounded-xl bg-[#97D6DF]/20 border border-[#97D6DF]/40 text-[#190088] dark:text-[#97D6DF] text-[12px] font-bold tracking-wide select-none">
+            Completado
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={onCompletar}
+            className="px-5 sm:px-6 py-2 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] active:scale-[0.98] text-white text-[13px] sm:text-[14px] font-bold tracking-wide cursor-pointer transition-[background-color,transform] shadow-md shadow-[#FF3F1A]/25"
+          >
+            Completar
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export const InicioChecklistPage = observer(() => {
   const navigate = useNavigate();
@@ -157,7 +174,12 @@ export const InicioChecklistPage = observer(() => {
               </div>
 
               {/* Un segmento por tarea: Naranja NECTO si está completada, Gris claro si no */}
-              <div className="grid grid-cols-2 gap-2.5 w-full">
+              <div
+                className="grid gap-2.5 w-full"
+                style={{
+                  gridTemplateColumns: `repeat(${tareas.length}, minmax(0, 1fr))`,
+                }}
+              >
                 {tareas.map((t) => (
                   <div
                     key={t.id}
@@ -185,13 +207,13 @@ export const InicioChecklistPage = observer(() => {
           </div>
 
           {/* Enlace para Omitir — 14px Regular */}
-          <div className="pt-2">
+          <div className="pt-2 text-center">
             <button
               type="button"
               onClick={handleOmitir}
               className="text-[14px] font-normal text-[#212121]/60 hover:text-[#FF3F1A] dark:text-[#ECECEC]/60 dark:hover:text-[#97D6DF] underline underline-offset-4 cursor-pointer transition-colors"
             >
-              Saltar
+              Saltar al panel principal
             </button>
           </div>
         </div>

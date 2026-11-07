@@ -1090,31 +1090,38 @@ export const InicioDashboardPage = observer(() => {
 
                 {/* Tareas de puesta en marcha pendientes: misma fuente que el checklist de
                     Inicio, así que cada aviso se quita solo al completarse la tarea. */}
-                {tareasPendientes.map((tarea) => (
-                  <div
-                    key={tarea.id}
-                    className="p-3 rounded-2xl bg-[#97D6DF]/15 dark:bg-[#97D6DF]/10 border border-[#97D6DF]/40 flex items-center justify-between gap-3"
-                  >
-                    <div className="space-y-0.5 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
-                        <p className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] truncate">
-                          {tarea.aviso.titulo}
+                {tareasPendientes.map((tarea) => {
+                  const Icono = tarea.icono;
+                  return (
+                    <div
+                      key={tarea.id}
+                      className="p-3 rounded-2xl bg-[#97D6DF]/15 dark:bg-[#97D6DF]/10 border border-[#97D6DF]/40 flex items-center justify-between gap-3"
+                    >
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          {Icono ? (
+                            <Icono className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
+                          ) : (
+                            <Layers className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
+                          )}
+                          <p className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] truncate">
+                            {tarea.aviso.titulo}
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-[#212121]/70 dark:text-[#ECECEC]/70 leading-snug">
+                          {tarea.aviso.texto}
                         </p>
                       </div>
-                      <p className="text-[11px] text-[#212121]/70 dark:text-[#ECECEC]/70 leading-snug">
-                        {tarea.aviso.texto}
-                      </p>
+                      <Link
+                        to={tarea.ruta}
+                        className="shrink-0 px-3 py-1.5 rounded-xl bg-[#190088] hover:bg-[#190088]/90 text-white text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                      >
+                        <span>{tarea.aviso.accion}</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </Link>
                     </div>
-                    <Link
-                      to={tarea.ruta}
-                      className="shrink-0 px-3 py-1.5 rounded-xl bg-[#190088] hover:bg-[#190088]/90 text-white text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                    >
-                      <span>{tarea.aviso.accion}</span>
-                      <ChevronRight className="w-3 h-3" />
-                    </Link>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
