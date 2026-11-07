@@ -1,8 +1,9 @@
 import { useState, useEffect, type KeyboardEvent } from "react";
 import { Link } from "react-router";
 import { observer } from "mobx-react-lite";
-import { PaperPlaneIcon } from "@/icons";
+import { PaperPlaneIcon, WhatsAppIcon, AiIcon } from "@/icons";
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import { sessionStore } from "@/stores/session.store";
 import {
   puedeResponderConversacion,
   hayCanalesMensajeriaActivos,
@@ -14,6 +15,7 @@ const LIMITE_TEXTO = 4096;
 export const Composer = observer(({ convId }: { convId: string }) => {
   const [texto, setTexto] = useState("");
   const [modoMensaje, setModoMensaje] = useState<"chat" | "nota">("chat");
+  const [sugiriendoIA, setSugiriendoIA] = useState(false);
 
   // Limpiar cualquier error previo de WhatsApp al cambiar de chat o al montar
   useEffect(() => {
@@ -21,11 +23,6 @@ export const Composer = observer(({ convId }: { convId: string }) => {
   }, [convId]);
 
   const conv = conversacionesStore.getConversacion(convId);
-
-  /**
-   * Modo de atención del hilo. En modo `bot` el operador NO escribe mensajes al cliente: la
-   * conversación la lleva el bot. Sin embargo, las notas internas SÍ se permiten porque son para el equipo.
-   */
   const esModoBot = conv?.atencion === "bot";
 
   const canalesActivos = hayCanalesMensajeriaActivos();
@@ -34,11 +31,10 @@ export const Composer = observer(({ convId }: { convId: string }) => {
   const vacio = texto.trim() === "";
   const enviando = conversacionesStore.enviandoMensaje;
 
-  // En modo nota interna: no depende del canal de WhatsApp ni del modo bot
   const puedeEnviar =
     modoMensaje === "nota"
       ? puedeResponder && !vacio && !excedido
-      : puedeResponder && canalesActivos && !esModoBot && !vacio && !excedido && !enviando;
+      : puedeResponder && canalesActivos && !vacio && !excedido && !enviando;
 
   const enviar = () => {
     if (!puedeEnviar) return;
@@ -47,6 +43,16 @@ export const Composer = observer(({ convId }: { convId: string }) => {
       setTexto("");
       return;
     }
+
+    // Si el bot estaba activo y el operador escribe un mensaje directo, tomar control
+    if (esModoBot) {
+      const opId =
+        sessionStore.accessContext.operadorId ??
+        sessionStore.accessContext.rolId ??
+        "operador";
+      conversacionesStore.tomar(convId, opId);
+    }
+
     void conversacionesStore.enviarComoNegocio(convId, texto);
     setTexto("");
   };
@@ -58,12 +64,25 @@ export const Composer = observer(({ convId }: { convId: string }) => {
     }
   };
 
+  const sugerirRespuestaIA = () => {
+    setSugiriendoIA(true);
+    setTimeout(() => {
+      if (!texto.trim()) {
+        const nombre = conv?.contacto.nombre ? `Hola ${conv.contacto.nombre.split(" ")[0]}! ` : "¡Hola! ";
+        setTexto(`${nombre}Con gusto te ayudamos con tu pedido. ¿Prefieres entrega a domicilio o recoger en local?`);
+      } else {
+        setTexto(`${texto.trim()} Quedamos muy atentos a tu confirmación para despacharte de inmediato.`);
+      }
+      setSugiriendoIA(false);
+    }, 400);
+  };
+
   return (
     <div
-      className={`shrink-0 border-t transition-colors px-5 py-3 sm:px-6 sm:py-3.5 xl:px-7 font-sans text-gray-800 dark:text-white/90 ${
+      className={`shrink-0 border-t transition-colors px-4 py-3 sm:px-6 sm:py-3.5 xl:px-7 font-sans text-gray-800 dark:text-white/90 ${
         modoMensaje === "nota"
           ? "border-amber-300/80 bg-amber-50/50 dark:border-amber-500/30 dark:bg-amber-950/20"
-          : "border-gray-200 bg-white dark:border-gray-800 dark:bg-transparent"
+          : "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
       }`}
     >
       {/* Selector de modo de redacción: Mensaje vs Nota Interna */}
@@ -72,7 +91,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           <button
             type="button"
             onClick={() => setModoMensaje("chat")}
-            className={`rounded-md px-2.5 py-1 font-medium transition-all ${
+            className={`rounded-md px-2.5 py-1 font-medium transition-all cursor-pointer ${
               modoMensaje === "chat"
                 ? "bg-white text-gray-900 shadow-xs dark:bg-gray-800 dark:text-white"
                 : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
@@ -83,7 +102,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           <button
             type="button"
             onClick={() => setModoMensaje("nota")}
-            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition-all ${
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition-all cursor-pointer ${
               modoMensaje === "nota"
                 ? "bg-amber-500 text-white shadow-xs font-semibold"
                 : "text-amber-800 hover:text-amber-950 dark:text-amber-300 dark:hover:text-amber-200"
@@ -101,49 +120,45 @@ export const Composer = observer(({ convId }: { convId: string }) => {
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
-            <span>Nota interna</span>
+            <span>Nota interna (equipo)</span>
           </button>
         </div>
 
-        {modoMensaje === "nota" && (
-          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-300">
-            🔒 Esta nota solo será visible para el equipo, no para el cliente.
-          </span>
-        )}
+        {/* Indicador de estado */}
+        <div className="flex items-center gap-2 text-xs">
+          {excedido && (
+            <span className="text-red-500 font-medium">
+              Límite excedido: {texto.length} / {LIMITE_TEXTO}
+            </span>
+          )}
+          {esModoBot && modoMensaje === "chat" && (
+            <span className="text-[11px] font-medium text-purple-600 dark:text-purple-400 flex items-center gap-1">
+              <span>🤖</span>
+              <span>Bot activo · Al enviar tomarás el chat</span>
+            </span>
+          )}
+        </div>
       </div>
 
+      {/* Formulario de redacción estilo Lucid Bot */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           enviar();
         }}
-        className="flex items-center justify-between gap-3"
+        className="flex items-center gap-2.5"
       >
-        <div className="relative flex flex-1 items-center">
-          {/* Botón Emoji */}
-          <button
-            type="button"
-            disabled={!canalesActivos}
-            title="Insertar emoji"
-            className="mr-3 text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM3.5 12C3.5 7.30558 7.30558 3.5 12 3.5C16.6944 3.5 20.5 7.30558 20.5 12C20.5 16.6944 16.6944 20.5 12 20.5C7.30558 20.5 3.5 16.6944 3.5 12ZM10.0001 9.23256C10.0001 8.5422 9.44042 7.98256 8.75007 7.98256C8.05971 7.98256 7.50007 8.5422 7.50007 9.23256V9.23266C7.50007 9.92301 8.05971 10.4827 8.75007 10.4827C9.44042 10.4827 10.0001 9.92301 10.0001 9.23266V9.23256ZM15.2499 7.98256C15.9403 7.98256 16.4999 8.5422 16.4999 9.23256V9.23266C16.4999 9.92301 15.9403 10.4827 15.2499 10.4827C14.5596 10.4827 13.9999 9.23201 13.9999 9.23266V9.23256ZM13.9999 8.5422 14.5596 7.98256 15.2499 7.98256ZM9.23014 13.7116C8.97215 13.3876 8.5003 13.334 8.17625 13.592C7.8522 13.85 7.79865 14.3219 8.05665 14.6459C8.97846 15.8037 10.4026 16.5481 12 16.5481C13.5975 16.5481 15.0216 15.8037 15.9434 14.6459C16.2014 14.3219 16.1479 13.85 15.8238 13.592C15.4998 13.334 15.0279 13.3876 14.7699 13.7116C14.1205 14.5274 13.1213 15.0481 12 15.0481C10.8788 15.0481 9.87961 14.5274 9.23014 13.7116Z"
-              />
-            </svg>
-          </button>
+        {/* Contenedor tipo píldora oscura/clara con iconos integrados */}
+        <div className="flex flex-1 items-center gap-2.5 rounded-2xl border border-gray-200 bg-gray-50/90 px-3.5 py-1.5 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-gray-700/80 dark:bg-gray-800/80">
+          {/* Icono WhatsApp verde a la izquierda */}
+          <div className="text-emerald-500 shrink-0" title="Canal activo WhatsApp">
+            <WhatsAppIcon size={19} />
+          </div>
 
-          {/* Campo de texto plano sin bordes invasivos */}
+          {/* Campo de entrada de texto */}
           <input
             type="text"
-            disabled={
-              modoMensaje === "nota"
-                ? !puedeResponder
-                : !puedeResponder || esModoBot || !canalesActivos
-            }
+            disabled={!puedeResponder || !canalesActivos}
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             onKeyDown={onKeyDown}
@@ -151,28 +166,38 @@ export const Composer = observer(({ convId }: { convId: string }) => {
               modoMensaje === "nota"
                 ? "Escribe una nota interna para el equipo..."
                 : !canalesActivos
-                  ? "Canales desconectados — No es posible enviar mensajes"
+                  ? "Canales desconectados"
                   : !puedeResponder
                     ? "No puedes responder en esta conversación"
-                    : esModoBot
-                      ? "El bot está atendiendo esta conversación"
-                      : "Escribe un mensaje al cliente..."
+                    : "Escribe un mensaje..."
             }
-            className="w-full bg-transparent border-0 outline-hidden h-10 text-sm sm:text-base font-normal text-gray-800 placeholder:text-gray-400 focus:border-0 focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-60 dark:text-white/90 dark:placeholder:text-gray-500"
+            className="w-full bg-transparent border-0 outline-hidden h-9 text-sm font-normal text-gray-900 placeholder:text-gray-400 focus:border-0 focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-60 dark:text-white dark:placeholder:text-gray-500"
           />
-        </div>
 
-        {/* Acciones de la derecha: adjunto, mic y botón de envío */}
-        <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
+          {/* Acciones dentro de la píldora: Asistente IA + Adjunto */}
           {modoMensaje === "chat" && (
-            <>
+            <div className="flex items-center gap-1 shrink-0">
+              {/* Botón de sugerencia IA ✨ */}
+              <button
+                type="button"
+                onClick={sugerirRespuestaIA}
+                disabled={!canalesActivos || sugiriendoIA}
+                title="Sugerir o mejorar respuesta con IA"
+                className={`p-1.5 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:text-gray-400 dark:hover:text-purple-300 dark:hover:bg-purple-950/40 transition-colors cursor-pointer ${
+                  sugiriendoIA ? "animate-pulse text-purple-600" : ""
+                }`}
+              >
+                <AiIcon className="h-4 w-4" />
+              </button>
+
+              {/* Botón Adjuntar 📎 */}
               <button
                 type="button"
                 disabled={!canalesActivos}
-                title="Adjuntar archivo"
-                className="text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Adjuntar archivo o imagen"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200/50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
               >
-                <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                   <path
                     fillRule="evenodd"
                     clipRule="evenodd"
@@ -180,124 +205,51 @@ export const Composer = observer(({ convId }: { convId: string }) => {
                   />
                 </svg>
               </button>
-
-              <button
-                type="button"
-                disabled={!canalesActivos}
-                title="Nota de voz"
-                className="text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <svg className="h-5 w-5 stroke-current" viewBox="0 0 24 24" fill="none">
-                  <rect x="7" y="2.75" width="10" height="12.5" rx="5" strokeWidth="1.5" />
-                  <path d="M20 10.25C20 14.6683 16.4183 18.25 12 18.25C7.58172 18.25 4 14.6683 4 10.25" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M10 21.25H14" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M12 18.25L12 21.25" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              </button>
-            </>
+            </div>
           )}
-
-          <button
-            type="submit"
-            disabled={!puedeEnviar}
-            title={
-              modoMensaje === "nota"
-                ? "Guardar nota interna"
-                : enviando
-                  ? "Enviando…"
-                  : "Enviar mensaje"
-            }
-            aria-busy={enviando}
-            className={`flex h-9 w-9 xl:h-10 xl:w-10 items-center justify-center rounded-lg xl:rounded-xl text-white shadow-theme-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-              modoMensaje === "nota"
-                ? "bg-amber-600 hover:bg-amber-700"
-                : "bg-brand-500 hover:bg-brand-600"
-            }`}
-          >
-            {enviando ? (
-              <svg
-                className="h-4 w-4 animate-spin"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-            ) : modoMensaje === "nota" ? (
-              <svg
-                className="h-4 w-4 xl:h-4.5 xl:w-4.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            ) : (
-              <PaperPlaneIcon className="h-4 w-4 xl:h-4.5 xl:w-4.5 fill-current" />
-            )}
-          </button>
         </div>
-      </form>
 
-      {modoMensaje === "chat" && !canalesActivos ? (
-        <div className="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-amber-200/90 bg-amber-50/80 px-3 py-2 text-xs text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-          <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 shrink-0 rounded-full bg-amber-500" />
-            <span>WhatsApp y los canales de mensajería están inactivos.</span>
-          </div>
-          <Link
-            to="/configuracion?tab=canales"
-            className="font-bold text-[#190088] underline underline-offset-2 hover:text-[#FF3F1A] dark:text-amber-300 shrink-0"
-          >
-            Conectar en Configuraciones →
-          </Link>
-        </div>
-      ) : !puedeResponder ? (
-        <p className="mt-1 text-xs font-normal text-error-500">
-          {motivoSinPermiso("channels.respond")}
-        </p>
-      ) : modoMensaje === "chat" && esModoBot ? (
-        <p className="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
-          La atención la lleva el bot. Pulsa «Tomar chat» para responder tú, o cambia a «Nota interna» para registrar notas de equipo.
-        </p>
-      ) : null}
-
-      {conversacionesStore.ultimoErrorEnvio && (
-        <div
-          role="alert"
-          className="animate-aparecer mt-1.5 flex items-start gap-2 rounded-lg border border-error-300/60 bg-error-50 px-2.5 py-1.5 text-[12px] font-normal text-error-900 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-200/90"
+        {/* Botón circular de envío azul estilo Lucid Bot */}
+        <button
+          type="submit"
+          disabled={!puedeEnviar}
+          title={modoMensaje === "nota" ? "Guardar nota interna" : "Enviar mensaje"}
+          aria-busy={enviando}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-md transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
+            modoMensaje === "nota"
+              ? "bg-amber-600 hover:bg-amber-700"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-          <span className="mt-px shrink-0" aria-hidden="true">
-            ⚠
-          </span>
-          <span className="flex-1">{conversacionesStore.ultimoErrorEnvio}</span>
-          <button
-            type="button"
-            onClick={() => {
-              conversacionesStore.ultimoErrorEnvio = null;
-            }}
-            className="shrink-0 font-bold underline underline-offset-2 hover:no-underline"
-          >
-            Descartar
-          </button>
-        </div>
-      )}
+          {enviando ? (
+            <svg
+              className="h-4 w-4 animate-spin"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+          ) : (
+            <svg className="h-4 w-4 ml-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          )}
+        </button>
+      </form>
     </div>
   );
 });

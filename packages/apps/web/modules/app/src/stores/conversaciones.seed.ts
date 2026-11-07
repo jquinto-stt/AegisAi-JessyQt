@@ -107,14 +107,12 @@ export interface ConversacionesSeed {
 // resueltas (8) y una que requiere humano (5).
 
 const CONVERSACIONES: Conversacion[] = [
-  // ── ETAPA 1: CONTACTO INICIAL (4 hilos abiertos con bot, consultando menú/precios, sin pedido aún) ──
-  { id: "conv-1", canal: "whatsapp", contacto: { telefono: "+57 300 555 1122", nombre: "Juan Carlos Pérez", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 1, ultimaActividad: haceMin(3) },
-  { id: "conv-2", canal: "whatsapp", contacto: { telefono: "+57 301 222 3344", nombre: "Carlos Mendoza", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(14) },
-  { id: "conv-26", canal: "whatsapp", contacto: { telefono: "+57 304 888 1100", nombre: "Andrea Peña", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 1, ultimaActividad: haceMin(6) },
-  { id: "conv-27", canal: "telegram", contacto: { telefono: "+57 305 999 2211", nombre: "Mauricio Cano", origen: "telegram" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(19) },
-
-  // ── ETAPA 2: OFERTA ENVIADA (4 hilos con cotización formal enviada o pedido programado) ──
-  { id: "conv-9", canal: "whatsapp", contacto: { telefono: "+573004567890", nombre: "Camila Restrepo", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(25) },
+  // ── ETAPA 1: CONTACTO INICIAL (Multiplataforma estilo Lucid Bot) ──
+  { id: "conv-1", canal: "whatsapp", contacto: { telefono: "+57 300 555 1122", nombre: "Tatiana G.", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(1) },
+  { id: "conv-2", canal: "instagram", contacto: { telefono: "+57 301 222 3344", nombre: "Diana R.", origen: "instagram" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(3) },
+  { id: "conv-26", canal: "messenger", contacto: { telefono: "+57 304 888 1100", nombre: "Alex Sánchez", origen: "messenger" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(12) },
+  { id: "conv-27", canal: "whatsapp", contacto: { telefono: "+57 305 999 2211", nombre: "Camila Ruiz", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(24) },
+  { id: "conv-9", canal: "tiktok", contacto: { telefono: "+573004567890", nombre: "Mateo L.", origen: "tiktok" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(46) },
   { id: "conv-17", canal: "whatsapp", contacto: { telefono: "+573105678901", nombre: "Esteban Morales", origen: "whatsapp" }, estado: "abierta", atencion: "bot", operadorAsignadoId: null, noLeidos: 0, ultimaActividad: haceMin(28) },
   { id: "conv-18", canal: "whatsapp", contacto: { telefono: "+573206789012", nombre: "Valeria Gómez", origen: "whatsapp" }, estado: "atendida", atencion: "humano", operadorAsignadoId: OPERADOR_ATENDIDA_ID, noLeidos: 0, ultimaActividad: haceMin(40) },
   { id: "conv-28", canal: "whatsapp", contacto: { telefono: "+57 306 777 4455", nombre: "Laura Aristizábal", origen: "whatsapp" }, estado: "atendida", atencion: "humano", operadorAsignadoId: OPERADOR_ATENDIDA_ID, noLeidos: 0, ultimaActividad: haceMin(32) },
@@ -177,36 +175,51 @@ const MENSAJES: Mensaje[] = [
   {
     id: "msg-1-1",
     conversacionId: "conv-1",
-    autor: "cliente",
-    contenido: texto("hola, que trae el combo clásico?"),
-    timestamp: haceMin(7),
+    autor: "bot",
+    contenido: texto("Listo, Tatiana 😊 te queda el *iPhone 15 256 GB Negro*"),
+    timestamp: haceMin(6),
   },
   {
     id: "msg-1-2",
     conversacionId: "conv-1",
     autor: "bot",
-    contenido: texto(
-      "¡Hola! El combo clásico trae plato principal, acompañamiento y bebida de 350 ml. Está en 25.000.",
-    ),
-    timestamp: haceMin(7),
-    moduloContexto: "pedidos",
+    contenido: texto("¿Lo quieres llevar *de contado* o *a crédito*? 😊"),
+    timestamp: haceMin(5),
   },
   {
     id: "msg-1-3",
     conversacionId: "conv-1",
     autor: "cliente",
-    contenido: texto("y hay opción sin carne?"),
-    timestamp: haceMin(6),
+    contenido: texto("Crédito"),
+    timestamp: haceMin(4),
   },
   {
     id: "msg-1-4",
     conversacionId: "conv-1",
     autor: "bot",
-    contenido: texto(
-      "Sí, se puede pedir sin carne. Lo dejo anotado como preferencia si más adelante quieres pedirlo.",
-    ),
-    timestamp: haceMin(6),
-    moduloContexto: "pedidos",
+    contenido: texto("Te hago un estudio de crédito rápido, aquí mismo por el chat"),
+    timestamp: haceMin(3),
+  },
+  {
+    id: "msg-1-5",
+    conversacionId: "conv-1",
+    autor: "bot",
+    contenido: texto("Son cinco preguntas cortitas y trabajamos con tu cédula"),
+    timestamp: haceMin(3),
+  },
+  {
+    id: "msg-1-6",
+    conversacionId: "conv-1",
+    autor: "cliente",
+    contenido: texto("Perfecto, dale"),
+    timestamp: haceMin(2),
+  },
+  {
+    id: "msg-1-7",
+    conversacionId: "conv-1",
+    autor: "bot",
+    contenido: texto("¡Aprobado! 🎉 Cuota de *$189.900* al mes"),
+    timestamp: haceMin(1),
   },
 
   // ─────────────────────────────────────────────────────────────────────────

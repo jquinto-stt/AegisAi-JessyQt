@@ -1,8 +1,9 @@
 import React from "react";
 import type { AvatarStatus } from "@/elements/ui/avatar";
+import type { CanalId } from "@/stores/conversaciones.types";
 
 export const WhatsAppIcon = ({
-  className = "h-5 w-5",
+  className = "h-3.5 w-3.5",
   ...props
 }: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -16,7 +17,7 @@ export const WhatsAppIcon = ({
 );
 
 export const TelegramIcon = ({
-  className = "h-5 w-5",
+  className = "h-3.5 w-3.5",
   ...props
 }: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -29,9 +30,67 @@ export const TelegramIcon = ({
   </svg>
 );
 
+export const InstagramIcon = ({
+  className = "h-3.5 w-3.5",
+  ...props
+}: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+    {...props}
+  >
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+  </svg>
+);
+
+export const MessengerIcon = ({
+  className = "h-3.5 w-3.5",
+  ...props
+}: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+    {...props}
+  >
+    <path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.91 1.455 5.512 3.736 7.205V22l3.411-1.872c.907.251 1.868.388 2.853.388 5.523 0 10-4.145 10-9.258C22 6.145 17.523 2 12 2zm1.066 12.443l-2.73-2.91-5.327 2.91 5.859-6.22 2.795 2.91 5.263-2.91-5.86 6.22z" />
+  </svg>
+);
+
+export const TikTokIcon = ({
+  className = "h-3.5 w-3.5",
+  ...props
+}: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+    {...props}
+  >
+    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.97v7.54c0 1.85-.54 3.72-1.65 5.2-1.57 2.08-4.14 3.28-6.74 3.21-2.94-.07-5.69-1.66-7.06-4.26-1.38-2.61-1.25-5.84.34-8.32 1.59-2.48 4.41-3.9 7.4-3.71v4.1c-1.39-.24-2.84.18-3.87 1.13-1.04.96-1.52 2.4-1.26 3.79.26 1.39 1.34 2.51 2.75 2.84 1.41.33 2.93-.16 3.84-1.23.63-.74.98-1.69.96-2.66V.02h.65z" />
+  </svg>
+);
+
+const UserSilhouette = ({ className = "h-5 w-5" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
 interface CanalAvatarProps {
-  canal?: "telegram" | "whatsapp" | string;
+  canal?: CanalId | string;
   nombre?: string;
+  avatarUrl?: string;
   size?: "small" | "medium" | "large" | "xlarge";
   status?: AvatarStatus;
   className?: string;
@@ -40,16 +99,15 @@ interface CanalAvatarProps {
 export const CanalAvatar: React.FC<CanalAvatarProps> = ({
   canal = "whatsapp",
   nombre = "Contacto",
+  avatarUrl,
   size = "medium",
   status = "none",
   className = "",
 }) => {
-  const esTelegram = canal === "telegram";
-
   const sizeClasses = {
     small: "h-8 w-8 text-xs",
     medium: "h-10 w-10 text-sm",
-    large: "h-12 w-12 text-base",
+    large: "h-11 w-11 sm:h-12 sm:w-12 text-base",
     xlarge: "h-14 w-14 text-lg",
   }[size];
 
@@ -60,42 +118,71 @@ export const CanalAvatar: React.FC<CanalAvatarProps> = ({
     xlarge: "h-7 w-7",
   }[size];
 
-  const statusDotSizes = {
-    small: "h-2 w-2 ring-1.5",
-    medium: "h-2.5 w-2.5 ring-2",
-    large: "h-3 w-3 ring-2",
-    xlarge: "h-3.5 w-3.5 ring-2",
-  }[size];
-
-  const statusColors: Record<AvatarStatus, string> = {
-    online: "bg-success-500",
-    busy: "bg-brand-500",
-    offline: "bg-gray-400",
-    none: "",
+  // Configuración de la miniatura de la plataforma
+  const badgeConfig = {
+    whatsapp: {
+      bg: "bg-[#25D366] text-white",
+      icon: <WhatsAppIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
+      label: "WhatsApp",
+    },
+    instagram: {
+      bg: "bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white",
+      icon: <InstagramIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
+      label: "Instagram",
+    },
+    messenger: {
+      bg: "bg-[#0084FF] text-white",
+      icon: <MessengerIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
+      label: "Messenger",
+    },
+    tiktok: {
+      bg: "bg-black text-white",
+      icon: <TikTokIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
+      label: "TikTok",
+    },
+    telegram: {
+      bg: "bg-[#229ED9] text-white",
+      icon: <TelegramIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
+      label: "Telegram",
+    },
+  }[canal as CanalId] || {
+    bg: "bg-[#25D366] text-white",
+    icon: <WhatsAppIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
+    label: canal,
   };
+
+  const badgeSizeClasses = {
+    small: "h-4 w-4 -bottom-0.5 -right-0.5 ring-1.5",
+    medium: "h-4.5 w-4.5 sm:h-5 sm:w-5 -bottom-0.5 -right-0.5 ring-2",
+    large: "h-5 w-5 sm:h-5.5 sm:w-5.5 -bottom-0.5 -right-0.5 ring-2",
+    xlarge: "h-6 w-6 -bottom-0.5 -right-0.5 ring-2",
+  }[size];
 
   return (
     <div
       className={`relative inline-flex shrink-0 items-center justify-center rounded-full font-sans ${sizeClasses} ${className}`}
     >
-      {/* Círculo con el logo de canal */}
+      {/* 1. Avatar principal del usuario (círculo oscuro/slate estilo Lucid Bot) */}
       <div
-        className="flex h-full w-full items-center justify-center rounded-full bg-gray-100 text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 transition-colors"
-        title={`${nombre} (${esTelegram ? "Telegram" : "WhatsApp"})`}
+        className="flex h-full w-full items-center justify-center rounded-full bg-[#334155] text-slate-200 dark:bg-[#334155] dark:text-slate-200 overflow-hidden shadow-xs transition-colors"
+        title={`${nombre} (${badgeConfig.label})`}
       >
-        {esTelegram ? (
-          <TelegramIcon className={iconSizes} />
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={nombre} className="h-full w-full object-cover" />
         ) : (
-          <WhatsAppIcon className={iconSizes} />
+          <UserSilhouette className={iconSizes} />
         )}
       </div>
 
-      {/* Indicador de presencia en la esquina inferior */}
-      {status !== "none" && (
-        <span
-          className={`absolute bottom-0 right-0 block rounded-full ring-2 ring-white dark:ring-gray-900 ${statusDotSizes} ${statusColors[status]}`}
-        />
-      )}
+      {/* 2. Miniatura de la plataforma en la esquina inferior derecha */}
+      <div
+        className={`absolute flex items-center justify-center rounded-full ring-white dark:ring-gray-900 shadow-sm ${badgeSizeClasses} ${badgeConfig.bg}`}
+        title={`Origen: ${badgeConfig.label}`}
+      >
+        {badgeConfig.icon}
+      </div>
     </div>
   );
 };
+
+export default CanalAvatar;

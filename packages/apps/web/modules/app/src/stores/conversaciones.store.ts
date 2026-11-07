@@ -39,7 +39,7 @@ import type {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Clave propia del módulo en `localStorage` (Req 9.1). Versionada para invalidar mocks viejos. */
-const STORAGE_KEY = "necto.conversaciones_v6";
+const STORAGE_KEY = "necto.conversaciones_v7";
 
 /**
  * Límite de caracteres del mensaje del cliente en `/wa` (Req 6.2/6.3): se
@@ -1357,6 +1357,48 @@ export class ConversacionesStore {
     // El tiempo real ya recarga la fila; este refresco es por si el canal está
     // caído y para que la marca de `/conversaciones` no dependa de él.
     void this.refrescarMensajes(convId);
+  }
+
+  /**
+   * Asigna la conversación a un operador específico o la desasigna (devolviéndola al bot).
+   */
+  asignar(convId: string, operadorId: string | null): void {
+    const conv = this.getConversacion(convId);
+    if (!conv) return;
+
+    if (!operadorId) {
+      conv.estado = "abierta";
+      conv.atencion = "bot";
+      conv.operadorAsignadoId = null;
+      conv.ultimaActividad = nowIso();
+      this.registrarEvento(convId, "devuelta", "Conversación devuelta al bot");
+      this.persistir();
+      void this.empujarModo(convId, "bot");
+      return;
+    }
+
+    conv.estado = "atendida";
+    conv.atencion = "humano";
+    conv.operadorAsignadoId = operadorId;
+    conv.ultimaActividad = nowIso();
+    this.registrarEvento(
+      convId,
+      "tomada",
+      "Conversación asignada a un operador",
+      operadorId,
+    );
+    this.persistir();
+    void this.empujarModo(convId, "humano");
+  }
+
+  /**
+   * Alterna el estado de conversación destacada (favorita).
+   */
+  toggleDestacada(convId: string): void {
+    const conv = this.getConversacion(convId);
+    if (!conv) return;
+    conv.destacada = !conv.destacada;
+    this.persistir();
   }
 
   /**

@@ -17,6 +17,9 @@ import { integracionesStore } from "@/stores/integraciones.store";
 import type { ModuloIntegrable } from "@/stores/integraciones.store";
 import { puede } from "@/stores/acceso.utils";
 import { BotonHandoff } from "./BotonHandoff";
+import { SelectorAsignacion } from "./SelectorAsignacion";
+import { OpcionesInteraccion } from "./OpcionesInteraccion";
+import { BannerEstadoBot } from "./BannerEstadoBot";
 import { ContextoModulo } from "./ContextoModulo";
 import { TextoMensajeFormateado } from "./TextoMensajeFormateado";
 import { CanalAvatar } from "./CanalAvatar";
@@ -164,51 +167,62 @@ export const ChatView = observer(({
             size="large"
             status={statusDe(conv.estado)}
           />
-          <div>
-            <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+          <div className="min-w-0">
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90 truncate">
               {conv.contacto.nombre}
             </h4>
-            <span className="text-xs text-gray-400 dark:text-gray-500">
+            <span className="text-xs text-gray-400 dark:text-gray-500 truncate block">
               {pedidosContacto.length > 0 && pedidosContacto[0] ? `${pedidosContacto[0].numero || pedidosContacto[0].id.slice(0, 6)} · ` : ""}{conv.contacto.telefono}
             </span>
           </div>
+
+          {/* Selector de Asignación estilo Lucid Bot: 🙏 Asignar Conversación v */}
+          <div className="hidden sm:block ml-1">
+            <SelectorAsignacion convId={conv.id} />
+          </div>
         </div>
 
-        {/* Acciones superiores: Crear pedido, Handoff y Alternar información de contacto */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Botón Tomar / Devolver */}
-          <BotonHandoff convId={conv.id} />
+        {/* Acciones superiores estilo Lucid Bot: Asignar (mobile), Opciones de Interacción, Pedido e Info */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className="sm:hidden">
+            <SelectorAsignacion convId={conv.id} />
+          </div>
 
-          {/* Botón Crear Pedido */}
-          <Link
-            to={`/pedidos/crear?telefono=${encodeURIComponent(conv.contacto.telefono)}&nombre=${encodeURIComponent(conv.contacto.nombre)}&chatId=${conv.id}`}
-            title="Crear un nuevo pedido para este contacto"
-            className="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-all active:scale-95"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span className="hidden sm:inline">Crear pedido</span>
-          </Link>
+          {/* Opciones de Interacción: Llamar 📞, Destacar ⭐, Menú ⋮ */}
+          <OpcionesInteraccion convId={conv.id} />
 
-          {/* Alternar panel de información del usuario */}
-          {onTogglePanel && (
-            <button
-              type="button"
-              onClick={onTogglePanel}
-              title={panelExpandido ? "Ocultar panel de información" : "Mostrar panel de información"}
-              aria-label={panelExpandido ? "Ocultar panel de información" : "Mostrar panel de información"}
-              className={`shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-theme-xs transition-all font-sans cursor-pointer ${
-                panelExpandido
-                  ? "border-[#190088] bg-[#190088]/10 text-[#190088] dark:border-[#97D6DF]/40 dark:bg-[#97D6DF]/15 dark:text-[#97D6DF]"
-                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-              }`}
+          <div className="hidden md:flex items-center gap-1.5">
+            {/* Botón Crear Pedido */}
+            <Link
+              to={`/pedidos/crear?telefono=${encodeURIComponent(conv.contacto.telefono)}&nombre=${encodeURIComponent(conv.contacto.nombre)}&chatId=${conv.id}`}
+              title="Crear un nuevo pedido para este contacto"
+              className="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-all active:scale-95"
             >
-              <PanelToggleIcon filled={panelExpandido} size={16} />
-              <span>Info. del pedido</span>
-            </button>
-          )}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <span className="hidden lg:inline">Crear pedido</span>
+            </Link>
+
+            {/* Alternar panel de información del usuario */}
+            {onTogglePanel && (
+              <button
+                type="button"
+                onClick={onTogglePanel}
+                title={panelExpandido ? "Ocultar panel de información" : "Mostrar panel de información"}
+                aria-label={panelExpandido ? "Ocultar panel de información" : "Mostrar panel de información"}
+                className={`shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold shadow-theme-xs transition-all font-sans cursor-pointer ${
+                  panelExpandido
+                    ? "border-[#190088] bg-[#190088]/10 text-[#190088] dark:border-[#97D6DF]/40 dark:bg-[#97D6DF]/15 dark:text-[#97D6DF]"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                }`}
+              >
+                <PanelToggleIcon filled={panelExpandido} size={16} />
+                <span className="hidden xl:inline">Info</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
       )}
@@ -261,11 +275,15 @@ export const ChatView = observer(({
 
       {vistaActiva === "conversacion" ? (
       /* ── Interior del Chat ── */
-      <div
-        role="tabpanel"
-        aria-label="Conversación"
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
+      <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+        {/* Banner Superior Prominente: 🤖 El bot está activo (estilo Lucid Bot) */}
+        <BannerEstadoBot convId={conv.id} />
+
+        <div
+          role="tabpanel"
+          aria-label="Conversación"
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C9279' fill-opacity='0.07' fill-rule='evenodd'%3E%3Cpath d='M11 11h6v6h-6zm40 0h6v6h-6zm-20 20h6v6h-6zm-20 20h6v6h-6zm40 0h6v6h-6zm-20 20h6v6h-6zM32 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm40 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM12 34a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm40 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM32 54a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm40 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM12 74a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm40 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0z'/%3E%3C/g%3E%3C/svg%3E")`,
           backgroundRepeat: "repeat",
@@ -322,11 +340,11 @@ export const ChatView = observer(({
                     />
                   </div>
                   <div className="flex flex-col items-start max-w-[85%] sm:max-w-lg lg:max-w-xl">
-                    <div className="w-fit max-w-full rounded-2xl rounded-tl-sm bg-white border border-gray-200/80 px-4 py-3 text-sm leading-relaxed text-gray-800 shadow-xs dark:border-gray-800 dark:bg-gray-800 dark:text-white/90">
-                      <p className="mb-1 text-xs font-semibold text-brand-500 dark:text-brand-400">
+                    <div className="w-fit max-w-full rounded-2xl rounded-tl-xs bg-[#1e293b] px-4 py-3 text-sm leading-relaxed text-white shadow-xs">
+                      <p className="mb-1 text-xs font-semibold text-blue-400">
                         {conv.contacto.nombre}
                       </p>
-                      <TextoMensajeFormateado texto={m.contenido.texto} />
+                      <TextoMensajeFormateado texto={m.contenido.texto} className="text-white" />
                     </div>
                     <div className="mt-1 flex items-center gap-1.5 pl-1 text-[11px] font-normal text-gray-400 dark:text-gray-500">
                       <span>{horaDe(m.timestamp)}</span>
@@ -351,13 +369,13 @@ export const ChatView = observer(({
               return (
                 <div key={m.id} className="animate-entrada-lista flex items-start justify-end gap-2.5 sm:gap-3">
                   <div className="flex flex-col items-end max-w-[82%] sm:max-w-lg lg:max-w-xl">
-                    {/* Burbuja del bot: verde WhatsApp / TailAdmin en la derecha */}
-                    <div className="w-fit min-w-0 max-w-full rounded-2xl rounded-tr-xs border border-emerald-200/60 bg-[#E7FEDB] px-4 py-3 text-sm leading-relaxed text-gray-900 shadow-xs break-words [overflow-wrap:anywhere] dark:border-emerald-800/40 dark:bg-[#005C4B] dark:text-gray-100">
+                    {/* Burbuja del bot: Azul estilo Lucid Bot en la derecha */}
+                    <div className="w-fit min-w-0 max-w-full rounded-2xl rounded-tr-xs bg-blue-600 px-4 py-3 text-sm leading-relaxed text-white shadow-xs break-words [overflow-wrap:anywhere]">
                       {/* Cabecera sutil: Identidad IA + Botón discreto de trazabilidad on-demand */}
-                      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-emerald-200/60 pb-1.5 dark:border-emerald-700/60">
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-blue-400/40 pb-1.5 text-white/90">
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span
-                            className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-emerald-600/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-200"
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-white/20 text-white"
                             title="Respuesta automática del Bot IA"
                           >
                             <svg
@@ -377,17 +395,17 @@ export const ChatView = observer(({
                               <line x1="16" y1="16" x2="16.01" y2="16" strokeWidth="2.5" />
                             </svg>
                           </span>
-                          <span className="text-xs font-semibold text-emerald-900 dark:text-emerald-200">
+                          <span className="text-xs font-semibold text-white">
                             {traza.nombreBot}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-emerald-200/80 border border-emerald-300 px-1.5 py-0.2 text-[10px] font-bold text-emerald-800 dark:bg-emerald-900/60 dark:border-emerald-700 dark:text-emerald-300">
+                          <span className="inline-flex items-center rounded-full bg-white/20 border border-white/30 px-1.5 py-0.2 text-[10px] font-bold text-white">
                             BOT · IA
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => setTrazaSeleccionada({ mensaje: m, traza })}
-                          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-emerald-800/80 transition-colors hover:bg-emerald-200/50 hover:text-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-800/50 cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-white/80 transition-colors hover:bg-white/20 hover:text-white cursor-pointer"
                           title="Inspeccionar trazabilidad técnica IA"
                         >
                           <AiIcon className="h-3 w-3" />
@@ -396,7 +414,7 @@ export const ChatView = observer(({
                       </div>
 
                       {/* Texto de la respuesta */}
-                      <TextoMensajeFormateado texto={m.contenido.texto} />
+                      <TextoMensajeFormateado texto={m.contenido.texto} className="text-white" />
 
                       {/* Tarjeta interactiva de pedido asociado si existe */}
                       {pedidoId && (
@@ -469,11 +487,19 @@ export const ChatView = observer(({
 
                       {/* Footer con wamid y hora */}
                       {(pedidoId || !traza.accion || !puedeIrModulo) && (
-                        <div className="mt-2 flex items-center justify-end gap-1.5 text-[11px] font-normal text-emerald-800/80 dark:text-emerald-300/80">
-                          <span className="font-mono text-[10px] bg-emerald-200/50 dark:bg-emerald-900/40 px-1 py-0.2 rounded">wamid</span>
+                        <div className="mt-2 flex items-center justify-end gap-1.5 text-[11px] font-normal text-white/80">
+                          <span className="font-mono text-[10px] bg-white/20 px-1 py-0.2 rounded">wamid</span>
                           <span>{horaDe(m.timestamp)}</span>
                         </div>
                       )}
+                    </div>
+                    {/* Indicador de lectura estilo Lucid Bot (Visto) */}
+                    <div className="mt-1 flex items-center justify-end gap-1 pr-1 text-[11px] text-gray-400 dark:text-gray-500">
+                      <svg className="h-3.5 w-3.5 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                      <span className="font-medium">Visto</span>
                     </div>
                   </div>
                   <BotAvatar />
@@ -588,6 +614,7 @@ export const ChatView = observer(({
             </button>
           </div>
         )}
+        </div>
       </div>
       ) : (
         /* Cuerpo de la pestaña de un módulo o Historial de pedidos.

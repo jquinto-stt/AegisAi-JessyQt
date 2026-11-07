@@ -373,11 +373,16 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex min-w-0 items-center gap-1.5 flex-wrap">
                         <h5
-                          className={`truncate text-sm font-bold ${
+                          className={`truncate text-sm font-bold flex items-center gap-1 ${
                             seleccionada ? "text-brand-500 dark:text-brand-400" : "text-gray-900 dark:text-white/90"
                           }`}
                         >
-                          {conv.contacto.nombre}
+                          <span className="truncate">{conv.contacto.nombre}</span>
+                          {conv.destacada && (
+                            <span className="text-amber-500 text-xs shrink-0" title="Conversación destacada">
+                              ★
+                            </span>
+                          )}
                         </h5>
 
                         {idPedido && (
@@ -399,9 +404,15 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                         )}
                       </div>
 
-                      <span className="shrink-0 text-xs font-normal text-gray-400 dark:text-gray-500">
-                        {fecha}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <svg className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M8 12l2.5 2.5L16 9" />
+                        </svg>
+                        <span className="text-xs font-normal text-gray-400 dark:text-gray-500">
+                          {fecha}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Fila 2: Teléfono + Preview del mensaje con distintivo Bot / Operador */}

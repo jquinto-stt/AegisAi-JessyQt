@@ -87,8 +87,8 @@ export type AutorMensaje = "cliente" | "negocio" | "bot";
  */
 export type ModuloDestino = "pedidos" | "inventario" | "general";
 
-/** Canal de comunicación (WhatsApp, Telegram). */
-export type CanalId = "whatsapp" | "telegram";
+/** Canal de comunicación (WhatsApp, Telegram, Instagram, Messenger, TikTok). */
+export type CanalId = "whatsapp" | "telegram" | "instagram" | "messenger" | "tiktok";
 
 // ── Contenido del mensaje (preparado para multimodal) ────────────────────────
 
@@ -162,7 +162,7 @@ export interface EventoSistema {
 export interface Contacto {
   telefono: string;
   nombre: string;
-  origen: "whatsapp" | "telegram";
+  origen: CanalId;
   lid?: string | null;
   email?: string | null;
   notasInternas?: string | null;
@@ -185,6 +185,7 @@ export interface Conversacion {
   noLeidos: number;
   ultimaActividad: string; // ISO 8601
   iaActiva?: boolean;
+  destacada?: boolean;
   necesitaAtencion?: boolean;
   motivoDerivacion?: string | null;
   /**
