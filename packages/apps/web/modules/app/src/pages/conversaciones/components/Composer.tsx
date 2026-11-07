@@ -149,7 +149,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
         className="flex items-center gap-2.5"
       >
         {/* Contenedor tipo píldora oscura/clara con iconos integrados */}
-        <div className="flex flex-1 items-center gap-2.5 rounded-2xl border border-gray-200 bg-gray-50/90 px-3.5 py-1.5 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-gray-700/80 dark:bg-gray-800/80">
+        <div className="flex flex-1 items-center gap-2.5 rounded-2xl border border-gray-200 bg-gray-50/90 px-3.5 py-1.5 transition-all focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 dark:border-gray-700/80 dark:bg-gray-800/80">
           {/* Icono WhatsApp verde a la izquierda */}
           <div className="text-emerald-500 shrink-0" title="Canal activo WhatsApp">
             <WhatsAppIcon size={19} />
@@ -183,8 +183,8 @@ export const Composer = observer(({ convId }: { convId: string }) => {
                 onClick={sugerirRespuestaIA}
                 disabled={!canalesActivos || sugiriendoIA}
                 title="Sugerir o mejorar respuesta con IA"
-                className={`p-1.5 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:text-gray-400 dark:hover:text-purple-300 dark:hover:bg-purple-950/40 transition-colors cursor-pointer ${
-                  sugiriendoIA ? "animate-pulse text-purple-600" : ""
+                className={`p-1.5 rounded-lg text-gray-400 hover:text-secondary-600 hover:bg-accent-300/20 dark:text-gray-400 dark:hover:text-accent-300 dark:hover:bg-secondary-900/40 transition-colors cursor-pointer ${
+                  sugiriendoIA ? "animate-pulse text-secondary-600" : ""
                 }`}
               >
                 <AiIcon className="h-4 w-4" />
@@ -218,7 +218,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-md transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
             modoMensaje === "nota"
               ? "bg-amber-600 hover:bg-amber-700"
-              : "bg-blue-600 hover:bg-blue-700"
+              : "bg-brand-500 hover:bg-brand-600"
           }`}
         >
           {enviando ? (

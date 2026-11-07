@@ -370,9 +370,9 @@ export const ChatView = observer(({
                 <div key={m.id} className="animate-entrada-lista flex items-start justify-end gap-2.5 sm:gap-3">
                   <div className="flex flex-col items-end max-w-[82%] sm:max-w-lg lg:max-w-xl">
                     {/* Burbuja del bot: Azul estilo Lucid Bot en la derecha */}
-                    <div className="w-fit min-w-0 max-w-full rounded-2xl rounded-tr-xs bg-blue-600 px-4 py-3 text-sm leading-relaxed text-white shadow-xs break-words [overflow-wrap:anywhere]">
+                    <div className="w-fit min-w-0 max-w-full rounded-2xl rounded-tr-xs bg-[#190088] px-4 py-3 text-sm leading-relaxed text-white shadow-xs break-words [overflow-wrap:anywhere]">
                       {/* Cabecera sutil: Identidad IA + Botón discreto de trazabilidad on-demand */}
-                      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-blue-400/40 pb-1.5 text-white/90">
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-[#97D6DF]/30 pb-1.5 text-white/90">
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span
                             className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-white/20 text-white"

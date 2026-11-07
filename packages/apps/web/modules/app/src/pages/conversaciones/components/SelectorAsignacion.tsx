@@ -50,7 +50,7 @@ export const SelectorAsignacion = observer(({ convId }: SelectorAsignacionProps)
         onClick={() => setAbierto(!abierto)}
         className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold shadow-xs transition-all cursor-pointer ${
           estaAsignado
-            ? "bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800"
+            ? "bg-[#97D6DF]/20 text-[#190088] border border-[#97D6DF]/40 hover:bg-[#97D6DF]/30 dark:bg-[#190088]/40 dark:text-[#97D6DF] dark:border-[#190088]/60"
             : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-700"
         }`}
         title="Asignar conversación a un usuario u operador"
@@ -88,12 +88,12 @@ export const SelectorAsignacion = observer(({ convId }: SelectorAsignacionProps)
               onClick={() => asignar(null)}
               className={`w-full flex items-center justify-between gap-3 px-3 py-2 text-xs font-medium rounded-xl transition-colors text-left cursor-pointer ${
                 !estaAsignado
-                  ? "bg-purple-50 text-purple-700 font-semibold dark:bg-purple-950/50 dark:text-purple-300"
+                  ? "bg-[#97D6DF]/20 text-[#190088] font-semibold dark:bg-[#190088]/40 dark:text-[#97D6DF]"
                   : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-sm">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#97D6DF]/30 text-[#190088] dark:bg-[#190088]/60 dark:text-[#97D6DF] text-sm">
                   🤖
                 </span>
                 <div>
