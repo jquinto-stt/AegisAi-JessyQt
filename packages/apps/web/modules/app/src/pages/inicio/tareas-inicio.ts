@@ -1,5 +1,6 @@
 import { organizacionStore } from "@/stores/organizacion.store";
 import { pedidosStore } from "@/stores/pedidos.store";
+import { inventarioStore } from "@/stores/inventario.store";
 import { UserCheck, Building2, Package, ShoppingCart, Truck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -18,6 +19,18 @@ export interface TareaInicio {
 }
 
 export function tareasDeInicio(): TareaInicio[] {
+  const tienePerfil = Boolean(organizacionStore?.tienePerfil);
+  const tieneNegocio = Boolean(organizacionStore?.tieneOrganizacion);
+  const tieneProductos =
+    (pedidosStore?.config?.catalogo?.length ?? 0) > 0 ||
+    (inventarioStore?.articulos?.length ?? 0) > 0;
+  const tienePedidos = (pedidosStore?.pedidos?.length ?? 0) > 0;
+  const tieneEnvios = Boolean(
+    pedidosStore?.pedidos?.some(
+      (p) => p.estado === "enviado" || p.estado === "entregado" || Boolean(p.guiaTransportadora)
+    )
+  );
+
   return [
     {
       id: "cuenta",
@@ -28,7 +41,7 @@ export function tareasDeInicio(): TareaInicio[] {
         accion: "Completar",
       },
       ruta: "/onboarding/perfil",
-      completada: organizacionStore.tienePerfil,
+      completada: tienePerfil,
       icono: UserCheck,
     },
     {
@@ -40,7 +53,7 @@ export function tareasDeInicio(): TareaInicio[] {
         accion: "Completar",
       },
       ruta: "/configuracion",
-      completada: organizacionStore.tieneOrganizacion,
+      completada: tieneNegocio,
       icono: Building2,
     },
     {
@@ -52,7 +65,7 @@ export function tareasDeInicio(): TareaInicio[] {
         accion: "Completar",
       },
       ruta: "/pedidos/catalogo",
-      completada: pedidosStore.articulos.length > 0,
+      completada: tieneProductos,
       icono: Package,
     },
     {
@@ -64,7 +77,7 @@ export function tareasDeInicio(): TareaInicio[] {
         accion: "Completar",
       },
       ruta: "/pedidos/crear",
-      completada: pedidosStore.pedidos.length > 0,
+      completada: tienePedidos,
       icono: ShoppingCart,
     },
     {
@@ -76,9 +89,7 @@ export function tareasDeInicio(): TareaInicio[] {
         accion: "Completar",
       },
       ruta: "/pedidos",
-      completada: pedidosStore.pedidos.some(
-        (p) => p.estado === "enviado" || p.estado === "entregado" || Boolean(p.guiaTransportadora)
-      ),
+      completada: tieneEnvios,
       icono: Truck,
     },
   ];
