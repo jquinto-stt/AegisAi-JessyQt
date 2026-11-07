@@ -10,6 +10,7 @@ import { Input } from "@/elements/form/input";
 import { Switch } from "@/elements/form/switch";
 import TextArea from "@/elements/form/textarea";
 import QRCode from "qrcode";
+import { apiUrl } from "@/lib/api";
 import {
   AlertIcon,
   BoltIcon,
@@ -171,7 +172,7 @@ export const ConfigPage = observer(() => {
   const cargarOGenerarQr = async () => {
     setCargandoQr(true);
     try {
-      const res = await fetch("/api/whatsapp/status");
+      const res = await fetch(apiUrl("/whatsapp/status"));
       if (res.ok) {
         const data = await res.json();
         if (data.estado === "conectado") {
@@ -727,7 +728,7 @@ export const ConfigPage = observer(() => {
                     <button
                       type="button"
                       onClick={() => {
-                        fetch("/api/whatsapp/disconnect", { method: "POST" })
+                        fetch(apiUrl("/whatsapp/disconnect"), { method: "POST" })
                           .then(() => {
                             setEstadoBaileys("desconectado");
                             cargarOGenerarQr();

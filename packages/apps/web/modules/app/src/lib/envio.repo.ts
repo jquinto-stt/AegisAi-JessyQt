@@ -18,14 +18,15 @@
 // usa para preguntar a `necto.tengo('channels.respond')` con la identidad del
 // operador. Si se omitiera, el endpoint devolvería 401.
 import { getSupabase } from "@/lib/supabase";
+import { apiUrl } from "@/lib/api";
 
 export type ResultadoEnvio =
   | { ok: true; messageId: string | null; mensajeId: string; enviadoEn: string }
   | { ok: false; motivo: string; detalle: string; reintentable: boolean };
 
-/** Ruta relativa: el proxy de Vite la reenvía al servicio quitando `/api`. */
+/** Ruta al endpoint de envío: apiUrl resuelve el proxy local o ACA en producción. */
 const RUTA = (conversacionId: string) =>
-  `/api/conversaciones/${encodeURIComponent(conversacionId)}/mensajes`;
+  apiUrl(`/conversaciones/${encodeURIComponent(conversacionId)}/mensajes`);
 
 /**
  * Traduce el `motivo` del servicio a una frase que el operador pueda entender y

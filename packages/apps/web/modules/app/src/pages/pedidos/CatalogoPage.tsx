@@ -20,6 +20,7 @@ import {
   ChevronDownIcon,
 } from '@/icons';
 import { getSupabase, ESQUEMA } from '@/lib/supabase';
+import { apiUrl } from '@/lib/api';
 import { PageMeta } from '@/shell/meta';
 import { AdministradorArchivos } from './AdministradorArchivos';
 import {
@@ -473,7 +474,7 @@ export const CatalogoPage: React.FC = observer(() => {
         };
       }
 
-      const res = await fetch('/api/pedidos/catalogo/importar-ia', {
+      const res = await fetch(apiUrl('/pedidos/catalogo/importar-ia'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyPayload),
