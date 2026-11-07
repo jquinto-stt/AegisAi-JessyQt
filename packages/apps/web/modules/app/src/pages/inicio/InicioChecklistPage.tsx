@@ -213,7 +213,7 @@ export const InicioChecklistPage = observer(() => {
               onClick={handleOmitir}
               className="text-[14px] font-normal text-[#212121]/60 hover:text-[#FF3F1A] dark:text-[#ECECEC]/60 dark:hover:text-[#97D6DF] underline underline-offset-4 cursor-pointer transition-colors"
             >
-              Saltar al panel principal
+              Omitir
             </button>
           </div>
         </div>

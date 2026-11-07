@@ -1,15 +1,11 @@
 import { organizacionStore } from "@/stores/organizacion.store";
-import { hayCanalesMensajeriaActivos } from "@/stores/acceso.utils";
-import { Eye, Lightbulb, Handshake, Network } from "lucide-react";
+import { pedidosStore } from "@/stores/pedidos.store";
+import { UserCheck, Building2, Package, ShoppingCart, Truck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 /**
- * Tareas de puesta en marcha. Una sola fuente para el checklist de `/inicio`
- * y para las notificaciones del dashboard: si cada pantalla decidiera por su
- * cuenta qué falta, una tarea completada seguiría apareciendo en la otra.
- *
- * Se leen del store dentro de componentes `observer`, así que cambian solas
- * cuando cambia el estado (p. ej. al instalar un módulo o conectar un canal).
+ * Tareas de puesta en marcha del negocio. Una sola fuente para el checklist
+ * de `/inicio` y para las notificaciones del dashboard en Necto.
  */
 export interface TareaInicio {
   id: string;
@@ -24,52 +20,66 @@ export interface TareaInicio {
 export function tareasDeInicio(): TareaInicio[] {
   return [
     {
-      id: "perfil",
-      nombre: "Visualiza tus agentes y perfil",
+      id: "cuenta",
+      nombre: "Crea tu cuenta",
       aviso: {
-        titulo: "Perfil: Completa tus datos",
-        texto: "Completa tu perfil para personalizar tu cuenta.",
-        accion: "Completar perfil",
+        titulo: "Cuenta: Completa tus datos",
+        texto: "Completa tu perfil para personalizar tu cuenta en Necto.",
+        accion: "Completar",
       },
       ruta: "/onboarding/perfil",
       completada: organizacionStore.tienePerfil,
-      icono: Eye,
+      icono: UserCheck,
     },
     {
-      id: "modulo",
-      nombre: "Comprende tus costos y módulos",
+      id: "negocio",
+      nombre: "Ingresa los datos del negocio",
       aviso: {
-        titulo: "Configuración: Instalar módulo",
-        texto: "Instala tus módulos (WhatsApp, Catálogo, etc.) para operar.",
-        accion: "Instalar módulo",
+        titulo: "Negocio: Datos de la empresa",
+        texto: "Ingresa el nombre, identificación y moneda de tu negocio.",
+        accion: "Completar",
       },
-      ruta: "/configuracion?tab=modulos",
-      completada: organizacionStore.modulosActivos.length > 0,
-      icono: Lightbulb,
+      ruta: "/configuracion",
+      completada: organizacionStore.tieneOrganizacion,
+      icono: Building2,
     },
     {
-      id: "canales",
-      nombre: "Demuestra el valor de tus canales",
+      id: "productos",
+      nombre: "Crea tus productos",
       aviso: {
-        titulo: "Canales: Conectar mensajería",
-        texto: "Conecta WhatsApp, Instagram o Messenger para recibir clientes.",
-        accion: "Conectar canales",
+        titulo: "Catálogo: Agrega tus productos",
+        texto: "Publica tus artículos con precios y stock para vender.",
+        accion: "Completar",
       },
-      ruta: "/configuracion?tab=canales",
-      completada: hayCanalesMensajeriaActivos(),
-      icono: Handshake,
+      ruta: "/pedidos/catalogo",
+      completada: pedidosStore.articulos.length > 0,
+      icono: Package,
     },
     {
-      id: "agentes",
-      nombre: "Corrige y ajusta lo que no funciona",
+      id: "pedido",
+      nombre: "Crea tu primer pedido",
       aviso: {
-        titulo: "Bot IA: Ajustar respuestas y flujo",
-        texto: "Revisa y personaliza la atención automática de tus agentes.",
-        accion: "Ajustar bot",
+        titulo: "Pedidos: Primer pedido",
+        texto: "Registra o toma tu primera orden desde el catálogo o chat.",
+        accion: "Completar",
       },
-      ruta: "/conversaciones?tab=bot",
-      completada: Boolean(organizacionStore.esModuloActivo("conversaciones")),
-      icono: Network,
+      ruta: "/pedidos/crear",
+      completada: pedidosStore.pedidos.length > 0,
+      icono: ShoppingCart,
+    },
+    {
+      id: "envio",
+      nombre: "Haz tu primer envío y aprende a operar en Necto",
+      aviso: {
+        titulo: "Logística: Primer despacho",
+        texto: "Genera la guía de transporte y aprende el flujo operativo en Necto.",
+        accion: "Completar",
+      },
+      ruta: "/pedidos",
+      completada: pedidosStore.pedidos.some(
+        (p) => p.estado === "enviado" || p.estado === "entregado" || Boolean(p.guiaTransportadora)
+      ),
+      icono: Truck,
     },
   ];
 }
