@@ -33,6 +33,8 @@ interface ProductoItem {
   precio: number;
   imagen: string;
   badge?: string;
+  disponibles?: number;
+  vendidos?: number;
 }
 
 const CATEGORIAS_MOCK = [
@@ -58,6 +60,8 @@ const PRODUCTOS_DEFAULT: ProductoItem[] = [
     precio: 28000,
     imagen: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80',
     badge: 'Más Vendido',
+    disponibles: 12,
+    vendidos: 6,
   },
   {
     id: 'prod-biryani',
@@ -68,6 +72,8 @@ const PRODUCTOS_DEFAULT: ProductoItem[] = [
     precio: 25000,
     imagen: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&q=80',
     badge: 'Destacado',
+    disponibles: 18,
+    vendidos: 14,
   },
   {
     id: 'prod-pasta-pesto',
@@ -78,6 +84,8 @@ const PRODUCTOS_DEFAULT: ProductoItem[] = [
     precio: 20000,
     imagen: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=500&q=80',
     badge: '9% Descuento',
+    disponibles: 10,
+    vendidos: 8,
   },
   {
     id: 'prod-noodles',
@@ -88,6 +96,8 @@ const PRODUCTOS_DEFAULT: ProductoItem[] = [
     precio: 22000,
     imagen: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=500&q=80',
     badge: 'Más Vendido',
+    disponibles: 15,
+    vendidos: 11,
   },
   {
     id: 'prod-pasta-bolognesa',
@@ -98,6 +108,8 @@ const PRODUCTOS_DEFAULT: ProductoItem[] = [
     precio: 24000,
     imagen: 'https://images.unsplash.com/photo-1546549032-9571cd6b27df?w=500&q=80',
     badge: 'Destacado',
+    disponibles: 9,
+    vendidos: 7,
   },
   {
     id: 'prod-pizza-pepperoni',
@@ -108,6 +120,8 @@ const PRODUCTOS_DEFAULT: ProductoItem[] = [
     precio: 26000,
     imagen: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500&q=80',
     badge: 'Nuevo',
+    disponibles: 14,
+    vendidos: 9,
   },
   {
     id: 'prod-burger',
@@ -118,6 +132,8 @@ const PRODUCTOS_DEFAULT: ProductoItem[] = [
     precio: 25000,
     imagen: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
     badge: 'Más Vendido',
+    disponibles: 16,
+    vendidos: 12,
   },
   {
     id: 'prod-papas',
@@ -128,6 +144,8 @@ const PRODUCTOS_DEFAULT: ProductoItem[] = [
     precio: 12000,
     imagen: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500&q=80',
     badge: '9% Descuento',
+    disponibles: 20,
+    vendidos: 15,
   },
   {
     id: 'prod-bebida',
@@ -137,6 +155,8 @@ const PRODUCTOS_DEFAULT: ProductoItem[] = [
     subtexto: 'Vaso 350ml',
     precio: 5000,
     imagen: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&q=80',
+    disponibles: 30,
+    vendidos: 22,
   },
   {
     id: 'prod-postre',
@@ -147,6 +167,8 @@ const PRODUCTOS_DEFAULT: ProductoItem[] = [
     precio: 11000,
     imagen: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=500&q=80',
     badge: 'Nuevo',
+    disponibles: 8,
+    vendidos: 5,
   },
 ];
 
@@ -161,6 +183,8 @@ const mapearItemCatalogo = (i: any, idx: number): ProductoItem => {
     precio: Number(i.precio) || 0,
     imagen: foto,
     badge: i.popular ? 'Destacado' : undefined,
+    disponibles: i.disponibles ?? 12,
+    vendidos: i.vendidos ?? (idx + 3),
   };
 };
 
@@ -469,44 +493,103 @@ export const MenuCatalogoPage: React.FC = observer(() => {
         className="min-h-screen bg-[#ECECEC]/30 text-[#212121] p-4 sm:p-6 lg:p-8 antialiased selection:bg-[#190088] selection:text-white"
       >
         <div className="max-w-[1500px] mx-auto space-y-6">
-          {/* ── ENCABEZADO SUPERIOR: TÍTULO PRODUCTOS Y BUSCADOR CON FILTRO ── */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h1 className="text-[24px] font-bold text-[#190088] tracking-tight">
-              Productos
-            </h1>
-
-            <div className="flex items-center gap-3">
-              <div className="relative w-full sm:w-72">
-                <MagnifyingGlassIcon className="w-4 h-4 text-[#212121]/50 absolute left-4 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar producto..."
-                  className="w-full h-11 pl-11 pr-8 bg-white text-[#212121] text-[14px] font-normal placeholder-[#212121]/40 rounded-full border border-[#ECECEC] focus:border-[#97D6DF] focus:outline-none shadow-2xs transition-colors"
+          {/* ── BANNER Y FOTO DE MARCA SINCRONIZADA CON CONFIGURACIÓN DEL NEGOCIO (NECTO) ── */}
+          <div className="relative overflow-hidden rounded-3xl border border-[#ECECEC] bg-white shadow-sm">
+            {/* Banner superior de portada */}
+            <div className="h-44 sm:h-52 w-full relative overflow-hidden bg-gradient-to-r from-[#190088] via-[#212121] to-[#190088]">
+              {organizacionStore.organizacion?.portadaUrl ? (
+                <img
+                  src={organizacionStore.organizacion.portadaUrl}
+                  alt="Portada del negocio"
+                  className="w-full h-full object-cover"
                 />
-                {busqueda && (
-                  <button
-                    type="button"
-                    onClick={() => setBusqueda('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#212121]/50 hover:text-[#FF3F1A]"
-                  >
-                    ✕
-                  </button>
-                )}
+              ) : (
+                <div className="w-full h-full relative flex items-center justify-center overflow-hidden">
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#97D6DF]/20 via-transparent to-transparent" />
+                  <div className="flex items-center gap-2 text-white/40">
+                    <BuildingStorefrontIcon className="w-8 h-8" />
+                    <span className="text-[14px] font-normal tracking-wide">
+                      {organizacionStore.organizacion?.nombre || 'Necto Negocio'}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {/* Degradado para transición suave */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+            </div>
+
+            {/* Fila de identidad del negocio: Logo, Nombre, Eslogan, Tags */}
+            <div className="p-5 sm:p-6 pt-0 relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 sm:-mt-14">
+              <div className="flex items-end gap-4">
+                {/* Logo de marca circular con borde blanco */}
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white p-1.5 shadow-md border border-[#ECECEC] shrink-0 overflow-hidden">
+                  {organizacionStore.organizacion?.logoUrl ? (
+                    <img
+                      src={organizacionStore.organizacion.logoUrl}
+                      alt={organizacionStore.organizacion?.nombre || 'Logo'}
+                      className="w-full h-full object-cover rounded-xl"
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-xl bg-gradient-to-br from-[#FF3F1A] to-[#190088] flex items-center justify-center text-white text-[28px] font-bold">
+                      {(organizacionStore.organizacion?.nombre || 'N')[0].toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1 mb-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-[24px] sm:text-[36px] font-bold text-[#190088] tracking-tight leading-none">
+                      {organizacionStore.organizacion?.nombrePublico ||
+                        organizacionStore.organizacion?.nombre ||
+                        'Menú & Catálogo'}
+                    </h1>
+                    <span className="px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-[#97D6DF]/30 text-[#190088] border border-[#97D6DF]/50">
+                      Abierto
+                    </span>
+                  </div>
+
+                  <p className="text-[14px] font-light text-[#212121]/70 max-w-xl line-clamp-1">
+                    {organizacionStore.organizacion?.eslogan ||
+                      organizacionStore.organizacion?.descripcion ||
+                      'Selecciona tus productos preferidos y arma tu pedido en segundos.'}
+                  </p>
+                </div>
               </div>
 
-              <button
-                type="button"
-                className="h-11 px-4 bg-white border border-[#ECECEC] text-[#212121] rounded-full text-[14px] font-normal flex items-center gap-2 hover:bg-[#EFE6D3]/40 shadow-2xs transition-colors shrink-0"
-              >
-                <FunnelIcon className="w-4 h-4 text-[#212121]/70" />
-                <span>Filtrar</span>
-              </button>
+              {/* Buscador y filtro integrados al estilo Kasirin */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="relative w-full sm:w-64">
+                  <MagnifyingGlassIcon className="w-4 h-4 text-[#212121]/50 absolute left-4 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    placeholder="Search Menu..."
+                    className="w-full h-11 pl-11 pr-8 bg-[#ECECEC]/30 text-[#212121] text-[14px] font-normal placeholder-[#212121]/40 rounded-full border border-[#ECECEC] focus:border-[#97D6DF] focus:outline-none transition-colors"
+                  />
+                  {busqueda && (
+                    <button
+                      type="button"
+                      onClick={() => setBusqueda('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#212121]/50 hover:text-[#FF3F1A]"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="h-11 px-4 bg-white border border-[#ECECEC] text-[#212121] rounded-full text-[14px] font-normal flex items-center gap-2 hover:bg-[#EFE6D3]/40 shadow-2xs transition-colors shrink-0"
+                >
+                  <FunnelIcon className="w-4 h-4 text-[#212121]/70" />
+                  <span>Filter</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* ── BARRA DE CATEGORÍAS HORIZONTAL ── */}
+          {/* ── BARRA DE CATEGORÍAS HORIZONTAL CON ESTILO DE PÍLDORAS ── */}
           <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
             {categoriasDisponibles.map((cat) => {
               const activa = categoriaActiva === cat;
@@ -515,9 +598,9 @@ export const MenuCatalogoPage: React.FC = observer(() => {
                   key={cat}
                   type="button"
                   onClick={() => setCategoriaActiva(cat)}
-                  className={`px-5 py-2.5 rounded-full text-[14px] transition-all shrink-0 cursor-pointer shadow-2xs ${
+                  className={`px-5 py-2 rounded-full text-[14px] transition-all shrink-0 cursor-pointer ${
                     activa
-                      ? 'bg-[#FF3F1A] text-white font-bold'
+                      ? 'bg-[#190088] text-white font-bold shadow-xs'
                       : 'bg-white text-[#212121] font-normal border border-[#ECECEC] hover:bg-[#EFE6D3]/50'
                   }`}
                 >
@@ -548,81 +631,86 @@ export const MenuCatalogoPage: React.FC = observer(() => {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   {productosFiltrados.map((prod) => {
-                    const esFav = favoritos[prod.id] || false;
+                    const cant = carrito[prod.id] || 0;
+                    const disponibles = prod.disponibles ?? 12;
+                    const vendidos = prod.vendidos ?? 6;
+
                     return (
                       <div
                         key={prod.id}
-                        className="bg-white rounded-3xl p-5 border border-[#ECECEC] shadow-2xs hover:shadow-md transition-all flex flex-col justify-between relative group"
+                        className="bg-white rounded-2xl p-4 border border-[#ECECEC] shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group"
                       >
-                        {/* Cabecera de la tarjeta: Badge promocional y botón de favorito */}
-                        <div className="flex items-center justify-between gap-2 h-7">
-                          {prod.badge ? (
-                            <span
-                              className={`px-3 py-1 rounded-full text-[12px] font-bold tracking-wider shadow-2xs ${obtenerEstiloBadge(
-                                prod.badge
-                              )}`}
-                            >
-                              {prod.badge}
-                            </span>
-                          ) : (
-                            <span />
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => toggleFavorito(prod.id)}
-                            className="w-8 h-8 rounded-full bg-white border border-[#ECECEC] flex items-center justify-center text-[#212121] hover:text-[#FF3F1A] transition-colors shadow-2xs cursor-pointer"
-                            title="Favorito"
-                          >
-                            <HeartIcon
-                              className={`w-4 h-4 ${
-                                esFav ? 'fill-[#FF3F1A] text-[#FF3F1A]' : 'text-[#212121]/60'
-                              }`}
-                            />
-                          </button>
-                        </div>
-
-                        {/* Foto del plato circular */}
-                        <div className="my-3 flex items-center justify-center">
-                          <div className="w-36 h-36 rounded-full overflow-hidden p-1 bg-[#EFE6D3]/40 shadow-inner flex items-center justify-center">
+                        {/* Fila superior: Foto a la izquierda, título y descripción a la derecha */}
+                        <div className="flex items-start gap-3.5">
+                          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shrink-0 bg-[#ECECEC]/30">
                             <img
                               src={prod.imagen}
                               alt={prod.nombre}
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).src = FOTO_RESPALDO;
                               }}
-                              className="w-full h-full object-cover rounded-full group-hover:scale-105 transition-transform duration-300"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               loading="lazy"
                             />
                           </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-[16px] font-bold text-[#212121] leading-tight line-clamp-2">
+                              {prod.nombre}
+                            </h3>
+                            <p className="text-[12px] font-light text-[#212121]/70 line-clamp-2 mt-1 leading-snug">
+                              {prod.descripcion || prod.subtexto || 'Deliciosa preparación artesanal elaborada con ingredientes frescos de la más alta calidad.'}
+                            </p>
+
+                            {/* Píldoras de stock y vendidos estilo Kasirin */}
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-normal bg-[#ECECEC]/70 text-[#212121]/80">
+                                {disponibles} Available
+                              </span>
+                              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-normal bg-[#ECECEC]/70 text-[#212121]/80">
+                                {vendidos} Sold
+                              </span>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Datos del producto */}
-                        <div className="space-y-1">
-                          <h3 className="text-[16px] font-bold text-[#190088] line-clamp-1">
-                            {prod.nombre}
-                          </h3>
-                          <p className="text-[12px] font-light text-[#212121]/70 line-clamp-1">
-                            {prod.subtexto || prod.categoria}
-                          </p>
-                        </div>
-
-                        {/* Pie de tarjeta: Precio y botón + */}
-                        <div className="flex items-center justify-between pt-3 mt-2 border-t border-[#ECECEC]">
-                          <span className="text-[16px] font-bold text-[#212121]">
+                        {/* Fila inferior: Precio a la izquierda, selector + / - a la derecha */}
+                        <div className="flex items-center justify-between pt-3 mt-3 border-t border-[#ECECEC]/60">
+                          <span className="text-[18px] font-bold text-[#212121]">
                             {formatearCOP(prod.precio)}
                           </span>
 
-                          <button
-                            type="button"
-                            onClick={() => agregarItem(prod.id)}
-                            className="w-10 h-10 rounded-full bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 active:scale-95 text-white flex items-center justify-center shadow-md transition-all cursor-pointer"
-                            title="Agregar al pedido"
-                          >
-                            <PlusIcon className="w-5 h-5 stroke-[2.5]" />
-                          </button>
+                          {/* Stepper + / - redondo estilo Kasirin */}
+                          <div className="flex items-center gap-2.5">
+                            <button
+                              type="button"
+                              onClick={() => quitarItem(prod.id)}
+                              disabled={cant === 0}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                                cant > 0
+                                  ? 'bg-[#ECECEC] hover:bg-[#ECECEC]/80 text-[#212121] active:scale-95'
+                                  : 'bg-[#ECECEC]/40 text-[#212121]/30 cursor-not-allowed'
+                              }`}
+                              title="Disminuir"
+                            >
+                              <MinusIcon className="w-4 h-4 stroke-[2.5]" />
+                            </button>
+
+                            <span className="text-[14px] font-bold text-[#212121] min-w-[16px] text-center">
+                              {cant}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => agregarItem(prod.id)}
+                              className="w-8 h-8 rounded-full bg-[#10B981] hover:bg-[#059669] text-white flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                              title="Aumentar"
+                            >
+                              <PlusIcon className="w-4 h-4 stroke-[2.5]" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -708,22 +796,22 @@ export const MenuCatalogoPage: React.FC = observer(() => {
                               <TrashIcon className="w-4 h-4" />
                             </button>
 
-                            <div className="flex items-center bg-white border border-[#ECECEC] rounded-full px-2 py-0.5 shadow-2xs gap-2">
+                            <div className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => quitarItem(id)}
-                                className="text-[14px] font-bold text-[#212121] hover:text-[#FF3F1A] px-1 cursor-pointer"
+                                className="w-6 h-6 rounded-full bg-[#ECECEC] hover:bg-[#ECECEC]/80 text-[#212121] flex items-center justify-center text-[12px] font-bold cursor-pointer transition-colors active:scale-95"
                                 title="Disminuir"
                               >
                                 −
                               </button>
-                              <span className="text-[14px] font-bold text-[#212121] min-w-[16px] text-center">
+                              <span className="text-[13px] font-bold text-[#212121] min-w-[14px] text-center">
                                 {qty}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => agregarItem(id)}
-                                className="w-5 h-5 rounded-full bg-[#212121] hover:bg-[#FF3F1A] text-white flex items-center justify-center text-[12px] font-bold cursor-pointer transition-colors"
+                                className="w-6 h-6 rounded-full bg-[#10B981] hover:bg-[#059669] text-white flex items-center justify-center text-[12px] font-bold cursor-pointer transition-colors active:scale-95 shadow-xs"
                                 title="Aumentar"
                               >
                                 +
