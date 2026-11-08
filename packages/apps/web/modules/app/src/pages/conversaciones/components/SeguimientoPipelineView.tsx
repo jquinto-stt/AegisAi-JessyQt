@@ -12,6 +12,9 @@ import {
   TagIcon,
   ChevronDownIcon,
   CheckIcon,
+  EllipsisHorizontalIcon,
+  PaperClipIcon,
+  ClipboardDocumentIcon,
 } from "@heroicons/react/24/outline";
 
 import { Badge } from "@/elements/ui/badge";
@@ -27,6 +30,13 @@ import {
   type EtapaSeguimientoConfig,
 } from "@/pages/conversaciones/seguimiento.etapas";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
+import {
+  WhatsAppIcon,
+  TelegramIcon,
+  InstagramIcon,
+  MessengerIcon,
+  TikTokIcon,
+} from "@/pages/conversaciones/components/CanalAvatar";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ETAPAS Y ANCLAJES MANUALES
@@ -131,129 +141,320 @@ const PALETA_AVATAR = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
+// MAPEO DE COLORES Y BADGES AL ESTILO DEL DISEÑO DE REFERENCIA
+// ═══════════════════════════════════════════════════════════════════════════
+
+const PROGRESO_POR_ETAPA: Record<EtapaSeguimiento, { pct: number; label: string }> = {
+  contacto_inicial: { pct: 20, label: "20%" },
+  oferta_enviada: { pct: 40, label: "40%" },
+  seguimiento: { pct: 60, label: "60%" },
+  en_cierre: { pct: 80, label: "80%" },
+  validacion_pago: { pct: 95, label: "95%" },
+};
+
+function configCanal(canal?: string) {
+  switch (canal) {
+    case "whatsapp":
+      return {
+        label: "WhatsApp",
+        tagClass: "bg-[#E8F8EA] text-[#1E7E34] dark:bg-[#1E7E34]/20 dark:text-[#4ADE80]",
+        avatarBg: "bg-[#25D366]",
+        icon: <WhatsAppIcon className="size-3 text-[#1E7E34] dark:text-[#4ADE80]" />,
+        avatarIcon: <WhatsAppIcon className="size-3 text-white" />,
+      };
+    case "instagram":
+      return {
+        label: "Instagram",
+        tagClass: "bg-[#FDE7F7] text-[#BE185D] dark:bg-[#BE185D]/20 dark:text-[#F472B6]",
+        avatarBg: "bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888]",
+        icon: <InstagramIcon className="size-3 text-[#BE185D] dark:text-[#F472B6]" />,
+        avatarIcon: <InstagramIcon className="size-3 text-white" />,
+      };
+    case "telegram":
+      return {
+        label: "Telegram",
+        tagClass: "bg-[#E8F1FF] text-[#2563EB] dark:bg-[#2563EB]/20 dark:text-[#60A5FA]",
+        avatarBg: "bg-[#229ED9]",
+        icon: <TelegramIcon className="size-3 text-[#2563EB] dark:text-[#60A5FA]" />,
+        avatarIcon: <TelegramIcon className="size-3 text-white" />,
+      };
+    case "messenger":
+      return {
+        label: "Messenger",
+        tagClass: "bg-[#EBF5FF] text-[#0084FF] dark:bg-[#0084FF]/20 dark:text-[#60A5FA]",
+        avatarBg: "bg-[#0084FF]",
+        icon: <MessengerIcon className="size-3 text-[#0084FF] dark:text-[#60A5FA]" />,
+        avatarIcon: <MessengerIcon className="size-3 text-white" />,
+      };
+    case "tiktok":
+      return {
+        label: "TikTok",
+        tagClass: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+        avatarBg: "bg-black",
+        icon: <TikTokIcon className="size-3" />,
+        avatarIcon: <TikTokIcon className="size-3 text-white" />,
+      };
+    default:
+      return {
+        label: "WhatsApp",
+        tagClass: "bg-[#E8F8EA] text-[#1E7E34] dark:bg-[#1E7E34]/20 dark:text-[#4ADE80]",
+        avatarBg: "bg-[#25D366]",
+        icon: <WhatsAppIcon className="size-3 text-[#1E7E34] dark:text-[#4ADE80]" />,
+        avatarIcon: <WhatsAppIcon className="size-3 text-white" />,
+      };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // COMPONENTE TARJETA DE CONVERSACIÓN / LEAD (PIPELINE CARD)
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface TarjetaPipelineProps {
   conv: ConversacionCanal;
   indice: number;
+  etapa: EtapaSeguimiento;
   onAbrir: (convId: string) => void;
   onDragStart: (e: React.DragEvent, convId: string) => void;
 }
 
-const TarjetaPipeline = observer(({ conv, indice, onAbrir, onDragStart }: TarjetaPipelineProps) => {
-  const pedido = pedidosStore.pedidoActivoDe(conv.contacto.telefono);
-  const valor = pedido ? pedidosStore.totalPedido(pedido) : 0;
-  const fechaStr = formatearFechaNecto(conv.ultimaActividad);
-  const iniciales = inicialesDe(conv.contacto.nombre);
-  const preview = ultimoTexto(conv.id);
-  const presencia = presenciaDe(conv.estado);
+const TarjetaPipeline = observer(
+  ({ conv, indice, etapa, onAbrir, onDragStart }: TarjetaPipelineProps) => {
+    const [menuAbierto, setMenuAbierto] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <div
-      draggable
-      onDragStart={(e) => onDragStart(e, conv.id)}
-      onClick={() => onAbrir(conv.id)}
-      style={{ animationDelay: retardoEscalonado(indice) }}
-      className="group relative cursor-grab active:cursor-grabbing select-none rounded-2xl border border-gray-100 bg-white p-3.5 shadow-theme-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-theme-md dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-800"
-    >
-      {/* ── Fila superior: Avatar, Nombre, Subtítulo y Fecha ── */}
-      <div className="flex items-start gap-3">
-        {/* Avatar redondo Necto con iniciales y punto de presencia/WhatsApp */}
-        <div className="relative shrink-0">
-          <div
-            className={`flex size-9 items-center justify-center rounded-full text-xs font-bold ${
-              PALETA_AVATAR[indice % PALETA_AVATAR.length]
-            }`}
-          >
-            {iniciales}
+    const pedido = pedidosStore.pedidoActivoDe(conv.contacto.telefono);
+    const valor = pedido ? pedidosStore.totalPedido(pedido) : 0;
+    const iniciales = inicialesDe(conv.contacto.nombre);
+    const preview = ultimoTexto(conv.id);
+    const presencia = presenciaDe(conv.estado);
+    const canal = configCanal(conv.canal);
+
+    // Calcular progreso de la tarjeta según su etapa
+    const progreso = pedido?.pagado
+      ? { pct: 100, label: "100%" }
+      : PROGRESO_POR_ETAPA[etapa] || { pct: 25, label: "25%" };
+
+    // Cerrar menú al hacer clic fuera
+    useEffect(() => {
+      if (!menuAbierto) return;
+      const handleClick = (e: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+          setMenuAbierto(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClick);
+      return () => document.removeEventListener("mousedown", handleClick);
+    }, [menuAbierto]);
+
+    const handleCopiarTelefono = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (conv.contacto.telefono) {
+        navigator.clipboard.writeText(conv.contacto.telefono);
+      }
+      setMenuAbierto(false);
+    };
+
+    return (
+      <div
+        draggable
+        onDragStart={(e) => onDragStart(e, conv.id)}
+        onClick={() => onAbrir(conv.id)}
+        style={{ animationDelay: retardoEscalonado(indice) }}
+        className="group relative cursor-grab select-none rounded-[20px] border border-gray-100 bg-white p-4 shadow-theme-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-200 hover:shadow-theme-md active:cursor-grabbing dark:border-white/[0.08] dark:bg-[#18181b] dark:hover:border-white/[0.15]"
+      >
+        {/* ── 1. Fila Superior: Etiquetas Pasteles + Menú 3 Puntos ── */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+            {/* Tag del Canal */}
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${canal.tagClass}`}
+            >
+              {canal.icon}
+              <span>{canal.label}</span>
+            </span>
+
+            {/* Tag de Estado / Pedido o Lead */}
+            {pedido ? (
+              <span className="inline-flex items-center rounded-full bg-[#F1E8FD] px-2.5 py-0.5 text-[11px] font-semibold text-[#5432EE] dark:bg-[#5432EE]/20 dark:text-[#C4B5FD]">
+                {pedidosStore.estadoLabel(pedido.estado)}
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full bg-[#E5F9F9] px-2.5 py-0.5 text-[11px] font-semibold text-[#0E7490] dark:bg-[#0E7490]/20 dark:text-[#67E8F9]">
+                Lead
+              </span>
+            )}
+
+            {/* Tag de Pago (si existe pedido) */}
+            {pedido && (
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                  pedido.pagado
+                    ? "bg-[#E8F8EA] text-[#1E7E34] dark:bg-[#1E7E34]/20 dark:text-[#4ADE80]"
+                    : "bg-[#FEF3C7] text-[#B45309] dark:bg-[#B45309]/20 dark:text-[#FBBF24]"
+                }`}
+              >
+                {pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
+              </span>
+            )}
+
+            {/* Etiquetas de contacto adicionales si existen */}
+            {conv.contacto.etiquetas?.slice(0, 1).map((etq) => (
+              <span
+                key={etq}
+                className="inline-flex items-center rounded-full bg-[#FDE7F7] px-2.5 py-0.5 text-[11px] font-semibold text-[#BE185D] dark:bg-[#BE185D]/20 dark:text-[#F472B6]"
+              >
+                {etq}
+              </span>
+            ))}
           </div>
-          <span
-            className={`absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full ring-2 ring-white dark:ring-gray-900 ${
-              presencia === "online"
-                ? "bg-[#25D366]"
-                : presencia === "busy"
-                ? "bg-brand-500"
-                : "bg-gray-400"
-            }`}
-            title="WhatsApp"
-          />
+
+          {/* Menú de opciones (3 puntos) */}
+          <div className="relative shrink-0" ref={menuRef}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuAbierto(!menuAbierto);
+              }}
+              className="flex size-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-gray-200"
+              title="Opciones"
+            >
+              <EllipsisHorizontalIcon className="size-4" />
+            </button>
+
+            {menuAbierto && (
+              <div
+                className="absolute right-0 top-8 z-30 w-44 rounded-xl border border-gray-100 bg-white p-1 shadow-theme-lg dark:border-gray-800 dark:bg-[#1c1c1f]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbierto(false);
+                    onAbrir(conv.id);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/5"
+                >
+                  <ChatBubbleLeftRightIcon className="size-4 text-gray-400" />
+                  Abrir conversación
+                </button>
+                {conv.contacto.telefono && (
+                  <button
+                    type="button"
+                    onClick={handleCopiarTelefono}
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/5"
+                  >
+                    <ClipboardDocumentIcon className="size-4 text-gray-400" />
+                    Copiar teléfono
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Nombre y subtítulo */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline justify-between gap-1.5">
-            <h4 className="truncate text-sm font-bold text-ink-title group-hover:text-brand-600 dark:text-white dark:group-hover:text-brand-400">
-              {conv.contacto.nombre}
-            </h4>
-            <span className="shrink-0 text-[10px] font-medium text-gray-400 dark:text-gray-500">
-              {fechaStr}
-            </span>
-          </div>
-
-          <p className="truncate text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-            {conv.contacto.telefono}
+        {/* ── 2. Título y Vista previa de texto ── */}
+        <div className="mt-3">
+          <h4 className="truncate text-[14px] font-bold leading-tight tracking-tight text-gray-900 transition-colors group-hover:text-brand-600 dark:text-white dark:group-hover:text-brand-400">
+            {conv.contacto.nombre}
+          </h4>
+          <p className="mt-1 line-clamp-2 text-[12px] font-normal leading-relaxed text-gray-500 dark:text-gray-400">
+            {preview ||
+              (conv.contacto.telefono
+                ? `${conv.contacto.telefono} · Sin mensajes recientes`
+                : "Sin mensajes recientes")}
           </p>
-
-          {preview && (
-            <p className="mt-1 line-clamp-1 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-              {preview}
-            </p>
-          )}
         </div>
-      </div>
 
-      {/* ── Los DOS ejes, a la vista ──
-          Antes esta tarjeta solo decía «Cliente» o «Lead», y el estado del
-          pedido había que adivinarlo. Por eso el tablero se leía como si
-          «Validación de pago» fuera un estado del pedido: no había nada que
-          dijera en cuál está. Ahora van los dos hechos, separados y con su
-          color: dónde va el pedido y si el dinero entró. */}
-      {pedido && (
-        <div className="mt-2 flex flex-wrap items-center gap-1">
-          <Badge color={pedidosStore.estadoBadgeColor(pedido.estado)} size="xs">
-            {pedidosStore.estadoLabel(pedido.estado)}
-          </Badge>
-          {/* El pago va en gris cuando falta: con `warning` quedaban dos
-              pastillas amarillas seguidas («Nuevo» + «Pendiente de pago») que se
-              leían como una sola. El color de alarma lo lleva el estado; el pago
-              es un hecho, y cuando de verdad urge lo dice la columna. */}
-          <Badge color={pedido.pagado ? "success" : "light"} size="xs">
-            {pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
-          </Badge>
-        </div>
-      )}
-
-      {/* ── Fila inferior: Valor y Badges Necto ── */}
-      <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2.5 dark:border-gray-800">
-        <span
-          className={`text-xs ${
-            valor > 0
-              ? "font-bold text-gray-900 dark:text-white"
-              : "font-medium text-gray-400 dark:text-gray-500"
-          }`}
-        >
-          {valor > 0 ? formatoMoneda(valor) : "Sin valor"}
-        </span>
-
-        <div className="flex items-center gap-1.5">
-          {conv.noLeidos > 0 && (
-            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF3F1A] px-1 text-[10px] font-bold text-white shadow-theme-xs">
-              {conv.noLeidos}
+        {/* ── 3. Barra de Progreso ── */}
+        <div className="mt-3.5">
+          <div className="flex items-center justify-between text-[11px] font-medium text-gray-400 dark:text-gray-500">
+            <span>Progress</span>
+            <span className="font-semibold text-gray-700 dark:text-gray-300">
+              {progreso.label}
             </span>
-          )}
-          {/* «Cliente» sobraba cuando ya se pinta el estado del pedido; «Lead»
-              sigue diciendo algo que ningún otro badge dice: no hay pedido. */}
-          {!pedido && (
-            <Badge color="light" size="sm">
-              Lead
-            </Badge>
-          )}
+          </div>
+          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
+            <div
+              className="h-full rounded-full bg-[#1C1C1F] transition-all duration-500 ease-out dark:bg-white"
+              style={{ width: `${progreso.pct}%` }}
+            />
+          </div>
+        </div>
+
+        {/* ── 4. Pie de Tarjeta: Avatares superpuestos + Moneda, Clips y Chat ── */}
+        <div className="mt-4 flex items-center justify-between pt-0.5">
+          {/* Avatares superpuestos a la izquierda */}
+          <div className="flex items-center -space-x-1.5 overflow-hidden">
+            {/* Avatar 1: Iniciales del contacto */}
+            <div
+              className={`relative flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ring-2 ring-white dark:ring-[#18181b] ${
+                PALETA_AVATAR[indice % PALETA_AVATAR.length]
+              }`}
+              title={conv.contacto.nombre}
+            >
+              {iniciales}
+              <span
+                className={`absolute -bottom-0.5 -right-0.5 size-2 rounded-full ring-1 ring-white dark:ring-gray-900 ${
+                  presencia === "online"
+                    ? "bg-[#25D366]"
+                    : presencia === "busy"
+                    ? "bg-brand-500"
+                    : "bg-gray-400"
+                }`}
+              />
+            </div>
+
+            {/* Avatar 2: Miniatura del canal superpuesta */}
+            <div
+              className={`flex size-7 shrink-0 items-center justify-center rounded-full ring-2 ring-white shadow-xs dark:ring-[#18181b] ${canal.avatarBg}`}
+              title={`Canal: ${canal.label}`}
+            >
+              {canal.avatarIcon}
+            </div>
+          </div>
+
+          {/* Iconos y Datos a la derecha */}
+          <div className="flex items-center gap-3">
+            {valor > 0 && (
+              <span className="text-[12px] font-bold text-gray-900 dark:text-white">
+                {formatoMoneda(valor)}
+              </span>
+            )}
+
+            {/* Cantidad de ítems / adjuntos */}
+            <div
+              className="flex items-center gap-1 text-[11px] font-medium text-gray-400 dark:text-gray-500"
+              title={
+                pedido?.items ? `${pedido.items.length} productos en pedido` : "Detalles"
+              }
+            >
+              <PaperClipIcon className="size-3.5" />
+              <span>{pedido?.items && pedido.items.length > 0 ? pedido.items.length : 1}</span>
+            </div>
+
+            {/* Mensajes / Chat */}
+            <div
+              className={`flex items-center gap-1 text-[11px] font-medium ${
+                conv.noLeidos > 0
+                  ? "font-bold text-[#FF3F1A]"
+                  : "text-gray-400 dark:text-gray-500"
+              }`}
+              title={
+                conv.noLeidos > 0
+                  ? `${conv.noLeidos} mensajes no leídos`
+                  : "Conversación activa"
+              }
+            >
+              <ChatBubbleLeftRightIcon className="size-3.5" />
+              <span>{conv.noLeidos > 0 ? conv.noLeidos : 1}</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // COMPONENTE COLUMNA DEL PIPELINE
@@ -310,20 +511,24 @@ const ColumnaPipeline = observer(
             : "border-gray-100/80 bg-gray-50/90 dark:border-gray-800/60 dark:bg-white/[0.02]"
         } p-3 shadow-theme-xs`}
       >
-        {/* Cabecera de la columna */}
-        <header className="mb-3 shrink-0 px-1.5 pt-1">
-          <div className="flex items-center gap-2">
-            <span className={`size-2 shrink-0 rounded-full ${config.punto}`} />
-            <h3 className="truncate text-sm font-bold text-ink-title dark:text-white">
+        {/* Cabecera de la columna al estilo del diseño de referencia */}
+        <header className="mb-3 shrink-0 px-1 pt-1 flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`size-2.5 shrink-0 rounded-full ${config.punto}`} />
+            <h3 className="truncate text-sm font-bold text-gray-900 dark:text-white">
               {config.label}
             </h3>
           </div>
-          <p className="mt-1 pl-4 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-            {formatoMoneda(totalDinero)}{" "}
-            <span className="font-medium text-gray-400 dark:text-gray-500">
-              · {convs.length}
+          <div className="flex items-center gap-2 shrink-0">
+            {totalDinero > 0 && (
+              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                {formatoMoneda(totalDinero)}
+              </span>
+            )}
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-200/80 px-1.5 text-[11px] font-bold text-gray-600 dark:bg-white/10 dark:text-gray-300">
+              {convs.length}
             </span>
-          </p>
+          </div>
         </header>
 
         {/* Lista de tarjetas con scroll suave y limpio */}
@@ -333,6 +538,7 @@ const ColumnaPipeline = observer(
               key={c.id}
               conv={c}
               indice={i}
+              etapa={config.clave}
               onAbrir={onAbrir}
               onDragStart={onDragStart}
             />
