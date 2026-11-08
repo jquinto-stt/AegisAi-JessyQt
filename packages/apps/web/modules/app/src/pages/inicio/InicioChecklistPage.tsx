@@ -54,15 +54,15 @@ const TarjetaTarea = ({
       animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
       exit={{
         opacity: 0,
-        transform: "translateX(40px) scale(0.95)",
-        filter: "blur(4px)",
+        transform: "translateX(60px) scale(0.92)",
+        filter: "blur(6px)",
         transition: {
-          duration: 0.35,
+          duration: 0.45,
           ease: [0.23, 1, 0.32, 1],
         },
       }}
       transition={{
-        duration: 0.3,
+        duration: 0.35,
         ease: [0.23, 1, 0.32, 1],
       }}
       onClick={!tarea.completada ? onCompletar : undefined}
@@ -147,10 +147,27 @@ export const InicioChecklistPage = observer(() => {
     vistasAlEntrar ? completadas.filter((id) => !vistasAlEntrar.includes(id)) : []
   );
 
-  // Filtramos las tareas: solo mostramos las pendientes, o aquellas que se acaban
-  // de completar en esta sesión para que se aprecie su animación de salida.
+  // Estado reactivo de ids que saldrán de la pantalla tras verse tachadas
+  const [idsExcluidos, setIdsExcluidos] = useState<Set<string>>(new Set());
+
+  // Si hay tareas recién completadas, dejamos que se vea el tachado (~1.2s)
+  // y luego activamos su salida motion graphic
+  useEffect(() => {
+    if (recienCompletadas.size === 0) return;
+    const timer = setTimeout(() => {
+      setIdsExcluidos((prev) => {
+        const next = new Set(prev);
+        recienCompletadas.forEach((id) => next.add(id));
+        return next;
+      });
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [recienCompletadas]);
+
+  // Filtramos las tareas: mostramos las pendientes, o las recién completadas
+  // mientras dure la animación antes de que salgan de la pantalla.
   const tareasVisibles = tareas.filter(
-    (t) => !t.completada || recienCompletadas.has(t.id)
+    (t) => (!t.completada && !idsExcluidos.has(t.id)) || (recienCompletadas.has(t.id) && !idsExcluidos.has(t.id))
   );
 
   useEffect(() => {
