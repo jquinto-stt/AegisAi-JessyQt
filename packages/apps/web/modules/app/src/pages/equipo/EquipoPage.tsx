@@ -217,8 +217,8 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
                 onClick={() => setModoVisualizacion("flujo")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
                   modoVisualizacion === "flujo"
-                    ? "bg-[#190088] text-white shadow-xs dark:bg-[#97D6DF] dark:text-[#190088]"
-                    : "text-[#212121]/70 hover:text-[#190088] dark:text-[#ECECEC]/70 dark:hover:text-white"
+                    ? "bg-[#FF3F1A] text-white shadow-xs dark:bg-[#FF3F1A] dark:text-white"
+                    : "text-[#212121]/70 hover:text-[#FF3F1A] dark:text-[#ECECEC]/70 dark:hover:text-white"
                 }`}
                 title="Vista Mapa de Perfiles y Accesos"
               >
@@ -231,8 +231,8 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
                 onClick={() => setModoVisualizacion("tabla")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
                   modoVisualizacion === "tabla"
-                    ? "bg-[#190088] text-white shadow-xs dark:bg-[#97D6DF] dark:text-[#190088]"
-                    : "text-[#212121]/70 hover:text-[#190088] dark:text-[#ECECEC]/70 dark:hover:text-white"
+                    ? "bg-[#FF3F1A] text-white shadow-xs dark:bg-[#FF3F1A] dark:text-white"
+                    : "text-[#212121]/70 hover:text-[#FF3F1A] dark:text-[#ECECEC]/70 dark:hover:text-white"
                 }`}
                 title="Vista Tabla Tradicional"
               >

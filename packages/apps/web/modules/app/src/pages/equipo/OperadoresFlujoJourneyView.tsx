@@ -80,12 +80,12 @@ const CONFIG_LINEA: Record<
   }
 > = {
   concedido: {
-    stroke: '#97D6DF',
+    stroke: '#190088',
     darkStroke: '#97D6DF',
     strokeWidth: 2,
-    puntoInicio: '#97D6DF',
+    puntoInicio: '#190088',
     darkPuntoInicio: '#97D6DF',
-    puntoFin: '#97D6DF',
+    puntoFin: '#190088',
     darkPuntoFin: '#97D6DF',
     opacidad: 0.95,
   },
@@ -368,8 +368,8 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
 
     const tarjeta = 'relative rounded-[28px] bg-[#ECECEC]/30 dark:bg-white/[0.05] border border-[#ECECEC] dark:border-white/10 shadow-xs';
     const etiqueta = 'mt-3 text-center text-[14px] font-normal text-[#190088] dark:text-[#97D6DF]';
-    const punto = 'hidden lg:block absolute w-2.5 h-2.5 rounded-full bg-[#190088] dark:bg-[#97D6DF] ring-2 ring-white dark:ring-[#101828]';
-    const circuloLleno = 'bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]';
+    const punto = 'hidden lg:block absolute w-2.5 h-2.5 rounded-full bg-[#FF3F1A] dark:bg-[#FF3F1A] ring-2 ring-white dark:ring-[#101828]';
+    const circuloLleno = 'bg-[#FF3F1A] text-white dark:bg-[#FF3F1A] dark:text-white';
     const circuloVacio = 'bg-[#ECECEC] text-[#212121]/60 dark:bg-white/10 dark:text-[#ECECEC]/70';
 
     const textoFila = (nivel: 'fuerte' | 'normal' | 'debil') =>
@@ -492,7 +492,7 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                         }
                         className={`relative flex items-center gap-3 px-2 rounded-[20px] text-left transition-colors ${
                           actual
-                            ? 'bg-[#EFE6D3]/60 dark:bg-white/[0.08] ring-1 ring-[#190088]/20 dark:ring-[#97D6DF]/30'
+                            ? 'bg-[#EFE6D3]/60 dark:bg-white/[0.08] ring-2 ring-[#FF3F1A] dark:ring-[#FF3F1A]'
                             : 'enabled:hover:bg-[#ECECEC]/60 dark:enabled:hover:bg-white/[0.04] enabled:cursor-pointer disabled:cursor-not-allowed'
                         }`}
                         style={{ height: ALTO_FILA }}
@@ -545,7 +545,7 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                         onMouseLeave={() => setHoverAreaIdx(null)}
                         className={`relative flex items-center gap-3 px-2 rounded-[20px] text-left cursor-pointer transition-all duration-200 ${
                           activa
-                            ? 'bg-[#EFE6D3]/70 dark:bg-white/[0.08] ring-2 ring-[#190088] dark:ring-[#97D6DF] scale-[1.01]'
+                            ? 'bg-[#EFE6D3]/70 dark:bg-white/[0.08] ring-2 ring-[#FF3F1A] dark:ring-[#FF3F1A] scale-[1.01]'
                             : isHovered
                               ? 'bg-[#ECECEC]/70 dark:bg-white/[0.06] scale-[1.005]'
                               : 'hover:bg-[#ECECEC]/60 dark:hover:bg-white/[0.04]'
@@ -561,7 +561,7 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                             tiene === total
                               ? circuloLleno
                               : tiene > 0
-                                ? 'border-2 border-[#190088] text-[#190088] dark:border-[#97D6DF] dark:text-[#97D6DF]'
+                                ? 'border-2 border-[#FF3F1A] text-[#FF3F1A] dark:border-[#FF3F1A] dark:text-[#FF3F1A]'
                                 : circuloVacio
                           }`}
                         >
@@ -715,10 +715,10 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
           {/* ── Leyenda NECTO ── */}
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] font-light text-[#212121]/70 dark:text-[#ECECEC]/70 border-t border-[#ECECEC] dark:border-white/10 pt-4">
             <span className="flex items-center gap-1.5">
-              <span className="w-5 h-0.5 bg-[#97D6DF] inline-block rounded-full" /> Concedido por rol
+              <span className="w-5 h-0.5 bg-[#190088] inline-block rounded-full" /> Concedido por rol
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-5 h-0.5 border-b-2 border-dashed border-[#190088] dark:border-[#97D6DF] inline-block" /> Excepción adicional
+              <span className="w-5 h-0.5 border-b-2 border-dashed border-[#190088] inline-block" /> Excepción adicional
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-5 h-0.5 border-b-2 border-dashed border-[#FF3F1A] inline-block" /> Excepción revocada
@@ -727,7 +727,7 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
               <span className="w-5 h-0.5 border-b border-dotted border-[#ECECEC] dark:border-white/30 inline-block" /> Sin acceso
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-[#EFE6D3] border border-[#ECECEC]" /> Selección activa
+              <span className="w-3 h-3 rounded-full bg-[#EFE6D3] border border-[#FF3F1A]" /> Selección activa
             </span>
           </div>
         </section>
