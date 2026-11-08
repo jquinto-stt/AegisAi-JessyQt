@@ -357,6 +357,8 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
       }
       return { indice: i, tipo };
     });
+
+    const tarjeta = 'relative rounded-[28px] bg-white dark:bg-white/[0.05] border border-[#ECECEC] dark:border-white/10 shadow-xs';
     const etiqueta = 'mt-3 text-center text-[14px] font-normal text-[#190088] dark:text-[#97D6DF]';
     const punto = 'hidden lg:block absolute w-2.5 h-2.5 rounded-full bg-[#190088] dark:bg-[#97D6DF] ring-2 ring-white dark:ring-[#101828]';
     const circuloLleno = 'bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]';
