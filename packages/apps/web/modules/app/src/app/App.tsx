@@ -29,6 +29,7 @@ import {
 import { ConfiguracionPage } from "@/pages/configuracion";
 import { InicioChecklistPage } from "@/pages/inicio/InicioChecklistPage";
 import { InicioDashboardPage } from "@/pages/inicio/InicioDashboardPage";
+import { tareasDeInicio } from "@/pages/inicio/tareas-inicio";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
 import {
   ConversacionesPage,
@@ -158,7 +159,8 @@ const RootRoute = observer(() => {
   if (!organizacionStore.usuario?.perfilCompletado || !organizacionStore.tieneOrganizacion) {
     return <Navigate to="/onboarding/bienvenida" replace />;
   }
-  return <Navigate to="/inicio" replace />;
+  const hayTareasPendientes = tareasDeInicio().some((t) => !t.completada);
+  return <Navigate to={hayTareasPendientes ? "/inicio" : "/dashboard"} replace />;
 });
 
 export default function App() {

@@ -5,6 +5,7 @@ import { BellIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
 import { inventarioStore, sessionStore, type AlertaInventario } from "@/stores";
+import { tareasDeInicio } from "@/pages/inicio/tareas-inicio";
 
 /**
  * Notificaciones: Soporta tarjetas ricas con insignias de categoría, fecha,
@@ -396,7 +397,23 @@ const NotificationDropdown = observer(function NotificationDropdown() {
   const [vistas, setVistas] = useState<Set<string>>(leerVistas);
   const [descartadas, setDescartadas] = useState<Set<string>>(leerDescartadas);
 
-  // 1. Notificaciones reales de inventario
+  // 1. Tareas de puesta en marcha del negocio (onboarding pendientes)
+  const tareasPendientes = tareasDeInicio().filter((t) => !t.completada);
+  const tarjetasPuestaEnMarcha: TarjetaNotificacion[] = tareasPendientes.map((t) => ({
+    id: `tarea-inicio-${t.id}`,
+    categoria: "Puesta en marcha",
+    categoriaColor: {
+      bg: "bg-[#97D6DF]/20 dark:bg-[#97D6DF]/15",
+      text: "text-[#190088] dark:text-[#97D6DF]",
+    },
+    fecha: "Pendiente",
+    titulo: t.aviso.titulo,
+    detalle: t.aviso.texto,
+    ruta: t.ruta,
+    banner: "ninguno",
+  }));
+
+  // 2. Notificaciones reales de inventario
   const alertasInventario = sessionStore.modulos.includes("inventarios")
     ? inventarioStore.alertas()
     : [];
@@ -429,7 +446,7 @@ const NotificationDropdown = observer(function NotificationDropdown() {
     })
   );
 
-  // 2. Tarjeta Anuncio Oficial NECTO (destacada y contextual a la plataforma de operaciones)
+  // 3. Tarjeta Anuncio Oficial NECTO (destacada y contextual a la plataforma de operaciones)
   const tarjetasDestacadas: TarjetaNotificacion[] = [
     {
       id: "anuncio-necto-operaciones",
@@ -448,9 +465,11 @@ const NotificationDropdown = observer(function NotificationDropdown() {
   ];
 
   // Lista combinada y filtrada por descartadas
-  const todasLasNotificaciones = [...tarjetasDestacadas, ...tarjetasInventario].filter(
-    (t) => !descartadas.has(t.id)
-  );
+  const todasLasNotificaciones = [
+    ...tarjetasPuestaEnMarcha,
+    ...tarjetasDestacadas,
+    ...tarjetasInventario,
+  ].filter((t) => !descartadas.has(t.id));
 
   const hayNoLeidas = todasLasNotificaciones.some((t) => !vistas.has(t.id));
 

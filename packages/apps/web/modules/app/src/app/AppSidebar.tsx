@@ -16,6 +16,7 @@ import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils
 // modo rail las repite como accesos directos. Se importan del catálogo y no se
 // escriben aquí para que renombrar una tarjeta no deje el sidebar diciendo otra cosa.
 import { TARJETAS_CONFIG } from "@/pages/configuracion/configuracion.catalogo";
+import { tareasDeInicio } from "@/pages/inicio/tareas-inicio";
 import {
   Cog6ToothIcon,
   HomeIcon,
@@ -70,59 +71,69 @@ const TOOLTIP_LANZADOR = "NECTO";
  * deja el tooltip a merced de que el puntero caiga sobre la imagen —que es lo que
  * ya pasa—, así que se pone donde el puntero realmente está.
  */
-const Logo = () => (
-  <Link to={RUTA_LANZADOR} className="flex items-center">
-    {/*
-      Logo oficial horizontal: NECTO en rojo #FF3F1A con «grow together» a la derecha.
-      - Modo normal: acento N y «grow together» en azul #190088.
-      - Modo oscuro: acento N y «grow together» en blanco #FFFFFF.
-    */}
-    <img
-      src="/images/logo/necto-full.svg"
-      alt="NECTO"
-      title={TOOLTIP_LANZADOR}
-      className="h-7 w-auto dark:hidden"
-    />
-    <img
-      src="/images/logo/necto-full-white.svg"
-      alt="NECTO"
-      title={TOOLTIP_LANZADOR}
-      className="hidden h-7 w-auto dark:block"
-    />
-  </Link>
-);
+const Logo = observer(() => {
+  const hayTareasPendientes = tareasDeInicio().some((t) => !t.completada);
+  const rutaDestino = hayTareasPendientes ? "/inicio" : "/dashboard";
 
-const LogoCollapsed = () => (
-  <Link
-    to={RUTA_LANZADOR}
-    title={TOOLTIP_LANZADOR}
-    aria-label="Inicio NECTO"
-    className="group flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-gray-100/70 dark:hover:bg-white/5"
-  >
-    {/*
-      Isotipo geométrico N oficial de NECTO.
-      Usa viewBox 24x24 a escala size-5 (20px), alineado con el tamaño de los
-      iconos de navegación del rail (h-5 w-5) para no romper la jerarquía visual.
-      - Trazo principal N: rojo/naranja corporativo #FF3F1A.
-      - Nodo superior: azul índigo #190088 en modo claro, blanco en modo oscuro.
-    */}
-    <svg
-      className="size-5 transition-transform duration-200 group-hover:scale-105 select-none"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+  return (
+    <Link to={rutaDestino} className="flex items-center">
+      {/*
+        Logo oficial horizontal: NECTO en rojo #FF3F1A con «grow together» a la derecha.
+        - Modo normal: acento N y «grow together» en azul #190088.
+        - Modo oscuro: acento N y «grow together» en blanco #FFFFFF.
+      */}
+      <img
+        src="/images/logo/necto-full.svg"
+        alt="NECTO"
+        title={TOOLTIP_LANZADOR}
+        className="h-7 w-auto dark:hidden"
+      />
+      <img
+        src="/images/logo/necto-full-white.svg"
+        alt="NECTO"
+        title={TOOLTIP_LANZADOR}
+        className="hidden h-7 w-auto dark:block"
+      />
+    </Link>
+  );
+});
+
+const LogoCollapsed = observer(() => {
+  const hayTareasPendientes = tareasDeInicio().some((t) => !t.completada);
+  const rutaDestino = hayTareasPendientes ? "/inicio" : "/dashboard";
+
+  return (
+    <Link
+      to={rutaDestino}
+      title={TOOLTIP_LANZADOR}
+      aria-label="Inicio NECTO"
+      className="group flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-gray-100/70 dark:hover:bg-white/5"
     >
-      <path
-        d="M22.4171 19.1921L19.5245 22.1622C18.9564 22.7461 18.0008 22.7715 17.4068 22.1622L9.16827 14.064C8.23853 13.1501 6.63731 13.7848 6.63731 15.1049V21.0453C6.63731 21.8576 5.96583 22.4923 5.16522 22.4923H1.47209C0.645653 22.4923 0 21.8322 0 21.0453V5.3819C0 5.0011 0.154957 4.62031 0.439044 4.34106L3.43487 1.39625C4.00305 0.837748 4.90696 0.837748 5.50096 1.37086L22.3654 17.1104C22.9594 17.6689 22.9852 18.5828 22.4171 19.1667V19.1921Z"
-        fill="#FF3F1A"
-      />
-      <path
-        d="M22.8045 1.92936V4.29029C22.8045 5.12803 22.0555 5.83885 21.1258 5.83885H15.3149C13.8428 5.83885 13.0938 4.21413 14.1269 3.22406L16.6062 0.863135C16.9161 0.558499 17.3551 0.406181 17.7942 0.406181H21.1258C22.0555 0.406181 22.8045 1.09161 22.8045 1.95475V1.92936Z"
-        className="fill-[#190088] dark:fill-white"
-      />
-    </svg>
-  </Link>
-);
+      {/*
+        Isotipo geométrico N oficial de NECTO.
+        Usa viewBox 24x24 a escala size-5 (20px), alineado con el tamaño de los
+        iconos de navegación del rail (h-5 w-5) para no romper la jerarquía visual.
+        - Trazo principal N: rojo/naranja corporativo #FF3F1A.
+        - Nodo superior: azul índigo #190088 en modo claro, blanco en modo oscuro.
+      */}
+      <svg
+        className="size-5 transition-transform duration-200 group-hover:scale-105 select-none"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M22.4171 19.1921L19.5245 22.1622C18.9564 22.7461 18.0008 22.7715 17.4068 22.1622L9.16827 14.064C8.23853 13.1501 6.63731 13.7848 6.63731 15.1049V21.0453C6.63731 21.8576 5.96583 22.4923 5.16522 22.4923H1.47209C0.645653 22.4923 0 21.8322 0 21.0453V5.3819C0 5.0011 0.154957 4.62031 0.439044 4.34106L3.43487 1.39625C4.00305 0.837748 4.90696 0.837748 5.50096 1.37086L22.3654 17.1104C22.9594 17.6689 22.9852 18.5828 22.4171 19.1667V19.1921Z"
+          fill="#FF3F1A"
+        />
+        <path
+          d="M22.8045 1.92936V4.29029C22.8045 5.12803 22.0555 5.83885 21.1258 5.83885H15.3149C13.8428 5.83885 13.0938 4.21413 14.1269 3.22406L16.6062 0.863135C16.9161 0.558499 17.3551 0.406181 17.7942 0.406181H21.1258C22.0555 0.406181 22.8045 1.09161 22.8045 1.95475V1.92936Z"
+          className="fill-[#190088] dark:fill-white"
+        />
+      </svg>
+    </Link>
+  );
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FOOTER — pinned actions (Configuracion, Ayuda, Cerrar sesion)
@@ -377,7 +388,8 @@ const SidebarContent = observer(() => {
   const { pathname, search } = useLocation();
   const { isExpanded: showExpanded } = useSidebarContext();
   const isActive = (path: string) => pathname === path;
-  const hayTareasPendientes = organizacionStore.modulosActivos.length === 0;
+  const hayTareasPendientes = tareasDeInicio().some((t) => !t.completada);
+  const rutaInicio = hayTareasPendientes ? "/inicio" : "/dashboard";
 
   const puedeVerSeccion = (modulo: Modulo, seccionId: string) =>
     sessionStore.puedeVerSeccion(modulo, seccionId);
@@ -601,8 +613,8 @@ const SidebarContent = observer(() => {
                   </div>
                 }
                 name="Inicio"
-                path="/inicio"
-                isActive={isActive}
+                path={rutaInicio}
+                isActive={() => pathname === "/inicio" || pathname === "/dashboard"}
               />
             </ul>
           </div>
@@ -681,11 +693,11 @@ const SidebarContent = observer(() => {
         <div ref={railRef} className="flex flex-col items-center justify-center gap-2.5 w-full py-1">
           {/* Botón Inicio en Rail Mode */}
           <Link
-            to="/inicio"
+            to={rutaInicio}
             title={hayTareasPendientes ? "Inicio · Tareas pendientes" : "Inicio"}
             aria-label="Inicio"
             className={`group relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ease-out hover:scale-110 active:scale-95 cursor-pointer ${
-              isActive("/inicio")
+              pathname === "/inicio" || pathname === "/dashboard"
                 ? "text-brand-500 bg-brand-50 dark:bg-brand-500/15 dark:text-brand-400 scale-105"
                 : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100/70 dark:hover:bg-white/5"
             }`}

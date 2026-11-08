@@ -1095,7 +1095,8 @@ export const InicioDashboardPage = observer(() => {
                   return (
                     <div
                       key={tarea.id}
-                      className="p-3 rounded-2xl bg-[#97D6DF]/15 dark:bg-[#97D6DF]/10 border border-[#97D6DF]/40 flex items-center justify-between gap-3"
+                      onClick={() => navigate(tarea.ruta)}
+                      className="p-3 rounded-2xl bg-[#97D6DF]/15 dark:bg-[#97D6DF]/10 border border-[#97D6DF]/40 flex items-center justify-between gap-3 cursor-pointer hover:border-[#97D6DF] hover:shadow-xs transition-[border-color,background-color,transform] active:scale-[0.99]"
                     >
                       <div className="space-y-0.5 min-w-0">
                         <div className="flex items-center gap-1.5">
@@ -1114,6 +1115,7 @@ export const InicioDashboardPage = observer(() => {
                       </div>
                       <Link
                         to={tarea.ruta}
+                        onClick={(e) => e.stopPropagation()}
                         className="shrink-0 px-3 py-1.5 rounded-xl bg-[#190088] hover:bg-[#190088]/90 text-white text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
                       >
                         <span>{tarea.aviso.accion}</span>

@@ -48,10 +48,11 @@ const TarjetaTarea = ({
 
   return (
     <div
-      className={`tarea-checklist flex items-center justify-between p-4 sm:p-5 rounded-2xl border border-[#ECECEC] dark:border-white/10 shadow-xs transition-[border-color,background-color] ${
+      onClick={!tarea.completada ? onCompletar : undefined}
+      className={`tarea-checklist flex items-center justify-between p-4 sm:p-5 rounded-2xl border border-[#ECECEC] dark:border-white/10 shadow-xs transition-[border-color,background-color,transform] ${
         tarea.completada
           ? "bg-[#ECECEC]/40 dark:bg-white/[0.03]"
-          : "bg-white dark:bg-[#212121]/60 hover:border-[#97D6DF]/60 dark:hover:border-white/20"
+          : "bg-white dark:bg-[#212121]/60 hover:border-[#97D6DF]/60 dark:hover:border-white/20 cursor-pointer hover:shadow-md active:scale-[0.995]"
       } ${recienCompletada ? "tarea-checklist--recien-completada" : ""}`}
     >
       <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
@@ -93,7 +94,10 @@ const TarjetaTarea = ({
         ) : (
           <button
             type="button"
-            onClick={onCompletar}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCompletar();
+            }}
             className="px-5 sm:px-6 py-2 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] active:scale-[0.98] text-white text-[13px] sm:text-[14px] font-bold tracking-wide cursor-pointer transition-[background-color,transform] shadow-md shadow-[#FF3F1A]/25"
           >
             Completar
