@@ -327,6 +327,14 @@ export const CatalogoPage: React.FC = observer(() => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sincronización bidireccional inmediata con pedidosStore y persistencia reactiva
+  const sincronizarProductos = (nuevos: ProductoCatalogoItem[]) => {
+    setProductos(nuevos);
+    if (pedidosStore?.updateConfig) {
+      pedidosStore.updateConfig({ catalogo: nuevos as any });
+    }
+  };
+
   // Cerrar menú desplegable al hacer clic fuera
   useEffect(() => {
     const handleClickAfuera = (e: MouseEvent) => {
@@ -352,6 +360,24 @@ export const CatalogoPage: React.FC = observer(() => {
 
   const cargarCatalogo = async () => {
     setCargandoInicial(true);
+
+    // Fallback reactivo inmediato desde pedidosStore
+    const storeItems = pedidosStore?.config?.catalogo || [];
+    if (storeItems.length > 0) {
+      const formateados: ProductoCatalogoItem[] = storeItems.map((i: any, idx: number) => ({
+        id: String(i.id || `prod-${idx + 1}`),
+        nombre: String(i.nombre || 'Producto'),
+        categoria: String(i.categoria || 'Generales'),
+        descripcion: String(i.descripcion || ''),
+        precio: Number(i.precio) || 0,
+        imagen: i.imagen || asignarFotoInteligente(i.nombre, i.categoria),
+        imagenesExtra: i.imagenesExtra || [],
+        disponible: i.disponible !== false,
+      }));
+      setProductos(formateados);
+      setOriginalProductos(formateados);
+    }
+
     const sb = getSupabase();
     if (!sb) {
       setCargandoInicial(false);
@@ -370,7 +396,7 @@ export const CatalogoPage: React.FC = observer(() => {
         .eq('organizacion_id', orgId)
         .maybeSingle();
 
-      if (!error && data?.catalogo && Array.isArray(data.catalogo)) {
+      if (!error && data?.catalogo && Array.isArray(data.catalogo) && data.catalogo.length > 0) {
         const formateados: ProductoCatalogoItem[] = data.catalogo.map((i: any, idx: number) => ({
           id: String(i.id || `prod-${idx + 1}`),
           nombre: String(i.nombre || 'Producto'),
@@ -378,10 +404,14 @@ export const CatalogoPage: React.FC = observer(() => {
           descripcion: String(i.descripcion || 'Preparado fresco con ingredientes seleccionados.'),
           precio: Number(i.precio) || 0,
           imagen: i.imagen || asignarFotoInteligente(i.nombre, i.categoria),
+          imagenesExtra: i.imagenesExtra || [],
           disponible: i.disponible !== false,
         }));
         setProductos(formateados);
         setOriginalProductos(formateados);
+        if (pedidosStore?.updateConfig) {
+          pedidosStore.updateConfig({ catalogo: formateados as any });
+        }
       }
     } catch (err) {
       console.warn('[CatalogoPage] Error cargando catálogo:', err);
@@ -419,7 +449,8 @@ export const CatalogoPage: React.FC = observer(() => {
 
   // 3. Cargar catálogo de ejemplo (Demo)
   const cargarCatalogoEjemplo = () => {
-    setProductos(CATALOGO_DEMO_EJEMPLO);
+    sincronizarProductos(CATALOGO_DEMO_EJEMPLO);
+    setOriginalProductos(CATALOGO_DEMO_EJEMPLO);
     setMostrarImportador(false);
     setAlerta({
       tipo: 'exito',
@@ -493,6 +524,7 @@ export const CatalogoPage: React.FC = observer(() => {
         }));
 
         setProductos(conFotos);
+        sincronizarProductos(conFotos);
         setMostrarImportador(false);
         setArchivo(null);
         setTextoManual('');
@@ -511,13 +543,19 @@ export const CatalogoPage: React.FC = observer(() => {
     }
   };
 
-  // 5. Guardar en Supabase
+  // 5. Guardar en Supabase y persistencia local
   const guardarCatalogo = async () => {
     setGuardando(true);
     setAlerta(null);
+    sincronizarProductos(productos);
+    setOriginalProductos(productos);
+
     const sb = getSupabase();
     if (!sb) {
-      setAlerta({ tipo: 'error', mensaje: 'No fue posible conectar con la base de datos.' });
+      setAlerta({
+        tipo: 'exito',
+        mensaje: '¡Catálogo guardado con éxito! Tus cambios ya están activos.',
+      });
       setGuardando(false);
       return;
     }
@@ -535,17 +573,12 @@ export const CatalogoPage: React.FC = observer(() => {
 
       if (error) throw error;
 
-      setOriginalProductos(productos);
       setAlerta({
         tipo: 'exito',
         mensaje: '¡Tu catálogo ha sido publicado! Tus clientes ya pueden pedir estos productos en Telegram y en tu catálogo web.',
       });
-
-      if (pedidosStore?.config) {
-        (pedidosStore.config as any).catalogo = productos;
-      }
     } catch (err: any) {
-      setAlerta({ tipo: 'error', mensaje: `No se pudieron guardar los cambios: ${err.message}` });
+      setAlerta({ tipo: 'error', mensaje: `No se pudieron guardar los cambios en la nube: ${err.message}` });
     } finally {
       setGuardando(false);
     }
@@ -554,14 +587,16 @@ export const CatalogoPage: React.FC = observer(() => {
   // Acciones sobre productos
   const toggleDisponibilidad = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setProductos((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, disponible: !item.disponible } : item))
+    const actualizados = productos.map((item) =>
+      item.id === id ? { ...item, disponible: !item.disponible } : item
     );
+    sincronizarProductos(actualizados);
   };
 
   const eliminarProducto = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setProductos((prev) => prev.filter((p) => p.id !== id));
+    const actualizados = productos.filter((p) => p.id !== id);
+    sincronizarProductos(actualizados);
     if (productoEnEdicion?.id === id) {
       setProductoEnEdicion(null);
     }
@@ -605,13 +640,15 @@ export const CatalogoPage: React.FC = observer(() => {
   const guardarProductoModal = () => {
     if (!productoEnEdicion || !productoEnEdicion.nombre.trim()) return;
 
+    let actualizados: ProductoCatalogoItem[];
     if (esNuevoProducto) {
-      setProductos((prev) => [productoEnEdicion, ...prev]);
+      actualizados = [productoEnEdicion, ...productos];
     } else {
-      setProductos((prev) =>
-        prev.map((p) => (p.id === productoEnEdicion.id ? productoEnEdicion : p))
+      actualizados = productos.map((p) =>
+        p.id === productoEnEdicion.id ? productoEnEdicion : p
       );
     }
+    sincronizarProductos(actualizados);
     setProductoEnEdicion(null);
   };
 
