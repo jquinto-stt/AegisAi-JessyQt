@@ -1,12 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import {
-  UserPlusIcon,
-  UserIcon,
-  CpuChipIcon,
-  CheckIcon,
-  ChevronDownIcon,
-} from "@heroicons/react/24/outline";
+import { CheckIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { BotIcon, UserIconSvg, UserPlusIconSvg } from "./ConversacionIconos";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import { operadoresStore } from "@/stores/operadores.store";
 
@@ -69,10 +64,10 @@ export const SelectorAsignacion = observer(({ convId }: SelectorAsignacionProps)
               className="size-4 rounded-full object-cover shrink-0"
             />
           ) : (
-            <UserIcon className="size-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
+            <UserIconSvg className="size-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
           )
         ) : (
-          <UserPlusIcon className="size-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
+          <UserPlusIconSvg className="size-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
         )}
 
         <span className="max-w-[140px] truncate">
@@ -106,7 +101,7 @@ export const SelectorAsignacion = observer(({ convId }: SelectorAsignacionProps)
             >
               <div className="flex items-center gap-2.5">
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#97D6DF]/30 text-[#190088] dark:bg-[#190088]/60 dark:text-[#97D6DF]">
-                  <CpuChipIcon className="size-4" />
+                  <BotIcon className="size-4.5" />
                 </span>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">Bot Inteligente</p>

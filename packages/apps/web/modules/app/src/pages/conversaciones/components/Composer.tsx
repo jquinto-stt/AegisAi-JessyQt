@@ -2,7 +2,7 @@ import { useState, useEffect, type KeyboardEvent } from "react";
 import { Link } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PaperPlaneIcon, WhatsAppIcon, AiIcon } from "@/icons";
-import { CpuChipIcon } from "@heroicons/react/24/outline";
+import { BotIcon } from "./ConversacionIconos";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import { sessionStore } from "@/stores/session.store";
 import {
@@ -134,7 +134,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           )}
           {esModoBot && modoMensaje === "chat" && (
             <span className="text-[11px] font-medium text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
-              <CpuChipIcon className="size-3.5 shrink-0" />
+              <BotIcon className="size-3.5 shrink-0" />
               <span>Bot activo · Al enviar tomarás el chat</span>
             </span>
           )}
