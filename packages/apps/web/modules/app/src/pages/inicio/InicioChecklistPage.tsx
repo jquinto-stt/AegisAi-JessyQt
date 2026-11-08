@@ -162,6 +162,20 @@ export const InicioChecklistPage = observer(() => {
 
       <div className="flex-1 w-full min-h-[calc(100vh-140px)] flex flex-col justify-center items-center py-10 px-4 sm:px-6 select-none animate-in fade-in duration-200 font-sans">
         <div className="w-full max-w-2xl mx-auto space-y-6">
+          {/* Logo Necto grande como en el Login */}
+          <div className="flex justify-center mb-2">
+            <img
+              src="/images/logo/necto-full.svg"
+              alt="Necto Logo"
+              className="h-14 sm:h-18 md:h-20 w-auto max-w-full drop-shadow-xs dark:hidden"
+            />
+            <img
+              src="/images/logo/necto-full-white.svg"
+              alt="Necto Logo"
+              className="hidden h-14 sm:h-18 md:h-20 w-auto max-w-full drop-shadow-xs dark:block"
+            />
+          </div>
+
           {/* Título principal centrado — 36px Bold con Azul profundo NECTO #190088 */}
           <div className="text-center space-y-4">
             <h1 className="text-[24px] sm:text-[36px] font-bold leading-tight tracking-tight text-[#190088] dark:text-white">
