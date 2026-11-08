@@ -389,16 +389,25 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
 
         {/* Marco principal contenedor con fondo blanco */}
         <section className="rounded-[32px] bg-white dark:bg-white/[0.03] border border-[#ECECEC] dark:border-white/10 p-5 sm:p-6 shadow-sm">
-          {/* ── Encabezado y Barra de Avatares del Equipo ── */}
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5 mb-5">
-            <div>
-              <h2 className="text-[24px] font-bold text-[#190088] dark:text-white tracking-tight">Mapa de accesos</h2>
-              <p className="text-[14px] font-light text-[#212121]/80 dark:text-[#ECECEC]/80">
-                Elige una persona para ver su rol y qué puede hacer en cada área.
-              </p>
+          {/* ── Barra Superior Unificada: Perfil Seleccionado + Barra de Avatares Centrada ── */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-[28px] bg-[#ECECEC]/30 dark:bg-white/[0.04] border border-[#ECECEC] dark:border-white/10 px-5 py-3 mb-6 shadow-xs">
+            {/* 1. Datos del Operador Seleccionado (izquierda) */}
+            <div className="flex items-center gap-3 min-w-[200px]">
+              <img
+                src={avatarDe(op)}
+                alt=""
+                className="w-12 h-12 rounded-full object-cover ring-2 ring-white dark:ring-white/20 shadow-xs"
+              />
+              <div>
+                <p className="text-[16px] font-bold text-[#190088] dark:text-white leading-tight">{op.nombre}</p>
+                <p className="text-[12px] font-light text-[#212121]/70 dark:text-[#ECECEC]/70">
+                  {op.cargo || 'Sin cargo'} · {op.email}
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 rounded-full bg-[#ECECEC]/50 dark:bg-white/[0.06] border border-[#ECECEC] dark:border-white/10 px-3 pt-2 pb-4 overflow-x-auto scrollbar-none shadow-xs">
+            {/* 2. Barra de Avatares del Equipo (Centrada) */}
+            <div className="flex items-center gap-2 rounded-full bg-white dark:bg-white/[0.08] border border-[#ECECEC] dark:border-white/10 px-3.5 py-1.5 overflow-x-auto scrollbar-none shadow-xs">
               {listaViva.map((o) => {
                 const activo = o.id === op.id;
                 const n = numExcepciones(o);
@@ -408,18 +417,18 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                     type="button"
                     onClick={() => setSeleccionId(o.id)}
                     title={`${o.nombre} · ${ESTADO_TEXTO[o.estado]}${n ? ` · ${n} excepciones` : ''}`}
-                    className="relative shrink-0 cursor-pointer transition-transform hover:scale-105"
+                    className="relative shrink-0 cursor-pointer transition-transform hover:scale-105 my-0.5"
                   >
                     <img
                       src={avatarDe(o)}
                       alt={o.nombre}
-                      className={`w-11 h-11 rounded-full object-cover ring-2 transition-all ${
-                        activo ? 'ring-[#190088] dark:ring-[#97D6DF] scale-105 shadow-sm' : 'ring-[#ECECEC] dark:ring-white/20'
+                      className={`w-10 h-10 rounded-full object-cover ring-2 transition-all ${
+                        activo ? 'ring-[#FF3F1A] dark:ring-[#FF3F1A] scale-105 shadow-sm' : 'ring-transparent dark:ring-white/10'
                       } ${o.estado === 'inactivo' ? 'grayscale opacity-50' : ''}`}
                     />
                     {(o.estado === 'pendiente' || n > 0) && (
                       <span
-                        className={`absolute -bottom-2 left-1/2 -translate-x-1/2 min-w-5 h-5 px-1 rounded-full text-[12px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#101828] ${
+                        className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 min-w-4 h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#101828] ${
                           o.estado === 'pendiente' ? 'bg-[#FF3F1A] text-white' : 'bg-[#97D6DF] text-[#190088]'
                         }`}
                       >
@@ -430,39 +439,32 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                 );
               })}
             </div>
-          </div>
 
-          {/* ── Ficha Persona seleccionada ── */}
-          <div className="flex flex-wrap items-center gap-3 rounded-[24px] bg-white dark:bg-white/[0.06] border border-[#ECECEC] dark:border-white/10 px-4 py-3 mb-6 shadow-xs">
-            <img src={avatarDe(op)} alt="" className="w-12 h-12 rounded-full object-cover ring-2 ring-[#ECECEC] dark:ring-white/10" />
-            <div className="flex-1 min-w-[180px]">
-              <p className="text-[16px] font-bold text-[#190088] dark:text-white leading-tight">{op.nombre}</p>
-              <p className="text-[12px] font-light text-[#212121]/70 dark:text-[#ECECEC]/70">
-                {op.cargo || 'Sin cargo'} · {op.email}
-              </p>
-            </div>
-            <span
-              className={`px-3 h-7 inline-flex items-center rounded-full text-[12px] font-bold ${
-                op.estado === 'activo'
-                  ? 'bg-[#97D6DF]/35 text-[#190088] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]'
-                  : op.estado === 'pendiente'
-                    ? 'bg-[#FF3F1A]/15 text-[#FF3F1A]'
-                    : 'bg-[#ECECEC] text-[#212121]/70 dark:bg-white/10 dark:text-[#ECECEC]/70'
-              }`}
-            >
-              {ESTADO_TEXTO[op.estado]}
-            </span>
-            <span className="text-[12px] font-light text-[#212121]/80 dark:text-[#ECECEC]/80">
-              <strong className="font-bold text-[#212121] dark:text-white">{efectivas.size}</strong> permisos ·{' '}
-              {excepciones ? (
-                <span className="font-bold text-[#FF3F1A]">{excepciones} excepciones</span>
-              ) : (
-                'igual a su rol'
+            {/* 3. Badges de Estado y Permisos (derecha) */}
+            <div className="flex items-center gap-3 shrink-0">
+              <span
+                className={`px-3 h-7 inline-flex items-center rounded-full text-[12px] font-bold ${
+                  op.estado === 'activo'
+                    ? 'bg-[#97D6DF]/35 text-[#190088] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]'
+                    : op.estado === 'pendiente'
+                      ? 'bg-[#FF3F1A]/15 text-[#FF3F1A]'
+                      : 'bg-[#ECECEC] text-[#212121]/70 dark:bg-white/10 dark:text-[#ECECEC]/70'
+                }`}
+              >
+                {ESTADO_TEXTO[op.estado]}
+              </span>
+              <span className="text-[12px] font-light text-[#212121]/80 dark:text-[#ECECEC]/80">
+                <strong className="font-bold text-[#212121] dark:text-white">{efectivas.size}</strong> permisos ·{' '}
+                {excepciones ? (
+                  <span className="font-bold text-[#FF3F1A]">{excepciones} excepciones</span>
+                ) : (
+                  'igual a su rol'
+                )}
+              </span>
+              {!puedeGestionar && (
+                <span className="text-[12px] font-bold text-[#FF3F1A]">Solo lectura</span>
               )}
-            </span>
-            {!puedeGestionar && (
-              <span className="text-[12px] font-bold text-[#FF3F1A]">Solo lectura</span>
-            )}
+            </div>
           </div>
 
           {/* ── Rol → Áreas → Permisos → Siguientes pasos ── */}
