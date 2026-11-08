@@ -211,14 +211,14 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
 
           <div className="flex shrink-0 items-center gap-3 w-full sm:w-auto justify-end">
             {/* Switch de modo de visualización: Flujo Journey vs Lista Tabla */}
-            <div className="inline-flex rounded-xl bg-gray-100 p-1 dark:bg-white/5 border border-gray-200 dark:border-white/10">
+            <div className="inline-flex rounded-xl bg-[#ECECEC] p-1 dark:bg-white/5 border border-[#ECECEC] dark:border-white/10">
               <button
                 type="button"
                 onClick={() => setModoVisualizacion("flujo")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
                   modoVisualizacion === "flujo"
-                    ? "bg-white text-gray-900 shadow-theme-xs dark:bg-white/20 dark:text-white"
-                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                    ? "bg-[#190088] text-white shadow-xs dark:bg-[#97D6DF] dark:text-[#190088]"
+                    : "text-[#212121]/70 hover:text-[#190088] dark:text-[#ECECEC]/70 dark:hover:text-white"
                 }`}
                 title="Vista Mapa de Perfiles y Accesos"
               >
@@ -229,10 +229,10 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
               <button
                 type="button"
                 onClick={() => setModoVisualizacion("tabla")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
                   modoVisualizacion === "tabla"
-                    ? "bg-white text-gray-900 shadow-theme-xs dark:bg-white/20 dark:text-white"
-                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                    ? "bg-[#190088] text-white shadow-xs dark:bg-[#97D6DF] dark:text-[#190088]"
+                    : "text-[#212121]/70 hover:text-[#190088] dark:text-[#ECECEC]/70 dark:hover:text-white"
                 }`}
                 title="Vista Tabla Tradicional"
               >
@@ -244,7 +244,7 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
             <Button
               size="md"
               variant="outline"
-              className="px-5 py-2.5 text-sm font-semibold shadow-theme-xs transition-all hover:shadow-md active:scale-95"
+              className="px-5 py-2.5 text-[14px] font-normal border-[#ECECEC] text-[#212121] dark:text-white dark:border-white/10 hover:bg-[#EFE6D3]/50 transition-all active:scale-95"
               onClick={() => setVista("roles")}
             >
               Gestionar roles
@@ -252,7 +252,7 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
             <Button
               size="md"
               startIcon={<PlusIcon className="h-4 w-4" />}
-              className="px-5 py-2.5 text-sm font-semibold shadow-theme-xs transition-all hover:shadow-md active:scale-95 bg-brand-500 hover:bg-brand-600 text-white"
+              className="px-5 py-2.5 text-[14px] font-bold shadow-xs transition-all hover:shadow-md active:scale-95 bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white border-none"
               onClick={abrirCrear}
             >
               Invitar miembro

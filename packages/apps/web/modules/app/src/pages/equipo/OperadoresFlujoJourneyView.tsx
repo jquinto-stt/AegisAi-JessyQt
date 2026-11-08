@@ -76,7 +76,7 @@ const Conector: React.FC<{ desde: number; hacia: number; altoMax: number; solida
           fill="none"
           strokeWidth={1.5}
           strokeDasharray={s ? undefined : '4 4'}
-          className={s ? 'stroke-[#190088]/45 dark:stroke-[#97D6DF]/60' : 'stroke-[#212121]/15 dark:stroke-white/15'}
+          className={s ? 'stroke-[#190088]/60 dark:stroke-[#97D6DF]' : 'stroke-[#212121]/20 dark:stroke-white/20'}
         />
       );
     })}
@@ -114,8 +114,11 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
 
     if (!op) {
       return (
-        <div className="rounded-[32px] border border-dashed border-[#212121]/15 dark:border-white/15 py-16 text-center">
-          <p className="text-[14px] font-normal text-[#212121]/60 dark:text-[#ECECEC]/60">
+        <div
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
+          className="rounded-[32px] border border-dashed border-[#212121]/20 dark:border-white/20 py-16 text-center bg-[#ECECEC]/30 dark:bg-white/[0.02]"
+        >
+          <p className="text-[14px] font-normal text-[#212121]/70 dark:text-[#ECECEC]/70">
             No hay personas que coincidan con el filtro.
           </p>
         </div>
@@ -223,39 +226,40 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
     );
     const pasosVisibles = pasos.slice(0, 6);
 
-    // ── Estilos compartidos ─────────────────────────────────────────────────
-    const tarjeta = 'relative rounded-[28px] bg-white dark:bg-white/[0.05] shadow-xs';
-    const etiqueta = 'mt-3 text-center text-[14px] font-normal text-[#212121]/80 dark:text-[#ECECEC]/80';
-    const punto = 'hidden lg:block absolute w-2 h-2 rounded-full bg-[#ECECEC] dark:bg-white/20 ring-2 ring-white dark:ring-[#1c1c22]';
+    // ── Tokens NECTO en el diseño ───────────────────────────────────────────
+    const tarjeta = 'relative rounded-[28px] bg-white dark:bg-white/[0.05] border border-[#ECECEC] dark:border-white/10 shadow-xs';
+    const etiqueta = 'mt-3 text-center text-[14px] font-normal text-[#190088] dark:text-[#97D6DF]';
+    const punto = 'hidden lg:block absolute w-2.5 h-2.5 rounded-full bg-[#190088] dark:bg-[#97D6DF] ring-2 ring-white dark:ring-[#101828]';
     const circuloLleno = 'bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]';
-    const circuloVacio = 'bg-[#ECECEC]/70 text-[#212121]/50 dark:bg-white/10 dark:text-[#ECECEC]/60';
+    const circuloVacio = 'bg-[#ECECEC] text-[#212121]/60 dark:bg-white/10 dark:text-[#ECECEC]/70';
 
     const textoFila = (nivel: 'fuerte' | 'normal' | 'debil') =>
       nivel === 'fuerte'
         ? 'font-bold text-[#212121] dark:text-white'
         : nivel === 'normal'
-          ? 'font-normal text-[#212121]/80 dark:text-[#ECECEC]/80'
-          : 'font-light text-[#212121]/45 dark:text-[#ECECEC]/45';
+          ? 'font-normal text-[#212121] dark:text-[#ECECEC]'
+          : 'font-light text-[#212121]/60 dark:text-[#ECECEC]/60';
 
     return (
       <div style={{ fontFamily: "'DM Sans', sans-serif" }} className="text-[#212121] dark:text-[#ECECEC]">
         {toast && (
-          <div className="fixed bottom-6 right-6 z-50 max-w-sm bg-[#190088] text-white px-5 py-3 rounded-2xl shadow-xl text-[14px] font-normal">
+          <div className="fixed bottom-6 right-6 z-50 max-w-sm bg-[#190088] text-white px-5 py-3 rounded-2xl shadow-xl text-[14px] font-normal border border-[#97D6DF]/30">
             {toast}
           </div>
         )}
 
-        <section className="rounded-[32px] bg-[#ECECEC]/70 dark:bg-white/[0.03] border border-[#ECECEC] dark:border-white/10 p-5 sm:p-6">
-          {/* ── Equipo ── */}
+        {/* Marco principal contenedor con fondo Cream / Gris Claro */}
+        <section className="rounded-[32px] bg-[#EFE6D3]/40 dark:bg-white/[0.03] border border-[#ECECEC] dark:border-white/10 p-5 sm:p-6 shadow-sm">
+          {/* ── Encabezado y Barra de Avatares del Equipo ── */}
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5 mb-5">
             <div>
               <h2 className="text-[24px] font-bold text-[#190088] dark:text-white tracking-tight">Mapa de accesos</h2>
-              <p className="text-[14px] font-light text-[#212121]/70 dark:text-[#ECECEC]/70">
+              <p className="text-[14px] font-light text-[#212121]/80 dark:text-[#ECECEC]/80">
                 Elige una persona para ver su rol y qué puede hacer en cada área.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 rounded-full bg-white/70 dark:bg-white/[0.06] px-3 pt-2 pb-4 overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-2 rounded-full bg-white dark:bg-white/[0.06] border border-[#ECECEC] dark:border-white/10 px-3 pt-2 pb-4 overflow-x-auto scrollbar-none shadow-xs">
               {listaViva.map((o) => {
                 const activo = o.id === op.id;
                 const n = numExcepciones(o);
@@ -265,18 +269,18 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                     type="button"
                     onClick={() => setSeleccionId(o.id)}
                     title={`${o.nombre} · ${ESTADO_TEXTO[o.estado]}${n ? ` · ${n} excepciones` : ''}`}
-                    className="relative shrink-0 cursor-pointer"
+                    className="relative shrink-0 cursor-pointer transition-transform hover:scale-105"
                   >
                     <img
                       src={avatarDe(o)}
                       alt={o.nombre}
                       className={`w-11 h-11 rounded-full object-cover ring-2 transition-all ${
-                        activo ? 'ring-[#190088] dark:ring-[#97D6DF] scale-105' : 'ring-white dark:ring-white/20'
+                        activo ? 'ring-[#190088] dark:ring-[#97D6DF] scale-105 shadow-sm' : 'ring-[#ECECEC] dark:ring-white/20'
                       } ${o.estado === 'inactivo' ? 'grayscale opacity-50' : ''}`}
                     />
                     {(o.estado === 'pendiente' || n > 0) && (
                       <span
-                        className={`absolute -bottom-2 left-1/2 -translate-x-1/2 min-w-5 h-5 px-1 rounded-full text-[12px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#1c1c22] ${
+                        className={`absolute -bottom-2 left-1/2 -translate-x-1/2 min-w-5 h-5 px-1 rounded-full text-[12px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#101828] ${
                           o.estado === 'pendiente' ? 'bg-[#FF3F1A] text-white' : 'bg-[#97D6DF] text-[#190088]'
                         }`}
                       >
@@ -289,28 +293,33 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
             </div>
           </div>
 
-          {/* ── Persona seleccionada ── */}
-          <div className="flex flex-wrap items-center gap-3 rounded-[24px] bg-white dark:bg-white/[0.05] px-4 py-3 mb-6">
-            <img src={avatarDe(op)} alt="" className="w-12 h-12 rounded-full object-cover" />
+          {/* ── Ficha Persona seleccionada ── */}
+          <div className="flex flex-wrap items-center gap-3 rounded-[24px] bg-white dark:bg-white/[0.06] border border-[#ECECEC] dark:border-white/10 px-4 py-3 mb-6 shadow-xs">
+            <img src={avatarDe(op)} alt="" className="w-12 h-12 rounded-full object-cover ring-2 ring-[#ECECEC] dark:ring-white/10" />
             <div className="flex-1 min-w-[180px]">
               <p className="text-[16px] font-bold text-[#190088] dark:text-white leading-tight">{op.nombre}</p>
-              <p className="text-[12px] font-light text-[#212121]/60 dark:text-[#ECECEC]/60">
+              <p className="text-[12px] font-light text-[#212121]/70 dark:text-[#ECECEC]/70">
                 {op.cargo || 'Sin cargo'} · {op.email}
               </p>
             </div>
             <span
               className={`px-3 h-7 inline-flex items-center rounded-full text-[12px] font-bold ${
                 op.estado === 'activo'
-                  ? 'bg-[#97D6DF]/30 text-[#190088] dark:text-[#97D6DF]'
+                  ? 'bg-[#97D6DF]/35 text-[#190088] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]'
                   : op.estado === 'pendiente'
-                    ? 'bg-[#FF3F1A]/10 text-[#FF3F1A]'
-                    : 'bg-[#ECECEC] text-[#212121]/60 dark:bg-white/10 dark:text-[#ECECEC]/60'
+                    ? 'bg-[#FF3F1A]/15 text-[#FF3F1A]'
+                    : 'bg-[#ECECEC] text-[#212121]/70 dark:bg-white/10 dark:text-[#ECECEC]/70'
               }`}
             >
               {ESTADO_TEXTO[op.estado]}
             </span>
-            <span className="text-[12px] font-light text-[#212121]/60 dark:text-[#ECECEC]/60">
-              {efectivas.size} permisos · {excepciones ? `${excepciones} excepciones` : 'igual a su rol'}
+            <span className="text-[12px] font-light text-[#212121]/80 dark:text-[#ECECEC]/80">
+              <strong className="font-bold text-[#212121] dark:text-white">{efectivas.size}</strong> permisos ·{' '}
+              {excepciones ? (
+                <span className="font-bold text-[#FF3F1A]">{excepciones} excepciones</span>
+              ) : (
+                'igual a su rol'
+              )}
             </span>
             {!puedeGestionar && (
               <span className="text-[12px] font-bold text-[#FF3F1A]">Solo lectura</span>
@@ -342,8 +351,10 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                               ? 'Rol actual'
                               : `Asignar «${r.nombre}»`
                         }
-                        className={`relative flex items-center gap-3 px-2 rounded-[20px] text-left ${
-                          actual ? 'bg-[#ECECEC]/50 dark:bg-white/[0.06]' : 'enabled:hover:bg-[#ECECEC]/40 dark:enabled:hover:bg-white/[0.04] enabled:cursor-pointer disabled:cursor-not-allowed'
+                        className={`relative flex items-center gap-3 px-2 rounded-[20px] text-left transition-colors ${
+                          actual
+                            ? 'bg-[#EFE6D3]/60 dark:bg-white/[0.08] ring-1 ring-[#190088]/20 dark:ring-[#97D6DF]/30'
+                            : 'enabled:hover:bg-[#ECECEC]/60 dark:enabled:hover:bg-white/[0.04] enabled:cursor-pointer disabled:cursor-not-allowed'
                         }`}
                         style={{ height: ALTO_FILA }}
                       >
@@ -353,7 +364,7 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                         </span>
                         <span className="flex-1 min-w-0">
                           <span className={`block text-[14px] leading-tight truncate ${textoFila(actual ? 'fuerte' : 'debil')}`}>{r.nombre}</span>
-                          <span className="block text-[12px] font-light text-[#212121]/50 dark:text-[#ECECEC]/50 truncate">
+                          <span className="block text-[12px] font-light text-[#212121]/60 dark:text-[#ECECEC]/60 truncate">
                             {r.capacidades.length} permisos · {personasPorRol(r.id)} personas
                           </span>
                         </span>
@@ -389,8 +400,10 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                         key={g.id}
                         type="button"
                         onClick={() => setGrupoId(g.id)}
-                        className={`relative flex items-center gap-3 px-2 rounded-[20px] text-left cursor-pointer ${
-                          activa ? 'bg-[#ECECEC]/50 dark:bg-white/[0.06]' : 'hover:bg-[#ECECEC]/40 dark:hover:bg-white/[0.04]'
+                        className={`relative flex items-center gap-3 px-2 rounded-[20px] text-left cursor-pointer transition-colors ${
+                          activa
+                            ? 'bg-[#EFE6D3]/60 dark:bg-white/[0.08] ring-1 ring-[#190088]/20 dark:ring-[#97D6DF]/30'
+                            : 'hover:bg-[#ECECEC]/60 dark:hover:bg-white/[0.04]'
                         }`}
                         style={{ height: ALTO_FILA }}
                       >
@@ -410,7 +423,12 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                         <span className={`flex-1 text-[14px] truncate ${textoFila(conExcepcion ? 'fuerte' : tiene > 0 ? 'normal' : 'debil')}`}>
                           {g.label}
                         </span>
-                        {conExcepcion && <span className="w-2 h-2 rounded-full bg-[#FF3F1A] shrink-0" title="Tiene excepciones sobre el rol" />}
+                        {conExcepcion && (
+                          <span
+                            className="w-2.5 h-2.5 rounded-full bg-[#FF3F1A] shrink-0 ring-2 ring-white dark:ring-[#101828]"
+                            title="Tiene excepciones sobre el rol"
+                          />
+                        )}
                       </button>
                     );
                   })}
@@ -447,7 +465,7 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                               ? 'Clic para revocar'
                               : 'Clic para conceder'
                         }
-                        className="relative flex items-center gap-3 px-2 rounded-[20px] text-left enabled:hover:bg-[#ECECEC]/40 dark:enabled:hover:bg-white/[0.04] enabled:cursor-pointer disabled:cursor-not-allowed"
+                        className="relative flex items-center gap-3 px-2 rounded-[20px] text-left enabled:hover:bg-[#ECECEC]/60 dark:enabled:hover:bg-white/[0.04] enabled:cursor-pointer disabled:cursor-not-allowed transition-colors"
                         style={{ height: ALTO_FILA }}
                       >
                         <span className={`${punto} -left-[13px]`} />
@@ -460,27 +478,33 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                                 : circuloVacio
                           }`}
                         >
-                          {efectiva ? <Check className="w-4 h-4" strokeWidth={3} /> : proc === 'removida' ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                          {efectiva ? (
+                            <Check className="w-4 h-4" strokeWidth={3} />
+                          ) : proc === 'removida' ? (
+                            <X className="w-4 h-4" strokeWidth={3} />
+                          ) : (
+                            <Plus className="w-4 h-4" />
+                          )}
                         </span>
                         <span
                           className={`flex-1 text-[14px] truncate ${textoFila(
                             proc === 'concedida' || proc === 'removida' ? 'fuerte' : efectiva ? 'normal' : 'debil'
-                          )} ${proc === 'removida' ? 'line-through' : ''}`}
+                          )} ${proc === 'removida' ? 'line-through opacity-70' : ''}`}
                         >
                           {CAPACIDAD_LABEL[cap]}
                         </span>
                         {proc === 'rol' && (
-                          <span className="flex items-center gap-1 text-[12px] font-light text-[#212121]/50 dark:text-[#ECECEC]/50 shrink-0">
-                            <CheckCheck className="w-3.5 h-3.5" /> Rol
+                          <span className="flex items-center gap-1 text-[12px] font-light text-[#212121]/60 dark:text-[#ECECEC]/60 shrink-0">
+                            <CheckCheck className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" /> Rol
                           </span>
                         )}
                         {proc === 'concedida' && (
-                          <span className="px-2 h-6 inline-flex items-center rounded-full text-[12px] font-bold bg-[#97D6DF]/30 text-[#190088] dark:text-[#97D6DF] shrink-0">
+                          <span className="px-2 h-6 inline-flex items-center rounded-full text-[12px] font-bold bg-[#97D6DF]/35 text-[#190088] dark:text-[#97D6DF] shrink-0">
                             Excepción
                           </span>
                         )}
                         {proc === 'removida' && (
-                          <span className="px-2 h-6 inline-flex items-center rounded-full text-[12px] font-bold bg-[#FF3F1A]/10 text-[#FF3F1A] shrink-0">
+                          <span className="px-2 h-6 inline-flex items-center rounded-full text-[12px] font-bold bg-[#FF3F1A]/15 text-[#FF3F1A] shrink-0">
                             Revocada
                           </span>
                         )}
@@ -492,7 +516,11 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
               <p className={etiqueta}>
                 Permisos · {grupo.label}
                 {puedeGestionar && (
-                  <button type="button" onClick={alternarGrupo} className="ml-2 text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] hover:underline cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={alternarGrupo}
+                    className="ml-2 text-[12px] font-bold text-[#FF3F1A] hover:underline cursor-pointer"
+                  >
                     {grupo.capacidades.every((c) => efectivas.has(c)) ? 'Quitar todos' : 'Conceder todos'}
                   </button>
                 )}
@@ -502,10 +530,10 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
             {/* Columna 4: Siguientes pasos */}
             <div className="lg:w-[300px] shrink-0 lg:pl-10 relative">
               <svg className="hidden lg:block absolute left-0 top-10" width="40" height="40" aria-hidden>
-                <path d="M2 30 C20 30, 18 8, 36 8" fill="none" strokeWidth={1.5} className="stroke-[#212121] dark:stroke-[#ECECEC]" />
-                <path d="M30 3 L37 8 L30 13" fill="none" strokeWidth={1.5} className="stroke-[#212121] dark:stroke-[#ECECEC]" />
+                <path d="M2 30 C20 30, 18 8, 36 8" fill="none" strokeWidth={1.5} className="stroke-[#190088] dark:stroke-[#97D6DF]" />
+                <path d="M30 3 L37 8 L30 13" fill="none" strokeWidth={1.5} className="stroke-[#190088] dark:stroke-[#97D6DF]" />
               </svg>
-              <div className="rounded-[28px] border border-[#212121]/10 dark:border-white/10 p-2 grid grid-cols-2 gap-2">
+              <div className="rounded-[28px] border border-[#ECECEC] dark:border-white/10 bg-white dark:bg-white/[0.04] p-2 grid grid-cols-2 gap-2 shadow-xs">
                 {pasosVisibles.map((p, i) => (
                   <button
                     key={p.id}
@@ -515,8 +543,8 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                     title={p.deshabilitado}
                     className={`h-20 rounded-[20px] p-3 text-left text-[14px] leading-tight transition-transform enabled:active:scale-95 enabled:cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                       i === 0
-                        ? 'bg-[#212121] text-white font-bold dark:bg-[#FF3F1A]'
-                        : 'bg-white font-normal text-[#212121] enabled:hover:shadow-md dark:bg-white/[0.06] dark:text-[#ECECEC]'
+                        ? 'bg-[#190088] text-white font-bold hover:bg-[#190088]/90 dark:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A]/90'
+                        : 'bg-[#ECECEC]/40 font-normal text-[#212121] border border-[#ECECEC] enabled:hover:bg-[#EFE6D3] dark:bg-white/[0.06] dark:text-[#ECECEC] dark:border-white/10'
                     }`}
                   >
                     {p.label}
@@ -527,12 +555,23 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
             </div>
           </div>
 
-          {/* ── Leyenda ── */}
-          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] font-light text-[#212121]/60 dark:text-[#ECECEC]/60">
-            <span className="flex items-center gap-1.5"><span className={`w-4 h-4 rounded-full ${circuloLleno}`} /> Tiene el permiso</span>
-            <span className="flex items-center gap-1.5"><b className="font-bold text-[#212121] dark:text-white">Negrita</b> se aparta de su rol</span>
-            <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded-full border-2 border-[#FF3F1A]" /> Revocado a mano</span>
-            <span className="flex items-center gap-1.5"><span className={`w-4 h-4 rounded-full ${circuloVacio}`} /> Sin acceso</span>
+          {/* ── Leyenda NECTO ── */}
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] font-light text-[#212121]/70 dark:text-[#ECECEC]/70 border-t border-[#ECECEC] dark:border-white/10 pt-4">
+            <span className="flex items-center gap-1.5">
+              <span className={`w-4 h-4 rounded-full ${circuloLleno}`} /> Tiene el permiso
+            </span>
+            <span className="flex items-center gap-1.5">
+              <b className="font-bold text-[#212121] dark:text-white">Negrita</b> se aparta de su rol
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded-full border-2 border-[#FF3F1A]" /> Revocado a mano
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className={`w-4 h-4 rounded-full ${circuloVacio}`} /> Sin acceso
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-[#EFE6D3] border border-[#ECECEC]" /> Selección activa
+            </span>
           </div>
         </section>
       </div>
