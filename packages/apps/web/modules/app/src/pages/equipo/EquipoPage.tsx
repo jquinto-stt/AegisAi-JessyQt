@@ -220,10 +220,10 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
                     ? "bg-white text-gray-900 shadow-theme-xs dark:bg-white/20 dark:text-white"
                     : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                 }`}
-                title="Vista Flujo y Carga de Trabajo"
+                title="Vista Mapa de Perfiles y Accesos"
               >
                 <GridIcon className="w-3.5 h-3.5" />
-                <span>Flujo & Equipos</span>
+                <span>Perfiles & Accesos</span>
               </button>
 
               <button
@@ -275,7 +275,11 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
       {vista === "roles" ? (
         <RolesTab modulo={moduloActivo} />
       ) : modoVisualizacion === "flujo" ? (
-        <OperadoresFlujoJourneyView operadores={listaFiltrada} onGestionarRoles={() => setVista("roles")} />
+        <OperadoresFlujoJourneyView
+          operadores={listaFiltrada}
+          onGestionarRoles={() => setVista("roles")}
+          onInvitar={abrirCrear}
+        />
       ) : (
         <EquipoTabla operadores={listaFiltrada} />
       )}
