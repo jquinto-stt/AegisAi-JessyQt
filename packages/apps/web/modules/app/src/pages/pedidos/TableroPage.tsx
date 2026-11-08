@@ -19,7 +19,7 @@ import {
   puedeGuardarConfig,
 } from "@/stores";
 import type { Pedido, PedidoEstado, Modalidad } from "@/stores/pedidos.store";
-import { retardoEscalonado } from "@/utils";
+import { retardoEscalonado, formatoMoneda, inicialesDe } from "@/utils";
 import { useFlipLista } from "@/hooks/useFlipLista";
 import { useEntradaEscalonada } from "@/hooks/useEntradaEscalonada";
 import { ProgramarModal } from "./ProgramarModal";
@@ -39,10 +39,13 @@ import {
   ArrowRightIcon,
   ArrowsUpDownIcon,
   CalendarDaysIcon,
+  ChatBubbleLeftRightIcon,
   CheckIcon,
   ClockIcon,
   EllipsisHorizontalIcon,
+  EyeIcon,
   MagnifyingGlassIcon,
+  PaperClipIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon,
@@ -116,8 +119,8 @@ const formatFechaHora = (iso: string) => {
   }
 };
 
-const WhatsAppIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+const WhatsAppIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
     <path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20z" />
   </svg>
 );
@@ -196,9 +199,49 @@ const TarjetaKanban = ({
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TARJETA DE PEDIDO
+// TARJETA DE PEDIDO (Rediseño Estilo Pipeline / Seguimiento)
 // ═══════════════════════════════════════════════════════════════════════════
 
+const PALETA_AVATAR = [
+  "bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300",
+  "bg-secondary-50 text-secondary-700 dark:bg-secondary-950/40 dark:text-secondary-300",
+  "bg-accent-50 text-accent-700 dark:bg-accent-950/40 dark:text-accent-300",
+  "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300",
+];
+
+const PROGRESO_PEDIDO: Record<string, { pct: number; label: string }> = {
+  ingresado: { pct: 20, label: "20%" },
+  en_preparacion: { pct: 50, label: "50%" },
+  listo: { pct: 80, label: "80%" },
+  despachado: { pct: 90, label: "90%" },
+  entregado: { pct: 100, label: "100%" },
+  cancelado: { pct: 0, label: "0%" },
+};
+
+function configModalidad(modalidad: Modalidad) {
+  switch (modalidad) {
+    case "domicilio":
+      return {
+        label: "Domicilio",
+        tagClass: "bg-[#E5F9F9] text-[#0E7490] dark:bg-[#0E7490]/20 dark:text-[#67E8F9]",
+      };
+    case "retiro":
+      return {
+        label: "Retiro",
+        tagClass: "bg-[#E8F1FF] text-[#2563EB] dark:bg-[#2563EB]/20 dark:text-[#60A5FA]",
+      };
+    case "en_local":
+      return {
+        label: "En Local",
+        tagClass: "bg-[#F1E8FD] text-[#5432EE] dark:bg-[#5432EE]/20 dark:text-[#C4B5FD]",
+      };
+    default:
+      return {
+        label: "Pedido",
+        tagClass: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+      };
+  }
+}
 
 const PedidoCard = observer(
   ({
@@ -213,54 +256,53 @@ const PedidoCard = observer(
   }: {
     pedido: Pedido;
     esRecienMovido?: boolean;
-    /**
-     * ¿La sesión puede mover este pedido a ALGUNA otra columna?
-     *
-     * Se calcula en `ColumnaKanban`, que es quien conoce la lista de columnas.
-     * Sin esto la tarjeta era `draggable` siempre: se dejaba agarrar, se veía la
-     * ranura de destino y al soltar **no pasaba nada** — el peor tipo de control,
-     * porque promete una acción que la sesión no puede ejecutar.
-     */
     puedeArrastrar?: boolean;
     onDragChange?: (id: string, isDragging: boolean) => void;
     onDetalle: () => void;
-    /** Solicita confirmación de cancelación (modal en el padre). */
     onCancelar: () => void;
-    /** Solicita confirmación del paso final →Entregado (modal en el padre). */
     onConfirmarEntrega: () => void;
-    /** Abre el chat rápido (slide-over) con el cliente del pedido. */
     onChat: () => void;
   }) => {
+    const [menuAbierto, setMenuAbierto] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
     const urgente = pedidosStore.esUrgente(pedido);
     const siguiente = pedidosStore.siguienteEstado(pedido);
-    const mins = pedidosStore.minutosEnEstado(pedido);
+    const total = pedidosStore.totalPedido(pedido);
 
     const puedeAvanzar = puedeMoverA(siguiente);
     const puedeEscribir = puedeEscribirCliente();
     const puedeCancelar = puedeCancelarPedido();
-    const sinAcciones = !puedeAvanzar && !puedeEscribir && !puedeCancelar;
 
-    const handleAvanzar = () => {
+    const handleAvanzar = (e?: React.MouseEvent) => {
+      e?.stopPropagation();
+      setMenuAbierto(false);
       if (siguiente === "entregado") onConfirmarEntrega();
       else avanzarPedido(pedido.id);
     };
 
-    const stop = (e: React.MouseEvent) => e.stopPropagation();
+    // Cerrar menú al hacer clic fuera
+    useEffect(() => {
+      if (!menuAbierto) return;
+      const handleClick = (e: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+          setMenuAbierto(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClick);
+      return () => document.removeEventListener("mousedown", handleClick);
+    }, [menuAbierto]);
 
-    // Simular fecha amigable similar a la maqueta (ej. "Today", "Tomorrow" o fecha formateada)
-    const fechaAmigable = () => {
-      if (pedido.programadoPara) {
-        return formatFechaHora(pedido.programadoPara);
-      }
-      if (mins < 60) return `Hace ${mins}m`;
-      return "Hoy";
-    };
-
-    // Resumen de items para la descripción estilo maqueta
     const descripcionItems = pedidosStore.resumenItems(pedido);
-
     const primerItemNombre = pedido.items?.[0]?.nombre;
-    const [isDragging, setIsDragging] = useState(false);
+    const iniciales = inicialesDe(pedido.cliente || pedido.numero);
+    const modConfig = configModalidad(pedido.modalidad);
+
+    const progreso =
+      pedido.pagado && pedido.estado === "entregado"
+        ? { pct: 100, label: "100%" }
+        : PROGRESO_PEDIDO[pedido.estado] || { pct: 30, label: "30%" };
 
     // Ranura visual en el lugar de origen mientras se arrastra
     if (isDragging) {
@@ -270,7 +312,7 @@ const PedidoCard = observer(
             setIsDragging(false);
             onDragChange?.(pedido.id, false);
           }}
-          className="relative select-none rounded-2xl border-2 border-dashed border-brand-400 bg-brand-50/60 dark:bg-brand-950/30 p-5 text-center min-h-[140px] flex flex-col items-center justify-center gap-2 animate-pulse transition-all shadow-inner"
+          className="relative select-none rounded-[20px] border-2 border-dashed border-brand-400 bg-brand-50/60 dark:bg-brand-950/30 p-5 text-center min-h-[140px] flex flex-col items-center justify-center gap-2 animate-pulse transition-all shadow-inner"
         >
           <div className="flex size-7 items-center justify-center rounded-full bg-brand-500/15 text-brand-600 dark:text-brand-300 font-bold text-xs font-mono">
             {pedido.numero || "P-000"}
@@ -285,6 +327,11 @@ const PedidoCard = observer(
       );
     }
 
+    // Avatar color consistente derivado del id o número
+    const avatarIndice = Math.abs(
+      (pedido.id || pedido.numero).split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
+    ) % PALETA_AVATAR.length;
+
     return (
       <div
         role="button"
@@ -294,7 +341,6 @@ const PedidoCard = observer(
           if (!puedeArrastrar) return;
           e.dataTransfer.setData("text/plain", pedido.id);
           e.dataTransfer.effectAllowed = "move";
-          // Esperar al siguiente ciclo para que el navegador capture la tarjeta completa y nítida
           setTimeout(() => {
             setIsDragging(true);
             onDragChange?.(pedido.id, true);
@@ -311,122 +357,217 @@ const PedidoCard = observer(
             onDetalle();
           }
         }}
-        className={`group relative select-none rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-300 ease-out hover:shadow-theme-md hover:-translate-y-1 hover:border-secondary-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${puedeArrastrar ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
-          } ${esRecienMovido
+        className={`group relative select-none rounded-[20px] border bg-white p-4 shadow-theme-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-theme-md dark:bg-[#18181b] ${
+          puedeArrastrar ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+        } ${
+          esRecienMovido
             ? "animate-aterrizaje ring-2 ring-brand-500 shadow-theme-xl border-brand-400 bg-brand-50/20 dark:bg-brand-950/30"
             : urgente
-              ? "border-error-300 dark:border-error-800"
-              : "border-gray-100 dark:border-gray-800"
-          }`}
+              ? "border-rose-300 dark:border-rose-900/60"
+              : "border-gray-100 hover:border-gray-200 dark:border-white/[0.08] dark:hover:border-white/[0.15]"
+        }`}
       >
-        {/* Cabecera de la tarjeta: Cliente + Número de pedido y Grip handle de manipulación */}
-        <div className="flex items-start justify-between gap-2.5">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-sm sm:text-base font-bold text-ink-title dark:text-white truncate leading-snug">
-              {pedido.cliente || `Pedido ${pedido.numero || ""}`}
-            </h3>
-            <p className="mt-0.5 text-xs font-mono font-semibold text-gray-500 dark:text-gray-400">
-              {pedido.numero || "P-000"}
-            </p>
-          </div>
-
-          {/* Símbolo de puntos 2x3 para indicar que la tarjeta se manipula/arrastra */}
-          <div
-            className="flex size-7 items-center justify-center rounded-lg text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60 transition-colors shrink-0 cursor-grab active:cursor-grabbing"
-            title="Arrastrar para mover de columna"
-            aria-label="Arrastrar pedido"
-          >
-            <svg
-              className="size-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300 transition-colors"
-              viewBox="0 0 24 24"
-              fill="currentColor"
+        {/* ── 1. Fila Superior: Etiquetas Pasteles + Menú 3 Puntos ── */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+            {/* Tag Modalidad */}
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${modConfig.tagClass}`}
             >
-              <circle cx="9" cy="6" r="1.75" />
-              <circle cx="15" cy="6" r="1.75" />
-              <circle cx="9" cy="12" r="1.75" />
-              <circle cx="15" cy="12" r="1.75" />
-              <circle cx="9" cy="18" r="1.75" />
-              <circle cx="15" cy="18" r="1.75" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Descripción de ítems (menciona los productos exactamente una vez) */}
-        {(descripcionItems || primerItemNombre) && (
-          <p className="mt-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium line-clamp-2">
-            {descripcionItems || primerItemNombre}
-          </p>
-        )}
-
-        {/* Metadatos inferiores: Fecha/Tiempo y Tag */}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-50 dark:border-gray-800/60 text-xs text-gray-400 dark:text-gray-400">
-          <div className="flex items-center gap-1.5 font-medium">
-            <CalendarDaysIcon className="size-3.5 text-gray-400" />
-            <span className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300">
-              {fechaAmigable()}
+              {modConfig.label}
             </span>
-          </div>
 
-          <div className="flex items-center gap-1.5">
+            {/* Tag Estado */}
+            <span className="inline-flex items-center rounded-full bg-[#F1E8FD] px-2.5 py-0.5 text-[11px] font-semibold text-[#5432EE] dark:bg-[#5432EE]/20 dark:text-[#C4B5FD]">
+              {pedidosStore.estadoLabel(pedido.estado)}
+            </span>
+
+            {/* Tag de Pago Interactivo */}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 pedidosStore.togglePagado(pedido.id);
               }}
-              title={pedido.pagado ? "Pedido pagado. Clic para marcar como pendiente" : "Pendiente de pago. Clic para registrar pago"}
-              className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer select-none flex items-center gap-1.5 ${pedido.pagado
-                  ? "bg-accent-50 text-accent-700 hover:bg-accent-100 dark:bg-accent-950/40 dark:text-accent-300"
-                  : "bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-950/40 dark:text-brand-300 ring-1 ring-inset ring-brand-300/60 dark:ring-brand-800"
-                }`}
+              title={
+                pedido.pagado
+                  ? "Pedido pagado. Clic para marcar como pendiente"
+                  : "Pendiente de pago. Clic para registrar pago"
+              }
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-all hover:opacity-85 cursor-pointer ${
+                pedido.pagado
+                  ? "bg-[#E8F8EA] text-[#1E7E34] dark:bg-[#1E7E34]/20 dark:text-[#4ADE80]"
+                  : "bg-[#FEF3C7] text-[#B45309] dark:bg-[#B45309]/20 dark:text-[#FBBF24]"
+              }`}
             >
-              <span className={`size-1.5 rounded-full ${pedido.pagado ? "bg-accent-500" : "bg-brand-500"}`} />
-              <span>{pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}</span>
+              {pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
             </button>
 
-            {puedeEscribir && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChat();
-                }}
-                className="flex items-center gap-1 rounded-lg border border-accent-200 bg-accent-50/70 hover:bg-accent-100 px-2 py-1 text-[11px] font-medium text-accent-700 dark:border-accent-800 dark:bg-accent-950/40 dark:text-accent-300 transition-colors cursor-pointer"
-                title="Abrir chat con el cliente"
+            {/* Tag Urgente */}
+            {urgente && (
+              <span className="inline-flex items-center rounded-full bg-[#FDE7F7] px-2.5 py-0.5 text-[11px] font-semibold text-[#BE185D] dark:bg-[#BE185D]/20 dark:text-[#F472B6]">
+                Urgente
+              </span>
+            )}
+          </div>
+
+          {/* Menú de opciones (3 puntos) */}
+          <div className="relative shrink-0" ref={menuRef}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuAbierto(!menuAbierto);
+              }}
+              className="flex size-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-gray-200 cursor-pointer"
+              title="Opciones"
+            >
+              <EllipsisHorizontalIcon className="size-4" />
+            </button>
+
+            {menuAbierto && (
+              <div
+                className="absolute right-0 top-8 z-30 w-44 rounded-xl border border-gray-100 bg-white p-1 shadow-theme-lg dark:border-gray-800 dark:bg-[#1c1c1f]"
+                onClick={(e) => e.stopPropagation()}
               >
-                <WhatsAppIcon />
-                <span>Chat</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbierto(false);
+                    onDetalle();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/5 cursor-pointer"
+                >
+                  <EyeIcon className="size-4 text-gray-400" />
+                  Ver detalle
+                </button>
+                {puedeEscribir && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuAbierto(false);
+                      onChat();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-white/5 cursor-pointer"
+                  >
+                    <WhatsAppIcon className="size-4 text-emerald-500" />
+                    Chat con cliente
+                  </button>
+                )}
+                {siguiente && puedeAvanzar && (
+                  <button
+                    type="button"
+                    onClick={handleAvanzar}
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-950/30 cursor-pointer"
+                  >
+                    <ArrowRightIcon className="size-4" />
+                    Avanzar a {pedidosStore.estadoLabel(siguiente)}
+                  </button>
+                )}
+                {puedeCancelar && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuAbierto(false);
+                      onCancelar();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30 cursor-pointer"
+                  >
+                    <XMarkIcon className="size-4 text-rose-500" />
+                    Cancelar pedido
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
 
-        {/* Barra de acciones operativas (Avanzar estado a la izquierda / Cancelar a la derecha) */}
-        {!sinAcciones && (
-          <div className="mt-3 flex items-center justify-between gap-3 pt-1" onClick={stop}>
-            <div>
-              {siguiente && puedeAvanzar && (
-                <button
-                  type="button"
-                  onClick={handleAvanzar}
-                  className="rounded-lg bg-brand-500 hover:bg-brand-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-colors cursor-pointer"
-                >
-                  {pedidosStore.estadoLabel(siguiente)} →
-                </button>
-              )}
+        {/* ── 2. Título (Cliente + #Pedido) y Descripción de Productos ── */}
+        <div className="mt-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <h4 className="truncate text-[14px] font-bold leading-tight tracking-tight text-gray-900 transition-colors group-hover:text-brand-600 dark:text-white dark:group-hover:text-brand-400">
+              {pedido.cliente || `Pedido ${pedido.numero || ""}`}
+            </h4>
+            <span className="shrink-0 text-[11px] font-mono font-medium text-gray-400 dark:text-gray-500">
+              {pedido.numero || "P-000"}
+            </span>
+          </div>
+          {(descripcionItems || primerItemNombre) && (
+            <p className="mt-1 line-clamp-2 text-[12px] font-normal leading-relaxed text-gray-500 dark:text-gray-400">
+              {descripcionItems || primerItemNombre}
+            </p>
+          )}
+        </div>
+
+        {/* ── 3. Barra de Progreso ── */}
+        <div className="mt-3.5">
+          <div className="flex items-center justify-between text-[11px] font-medium text-gray-400 dark:text-gray-500">
+            <span>Progress</span>
+            <span className="font-semibold text-gray-700 dark:text-gray-300">
+              {progreso.label}
+            </span>
+          </div>
+          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
+            <div
+              className="h-full rounded-full bg-[#1C1C1F] transition-all duration-500 ease-out dark:bg-white"
+              style={{ width: `${progreso.pct}%` }}
+            />
+          </div>
+        </div>
+
+        {/* ── 4. Pie de Tarjeta: Avatares superpuestos + Moneda, Clips y Avanzar ── */}
+        <div className="mt-4 flex items-center justify-between pt-0.5">
+          {/* Avatares superpuestos a la izquierda */}
+          <div className="flex items-center -space-x-1.5 overflow-hidden">
+            {/* Avatar 1: Iniciales del cliente */}
+            <div
+              className={`relative flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ring-2 ring-white dark:ring-[#18181b] ${PALETA_AVATAR[avatarIndice]}`}
+              title={pedido.cliente || "Cliente"}
+            >
+              {iniciales}
             </div>
 
-            {puedeCancelar && (
+            {/* Avatar 2: Canal WhatsApp o Modalidad superpuesta */}
+            <div
+              className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white ring-2 ring-white shadow-xs dark:ring-[#18181b]"
+              title="WhatsApp"
+            >
+              <WhatsAppIcon className="size-3.5 text-white" />
+            </div>
+          </div>
+
+          {/* Iconos y Acciones a la derecha */}
+          <div className="flex items-center gap-2.5">
+            {/* Total formateado */}
+            {total > 0 && (
+              <span className="text-[12px] font-bold text-gray-900 dark:text-white">
+                {formatoMoneda(total)}
+              </span>
+            )}
+
+            {/* Cantidad de productos con PaperClipIcon */}
+            <div
+              className="flex items-center gap-1 text-[11px] font-medium text-gray-400 dark:text-gray-500"
+              title={`${pedido.items?.length || 1} producto(s)`}
+            >
+              <PaperClipIcon className="size-3.5" />
+              <span>{pedido.items && pedido.items.length > 0 ? pedido.items.length : 1}</span>
+            </div>
+
+            {/* Botón de acción rápida para avanzar */}
+            {siguiente && puedeAvanzar && (
               <button
                 type="button"
-                onClick={onCancelar}
-                className="text-xs font-medium text-error-500 hover:text-error-600 hover:underline transition-colors cursor-pointer px-1 py-1"
+                onClick={handleAvanzar}
+                className="inline-flex items-center gap-1 rounded-full bg-[#1C1C1F] px-2.5 py-1 text-[10px] font-semibold text-white transition-all hover:bg-black active:scale-95 dark:bg-white dark:text-black dark:hover:bg-gray-100 cursor-pointer shadow-xs"
+                title={`Avanzar a ${pedidosStore.estadoLabel(siguiente)}`}
               >
-                Cancelar
+                <span>{pedidosStore.estadoLabel(siguiente)}</span>
+                <ArrowRightIcon className="size-3 stroke-[2.5]" />
               </button>
             )}
           </div>
-        )}
+        </div>
       </div>
     );
   },
@@ -838,8 +979,8 @@ const VistaToggle = ({ vista, onChange }: { vista: VistaTablero; onChange: (v: V
             type="button"
             onClick={() => onChange(o.id)}
             className={`flex h-full items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs transition-all duration-200 cursor-pointer select-none whitespace-nowrap ${activo
-                ? "bg-white font-bold text-gray-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:bg-[#1C1C1F] dark:text-white"
-                : "font-medium text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
+              ? "bg-white font-bold text-gray-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:bg-[#1C1C1F] dark:text-white"
+              : "font-medium text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
               }`}
             aria-pressed={activo}
           >
@@ -925,8 +1066,8 @@ const ColumnaKanban = observer(({
         if (id) onMoverPedido(id, estado);
       }}
       className={`flex flex-col h-full max-h-full min-h-0 rounded-3xl transition-all duration-200 ease-out overflow-hidden p-3 sm:p-4 ${isDragOver
-          ? "bg-brand-50/70 ring-2 ring-brand-400/80 border-brand-300 dark:bg-brand-950/40 dark:border-brand-500/60 dark:ring-brand-500/40 scale-[1.01]"
-          : "bg-gray-50/90 dark:bg-white/[0.02] border border-gray-100/80 dark:border-gray-800/60"
+        ? "bg-brand-50/70 ring-2 ring-brand-400/80 border-brand-300 dark:bg-brand-950/40 dark:border-brand-500/60 dark:ring-brand-500/40 scale-[1.01]"
+        : "bg-gray-50/90 dark:bg-white/[0.02] border border-gray-100/80 dark:border-gray-800/60"
         }`}
     >
       {/* Cabecera de la columna con nombre, contador suave y botón de tres puntos */}
@@ -1499,8 +1640,8 @@ export const TableroPage = observer(() => {
               aria-label={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
               title={buscadorAbierto ? "Ocultar el buscador" : "Buscar pedidos"}
               className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${buscadorAbierto
-                  ? "border-gray-400 bg-gray-100 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                  : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                ? "border-gray-400 bg-gray-100 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
                 }`}
             >
               <MagnifyingGlassIcon className="size-4" />
@@ -1561,8 +1702,8 @@ export const TableroPage = observer(() => {
                         type="button"
                         onClick={() => toggleEtapaFiltro(e.clave)}
                         className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors cursor-pointer ${seleccionada
-                            ? "bg-gray-100 font-semibold text-gray-900 dark:bg-gray-800 dark:text-white"
-                            : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/60"
+                          ? "bg-gray-100 font-semibold text-gray-900 dark:bg-gray-800 dark:text-white"
+                          : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/60"
                           }`}
                       >
                         <div className="flex items-center gap-2">
@@ -1767,14 +1908,14 @@ export const TableroPage = observer(() => {
           <div
             ref={refTablero}
             className={`flex-1 min-h-0 h-full overflow-x-auto grid grid-cols-1 gap-6 ${columnasVisibles.length === 1
-                ? "max-w-md w-full mr-auto"
-                : columnasVisibles.length === 2
-                  ? "md:grid-cols-2 max-w-3xl w-full mr-auto"
-                  : columnasVisibles.length === 3
-                    ? "md:grid-cols-2 xl:grid-cols-3 max-w-5xl w-full mr-auto"
-                    : columnasVisibles.length === 4
-                      ? "md:grid-cols-2 xl:grid-cols-4 w-full"
-                      : "md:grid-cols-2 xl:grid-cols-5 w-full"
+              ? "max-w-md w-full mr-auto"
+              : columnasVisibles.length === 2
+                ? "md:grid-cols-2 max-w-3xl w-full mr-auto"
+                : columnasVisibles.length === 3
+                  ? "md:grid-cols-2 xl:grid-cols-3 max-w-5xl w-full mr-auto"
+                  : columnasVisibles.length === 4
+                    ? "md:grid-cols-2 xl:grid-cols-4 w-full"
+                    : "md:grid-cols-2 xl:grid-cols-5 w-full"
               }`}
           >
             {columnasVisibles.map((estado, colIndex) => {
@@ -1974,8 +2115,8 @@ const FiltroChip = ({ label, activo, onClick }: { label: string; activo: boolean
     type="button"
     onClick={onClick}
     className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${activo
-        ? "bg-brand-500 text-white"
-        : "bg-white text-gray-600 ring-1 ring-inset ring-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700"
+      ? "bg-brand-500 text-white"
+      : "bg-white text-gray-600 ring-1 ring-inset ring-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700"
       }`}
   >
     {label}
