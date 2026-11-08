@@ -1,8 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { observer } from "mobx-react-lite";
+import {
+  UserPlusIcon,
+  UserIcon,
+  CpuChipIcon,
+  CheckIcon,
+  ChevronDownIcon,
+} from "@heroicons/react/24/outline";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import { operadoresStore } from "@/stores/operadores.store";
-import { sessionStore } from "@/stores/session.store";
 
 interface SelectorAsignacionProps {
   convId: string;
@@ -44,7 +50,7 @@ export const SelectorAsignacion = observer(({ convId }: SelectorAsignacionProps)
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
-      {/* Botón principal estilo Lucid Bot */}
+      {/* Botón principal de asignación con icono profesional */}
       <button
         type="button"
         onClick={() => setAbierto(!abierto)}
@@ -55,21 +61,27 @@ export const SelectorAsignacion = observer(({ convId }: SelectorAsignacionProps)
         }`}
         title="Asignar conversación a un usuario u operador"
       >
-        <span className="text-sm">🙏</span>
+        {estaAsignado ? (
+          operadorAsignado?.avatarUrl ? (
+            <img
+              src={operadorAsignado.avatarUrl}
+              alt={operadorAsignado.nombre}
+              className="size-4 rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <UserIcon className="size-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
+          )
+        ) : (
+          <UserPlusIcon className="size-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
+        )}
+
         <span className="max-w-[140px] truncate">
           {estaAsignado ? (operadorAsignado?.nombre || "Asignado") : "Asignar Conversación"}
         </span>
-        <svg
-          className={`h-3.5 w-3.5 text-gray-500 transition-transform ${abierto ? "rotate-180" : ""}`}
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-            clipRule="evenodd"
-          />
-        </svg>
+
+        <ChevronDownIcon
+          className={`size-3.5 text-gray-400 transition-transform ${abierto ? "rotate-180" : ""}`}
+        />
       </button>
 
       {/* Menú desplegable */}
@@ -93,8 +105,8 @@ export const SelectorAsignacion = observer(({ convId }: SelectorAsignacionProps)
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#97D6DF]/30 text-[#190088] dark:bg-[#190088]/60 dark:text-[#97D6DF] text-sm">
-                  🤖
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#97D6DF]/30 text-[#190088] dark:bg-[#190088]/60 dark:text-[#97D6DF]">
+                  <CpuChipIcon className="size-4" />
                 </span>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">Bot Inteligente</p>
@@ -102,7 +114,7 @@ export const SelectorAsignacion = observer(({ convId }: SelectorAsignacionProps)
                 </div>
               </div>
               {!estaAsignado && (
-                <span className="text-purple-600 dark:text-purple-400 text-sm">✓</span>
+                <CheckIcon className="size-4 text-brand-600 dark:text-brand-400" />
               )}
             </button>
           </div>
@@ -152,7 +164,7 @@ export const SelectorAsignacion = observer(({ convId }: SelectorAsignacionProps)
                     </div>
                   </div>
                   {seleccionado && (
-                    <span className="text-purple-600 dark:text-purple-400 text-sm shrink-0">✓</span>
+                    <CheckIcon className="size-4 text-purple-600 dark:text-purple-400 shrink-0" />
                   )}
                 </button>
               );
@@ -165,4 +177,3 @@ export const SelectorAsignacion = observer(({ convId }: SelectorAsignacionProps)
 });
 
 export default SelectorAsignacion;
-
