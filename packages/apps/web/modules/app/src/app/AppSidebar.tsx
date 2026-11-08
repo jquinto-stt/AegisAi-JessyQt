@@ -485,7 +485,7 @@ const SidebarContent = observer(() => {
   const bannerConfig = flyoutModulo ? BANNER_MODULO_CONFIG[flyoutModulo] : null;
 
   return (
-    <nav className={`flex flex-col ${showExpanded ? "flex-1" : "flex-initial"}`}>
+    <nav className="flex flex-col flex-1 h-full justify-between min-h-0">
       <SimulacionBanner />
 
       {/* FLYOUT SUBMENU PANEL (Flotante a la derecha del rail contraído) */}
@@ -682,8 +682,8 @@ const SidebarContent = observer(() => {
           )}
         </div>
       ) : (
-        /* RAIL MODE: En barra contraída, solo los iconos principales de cada módulo, centrados verticalmente */
-        <div ref={railRef} className="flex flex-col items-center justify-center gap-2.5 w-full py-1">
+        /* RAIL MODE: En barra contraída, tamaño largo hasta arriba con iconos centrados */
+        <div ref={railRef} className="flex flex-col items-center gap-3 w-full py-2 flex-1 min-h-0 overflow-y-auto no-scrollbar">
           {/* Botón Inicio en Rail Mode */}
           <Link
             to="/dashboard"
@@ -751,7 +751,7 @@ const SidebarContent = observer(() => {
         </div>
       )}
 
-      <div className={showExpanded ? "mt-auto" : "mt-2"}>
+      <div className="mt-auto shrink-0 pt-2">
         <SidebarFooter />
       </div>
     </nav>
