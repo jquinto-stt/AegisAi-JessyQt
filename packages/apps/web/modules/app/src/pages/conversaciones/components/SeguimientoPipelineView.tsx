@@ -532,7 +532,7 @@ const ColumnaPipeline = observer(
         </header>
 
         {/* Lista de tarjetas con scroll suave y limpio */}
-        <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1 pb-2 [scrollbar-width:thin]">
+        <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1 pb-2 custom-scrollbar">
           {convs.map((c, i) => (
             <TarjetaPipeline
               key={c.id}
@@ -929,7 +929,7 @@ export const SeguimientoPipelineView = observer(
         </header>
 
         {/* ── CUERPO: COLUMNAS KANBAN HORIZONTALES CON ESTILO NECTO ── */}
-        <main className="flex min-h-0 flex-1 gap-4 overflow-x-auto pb-1 [scrollbar-width:thin]">
+        <main className="flex min-h-0 flex-1 gap-4 overflow-x-auto pb-1 custom-scrollbar">
           {columnasVisibles.map((config) => (
             <div
               key={config.clave}

@@ -1,16 +1,81 @@
 /**
- * Scrollbar Utilities — Custom scrollbar styling.
+ * Scrollbar Utilities & Global Clean Scrollbar Styling
  *
- * Provides two utilities:
- * - no-scrollbar: completely hides the scrollbar (cross-browser)
- * - custom-scrollbar: slim styled scrollbar with theme-aware colors
- *
- * Used across multiple components: sidebar, tables, chat, lists, etc.
+ * Provides modern, arrow-free, pill-shaped scrollbars across all browsers:
+ * - Eliminates legacy browser arrow buttons (::-webkit-scrollbar-button).
+ * - Thin, elegant 6px tracks and rounded capsule thumbs.
+ * - Theme-aware light and dark mode colors with smooth hover feedback.
+ * - Global application so no container falls back to default Windows arrows.
  */
+
+/* ── 1. ELIMINACIÓN GLOBAL DE FLECHAS Y BOTONES EN TODAS LAS BARRAS ──────── */
+*::-webkit-scrollbar-button,
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* ── 2. ESTILOS GLOBALES DE SCROLLBAR (VERTICAL Y HORIZONTAL) ─────────────── */
+*::-webkit-scrollbar,
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease-in-out;
+}
+
+*::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.7);
+}
+
+*::-webkit-scrollbar-corner,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark mode global */
+.dark *::-webkit-scrollbar-thumb,
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+.dark *::-webkit-scrollbar-thumb:hover,
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Firefox standard */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* ── 3. UTILIDADES TAILWIND ──────────────────────────────────────────────── */
 
 @utility no-scrollbar {
   &::-webkit-scrollbar {
-    display: none;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
   }
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -18,14 +83,35 @@
 
 @utility custom-scrollbar {
   &::-webkit-scrollbar {
-    @apply size-1.5;
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  &::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
   }
 
   &::-webkit-scrollbar-track {
-    @apply rounded-full;
+    background: transparent !important;
+    border-radius: 9999px !important;
   }
 
   &::-webkit-scrollbar-thumb {
-    @apply bg-gray-200 rounded-full dark:bg-gray-700;
+    background-color: rgba(156, 163, 175, 0.45) !important;
+    border-radius: 9999px !important;
   }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(107, 114, 128, 0.75) !important;
+  }
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.4) !important;
 }
