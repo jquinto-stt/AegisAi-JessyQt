@@ -10,9 +10,10 @@ import { Select } from "@/elements/form/select";
 import { operadoresStore, rolesStore, type Modulo, type Operador, type OperadorEstado } from "@/stores";
 import { PageMeta } from "@/shell/meta";
 import { ConfigHeader } from "@/pages/config-layout";
-import { PlusIcon } from "@/icons";
+import { PlusIcon, GridIcon, ListIcon } from "@/icons";
 import { EquipoTabla } from "./EquipoTabla";
 import { RolesTab } from "./RolesTab";
+import { OperadoresFlujoJourneyView } from "./OperadoresFlujoJourneyView";
 import {
   FILTRO_ESTADO_TODAS,
   OPCIONES_FILTRO_ESTADO,
@@ -76,6 +77,7 @@ export interface EquipoPageProps {
 
 export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => {
   const [vista, setVista] = useState<"equipo" | "roles">("equipo");
+  const [modoVisualizacion, setModoVisualizacion] = useState<"flujo" | "tabla">("flujo");
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<string>(FILTRO_ESTADO_TODAS);
   const [modalOpen, setModalOpen] = useState(false);
@@ -208,6 +210,37 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
           </div>
 
           <div className="flex shrink-0 items-center gap-3 w-full sm:w-auto justify-end">
+            {/* Switch de modo de visualización: Flujo Journey vs Lista Tabla */}
+            <div className="inline-flex rounded-xl bg-gray-100 p-1 dark:bg-white/5 border border-gray-200 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => setModoVisualizacion("flujo")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  modoVisualizacion === "flujo"
+                    ? "bg-white text-gray-900 shadow-theme-xs dark:bg-white/20 dark:text-white"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                }`}
+                title="Vista Flujo y Carga de Trabajo"
+              >
+                <GridIcon className="w-3.5 h-3.5" />
+                <span>Flujo & Equipos</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setModoVisualizacion("tabla")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  modoVisualizacion === "tabla"
+                    ? "bg-white text-gray-900 shadow-theme-xs dark:bg-white/20 dark:text-white"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                }`}
+                title="Vista Tabla Tradicional"
+              >
+                <ListIcon className="w-3.5 h-3.5" />
+                <span>Tabla</span>
+              </button>
+            </div>
+
             <Button
               size="md"
               variant="outline"
@@ -241,6 +274,8 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
 
       {vista === "roles" ? (
         <RolesTab modulo={moduloActivo} />
+      ) : modoVisualizacion === "flujo" ? (
+        <OperadoresFlujoJourneyView operadores={listaFiltrada} />
       ) : (
         <EquipoTabla operadores={listaFiltrada} />
       )}
