@@ -128,15 +128,71 @@ const Conector: React.FC<{
   desde: number;
   hacia: DestinoLinea[];
   altoMax: number;
+  totalOrigen?: number;
   hoverIdx?: number | null;
   onHoverDest?: (idx: number | null) => void;
-}> = ({ desde, hacia, altoMax, hoverIdx, onHoverDest }) => {
+}> = ({ desde, hacia, altoMax, totalOrigen, hoverIdx, onHoverDest }) => {
   const y1 = centro(Math.max(0, desde));
   const rPunto = 4;
+  const numOrigen = totalOrigen ?? hacia.length;
 
   return (
-    <svg className="hidden lg:block shrink-0 w-12 overflow-visible" height={altoMax} aria-hidden>
-      {/* 1. Dibujamos las trayectorias de curvas Bézier estilo SugarCRM */}
+    <svg className="hidden lg:block shrink-0 w-16 overflow-visible" height={altoMax} aria-hidden>
+      {/* 1. Canal / Tubería de fondo estilo SugarCRM */}
+      <rect
+        x={12}
+        y={4}
+        width={40}
+        height={altoMax - 8}
+        rx={20}
+        className="fill-[#ECECEC]/50 dark:fill-white/[0.03]"
+      />
+
+      {/* 2. Hendiduras / Pestañas de conexión laterales (Left & Right Outset Tabs) */}
+      {/* Lado izquierdo (hacia cada elemento de la columna origen) */}
+      {Array.from({ length: numOrigen }).map((_, i) => {
+        const py = centro(i);
+        const isActiveOrigin = i === desde;
+        return (
+          <g key={`tab-izq-${i}`}>
+            {/* Pestaña semicircular que abraza el borde */}
+            <path
+              d={`M 14 ${py - 7} A 7 7 0 0 0 14 ${py + 7} Z`}
+              className="fill-[#ECECEC]/80 dark:fill-white/10"
+            />
+            {isActiveOrigin && (
+              <circle
+                cx={13}
+                cy={py}
+                r={3}
+                className="fill-[#FF3F1A] dark:fill-[#FF3F1A]"
+              />
+            )}
+          </g>
+        );
+      })}
+
+      {/* Lado derecho (hacia cada elemento de la columna destino) */}
+      {hacia.map((dest) => {
+        const py = centro(dest.indice);
+        const cfg = CONFIG_LINEA[dest.tipo];
+        return (
+          <g key={`tab-der-${dest.indice}`}>
+            <path
+              d={`M 50 ${py - 7} A 7 7 0 0 1 50 ${py + 7} Z`}
+              className="fill-[#ECECEC]/80 dark:fill-white/10"
+            />
+            <circle
+              cx={51}
+              cy={py}
+              r={dest.tipo === 'concedido' || dest.tipo === 'excepcion_alta' ? 3 : 2}
+              fill={cfg.puntoFin}
+            />
+          </g>
+        );
+      })}
+
+      {/* 3. Trayectorias de curvas Bézier que discurren por el canal */}
       {hacia.map((dest) => {
         const y2 = centro(dest.indice);
         const cfg = CONFIG_LINEA[dest.tipo];
@@ -144,7 +200,7 @@ const Conector: React.FC<{
         return (
           <path
             key={`linea-${dest.indice}`}
-            d={`M 6 ${y1} C 26 ${y1}, 22 ${y2}, 42 ${y2}`}
+            d={`M 13 ${y1} C 32 ${y1}, 32 ${y2}, 51 ${y2}`}
             fill="none"
             strokeWidth={isHovered ? cfg.strokeWidth + 1.5 : cfg.strokeWidth}
             strokeDasharray={cfg.dash}
@@ -155,34 +211,6 @@ const Conector: React.FC<{
             }}
             onMouseEnter={() => onHoverDest?.(dest.indice)}
             onMouseLeave={() => onHoverDest?.(null)}
-          />
-        );
-      })}
-
-      {/* 2. Puntos terminales circulares en los extremos derecho e izquierdo */}
-      {/* Punto de origen (desde la columna izquierda) */}
-      <circle
-        cx={6}
-        cy={y1}
-        r={rPunto}
-        className="fill-[#190088] dark:fill-[#97D6DF] stroke-white dark:stroke-[#1c1c22] shadow-sm"
-        strokeWidth={2}
-      />
-
-      {/* Puntos de destino (en la columna derecha) */}
-      {hacia.map((dest) => {
-        const y2 = centro(dest.indice);
-        const cfg = CONFIG_LINEA[dest.tipo];
-        const isHovered = hoverIdx === dest.indice;
-        return (
-          <circle
-            key={`punto-${dest.indice}`}
-            cx={42}
-            cy={y2}
-            r={isHovered ? rPunto + 1.5 : dest.tipo === 'concedido' || dest.tipo === 'excepcion_alta' ? rPunto : 3}
-            fill={cfg.puntoFin}
-            className="stroke-white dark:stroke-[#1c1c22] transition-all duration-200"
-            strokeWidth={2}
           />
         );
       })}
@@ -521,6 +549,7 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
               desde={idxRol}
               hacia={destinosRolAAreas}
               altoMax={Math.max(alto(roles.length), alto(CAPACIDAD_GRUPOS.length))}
+              totalOrigen={roles.length}
               hoverIdx={hoverAreaIdx}
               onHoverDest={setHoverAreaIdx}
             />
@@ -590,6 +619,7 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
               desde={idxGrupo}
               hacia={destinosAreasAPermisos}
               altoMax={Math.max(alto(CAPACIDAD_GRUPOS.length), alto(grupo.capacidades.length))}
+              totalOrigen={CAPACIDAD_GRUPOS.length}
               hoverIdx={hoverPermisoIdx}
               onHoverDest={setHoverPermisoIdx}
             />
