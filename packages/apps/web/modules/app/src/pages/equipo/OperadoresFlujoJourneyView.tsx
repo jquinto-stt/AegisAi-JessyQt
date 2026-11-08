@@ -58,30 +58,131 @@ const ESTADO_TEXTO: Record<Operador['estado'], string> = {
 const numExcepciones = (op: Operador) =>
   (op.capacidadesExtra?.length ?? 0) + (op.capacidadesRemovidas?.length ?? 0);
 
-const Conector: React.FC<{ desde: number; hacia: number; altoMax: number; solidas: boolean[] }> = ({
-  desde,
-  hacia,
-  altoMax,
-  solidas,
-}) => (
-  <svg className="hidden lg:block shrink-0 w-10" height={altoMax} aria-hidden>
-    {Array.from({ length: hacia }, (_, j) => {
-      const y1 = centro(Math.max(0, desde));
-      const y2 = centro(j);
-      const s = solidas[j];
-      return (
-        <path
-          key={j}
-          d={`M0 ${y1} C20 ${y1}, 20 ${y2}, 40 ${y2}`}
-          fill="none"
-          strokeWidth={1.5}
-          strokeDasharray={s ? undefined : '4 4'}
-          className={s ? 'stroke-[#190088]/60 dark:stroke-[#97D6DF]' : 'stroke-[#212121]/20 dark:stroke-white/20'}
-        />
-      );
-    })}
-  </svg>
-);
+export type EstiloLinea = 'concedido' | 'excepcion_alta' | 'excepcion_baja' | 'sin_acceso';
+
+export interface DestinoLinea {
+  indice: number;
+  tipo: EstiloLinea;
+}
+
+const CONFIG_LINEA: Record<
+  EstiloLinea,
+  {
+    stroke: string;
+    darkStroke: string;
+    strokeWidth: number;
+    dash?: string;
+    puntoInicio: string;
+    darkPuntoInicio: string;
+    puntoFin: string;
+    darkPuntoFin: string;
+    opacidad: number;
+  }
+> = {
+  concedido: {
+    stroke: '#97D6DF',
+    darkStroke: '#97D6DF',
+    strokeWidth: 2,
+    puntoInicio: '#97D6DF',
+    darkPuntoInicio: '#97D6DF',
+    puntoFin: '#97D6DF',
+    darkPuntoFin: '#97D6DF',
+    opacidad: 0.95,
+  },
+  excepcion_alta: {
+    stroke: '#190088',
+    darkStroke: '#97D6DF',
+    strokeWidth: 2,
+    dash: '5 3',
+    puntoInicio: '#190088',
+    darkPuntoInicio: '#97D6DF',
+    puntoFin: '#190088',
+    darkPuntoFin: '#97D6DF',
+    opacidad: 1,
+  },
+  excepcion_baja: {
+    stroke: '#FF3F1A',
+    darkStroke: '#FF3F1A',
+    strokeWidth: 1.75,
+    dash: '4 4',
+    puntoInicio: '#FF3F1A',
+    darkPuntoInicio: '#FF3F1A',
+    puntoFin: '#FF3F1A',
+    darkPuntoFin: '#FF3F1A',
+    opacidad: 0.85,
+  },
+  sin_acceso: {
+    stroke: '#ECECEC',
+    darkStroke: 'rgba(255,255,255,0.18)',
+    strokeWidth: 1.25,
+    dash: '3 4',
+    puntoInicio: '#ECECEC',
+    darkPuntoInicio: 'rgba(255,255,255,0.25)',
+    puntoFin: '#ECECEC',
+    darkPuntoFin: 'rgba(255,255,255,0.25)',
+    opacidad: 0.6,
+  },
+};
+
+const Conector: React.FC<{
+  desde: number;
+  hacia: DestinoLinea[];
+  altoMax: number;
+}> = ({ desde, hacia, altoMax }) => {
+  const y1 = centro(Math.max(0, desde));
+  const rPunto = 3.5;
+
+  return (
+    <svg className="hidden lg:block shrink-0 w-12" height={altoMax} aria-hidden>
+      {/* 1. Dibujamos las trayectorias de curvas Bézier estilo SugarCRM */}
+      {hacia.map((dest) => {
+        const y2 = centro(dest.indice);
+        const cfg = CONFIG_LINEA[dest.tipo];
+        return (
+          <path
+            key={`linea-${dest.indice}`}
+            d={`M 6 ${y1} C 26 ${y1}, 22 ${y2}, 42 ${y2}`}
+            fill="none"
+            strokeWidth={cfg.strokeWidth}
+            strokeDasharray={cfg.dash}
+            opacity={cfg.opacidad}
+            className="transition-colors duration-200"
+            style={{
+              stroke: cfg.stroke,
+            }}
+          />
+        );
+      })}
+
+      {/* 2. Puntos terminales circulares en los extremos derecho e izquierdo */}
+      {/* Punto de origen (desde la columna izquierda) */}
+      <circle
+        cx={6}
+        cy={y1}
+        r={rPunto}
+        className="fill-[#190088] dark:fill-[#97D6DF] stroke-white dark:stroke-[#1c1c22]"
+        strokeWidth={1.5}
+      />
+
+      {/* Puntos de destino (en la columna derecha) */}
+      {hacia.map((dest) => {
+        const y2 = centro(dest.indice);
+        const cfg = CONFIG_LINEA[dest.tipo];
+        return (
+          <circle
+            key={`punto-${dest.indice}`}
+            cx={42}
+            cy={y2}
+            r={dest.tipo === 'concedido' || dest.tipo === 'excepcion_alta' ? rPunto : 2.5}
+            fill={cfg.puntoFin}
+            className="stroke-white dark:stroke-[#1c1c22] transition-colors"
+            strokeWidth={1.5}
+          />
+        );
+      })}
+    </svg>
+  );
+};
 
 export interface OperadoresFlujoJourneyViewProps {
   operadores: Operador[];
@@ -226,8 +327,36 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
     );
     const pasosVisibles = pasos.slice(0, 6);
 
-    // ── Tokens NECTO en el diseño ───────────────────────────────────────────
-    const tarjeta = 'relative rounded-[28px] bg-white dark:bg-white/[0.05] border border-[#ECECEC] dark:border-white/10 shadow-xs';
+    // ── Clasificación de líneas según el estado real del permiso ─────────────
+    const destinosRolAAreas: DestinoLinea[] = CAPACIDAD_GRUPOS.map((g, i) => {
+      const tiene = g.capacidades.filter((c) => efectivas.has(c)).length;
+      const total = g.capacidades.length;
+      const tieneConcedida = g.capacidades.some((c) => procedenciaDe(op, c, capsRol) === 'concedida');
+      const tieneRemovida = g.capacidades.some((c) => procedenciaDe(op, c, capsRol) === 'removida');
+
+      let tipo: EstiloLinea = 'sin_acceso';
+      if (tieneRemovida) {
+        tipo = 'excepcion_baja'; // Línea roja segmentada
+      } else if (tieneConcedida) {
+        tipo = 'excepcion_alta'; // Línea azul/cyan punteada
+      } else if (tiene === total || (tiene > 0 && g.capacidades.some((c) => capsRol.includes(c)))) {
+        tipo = 'concedido'; // Línea cyan sólida
+      }
+      return { indice: i, tipo };
+    });
+
+    const destinosAreasAPermisos: DestinoLinea[] = grupo.capacidades.map((cap, i) => {
+      const proc = procedenciaDe(op, cap, capsRol);
+      let tipo: EstiloLinea = 'sin_acceso';
+      if (proc === 'concedida') {
+        tipo = 'excepcion_alta'; // Azul/cyan
+      } else if (proc === 'removida') {
+        tipo = 'excepcion_baja'; // Naranja/rojo
+      } else if (proc === 'rol') {
+        tipo = 'concedido'; // Cyan
+      }
+      return { indice: i, tipo };
+    });
     const etiqueta = 'mt-3 text-center text-[14px] font-normal text-[#190088] dark:text-[#97D6DF]';
     const punto = 'hidden lg:block absolute w-2.5 h-2.5 rounded-full bg-[#190088] dark:bg-[#97D6DF] ring-2 ring-white dark:ring-[#101828]';
     const circuloLleno = 'bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]';
@@ -378,9 +507,8 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
 
             <Conector
               desde={idxRol}
-              hacia={CAPACIDAD_GRUPOS.length}
+              hacia={destinosRolAAreas}
               altoMax={Math.max(alto(roles.length), alto(CAPACIDAD_GRUPOS.length))}
-              solidas={CAPACIDAD_GRUPOS.map((g) => g.capacidades.some((c) => capsRol.includes(c)))}
             />
 
             {/* Columna 2: Áreas */}
@@ -439,9 +567,8 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
 
             <Conector
               desde={idxGrupo}
-              hacia={grupo.capacidades.length}
+              hacia={destinosAreasAPermisos}
               altoMax={Math.max(alto(CAPACIDAD_GRUPOS.length), alto(grupo.capacidades.length))}
-              solidas={grupo.capacidades.map((c) => efectivas.has(c))}
             />
 
             {/* Columna 3: Permisos del área */}
@@ -558,16 +685,16 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
           {/* ── Leyenda NECTO ── */}
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] font-light text-[#212121]/70 dark:text-[#ECECEC]/70 border-t border-[#ECECEC] dark:border-white/10 pt-4">
             <span className="flex items-center gap-1.5">
-              <span className={`w-4 h-4 rounded-full ${circuloLleno}`} /> Tiene el permiso
+              <span className="w-5 h-0.5 bg-[#97D6DF] inline-block rounded-full" /> Concedido por rol
             </span>
             <span className="flex items-center gap-1.5">
-              <b className="font-bold text-[#212121] dark:text-white">Negrita</b> se aparta de su rol
+              <span className="w-5 h-0.5 border-b-2 border-dashed border-[#190088] dark:border-[#97D6DF] inline-block" /> Excepción adicional
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-4 h-4 rounded-full border-2 border-[#FF3F1A]" /> Revocado a mano
+              <span className="w-5 h-0.5 border-b-2 border-dashed border-[#FF3F1A] inline-block" /> Excepción revocada
             </span>
             <span className="flex items-center gap-1.5">
-              <span className={`w-4 h-4 rounded-full ${circuloVacio}`} /> Sin acceso
+              <span className="w-5 h-0.5 border-b border-dotted border-[#ECECEC] dark:border-white/30 inline-block" /> Sin acceso
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-[#EFE6D3] border border-[#ECECEC]" /> Selección activa
