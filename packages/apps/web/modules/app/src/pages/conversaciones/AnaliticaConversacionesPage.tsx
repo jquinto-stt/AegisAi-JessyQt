@@ -1,6 +1,11 @@
 import { useMemo, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
+import {
+  ChatBubbleLeftRightIcon,
+  CpuChipIcon,
+  UserIcon,
+} from "@heroicons/react/24/outline";
 import { PageMeta } from "@/shell/meta";
 import { Card } from "@/elements/ui/card";
 import { Badge } from "@/elements/ui/badge";
@@ -145,7 +150,7 @@ export const AnaliticaConversacionesPage = observer(() => {
               Conversaciones Totales
             </span>
             <span className="rounded-full bg-secondary-50 p-2 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400">
-              💬
+              <ChatBubbleLeftRightIcon className="size-4" />
             </span>
           </div>
           <div className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
@@ -163,7 +168,7 @@ export const AnaliticaConversacionesPage = observer(() => {
               Resolución por IA (Bot)
             </span>
             <span className="rounded-full bg-accent-50 p-2 text-accent-600 dark:bg-accent-500/10 dark:text-accent-400">
-              🤖
+              <CpuChipIcon className="size-4" />
             </span>
           </div>
           <div className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
@@ -338,12 +343,14 @@ export const AnaliticaConversacionesPage = observer(() => {
                   </td>
                   <td className="px-4 py-3">
                     {conv.operadorAsignadoId ? (
-                      <span className="inline-flex items-center gap-1 text-secondary-600 dark:text-brand-400 font-medium">
-                        👤 Operador
+                      <span className="inline-flex items-center gap-1.5 text-secondary-600 dark:text-brand-400 font-medium text-xs">
+                        <UserIcon className="size-3.5" />
+                        <span>Operador</span>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-accent-600 dark:text-accent-400 font-medium">
-                        🤖 Bot Necto
+                      <span className="inline-flex items-center gap-1.5 text-accent-600 dark:text-accent-400 font-medium text-xs">
+                        <CpuChipIcon className="size-3.5" />
+                        <span>Bot Necto</span>
                       </span>
                     )}
                   </td>
