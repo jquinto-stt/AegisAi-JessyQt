@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router';
+import { observer } from 'mobx-react-lite';
+import { pedidosStore, organizacionStore } from '../../stores';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -148,7 +150,21 @@ const PRODUCTOS_DEFAULT: ProductoItem[] = [
   },
 ];
 
-export const MenuCatalogoPage: React.FC = () => {
+const mapearItemCatalogo = (i: any, idx: number): ProductoItem => {
+  const foto = i.imagen || asignarFotoInteligente(i.nombre, i.categoria);
+  return {
+    id: String(i.id || `prod-${idx}`),
+    nombre: String(i.nombre || 'Producto'),
+    categoria: i.categoria || 'General',
+    descripcion: i.descripcion || '',
+    subtexto: i.descripcion ? i.descripcion.slice(0, 30) : undefined,
+    precio: Number(i.precio) || 0,
+    imagen: foto,
+    badge: i.popular ? 'Destacado' : undefined,
+  };
+};
+
+export const MenuCatalogoPage: React.FC = observer(() => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -161,58 +177,58 @@ export const MenuCatalogoPage: React.FC = () => {
   const [modalidad, setModalidad] = useState<string>(
     paramModalidad || (direccion ? 'domicilio' : 'retiro')
   );
-  const [productos, setProductos] = useState<ProductoItem[]>(PRODUCTOS_DEFAULT);
+
+  const catalogoStore = pedidosStore?.config?.catalogo || [];
+  const [productos, setProductos] = useState<ProductoItem[]>(() => {
+    if (catalogoStore.length > 0) {
+      return catalogoStore
+        .filter((i: any) => i && i.disponible !== false)
+        .map(mapearItemCatalogo);
+    }
+    return PRODUCTOS_DEFAULT;
+  });
+
   const [categoriaActiva, setCategoriaActiva] = useState<string>('Todos');
   const [busqueda, setBusqueda] = useState<string>('');
-  const [carrito, setCarrito] = useState<{ [productoId: string]: number }>({
-    'prod-pizza-bbq': 2,
-    'prod-biryani': 1,
-    'prod-pasta-pesto': 2,
-  });
-  const [favoritos, setFavoritos] = useState<{ [productoId: string]: boolean }>({
-    'prod-pizza-bbq': true,
-    'prod-biryani': true,
-  });
+  const [carrito, setCarrito] = useState<{ [productoId: string]: number }>({});
+  const [favoritos, setFavoritos] = useState<{ [productoId: string]: boolean }>({});
   const [promoActiva, setPromoActiva] = useState<boolean>(true);
   const [modalPagoAbierto, setModalPagoAbierto] = useState<boolean>(false);
   const [codigoQrDataUrl, setCodigoQrDataUrl] = useState<string>('');
   const [guardandoPedido, setGuardandoPedido] = useState<boolean>(false);
   const [notificacionBotEnviada, setNotificacionBotEnviada] = useState<boolean>(false);
 
-  // Cargar catálogo desde Supabase si existe configuración personalizada
+  // Sincronizar catálogo con pedidosStore y Supabase
   useEffect(() => {
+    const storeActual = pedidosStore?.config?.catalogo;
+    if (Array.isArray(storeActual) && storeActual.length > 0) {
+      const cargados = storeActual
+        .filter((i: any) => i && i.disponible !== false)
+        .map(mapearItemCatalogo);
+      setProductos(cargados);
+    }
+
     const cargarCatalogoBD = async () => {
       const sb = getSupabase();
       if (!sb) return;
 
       try {
-        const { data, error } = await sb
-          .schema(ESQUEMA)
-          .from('config_pedidos')
-          .select('catalogo')
-          .limit(1)
-          .maybeSingle();
+        const orgSlug = searchParams.get('org');
+        let orgId = orgSlug || organizacionStore.organizacion?.id;
+
+        let query = sb.schema(ESQUEMA).from('config_pedidos').select('catalogo');
+        if (orgId) {
+          query = query.eq('organizacion_id', orgId);
+        }
+
+        const { data, error } = await query.limit(1).maybeSingle();
 
         if (!error && data?.catalogo && Array.isArray(data.catalogo) && data.catalogo.length > 0) {
           const cargados: ProductoItem[] = data.catalogo
             .filter((i: any) => i && i.disponible !== false)
-            .map((i: any, idx: number) => {
-              const foto = i.imagen || asignarFotoInteligente(i.nombre, i.categoria);
-              return {
-                id: String(i.id || `prod-${idx}`),
-                nombre: String(i.nombre),
-                categoria: i.categoria || 'Pizzas',
-                descripcion: i.descripcion || 'Producto elaborado con ingredientes selectos.',
-                subtexto: i.descripcion ? i.descripcion.slice(0, 20) : 'Porción estándar',
-                precio: Number(i.precio) || 0,
-                imagen: foto,
-                badge: i.popular ? 'Destacado' : idx % 3 === 0 ? 'Más Vendido' : undefined,
-              };
-            });
+            .map(mapearItemCatalogo);
 
-          const idsExistentes = new Set(cargados.map((c) => c.id));
-          const complementos = PRODUCTOS_DEFAULT.filter((p) => !idsExistentes.has(p.id));
-          setProductos([...cargados, ...complementos]);
+          setProductos(cargados);
         }
       } catch (e) {
         console.warn('[MenuCatalogoPage] Usando catálogo base:', e);
@@ -220,7 +236,7 @@ export const MenuCatalogoPage: React.FC = () => {
     };
 
     cargarCatalogoBD();
-  }, []);
+  }, [searchParams, pedidosStore?.config?.catalogo]);
 
   const formatearCOP = (valor: number) => {
     return `$ ${valor.toLocaleString('es-CO')}`;
@@ -260,8 +276,7 @@ export const MenuCatalogoPage: React.FC = () => {
       const c = (p.categoria || '').trim();
       if (c && !vistas.includes(c)) vistas.push(c);
     }
-    const unicas = Array.from(new Set([...CATEGORIAS_MOCK.filter((c) => c !== 'Todos'), ...vistas]));
-    return ['Todos', ...unicas];
+    return ['Todos', ...vistas];
   }, [productos]);
 
   const productosFiltrados = useMemo(() => {
@@ -904,6 +919,6 @@ export const MenuCatalogoPage: React.FC = () => {
       </div>
     </>
   );
-};
+});
 
 export default MenuCatalogoPage;
