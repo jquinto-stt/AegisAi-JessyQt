@@ -806,7 +806,7 @@ const VistaToggle = ({ vista, onChange }: { vista: VistaTablero; onChange: (v: V
       id: "inicio",
       label: "Inicio",
       icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="size-3.5 sm:size-4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h5v14H4zM15 5h5v9h-5z" />
         </svg>
       ),
@@ -815,31 +815,33 @@ const VistaToggle = ({ vista, onChange }: { vista: VistaTablero; onChange: (v: V
       id: "lista",
       label: "Lista",
       icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="size-3.5 sm:size-4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
         </svg>
       ),
     },
   ];
   return (
-    <div className="inline-flex h-10 items-center rounded-xl border border-gray-200/90 bg-gray-50/80 p-1 dark:border-gray-800 dark:bg-gray-800/50 shrink-0">
-      {opciones.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          onClick={() => onChange(o.id)}
-          className={
-            "flex h-full items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors cursor-pointer select-none whitespace-nowrap " +
-            (vista === o.id
-              ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
-              : "text-gray-500 hover:text-gray-700 dark:text-gray-400")
-          }
-          aria-pressed={vista === o.id}
-        >
-          {o.icon}
-          <span>{o.label}</span>
-        </button>
-      ))}
+    <div className="inline-flex h-9 sm:h-10 items-center rounded-2xl bg-[#EEEEEE] p-1 dark:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.06] shrink-0">
+      {opciones.map((o) => {
+        const activo = vista === o.id;
+        return (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => onChange(o.id)}
+            className={`flex h-full items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs transition-all duration-200 cursor-pointer select-none whitespace-nowrap ${
+              activo
+                ? "bg-white font-bold text-gray-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:bg-[#1C1C1F] dark:text-white"
+                : "font-medium text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
+            }`}
+            aria-pressed={activo}
+          >
+            {o.icon}
+            <span>{o.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 };

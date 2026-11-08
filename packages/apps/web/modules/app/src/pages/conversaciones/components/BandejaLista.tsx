@@ -77,12 +77,12 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
       <div className="p-3.5 sm:p-4 pb-3 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center justify-between mb-2.5">
           {/* Segmented Control Necto (Chats / Seguimiento) */}
-          <div className="flex h-10 items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 shadow-2xs shrink-0">
+          <div className="inline-flex h-9 sm:h-10 items-center rounded-2xl bg-[#EEEEEE] p-1 dark:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.06] shrink-0">
             <button
               type="button"
-              className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white cursor-default"
+              className="flex h-full items-center gap-1.5 rounded-xl bg-white px-3.5 py-1.5 text-xs font-bold text-gray-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:bg-[#1C1C1F] dark:text-white transition-all duration-200 cursor-default"
             >
-              <ChatBubbleLeftRightIcon className="size-4 text-brand-500" />
+              <ChatBubbleLeftRightIcon className="size-3.5 sm:size-4" />
               <span>Chats</span>
               {conversacionesStore.totalNoLeidos > 0 && (
                 <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF3F1A] px-1 text-[10px] font-bold text-white shadow-theme-xs">
@@ -93,10 +93,10 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
 
             <Link
               to="/conversaciones/seguimiento"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
+              className="flex h-full items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200 transition-all duration-200 cursor-pointer"
               title="Ir a Seguimiento (Pipeline Kanban)"
             >
-              <ViewColumnsIcon className="size-4 text-secondary-600 dark:text-accent-400" />
+              <ViewColumnsIcon className="size-3.5 sm:size-4" />
               <span>Seguimiento</span>
             </Link>
           </div>

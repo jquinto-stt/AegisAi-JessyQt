@@ -877,31 +877,33 @@ export const CatalogoPage: React.FC = observer(() => {
               )}
             </div>
 
-            {/* Toggle de Cuadrícula / Lista */}
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shrink-0 self-end md:self-auto">
+            {/* Toggle de Cuadrícula / Lista con diseño de switch pill minimalista */}
+            <div className="inline-flex h-9 sm:h-10 items-center rounded-2xl bg-[#EEEEEE] p-1 dark:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.06] shrink-0 self-end md:self-auto">
               <button
                 type="button"
                 onClick={() => setVistaModo('cuadricula')}
-                title="Vista en tarjetas"
-                className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
+                title="Vista en cuadrícula"
+                className={`flex h-full items-center gap-1.5 rounded-xl px-3 sm:px-3.5 text-xs transition-all duration-200 cursor-pointer ${
                   vistaModo === 'cuadricula'
-                    ? 'bg-white dark:bg-gray-700 text-[#190088] dark:text-white shadow-2xs'
-                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                    ? 'bg-white font-bold text-gray-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:bg-[#1C1C1F] dark:text-white'
+                    : 'font-medium text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200'
                 }`}
               >
-                <GridIcon className="w-4 h-4" />
+                <GridIcon className="size-3.5 sm:size-4" />
+                <span>Cuadrícula</span>
               </button>
               <button
                 type="button"
                 onClick={() => setVistaModo('lista')}
-                title="Vista en tabla"
-                className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
+                title="Vista en tabla / lista"
+                className={`flex h-full items-center gap-1.5 rounded-xl px-3 sm:px-3.5 text-xs transition-all duration-200 cursor-pointer ${
                   vistaModo === 'lista'
-                    ? 'bg-white dark:bg-gray-700 text-[#190088] dark:text-white shadow-2xs'
-                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                    ? 'bg-white font-bold text-gray-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:bg-[#1C1C1F] dark:text-white'
+                    : 'font-medium text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200'
                 }`}
               >
-                <ListIcon className="w-4 h-4" />
+                <ListIcon className="size-3.5 sm:size-4" />
+                <span>Lista</span>
               </button>
             </div>
           </div>

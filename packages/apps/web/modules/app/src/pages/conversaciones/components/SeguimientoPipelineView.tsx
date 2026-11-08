@@ -67,7 +67,7 @@ interface AnclajeManual {
  * v2 y no v1: el formato cambió (v1 guardaba solo la etapa) y migrarlo sería
  * heredar justo el defecto que se corrige. Se empieza limpio.
  */
-const LOCAL_STORAGE_STAGES_KEY = "necto_seguimiento_etapas_v2";
+const LOCAL_STORAGE_STAGES_KEY = "necto_seguimiento_etapas_v3";
 
 function leerAnclajes(): Record<string, AnclajeManual> {
   try {
@@ -276,7 +276,9 @@ const TarjetaPipeline = observer(
             {/* Tag de Estado / Pedido o Lead */}
             {pedido ? (
               <span className="inline-flex items-center rounded-full bg-[#F1E8FD] px-2.5 py-0.5 text-[11px] font-semibold text-[#5432EE] dark:bg-[#5432EE]/20 dark:text-[#C4B5FD]">
-                {pedidosStore.estadoLabel(pedido.estado)}
+                {etapa === "oferta_enviada" && pedido.estado === "programado"
+                  ? "Cotización"
+                  : pedidosStore.estadoLabel(pedido.estado)}
               </span>
             ) : (
               <span className="inline-flex items-center rounded-full bg-[#E5F9F9] px-2.5 py-0.5 text-[11px] font-semibold text-[#0E7490] dark:bg-[#0E7490]/20 dark:text-[#67E8F9]">
@@ -293,7 +295,11 @@ const TarjetaPipeline = observer(
                     : "bg-[#FEF3C7] text-[#B45309] dark:bg-[#B45309]/20 dark:text-[#FBBF24]"
                 }`}
               >
-                {pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
+                {pedido.pagado
+                  ? ETIQUETA_PAGO.pagado
+                  : etapa === "oferta_enviada" && pedido.estado === "programado"
+                  ? "Por confirmar"
+                  : ETIQUETA_PAGO.sinPagar}
               </span>
             )}
 
@@ -694,6 +700,9 @@ export const SeguimientoPipelineView = observer(
       setAnclajes({});
       guardarAnclajes({});
       try {
+        if (conversacionesStore.origenDatos === "seed") {
+          conversacionesStore.restaurarSeed();
+        }
         await conversacionesStore.cargarDesdeBase();
       } finally {
         setTimeout(() => setRecargando(false), 500);
@@ -708,34 +717,34 @@ export const SeguimientoPipelineView = observer(
             {/* Lado izquierdo: Switcher, Buscador, Restablecer y Filtro por etiquetas */}
             <div className="flex flex-wrap items-center gap-2.5 min-w-0">
               {/* Segmented Control Necto (Chats / Seguimiento) */}
-              <div className="flex h-10 items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 shadow-2xs shrink-0">
+              <div className="inline-flex h-9 sm:h-10 items-center rounded-2xl bg-[#EEEEEE] p-1 dark:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.06] shrink-0">
                 {onCambiarAVistaChats ? (
                   <button
                     type="button"
                     onClick={onCambiarAVistaChats}
-                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
+                    className="flex h-full items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200 transition-all duration-200 cursor-pointer"
                     title="Ir a consola de chats"
                   >
-                    <ChatBubbleLeftRightIcon className="size-4 text-brand-500" />
+                    <ChatBubbleLeftRightIcon className="size-3.5 sm:size-4" />
                     <span>Chats</span>
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={() => navigate("/conversaciones")}
-                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
+                    className="flex h-full items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200 transition-all duration-200 cursor-pointer"
                     title="Ir a consola de chats"
                   >
-                    <ChatBubbleLeftRightIcon className="size-4 text-brand-500" />
+                    <ChatBubbleLeftRightIcon className="size-3.5 sm:size-4" />
                     <span>Chats</span>
                   </button>
                 )}
 
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white cursor-default"
+                  className="flex h-full items-center gap-1.5 rounded-xl bg-white px-3.5 py-1.5 text-xs font-bold text-gray-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:bg-[#1C1C1F] dark:text-white transition-all duration-200 cursor-default"
                 >
-                  <ViewColumnsIcon className="size-4 text-secondary-600 dark:text-accent-400" />
+                  <ViewColumnsIcon className="size-3.5 sm:size-4" />
                   <span>Seguimiento</span>
                 </button>
               </div>
