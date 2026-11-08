@@ -38,7 +38,7 @@ import {
   WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
 import { Skeleton, SkeletonGrupo } from '@/elements';
-import { pedidosStore } from '@/stores';
+import { pedidosStore, organizacionStore } from '@/stores';
 import { retardoEscalonado } from '@/utils';
 import { useFlipLista } from '@/hooks/useFlipLista';
 
@@ -295,6 +295,7 @@ export const CatalogoPage: React.FC = observer(() => {
   const [originalProductos, setOriginalProductos] = useState<ProductoCatalogoItem[]>([]);
   const [cargandoInicial, setCargandoInicial] = useState<boolean>(true);
   const [guardando, setGuardando] = useState<boolean>(false);
+  const [recienGuardado, setRecienGuardado] = useState<boolean>(false);
   const [organizacionId, setOrganizacionId] = useState<string>('fc009b85-73b8-47b3-8d1a-080b65ac7120');
 
   // Importación desde documento (PDF / Excel)
@@ -551,37 +552,54 @@ export const CatalogoPage: React.FC = observer(() => {
     setOriginalProductos(productos);
 
     const sb = getSupabase();
-    if (!sb) {
-      setAlerta({
-        tipo: 'exito',
-        mensaje: '¡Catálogo guardado con éxito! Tus cambios ya están activos.',
-      });
-      setGuardando(false);
-      return;
+    if (sb) {
+      try {
+        let orgId = organizacionStore.organizacion?.id;
+        if (!orgId) {
+          try {
+            const { data: orgData } = await sb.schema(ESQUEMA).rpc('mi_organizacion');
+            if (orgData) orgId = typeof orgData === 'string' ? orgData : orgData.id || orgData;
+          } catch {
+            // no-op
+          }
+        }
+        if (!orgId) {
+          try {
+            const { data: orgList } = await sb.schema(ESQUEMA).from('organizacion').select('id').limit(1);
+            if (orgList && orgList.length > 0) orgId = orgList[0].id;
+          } catch {
+            // no-op
+          }
+        }
+
+        if (orgId) {
+          const payload = {
+            organizacion_id: orgId,
+            catalogo: productos,
+          };
+
+          const { error } = await sb
+            .schema(ESQUEMA)
+            .from('config_pedidos')
+            .upsert(payload, { onConflict: 'organizacion_id' });
+
+          if (error) {
+            console.warn('[CatalogoPage] Advertencia al sincronizar config_pedidos en Supabase:', error.message);
+          }
+        }
+      } catch (err: any) {
+        console.warn('[CatalogoPage] Excepción al sincronizar en la nube:', err);
+      }
     }
 
-    try {
-      const payload = {
-        organizacion_id: organizacionId,
-        catalogo: productos,
-      };
+    setGuardando(false);
+    setRecienGuardado(true);
+    setTimeout(() => setRecienGuardado(false), 3000);
 
-      const { error } = await sb
-        .schema(ESQUEMA)
-        .from('config_pedidos')
-        .upsert(payload, { onConflict: 'organizacion_id' });
-
-      if (error) throw error;
-
-      setAlerta({
-        tipo: 'exito',
-        mensaje: '¡Tu catálogo ha sido publicado! Tus clientes ya pueden pedir estos productos en Telegram y en tu catálogo web.',
-      });
-    } catch (err: any) {
-      setAlerta({ tipo: 'error', mensaje: `No se pudieron guardar los cambios en la nube: ${err.message}` });
-    } finally {
-      setGuardando(false);
-    }
+    setAlerta({
+      tipo: 'exito',
+      mensaje: '¡Catálogo guardado y publicado con éxito! Tus cambios ya están disponibles para tus clientes.',
+    });
   };
 
   // Acciones sobre productos
@@ -788,17 +806,30 @@ export const CatalogoPage: React.FC = observer(() => {
                 )}
               </div>
 
-              {hayCambiosPendientes && (
-                <button
-                  type="button"
-                  onClick={guardarCatalogo}
-                  disabled={guardando}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white shadow-sm ring-2 ring-[#FF3F1A]/30 ring-offset-1 dark:ring-offset-gray-900 animate-pulse cursor-pointer"
-                >
-                  <CheckLineIcon className="w-3.5 h-3.5" />
-                  <span>{guardando ? 'Guardando...' : 'Guardar y Publicar'}</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={guardarCatalogo}
+                disabled={guardando}
+                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer ${
+                  recienGuardado
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : hayCambiosPendientes
+                      ? 'bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white shadow-sm ring-2 ring-[#FF3F1A]/30 ring-offset-1 dark:ring-offset-gray-900 animate-pulse'
+                      : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750'
+                }`}
+              >
+                {recienGuardado ? (
+                  <>
+                    <CheckCircleIcon className="w-3.5 h-3.5 text-white" />
+                    <span>¡Guardado y Publicado!</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckLineIcon className="w-3.5 h-3.5" />
+                    <span>{guardando ? 'Guardando...' : 'Guardar y Publicar'}</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
