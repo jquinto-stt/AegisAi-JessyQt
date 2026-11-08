@@ -283,11 +283,13 @@ export class RolesStore {
 
   /** Actualiza un rol existente. Ignora ids desconocidos. */
   actualizar(id: string, patch: Partial<Omit<Rol, "id" | "sistema">>) {
-    const rol = this.porId(id);
-    if (!rol) return;
+    const idx = this.roles.findIndex((r) => r.id === id);
+    if (idx === -1) return;
+    const rol = this.roles[idx];
     if (patch.nombre !== undefined) rol.nombre = patch.nombre;
     if (patch.descripcion !== undefined) rol.descripcion = patch.descripcion;
     if (patch.capacidades !== undefined) rol.capacidades = [...patch.capacidades];
+    this.roles = this.roles.map((r, i) => (i === idx ? { ...rol, capacidades: [...rol.capacidades] } : r));
   }
 
   /** Duplica un rol existente con un nombre nuevo. */

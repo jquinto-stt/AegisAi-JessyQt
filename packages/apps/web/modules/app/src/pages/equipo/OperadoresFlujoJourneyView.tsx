@@ -58,6 +58,31 @@ const ESTADO_TEXTO: Record<Operador['estado'], string> = {
 const numExcepciones = (op: Operador) =>
   (op.capacidadesExtra?.length ?? 0) + (op.capacidadesRemovidas?.length ?? 0);
 
+const Conector: React.FC<{ desde: number; hacia: number; altoMax: number; solidas: boolean[] }> = ({
+  desde,
+  hacia,
+  altoMax,
+  solidas,
+}) => (
+  <svg className="hidden lg:block shrink-0 w-10" height={altoMax} aria-hidden>
+    {Array.from({ length: hacia }, (_, j) => {
+      const y1 = centro(Math.max(0, desde));
+      const y2 = centro(j);
+      const s = solidas[j];
+      return (
+        <path
+          key={j}
+          d={`M0 ${y1} C20 ${y1}, 20 ${y2}, 40 ${y2}`}
+          fill="none"
+          strokeWidth={1.5}
+          strokeDasharray={s ? undefined : '4 4'}
+          className={s ? 'stroke-[#190088]/45 dark:stroke-[#97D6DF]/60' : 'stroke-[#212121]/15 dark:stroke-white/15'}
+        />
+      );
+    })}
+  </svg>
+);
+
 export interface OperadoresFlujoJourneyViewProps {
   operadores: Operador[];
   onGestionarRoles?: () => void;
@@ -68,7 +93,11 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
   ({ operadores, onGestionarRoles, onInvitar }) => {
     const navigate = useNavigate();
     const [seleccionId, setSeleccionId] = useState<string | null>(
-      () => operadores.find((o) => o.estado === 'pendiente')?.id ?? operadores[0]?.id ?? null
+      () =>
+        operadores.find((o) => o.estado === 'pendiente')?.id ??
+        operadores.find((o) => o.rolId !== ROL_ADMIN)?.id ??
+        operadores[0]?.id ??
+        null
     );
     const [grupoId, setGrupoId] = useState(CAPACIDAD_GRUPOS[0].id);
     const [toast, setToast] = useState<string | null>(null);
@@ -78,8 +107,10 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
       window.setTimeout(() => setToast(null), 3000);
     };
 
-    // La selección puede quedar fuera del filtro de la página: se cae al primero.
-    const op = operadores.find((o) => o.id === seleccionId) ?? operadores[0];
+    // Leemos siempre la versión viva desde operadoresStore para que cualquier
+    // cambio de rol o permiso se refleje en tiempo real sin cambiar de vista.
+    const listaViva = operadores.map((o) => operadoresStore.porId(o.id) ?? o);
+    const op = listaViva.find((o) => o.id === seleccionId) ?? listaViva[0];
 
     if (!op) {
       return (
@@ -103,7 +134,7 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
 
     const roles = rolesStore.roles.filter((r) => r.id !== ROL_ADMIN || r.id === op.rolId);
     const idxRol = roles.findIndex((r) => r.id === op.rolId);
-    const personasPorRol = (rolId: string) => operadores.filter((o) => o.rolId === rolId).length;
+    const personasPorRol = (rolId: string) => listaViva.filter((o) => o.rolId === rolId).length;
 
     const bloqueada = (cap: Capacidad) => esUnoMismo && CAPACIDADES_GESTION.includes(cap);
 
@@ -199,26 +230,6 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
     const circuloLleno = 'bg-[#190088] text-white dark:bg-[#97D6DF] dark:text-[#190088]';
     const circuloVacio = 'bg-[#ECECEC]/70 text-[#212121]/50 dark:bg-white/10 dark:text-[#ECECEC]/60';
 
-    const Conector: React.FC<{ desde: number; hacia: number[]; altoMax: number; solida: (j: number) => boolean }> = ({ desde, hacia, altoMax, solida }) => (
-      <svg className="hidden lg:block shrink-0 w-10" height={altoMax} aria-hidden>
-        {hacia.map((_, j) => {
-          const y1 = centro(Math.max(0, desde));
-          const y2 = centro(j);
-          const s = solida(j);
-          return (
-            <path
-              key={j}
-              d={`M0 ${y1} C20 ${y1}, 20 ${y2}, 40 ${y2}`}
-              fill="none"
-              strokeWidth={1.5}
-              strokeDasharray={s ? undefined : '4 4'}
-              className={s ? 'stroke-[#190088]/45 dark:stroke-[#97D6DF]/60' : 'stroke-[#212121]/15 dark:stroke-white/15'}
-            />
-          );
-        })}
-      </svg>
-    );
-
     const textoFila = (nivel: 'fuerte' | 'normal' | 'debil') =>
       nivel === 'fuerte'
         ? 'font-bold text-[#212121] dark:text-white'
@@ -245,7 +256,7 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
             </div>
 
             <div className="flex items-center gap-2 rounded-full bg-white/70 dark:bg-white/[0.06] px-3 pt-2 pb-4 overflow-x-auto scrollbar-none">
-              {operadores.map((o) => {
+              {listaViva.map((o) => {
                 const activo = o.id === op.id;
                 const n = numExcepciones(o);
                 return (
@@ -356,9 +367,9 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
 
             <Conector
               desde={idxRol}
-              hacia={CAPACIDAD_GRUPOS.map((g) => g.id)}
+              hacia={CAPACIDAD_GRUPOS.length}
               altoMax={Math.max(alto(roles.length), alto(CAPACIDAD_GRUPOS.length))}
-              solida={(j) => CAPACIDAD_GRUPOS[j].capacidades.some((c) => capsRol.includes(c))}
+              solidas={CAPACIDAD_GRUPOS.map((g) => g.capacidades.some((c) => capsRol.includes(c)))}
             />
 
             {/* Columna 2: Áreas */}
@@ -410,9 +421,9 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
 
             <Conector
               desde={idxGrupo}
-              hacia={grupo.capacidades}
+              hacia={grupo.capacidades.length}
               altoMax={Math.max(alto(CAPACIDAD_GRUPOS.length), alto(grupo.capacidades.length))}
-              solida={(j) => efectivas.has(grupo.capacidades[j])}
+              solidas={grupo.capacidades.map((c) => efectivas.has(c))}
             />
 
             {/* Columna 3: Permisos del área */}

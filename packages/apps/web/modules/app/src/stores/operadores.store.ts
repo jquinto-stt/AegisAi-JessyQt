@@ -180,6 +180,13 @@ const SEED: Operador[] = [
 // STORE (mock)
 // ═══════════════════════════════════════════════════════════════════════════
 
+const clonarSeed = (): Operador[] =>
+  SEED.map((op) => ({
+    ...op,
+    capacidadesExtra: [...(op.capacidadesExtra ?? [])],
+    capacidadesRemovidas: [...(op.capacidadesRemovidas ?? [])],
+  }));
+
 /**
  * OperadoresStore — equipo de operadores del administrador (mock, sin backend).
  *
@@ -194,7 +201,7 @@ const SEED: Operador[] = [
  * recargar. Es una decisión explícita del mock, no un olvido.
  */
 export class OperadoresStore {
-  operadores: Operador[] = [...SEED];
+  operadores: Operador[] = clonarSeed();
 
   /**
    * Callback que se avisa cuando cambia la lista de operadores.
@@ -220,6 +227,24 @@ export class OperadoresStore {
     this.listener?.();
   }
 
+  /** Modifica un operador en `this.operadores` y reemplaza su referencia para disparar reactividad inmediata en MobX. */
+  private mutarOperador(id: string, fn: (op: Operador) => void) {
+    const idx = this.operadores.findIndex((o) => o.id === id);
+    if (idx === -1) return;
+    const actual = this.operadores[idx];
+    fn(actual);
+    this.operadores = this.operadores.map((o, i) =>
+      i === idx
+        ? {
+            ...actual,
+            capacidadesExtra: [...(actual.capacidadesExtra ?? [])],
+            capacidadesRemovidas: [...(actual.capacidadesRemovidas ?? [])],
+          }
+        : o
+    );
+    this.emit();
+  }
+
   // ── Getters ────────────────────────────────────────────────────────────────
 
   get operadoresConNombreSincronizado(): Operador[] {
@@ -230,11 +255,18 @@ export class OperadoresStore {
     const emailAdmin = usr?.email || "tailor.davis@negocio.com";
 
     return this.operadores.map((op) => {
+      // Leemos explícitamente las propiedades de autorización para suscribir a cualquier computed/observer
+      void op.rolId;
+      void op.estado;
+      void op.capacidadesExtra?.length;
+      void op.capacidadesRemovidas?.length;
       if (op.id === "d0") {
         return {
           ...op,
           nombre: nombreAdmin,
           email: emailAdmin,
+          capacidadesExtra: op.capacidadesExtra ? [...op.capacidadesExtra] : [],
+          capacidadesRemovidas: op.capacidadesRemovidas ? [...op.capacidadesRemovidas] : [],
         };
       }
       return op;
@@ -279,17 +311,22 @@ export class OperadoresStore {
       avatarUrl?: string;
     }
   ) {
-    this.operadores.push({
-      id: `${modulo[0]}${Date.now()}`,
-      nombre: data.nombre,
-      email: data.email,
-      telefono: data.telefono,
-      cargo: data.cargo,
-      avatarUrl: data.avatarUrl,
-      estado: data.estado ?? "activo",
-      modulo,
-      rolId: data.rolId ?? "personalizado",
-    });
+    this.operadores = [
+      ...this.operadores,
+      {
+        id: `${modulo[0]}${Date.now()}`,
+        nombre: data.nombre,
+        email: data.email,
+        telefono: data.telefono,
+        cargo: data.cargo,
+        avatarUrl: data.avatarUrl,
+        estado: data.estado ?? "activo",
+        modulo,
+        rolId: data.rolId ?? "personalizado",
+        capacidadesExtra: [],
+        capacidadesRemovidas: [],
+      },
+    ];
     this.emit();
   }
 
@@ -301,15 +338,20 @@ export class OperadoresStore {
    * visual y no creaba nada: los `pendiente` de la tabla venían solo del SEED.
    */
   solicitar(data: { nombre: string; email: string; telefono: string; modulo: Modulo }) {
-    this.operadores.push({
-      id: `${data.modulo[0]}${Date.now()}`,
-      nombre: data.nombre,
-      email: data.email,
-      telefono: data.telefono,
-      estado: "pendiente",
-      modulo: data.modulo,
-      rolId: undefined,
-    });
+    this.operadores = [
+      ...this.operadores,
+      {
+        id: `${data.modulo[0]}${Date.now()}`,
+        nombre: data.nombre,
+        email: data.email,
+        telefono: data.telefono,
+        estado: "pendiente",
+        modulo: data.modulo,
+        rolId: undefined,
+        capacidadesExtra: [],
+        capacidadesRemovidas: [],
+      },
+    ];
     this.emit();
   }
 
@@ -323,40 +365,39 @@ export class OperadoresStore {
    * persona.
    */
   actualizarDatos(id: string, patch: { nombre?: string; email?: string; telefono?: string }) {
-    const op = this.porId(id);
-    if (!op) return;
-    if (patch.nombre !== undefined) op.nombre = patch.nombre;
-    if (patch.email !== undefined) op.email = patch.email;
-    if (patch.telefono !== undefined) op.telefono = patch.telefono;
-    this.emit();
+    this.mutarOperador(id, (op) => {
+      if (patch.nombre !== undefined) op.nombre = patch.nombre;
+      if (patch.email !== undefined) op.email = patch.email;
+      if (patch.telefono !== undefined) op.telefono = patch.telefono;
+    });
   }
 
   /** Asigna el rol de un operador (fuente de verdad de la autorización). */
   setRol(id: string, rolId: string) {
-    const op = this.porId(id);
-    if (op) op.rolId = rolId;
-    this.emit();
+    this.mutarOperador(id, (op) => {
+      op.rolId = rolId;
+    });
   }
 
   /** Reemplaza las excepciones que SUMAN capacidades sobre las del rol. */
   setCapacidadesExtra(id: string, capacidades: Capacidad[]) {
-    const op = this.porId(id);
-    if (op) op.capacidadesExtra = capacidades;
-    this.emit();
+    this.mutarOperador(id, (op) => {
+      op.capacidadesExtra = [...capacidades];
+    });
   }
 
   /** Reemplaza las excepciones que RESTAN capacidades. La denegación gana. */
   setCapacidadesRemovidas(id: string, capacidades: Capacidad[]) {
-    const op = this.porId(id);
-    if (op) op.capacidadesRemovidas = capacidades;
-    this.emit();
+    this.mutarOperador(id, (op) => {
+      op.capacidadesRemovidas = [...capacidades];
+    });
   }
 
   /** Aprueba una solicitud pendiente → pasa a activo. */
   aprobar(id: string) {
-    const op = this.porId(id);
-    if (op) op.estado = "activo";
-    this.emit();
+    this.mutarOperador(id, (op) => {
+      op.estado = "activo";
+    });
   }
 
   /** Rechaza y descarta una solicitud pendiente. */
@@ -366,16 +407,16 @@ export class OperadoresStore {
 
   /** Desactiva un operador (sin eliminarlo). */
   desactivar(id: string) {
-    const op = this.porId(id);
-    if (op) op.estado = "inactivo";
-    this.emit();
+    this.mutarOperador(id, (op) => {
+      op.estado = "inactivo";
+    });
   }
 
   /** Reactiva un operador inactivo → activo. */
   activar(id: string) {
-    const op = this.porId(id);
-    if (op) op.estado = "activo";
-    this.emit();
+    this.mutarOperador(id, (op) => {
+      op.estado = "activo";
+    });
   }
 
   /** Elimina un operador de la lista. */
@@ -392,7 +433,7 @@ export class OperadoresStore {
 
   /** Restaura los operadores de ejemplo (seed) para el inicio normal. */
   restaurarSeed() {
-    this.operadores = [...SEED];
+    this.operadores = clonarSeed();
     this.emit();
   }
 }

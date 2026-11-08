@@ -165,4 +165,32 @@ describe("una solicitud pendiente no se puede impersonar (invariante C8)", () =>
     expect(sessionStore.accessContext.autenticado).toBe(true);
     expect(sessionStore.accessContext.capacidades).toEqual([]);
   });
+
+  it("notifica reactivamente en tiempo real al cambiar permisos de cualquier operador (incluido d0 y d1)", async () => {
+    const { autorun } = await import("mobx");
+    const { operadoresStore, rolesStore } = await freshStores();
+
+    const snapshotsD1: number[] = [];
+    const dispose1 = autorun(() => {
+      const lista = operadoresStore.porModulo("pedidos");
+      const op = lista.find((o) => o.id === "d1")!;
+      snapshotsD1.push(rolesStore.capacidadesEfectivas(op).length);
+    });
+
+    operadoresStore.setCapacidadesExtra("d1", ["team.manage"]);
+    dispose1();
+
+    const snapshotsD0: number[] = [];
+    const dispose0 = autorun(() => {
+      const lista = operadoresStore.porModulo("pedidos");
+      const op = lista.find((o) => o.id === "d0")!;
+      snapshotsD0.push(rolesStore.capacidadesEfectivas(op).length);
+    });
+
+    operadoresStore.setCapacidadesRemovidas("d0", ["orders.delete"]);
+    dispose0();
+
+    expect(snapshotsD1.length).toBeGreaterThan(1);
+    expect(snapshotsD0.length).toBeGreaterThan(1);
+  });
 });
