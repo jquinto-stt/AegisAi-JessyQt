@@ -31,6 +31,7 @@ import type { Pedido } from "@/stores/pedidos.store";
 import type { ConversacionCanal } from "@/stores";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
 import { DetallePedidoModal } from "./DetallePedidoModal";
+import { CrearPedidoModal } from "./CrearPedidoModal";
 import { AdminDashboardView } from "./AdminDashboardView";
 import {
   money,
@@ -109,7 +110,7 @@ function reproducirCampanita() {
       detenerCampanita();
       return;
     }
-  } catch {}
+  } catch { }
 
   const ahora = Date.now();
   if (ahora - _ultimoDing < 300) return;
@@ -150,7 +151,7 @@ function iniciarCampanita(cadaSegundos: number, primerAviso: boolean) {
   if (!pedidosStore.config.alertaAtencion.activo) return;
   try {
     if (localStorage.getItem("necto.sonido_alertas_silenciado") === "1") return;
-  } catch {}
+  } catch { }
   if (primerAviso) reproducirCampanita();
   _campanitaTimer = setInterval(reproducirCampanita, cadaSegundos * 1000);
 }
@@ -177,7 +178,7 @@ const BotonSilenciar = observer(({ className }: { className?: string }) => {
           } else {
             localStorage.removeItem("necto.sonido_alertas_silenciado");
           }
-        } catch {}
+        } catch { }
       }}
       title={sonidoActivo ? "Timbre sonoro activo — Clic para silenciar por completo" : "Timbre silenciado — Clic para activar sonido"}
       aria-label={sonidoActivo ? "Silenciar timbre de alertas" : "Activar timbre de alertas"}
@@ -385,11 +386,10 @@ const ClientesModal = observer(
               key={s.id}
               type="button"
               onClick={() => setSeg(s.id)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                seg === s.id
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${seg === s.id
                   ? "bg-brand-500 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
-              }`}
+                }`}
             >
               {s.label}
               <span className={`rounded-full px-1.5 text-[10px] font-semibold ${seg === s.id ? "bg-white/20" : "bg-white text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
@@ -664,6 +664,7 @@ export const InicioPage = observer(() => {
 
   const [displayOpen, setDisplayOpen] = useState(false);
   const [clientesOpen, setClientesOpen] = useState(false);
+  const [crearModalOpen, setCrearModalOpen] = useState(false);
   const [chatDrawerConvId, setChatDrawerConvId] = useState<string | null>(null);
   // El drawer también se abre por PEDIDO (desde el detalle): quien invoca el
   // detalle de una tarjeta no tiene por qué conocer el hilo de conversación.
@@ -742,6 +743,7 @@ export const InicioPage = observer(() => {
           onOpenCalendario={() => setCalendarioOpen(true)}
           onOpenDisplay={() => setDisplayOpen(true)}
           onOpenClientes={() => setClientesOpen(true)}
+          onOpenCrearPedido={() => setCrearModalOpen(true)}
           fechaTexto={esHoy(dia) ? fechaActualTexto : fechaCorta(dia)}
           botonSilenciar={
             <BotonSilenciar className="inline-flex items-center justify-center size-10 rounded-full border border-slate-200/80 bg-white text-slate-600 hover:text-slate-900 dark:border-white/10 dark:bg-[#1C1D24] dark:text-slate-300 shadow-2xs transition-all" />
@@ -777,7 +779,7 @@ export const InicioPage = observer(() => {
               {puedeCrear && (
                 <button
                   type="button"
-                  onClick={() => navigate("/pedidos/crear")}
+                  onClick={() => setCrearModalOpen(true)}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white font-bold text-[14px] shadow-theme-xs transition-all cursor-pointer"
                 >
                   <PlusIcon className="w-4 h-4 stroke-[2.5]" />
@@ -885,6 +887,15 @@ export const InicioPage = observer(() => {
           }}
         />
       )}
+
+      {/* Modal Crear Pedido */}
+      <CrearPedidoModal
+        isOpen={crearModalOpen}
+        onClose={() => setCrearModalOpen(false)}
+        onPedidoCreado={(nuevoId) => {
+          setDetalleId(nuevoId);
+        }}
+      />
 
       {/* Una sola instancia del drawer: `convId` manda sobre `pedido`, y los dos
           estados son mutuamente excluyentes por construcción. */}

@@ -24,6 +24,7 @@ import { useFlipLista } from "@/hooks/useFlipLista";
 import { useEntradaEscalonada } from "@/hooks/useEntradaEscalonada";
 import { ProgramarModal } from "./ProgramarModal";
 import { DetallePedidoModal } from "./DetallePedidoModal";
+import { CrearPedidoModal } from "./CrearPedidoModal";
 import { ResumenPedidosVista } from "./ResumenPedidosVista";
 import { ETAPAS_INICIO, contarEtapa, type EtapaInicio } from "./ResumenPedidosVista";
 import {
@@ -357,15 +358,13 @@ const PedidoCard = observer(
             onDetalle();
           }
         }}
-        className={`group relative select-none rounded-[20px] border bg-white p-4 shadow-theme-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-theme-md dark:bg-[#18181b] ${
-          puedeArrastrar ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
-        } ${
-          esRecienMovido
+        className={`group relative select-none rounded-[20px] border bg-white p-4 shadow-theme-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-theme-md dark:bg-[#18181b] ${puedeArrastrar ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+          } ${esRecienMovido
             ? "animate-aterrizaje ring-2 ring-brand-500 shadow-theme-xl border-brand-400 bg-brand-50/20 dark:bg-brand-950/30"
             : urgente
               ? "border-rose-300 dark:border-rose-900/60"
               : "border-gray-100 hover:border-gray-200 dark:border-white/[0.08] dark:hover:border-white/[0.15]"
-        }`}
+          }`}
       >
         {/* ── 1. Fila Superior: Etiquetas Pasteles + Menú 3 Puntos ── */}
         <div className="flex items-center justify-between gap-2">
@@ -394,11 +393,10 @@ const PedidoCard = observer(
                   ? "Pedido pagado. Clic para marcar como pendiente"
                   : "Pendiente de pago. Clic para registrar pago"
               }
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-all hover:opacity-85 cursor-pointer ${
-                pedido.pagado
-                  ? "bg-[#E8F8EA] text-[#1E7E34] dark:bg-[#1E7E34]/20 dark:text-[#4ADE80]"
-                  : "bg-[#FEF3C7] text-[#B45309] dark:bg-[#B45309]/20 dark:text-[#FBBF24]"
-              }`}
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-all hover:opacity-85 cursor-pointer ${pedido.pagado
+                ? "bg-[#E8F8EA] text-[#1E7E34] dark:bg-[#1E7E34]/20 dark:text-[#4ADE80]"
+                : "bg-[#FEF3C7] text-[#B45309] dark:bg-[#B45309]/20 dark:text-[#FBBF24]"
+                }`}
             >
               {pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
             </button>
@@ -1552,6 +1550,9 @@ export const TableroPage = observer(() => {
     return estado === columnaFiltroActiva;
   });
 
+  // Control del modal de creación de pedido
+  const [crearModalOpen, setCrearModalOpen] = useState(false);
+
   // FLIP del tablero. La firma describe el orden actual —cada columna visible y
   // los pedidos que tiene, en orden—, así que el efecto solo se dispara cuando
   // algo cambió de sitio de verdad. Sin ella habría que medir en cada render, y
@@ -1849,18 +1850,15 @@ export const TableroPage = observer(() => {
 
           </div>
 
-          {/* Bloque derecho: Botón «Nuevo pedido» — la entrada a `/pedidos/crear` */}
+          {/* Bloque derecho: Botón «Nuevo pedido» — abre modal */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
             {puedeCrearPedido() && (
               <button
                 type="button"
-                onClick={() => navigate("/pedidos/crear")}
+                onClick={() => setCrearModalOpen(true)}
                 className="flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white px-4 text-xs sm:text-sm font-semibold shadow-theme-xs transition-colors cursor-pointer shrink-0"
               >
                 <PlusIcon className="size-4 stroke-2" />
-                {/* Se llama como la pantalla a la que lleva («Nuevo pedido»), no
-                    «Añadir»: es la única entrada a `/pedidos/crear` desde la
-                    navegación, ahora que el sidebar ya no tiene ese ítem. */}
                 <span>Nuevo pedido</span>
               </button>
             )}
@@ -2090,6 +2088,15 @@ export const TableroPage = observer(() => {
           </div>
         </Modal>
       )}
+
+      {/* Modal de Crear Pedido */}
+      <CrearPedidoModal
+        isOpen={crearModalOpen}
+        onClose={() => setCrearModalOpen(false)}
+        onPedidoCreado={(nuevoId) => {
+          setPedidoDetalleId(nuevoId);
+        }}
+      />
 
       {/* Chat rápido (slide-over). Una sola instancia para todo el tablero: el
           hilo se resuelve dentro del drawer con el resolutor canónico del store.

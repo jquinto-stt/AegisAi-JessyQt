@@ -9,6 +9,7 @@ import { puedeCrearPedido } from "@/stores/acceso.utils";
 import type { EstadoConversacion } from "@/stores/conversaciones.types";
 import { statusDe } from "../conversaciones.utils";
 import { enlaceDePago, datosParaTransferir } from "@/pages/pedidos/cobros";
+import { CrearPedidoModal } from "@/pages/pedidos/CrearPedidoModal";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PIPELINE CRM DEL CONTACTO
@@ -124,6 +125,7 @@ interface PanelContextoProps {
 export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelContextoProps) => {
   const navigate = useNavigate();
   const [copiado, setCopiado] = useState(false);
+  const [crearModalOpen, setCrearModalOpen] = useState(false);
   const [notasContacto, setNotasContacto] = useState<string>(() => {
     return convId ? localStorage.getItem(`crm_notas_${convId}`) ?? "" : "";
   });
@@ -166,16 +168,7 @@ export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelC
   }, 0);
 
   const irACrearPedido = () => {
-    const params = new URLSearchParams();
-    if (nombre) params.set("cliente", nombre);
-    if (telefono) params.set("telefono", telefono);
-    params.set("modalidad", "domicilio");
-    if (convId) params.set("chatId", convId);
-    if (principal?.calle) params.set("calle", principal.calle);
-    if (principal?.barrio) params.set("barrio", principal.barrio);
-    if (principal?.referencia) params.set("referencia", principal.referencia);
-    if (principal?.indicaciones) params.set("indicaciones", principal.indicaciones);
-    navigate(`/pedidos/crear?${params.toString()}`);
+    setCrearModalOpen(true);
   };
 
   const copiarTelefono = () => {
@@ -382,6 +375,19 @@ export const PanelContexto = observer(({ convId, onVerHistorialPedidos }: PanelC
           </button>
         </div>
       )}
+      {/* Modal Crear Pedido con contexto precargado del contacto */}
+      <CrearPedidoModal
+        isOpen={crearModalOpen}
+        onClose={() => setCrearModalOpen(false)}
+        clienteInicial={nombre}
+        telefonoInicial={telefono}
+        chatIdInicial={convId ?? undefined}
+        modalidadInicial="domicilio"
+        calleInicial={principal?.calle}
+        barrioInicial={principal?.barrio}
+        referenciaInicial={principal?.referencia}
+        indicacionesInicial={principal?.indicaciones}
+      />
     </div>
   );
 });
