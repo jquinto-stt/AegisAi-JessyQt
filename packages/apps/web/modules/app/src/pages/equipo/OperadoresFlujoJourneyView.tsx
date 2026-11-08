@@ -133,66 +133,43 @@ const Conector: React.FC<{
   onHoverDest?: (idx: number | null) => void;
 }> = ({ desde, hacia, altoMax, totalOrigen, hoverIdx, onHoverDest }) => {
   const y1 = centro(Math.max(0, desde));
-  const rPunto = 4;
   const numOrigen = totalOrigen ?? hacia.length;
+  // Ancho exacto del SVG conector (48px)
+  const ancho = 48;
 
   return (
-    <svg className="hidden lg:block shrink-0 w-16 overflow-visible" height={altoMax} aria-hidden>
-      {/* 1. Canal / Tubería de fondo estilo SugarCRM */}
-      <rect
-        x={12}
-        y={4}
-        width={40}
-        height={altoMax - 8}
-        rx={20}
-        className="fill-[#ECECEC]/50 dark:fill-white/[0.03]"
-      />
-
-      {/* 2. Hendiduras / Pestañas de conexión laterales (Left & Right Outset Tabs) */}
-      {/* Lado izquierdo (hacia cada elemento de la columna origen) */}
+    <svg
+      className="hidden lg:block shrink-0 w-12 overflow-visible z-10 -mx-1"
+      height={altoMax}
+      aria-hidden
+    >
+      {/* 1. Nodos terminales sobre el borde derecho de la columna origen */}
       {Array.from({ length: numOrigen }).map((_, i) => {
         const py = centro(i);
         const isActiveOrigin = i === desde;
         return (
-          <g key={`tab-izq-${i}`}>
-            {/* Pestaña semicircular que abraza el borde */}
-            <path
-              d={`M 14 ${py - 7} A 7 7 0 0 0 14 ${py + 7} Z`}
-              className="fill-[#ECECEC]/80 dark:fill-white/10"
-            />
+          <g key={`nodo-izq-${i}`}>
             {isActiveOrigin && (
-              <circle
-                cx={13}
-                cy={py}
-                r={3}
-                className="fill-[#FF3F1A] dark:fill-[#FF3F1A]"
-              />
+              <>
+                <circle
+                  cx={0}
+                  cy={py}
+                  r={5}
+                  className="fill-[#FF3F1A] stroke-white dark:stroke-[#101828] stroke-[2]"
+                />
+                <circle
+                  cx={0}
+                  cy={py}
+                  r={2}
+                  className="fill-white"
+                />
+              </>
             )}
           </g>
         );
       })}
 
-      {/* Lado derecho (hacia cada elemento de la columna destino) */}
-      {hacia.map((dest) => {
-        const py = centro(dest.indice);
-        const cfg = CONFIG_LINEA[dest.tipo];
-        return (
-          <g key={`tab-der-${dest.indice}`}>
-            <path
-              d={`M 50 ${py - 7} A 7 7 0 0 1 50 ${py + 7} Z`}
-              className="fill-[#ECECEC]/80 dark:fill-white/10"
-            />
-            <circle
-              cx={51}
-              cy={py}
-              r={dest.tipo === 'concedido' || dest.tipo === 'excepcion_alta' ? 3 : 2}
-              fill={cfg.puntoFin}
-            />
-          </g>
-        );
-      })}
-
-      {/* 3. Trayectorias de curvas Bézier que discurren por el canal */}
+      {/* 2. Trayectorias curvas Bézier limpias y fluidas entre tarjetas */}
       {hacia.map((dest) => {
         const y2 = centro(dest.indice);
         const cfg = CONFIG_LINEA[dest.tipo];
@@ -200,11 +177,11 @@ const Conector: React.FC<{
         return (
           <path
             key={`linea-${dest.indice}`}
-            d={`M 13 ${y1} C 32 ${y1}, 32 ${y2}, 51 ${y2}`}
+            d={`M 0 ${y1} C ${ancho * 0.5} ${y1}, ${ancho * 0.5} ${y2}, ${ancho} ${y2}`}
             fill="none"
             strokeWidth={isHovered ? cfg.strokeWidth + 1.5 : cfg.strokeWidth}
             strokeDasharray={cfg.dash}
-            opacity={hoverIdx != null ? (isHovered ? 1 : 0.25) : cfg.opacidad}
+            opacity={hoverIdx != null ? (isHovered ? 1 : 0.2) : cfg.opacidad}
             className="transition-all duration-200 cursor-pointer"
             style={{
               stroke: cfg.stroke,
@@ -212,6 +189,27 @@ const Conector: React.FC<{
             onMouseEnter={() => onHoverDest?.(dest.indice)}
             onMouseLeave={() => onHoverDest?.(null)}
           />
+        );
+      })}
+
+      {/* 3. Nodos terminales sobre el borde izquierdo de la columna destino */}
+      {hacia.map((dest) => {
+        const py = centro(dest.indice);
+        const cfg = CONFIG_LINEA[dest.tipo];
+        const activo = dest.tipo === 'concedido' || dest.tipo === 'excepcion_alta' || dest.tipo === 'excepcion_baja';
+        const color = cfg.stroke;
+        return (
+          <g key={`nodo-der-${dest.indice}`}>
+            <circle
+              cx={ancho}
+              cy={py}
+              r={activo ? 4.5 : 3}
+              fill={color}
+              stroke="white"
+              strokeWidth={1.5}
+              className="dark:stroke-[#101828]"
+            />
+          </g>
         );
       })}
     </svg>
@@ -527,7 +525,6 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                         }`}
                         style={{ height: ALTO_FILA }}
                       >
-                        {actual && <span className={`${punto} -right-[13px]`} />}
                         <span className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${actual ? circuloLleno : circuloVacio}`}>
                           {actual ? <Check className="w-4 h-4" strokeWidth={3} /> : <Plus className="w-4 h-4" />}
                         </span>
@@ -583,8 +580,6 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                         }`}
                         style={{ height: ALTO_FILA }}
                       >
-                        <span className={`${punto} -left-[13px]`} />
-                        {activa && <span className={`${punto} -right-[13px]`} />}
                         <span
                           className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-[12px] font-bold transition-transform duration-200 ${
                             isHovered || activa ? 'scale-105' : ''
@@ -655,7 +650,6 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                         }`}
                         style={{ height: ALTO_FILA }}
                       >
-                        <span className={`${punto} -left-[13px]`} />
                         <span
                           className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-transform duration-200 ${
                             isHovered ? 'scale-105' : ''
