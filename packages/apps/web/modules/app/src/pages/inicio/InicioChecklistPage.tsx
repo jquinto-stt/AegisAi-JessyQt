@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { Check } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { PageMeta } from "@/shell/meta";
 import { organizacionStore } from "@/stores/organizacion.store";
 import { uiStore } from "@/stores";
@@ -47,9 +48,25 @@ const TarjetaTarea = ({
   const Icono = tarea.icono;
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={{ opacity: 0, transform: "translateY(12px) scale(0.97)" }}
+      animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+      exit={{
+        opacity: 0,
+        transform: "translateX(40px) scale(0.95)",
+        filter: "blur(4px)",
+        transition: {
+          duration: 0.35,
+          ease: [0.23, 1, 0.32, 1],
+        },
+      }}
+      transition={{
+        duration: 0.3,
+        ease: [0.23, 1, 0.32, 1],
+      }}
       onClick={!tarea.completada ? onCompletar : undefined}
-      className={`tarea-checklist flex items-center justify-between p-4 sm:p-5 rounded-2xl border border-[#ECECEC] dark:border-white/10 shadow-xs transition-[border-color,background-color,transform] ${
+      className={`tarea-checklist flex items-center justify-between p-4 sm:p-5 rounded-2xl border border-[#ECECEC] dark:border-white/10 shadow-xs transition-[border-color,background-color] ${
         tarea.completada
           ? "bg-[#ECECEC]/40 dark:bg-white/[0.03]"
           : "bg-white dark:bg-[#212121]/60 hover:border-[#97D6DF]/60 dark:hover:border-white/20 cursor-pointer hover:shadow-md active:scale-[0.995]"
@@ -104,7 +121,7 @@ const TarjetaTarea = ({
           </button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -128,6 +145,12 @@ export const InicioChecklistPage = observer(() => {
   const [vistasAlEntrar] = useState(() => leerVistas(orgId));
   const recienCompletadas = new Set(
     vistasAlEntrar ? completadas.filter((id) => !vistasAlEntrar.includes(id)) : []
+  );
+
+  // Filtramos las tareas: solo mostramos las pendientes, o aquellas que se acaban
+  // de completar en esta sesión para que se aprecie su animación de salida.
+  const tareasVisibles = tareas.filter(
+    (t) => !t.completada || recienCompletadas.has(t.id)
   );
 
   useEffect(() => {
@@ -214,14 +237,16 @@ export const InicioChecklistPage = observer(() => {
 
           {/* Lista de tareas */}
           <div className="space-y-3 pt-3">
-            {tareas.map((t) => (
-              <TarjetaTarea
-                key={t.id}
-                tarea={t}
-                recienCompletada={recienCompletadas.has(t.id)}
-                onCompletar={() => navigate(t.ruta)}
-              />
-            ))}
+            <AnimatePresence mode="popLayout" initial={false}>
+              {tareasVisibles.map((t) => (
+                <TarjetaTarea
+                  key={t.id}
+                  tarea={t}
+                  recienCompletada={recienCompletadas.has(t.id)}
+                  onCompletar={() => navigate(t.ruta)}
+                />
+              ))}
+            </AnimatePresence>
           </div>
 
           {/* Enlace para Omitir — 14px Regular */}
