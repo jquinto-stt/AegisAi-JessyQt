@@ -1,12 +1,17 @@
 import { organizacionStore } from "@/stores/organizacion.store";
 import { pedidosStore } from "@/stores/pedidos.store";
-import { inventarioStore } from "@/stores/inventario.store";
-import { UserCheck, Building2, Package, ShoppingCart, Truck } from "lucide-react";
+import { Building2, Layers, Package, ShoppingCart, Truck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 /**
- * Tareas de puesta en marcha del negocio. Una sola fuente para el checklist
- * de `/inicio` y para las notificaciones del dashboard en Necto.
+ * Tareas de puesta en marcha del negocio.
+ * Flujo progresivo de Necto:
+ * 1. Configurar datos reales del negocio (reemplazar defaults demo).
+ * 2. Instalar módulos de operación.
+ * 3. Si 'pedidos' está activo, desbloquear tareas específicas:
+ *    - Crear productos propios
+ *    - Crear el primer pedido real
+ *    - Realizar el primer envío en Necto
  */
 export interface TareaInicio {
   id: string;
@@ -19,44 +24,59 @@ export interface TareaInicio {
 }
 
 export function tareasDeInicio(): TareaInicio[] {
-  const tienePerfil = Boolean(organizacionStore?.tienePerfil);
-  const tieneNegocio = Boolean(organizacionStore?.tieneOrganizacion);
-  const tieneProductos =
-    (pedidosStore?.config?.catalogo?.length ?? 0) > 0 ||
-    (inventarioStore?.articulos?.length ?? 0) > 0;
-  const tienePedidos = (pedidosStore?.pedidos?.length ?? 0) > 0;
-  const tieneEnvios = Boolean(
-    pedidosStore?.pedidos?.some(
-      (p) => p.estado === "enviado" || p.estado === "entregado" || Boolean(p.guiaTransportadora)
-    )
+  const tareas: TareaInicio[] = [];
+
+  // 1. Ingresar datos reales del negocio (no el placeholder demo «Mi Empresa»)
+  const org = organizacionStore.organizacion;
+  const nombreOrg = org?.nombre?.trim() ?? "";
+  const negocioCompletado = Boolean(
+    org &&
+    nombreOrg !== "" &&
+    nombreOrg.toLowerCase() !== "mi empresa" &&
+    nombreOrg.toLowerCase() !== "empresa demo"
   );
 
-  return [
-    {
-      id: "cuenta",
-      nombre: "Crea tu cuenta",
-      aviso: {
-        titulo: "Cuenta: Completa tus datos",
-        texto: "Completa tu perfil para personalizar tu cuenta en Necto.",
-        accion: "Completar",
-      },
-      ruta: "/onboarding/perfil",
-      completada: tienePerfil,
-      icono: UserCheck,
+  tareas.push({
+    id: "negocio",
+    nombre: "Ingresa los datos del negocio",
+    aviso: {
+      titulo: "Negocio: Datos de la empresa",
+      texto: "Ingresa el nombre, identificación y moneda de tu negocio.",
+      accion: "Completar",
     },
-    {
-      id: "negocio",
-      nombre: "Ingresa los datos del negocio",
-      aviso: {
-        titulo: "Negocio: Datos de la empresa",
-        texto: "Ingresa el nombre, identificación y moneda de tu negocio.",
-        accion: "Completar",
-      },
-      ruta: "/configuracion",
-      completada: tieneNegocio,
-      icono: Building2,
+    ruta: "/configuracion",
+    completada: negocioCompletado,
+    icono: Building2,
+  });
+
+  // 2. Instalar módulos de operación
+  const tieneModulos = organizacionStore.modulosActivos.length > 0;
+  tareas.push({
+    id: "modulo",
+    nombre: "Instala un módulo",
+    aviso: {
+      titulo: "Configuración: Instalar módulos",
+      texto: "Activa tus módulos operativos (Pedidos, WhatsApp, etc.).",
+      accion: "Completar",
     },
-    {
+    ruta: "/configuracion?tab=modulos",
+    completada: tieneModulos,
+    icono: Layers,
+  });
+
+  // 3. Tareas dependientes del módulo de PEDIDOS
+  // Solo se desbloquean si el usuario tiene activo el módulo 'pedidos'
+  if (organizacionStore.esModuloActivo("pedidos")) {
+    const catalogo = pedidosStore?.config?.catalogo || [];
+    // Comprobar si el usuario cargó productos propios (excluyendo los 3 demo por defecto)
+    const tieneProductosPropios =
+      catalogo.length > 0 &&
+      !catalogo.every((c) =>
+        ["cat1", "cat2", "cat3"].includes(c.id) ||
+        ["Combo clásico", "Bebida 350ml", "Postre del día"].includes(c.nombre)
+      );
+
+    tareas.push({
       id: "productos",
       nombre: "Crea tus productos",
       aviso: {
@@ -65,10 +85,17 @@ export function tareasDeInicio(): TareaInicio[] {
         accion: "Completar",
       },
       ruta: "/pedidos/catalogo",
-      completada: tieneProductos,
+      completada: tieneProductosPropios,
       icono: Package,
-    },
-    {
+    });
+
+    // Pedidos reales creados por el usuario (excluyendo el lote de seed pd1..pd7)
+    const pedidosReales = (pedidosStore?.pedidos || []).filter(
+      (p) => !p.id.startsWith("pd") && !p.id.startsWith("p-seed-")
+    );
+    const tienePrimerPedido = pedidosReales.length > 0;
+
+    tareas.push({
       id: "pedido",
       nombre: "Crea tu primer pedido",
       aviso: {
@@ -77,10 +104,15 @@ export function tareasDeInicio(): TareaInicio[] {
         accion: "Completar",
       },
       ruta: "/pedidos/crear",
-      completada: tienePedidos,
+      completada: tienePrimerPedido,
       icono: ShoppingCart,
-    },
-    {
+    });
+
+    const tienePrimerEnvio = pedidosReales.some(
+      (p) => p.estado === "enviado" || p.estado === "entregado" || Boolean(p.guiaTransportadora)
+    );
+
+    tareas.push({
       id: "envio",
       nombre: "Haz tu primer envío y aprende a operar en Necto",
       aviso: {
@@ -89,8 +121,10 @@ export function tareasDeInicio(): TareaInicio[] {
         accion: "Completar",
       },
       ruta: "/pedidos",
-      completada: tieneEnvios,
+      completada: tienePrimerEnvio,
       icono: Truck,
-    },
-  ];
+    });
+  }
+
+  return tareas;
 }

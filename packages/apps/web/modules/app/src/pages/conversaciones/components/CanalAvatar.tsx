@@ -162,25 +162,15 @@ export const CanalAvatar: React.FC<CanalAvatarProps> = ({
     <div
       className={`relative inline-flex shrink-0 items-center justify-center rounded-full font-sans ${sizeClasses} ${className}`}
     >
-      {/* 1. Avatar principal del usuario (Gris claro #ECECEC y azul NECTO #190088) */}
+      {/* 1. Avatar principal del usuario (círculo oscuro/slate estilo Lucid Bot) */}
       <div
-        className="flex h-full w-full items-center justify-center rounded-full bg-[#ECECEC] text-[#190088] border border-[#d0d5dd]/50 dark:bg-[#190088]/25 dark:text-[#97D6DF] dark:border-[#190088]/40 overflow-hidden shadow-2xs transition-colors"
+        className="flex h-full w-full items-center justify-center rounded-full bg-[#334155] text-slate-200 dark:bg-[#334155] dark:text-slate-200 overflow-hidden shadow-xs transition-colors"
         title={`${nombre} (${badgeConfig.label})`}
       >
         {avatarUrl ? (
           <img src={avatarUrl} alt={nombre} className="h-full w-full object-cover" />
         ) : (
-          <span className="font-bold tracking-tight select-none">
-            {nombre
-              ? nombre
-                  .split(" ")
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((p) => p[0])
-                  .join("")
-                  .toUpperCase()
-              : "U"}
-          </span>
+          <UserSilhouette className={iconSizes} />
         )}
       </div>
 
