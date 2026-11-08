@@ -128,28 +128,33 @@ const Conector: React.FC<{
   desde: number;
   hacia: DestinoLinea[];
   altoMax: number;
-}> = ({ desde, hacia, altoMax }) => {
+  hoverIdx?: number | null;
+  onHoverDest?: (idx: number | null) => void;
+}> = ({ desde, hacia, altoMax, hoverIdx, onHoverDest }) => {
   const y1 = centro(Math.max(0, desde));
-  const rPunto = 3.5;
+  const rPunto = 4;
 
   return (
-    <svg className="hidden lg:block shrink-0 w-12" height={altoMax} aria-hidden>
+    <svg className="hidden lg:block shrink-0 w-12 overflow-visible" height={altoMax} aria-hidden>
       {/* 1. Dibujamos las trayectorias de curvas Bézier estilo SugarCRM */}
       {hacia.map((dest) => {
         const y2 = centro(dest.indice);
         const cfg = CONFIG_LINEA[dest.tipo];
+        const isHovered = hoverIdx === dest.indice;
         return (
           <path
             key={`linea-${dest.indice}`}
             d={`M 6 ${y1} C 26 ${y1}, 22 ${y2}, 42 ${y2}`}
             fill="none"
-            strokeWidth={cfg.strokeWidth}
+            strokeWidth={isHovered ? cfg.strokeWidth + 1.5 : cfg.strokeWidth}
             strokeDasharray={cfg.dash}
-            opacity={cfg.opacidad}
-            className="transition-colors duration-200"
+            opacity={hoverIdx != null ? (isHovered ? 1 : 0.25) : cfg.opacidad}
+            className="transition-all duration-200 cursor-pointer"
             style={{
               stroke: cfg.stroke,
             }}
+            onMouseEnter={() => onHoverDest?.(dest.indice)}
+            onMouseLeave={() => onHoverDest?.(null)}
           />
         );
       })}
@@ -160,23 +165,24 @@ const Conector: React.FC<{
         cx={6}
         cy={y1}
         r={rPunto}
-        className="fill-[#190088] dark:fill-[#97D6DF] stroke-white dark:stroke-[#1c1c22]"
-        strokeWidth={1.5}
+        className="fill-[#190088] dark:fill-[#97D6DF] stroke-white dark:stroke-[#1c1c22] shadow-sm"
+        strokeWidth={2}
       />
 
       {/* Puntos de destino (en la columna derecha) */}
       {hacia.map((dest) => {
         const y2 = centro(dest.indice);
         const cfg = CONFIG_LINEA[dest.tipo];
+        const isHovered = hoverIdx === dest.indice;
         return (
           <circle
             key={`punto-${dest.indice}`}
             cx={42}
             cy={y2}
-            r={dest.tipo === 'concedido' || dest.tipo === 'excepcion_alta' ? rPunto : 2.5}
+            r={isHovered ? rPunto + 1.5 : dest.tipo === 'concedido' || dest.tipo === 'excepcion_alta' ? rPunto : 3}
             fill={cfg.puntoFin}
-            className="stroke-white dark:stroke-[#1c1c22] transition-colors"
-            strokeWidth={1.5}
+            className="stroke-white dark:stroke-[#1c1c22] transition-all duration-200"
+            strokeWidth={2}
           />
         );
       })}
@@ -201,6 +207,8 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
         null
     );
     const [grupoId, setGrupoId] = useState(CAPACIDAD_GRUPOS[0].id);
+    const [hoverAreaIdx, setHoverAreaIdx] = useState<number | null>(null);
+    const [hoverPermisoIdx, setHoverPermisoIdx] = useState<number | null>(null);
     const [toast, setToast] = useState<string | null>(null);
 
     const avisar = (msg: string) => {
@@ -511,13 +519,15 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
               desde={idxRol}
               hacia={destinosRolAAreas}
               altoMax={Math.max(alto(roles.length), alto(CAPACIDAD_GRUPOS.length))}
+              hoverIdx={hoverAreaIdx}
+              onHoverDest={setHoverAreaIdx}
             />
 
             {/* Columna 2: Áreas */}
             <div className="flex-1 min-w-0">
               <div className={tarjeta} style={{ padding: PAD }}>
                 <div className="flex flex-col" style={{ gap: GAP }}>
-                  {CAPACIDAD_GRUPOS.map((g) => {
+                  {CAPACIDAD_GRUPOS.map((g, i) => {
                     const tiene = g.capacidades.filter((c) => efectivas.has(c)).length;
                     const total = g.capacidades.length;
                     const conExcepcion = g.capacidades.some((c) => {
@@ -525,22 +535,29 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                       return p === 'concedida' || p === 'removida';
                     });
                     const activa = g.id === grupo.id;
+                    const isHovered = hoverAreaIdx === i;
                     return (
                       <button
                         key={g.id}
                         type="button"
                         onClick={() => setGrupoId(g.id)}
-                        className={`relative flex items-center gap-3 px-2 rounded-[20px] text-left cursor-pointer transition-colors ${
+                        onMouseEnter={() => setHoverAreaIdx(i)}
+                        onMouseLeave={() => setHoverAreaIdx(null)}
+                        className={`relative flex items-center gap-3 px-2 rounded-[20px] text-left cursor-pointer transition-all duration-200 ${
                           activa
-                            ? 'bg-[#EFE6D3]/60 dark:bg-white/[0.08] ring-1 ring-[#190088]/20 dark:ring-[#97D6DF]/30'
-                            : 'hover:bg-[#ECECEC]/60 dark:hover:bg-white/[0.04]'
+                            ? 'bg-[#EFE6D3]/70 dark:bg-white/[0.08] ring-2 ring-[#190088] dark:ring-[#97D6DF] scale-[1.01]'
+                            : isHovered
+                              ? 'bg-[#ECECEC]/70 dark:bg-white/[0.06] scale-[1.005]'
+                              : 'hover:bg-[#ECECEC]/60 dark:hover:bg-white/[0.04]'
                         }`}
                         style={{ height: ALTO_FILA }}
                       >
                         <span className={`${punto} -left-[13px]`} />
                         {activa && <span className={`${punto} -right-[13px]`} />}
                         <span
-                          className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-[12px] font-bold ${
+                          className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-[12px] font-bold transition-transform duration-200 ${
+                            isHovered || activa ? 'scale-105' : ''
+                          } ${
                             tiene === total
                               ? circuloLleno
                               : tiene > 0
@@ -571,22 +588,27 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
               desde={idxGrupo}
               hacia={destinosAreasAPermisos}
               altoMax={Math.max(alto(CAPACIDAD_GRUPOS.length), alto(grupo.capacidades.length))}
+              hoverIdx={hoverPermisoIdx}
+              onHoverDest={setHoverPermisoIdx}
             />
 
             {/* Columna 3: Permisos del área */}
             <div className="flex-1 min-w-0">
               <div className={tarjeta} style={{ padding: PAD }}>
                 <div className="flex flex-col" style={{ gap: GAP }}>
-                  {grupo.capacidades.map((cap) => {
+                  {grupo.capacidades.map((cap, i) => {
                     const proc: Procedencia = procedenciaDe(op, cap, capsRol);
                     const lock = bloqueada(cap);
                     const efectiva = efectivas.has(cap);
+                    const isHovered = hoverPermisoIdx === i;
                     return (
                       <button
                         key={cap}
                         type="button"
                         disabled={!puedeGestionar || lock}
                         onClick={() => toggleCap(cap)}
+                        onMouseEnter={() => setHoverPermisoIdx(i)}
+                        onMouseLeave={() => setHoverPermisoIdx(null)}
                         title={
                           lock
                             ? 'No puedes quitarte la gestión de equipo a ti mismo.'
@@ -594,12 +616,18 @@ export const OperadoresFlujoJourneyView: React.FC<OperadoresFlujoJourneyViewProp
                               ? 'Clic para revocar'
                               : 'Clic para conceder'
                         }
-                        className="relative flex items-center gap-3 px-2 rounded-[20px] text-left enabled:hover:bg-[#ECECEC]/60 dark:enabled:hover:bg-white/[0.04] enabled:cursor-pointer disabled:cursor-not-allowed transition-colors"
+                        className={`relative flex items-center gap-3 px-2 rounded-[20px] text-left transition-all duration-200 enabled:cursor-pointer disabled:cursor-not-allowed ${
+                          isHovered
+                            ? 'bg-[#EFE6D3]/50 dark:bg-white/[0.08] ring-1 ring-[#190088]/20 dark:ring-[#97D6DF]/30 scale-[1.005]'
+                            : 'enabled:hover:bg-[#ECECEC]/60 dark:enabled:hover:bg-white/[0.04]'
+                        }`}
                         style={{ height: ALTO_FILA }}
                       >
                         <span className={`${punto} -left-[13px]`} />
                         <span
-                          className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${
+                          className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                            isHovered ? 'scale-105' : ''
+                          } ${
                             efectiva
                               ? circuloLleno
                               : proc === 'removida'
