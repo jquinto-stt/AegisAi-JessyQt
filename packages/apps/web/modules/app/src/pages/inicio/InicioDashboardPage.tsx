@@ -773,6 +773,10 @@ export const InicioDashboardPage = observer(() => {
   const todasLasTareas = tareasDeInicio();
   const tareasPendientes = todasLasTareas.filter((t) => !t.completada);
   const tareasCompletadas = todasLasTareas.length - tareasPendientes.length;
+  const porcentajeCompletado =
+    todasLasTareas.length > 0
+      ? Math.round((tareasCompletadas / todasLasTareas.length) * 100)
+      : 0;
   const pedidosAtencion = pedidosStore.enCurso().length;
   const hayNotificacionesGestion =
     pedidosAtencion > 0 || tareasPendientes.length > 0;
@@ -1090,31 +1094,44 @@ export const InicioDashboardPage = observer(() => {
                   </div>
                 )}
 
-                {/* Tarjeta única comprimida de puesta en marcha del negocio */}
+                {/* Tarjeta única comprimida de puesta en marcha del negocio con barra de progreso */}
                 {tareasPendientes.length > 0 && (
                   <div
                     onClick={() => navigate("/inicio")}
-                    className="p-3.5 rounded-2xl bg-gradient-to-r from-[#97D6DF]/20 via-[#97D6DF]/10 to-transparent dark:from-[#97D6DF]/15 dark:to-transparent border border-[#97D6DF]/50 flex items-center justify-between gap-3 cursor-pointer hover:border-[#97D6DF] hover:shadow-xs transition-[border-color,background-color,transform] active:scale-[0.99]"
+                    className="p-3.5 rounded-2xl bg-gradient-to-r from-[#97D6DF]/20 via-[#97D6DF]/10 to-transparent dark:from-[#97D6DF]/15 dark:to-transparent border border-[#97D6DF]/50 flex flex-col gap-2.5 cursor-pointer hover:border-[#97D6DF] hover:shadow-xs transition-[border-color,background-color,transform] active:scale-[0.99]"
                   >
-                    <div className="space-y-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <Layers className="w-4 h-4 text-[#190088] dark:text-[#97D6DF] shrink-0" />
-                        <p className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] truncate">
-                          Puesta en marcha ({tareasCompletadas}/{todasLasTareas.length} completadas)
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Layers className="w-4 h-4 text-[#190088] dark:text-[#97D6DF] shrink-0" />
+                          <p className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] truncate">
+                            Puesta en marcha ({tareasCompletadas}/{todasLasTareas.length} completadas)
+                          </p>
+                          <span className="text-[10px] font-bold text-[#190088] dark:text-[#97D6DF] bg-white/70 dark:bg-white/10 px-1.5 py-0.5 rounded-md border border-[#97D6DF]/40">
+                            {porcentajeCompletado}%
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#212121]/80 dark:text-[#ECECEC]/80 leading-snug">
+                          Tenés {tareasPendientes.length} {tareasPendientes.length === 1 ? "paso pendiente" : "pasos pendientes"} para configurar tu negocio.
                         </p>
                       </div>
-                      <p className="text-[11px] text-[#212121]/80 dark:text-[#ECECEC]/80 leading-snug">
-                        Tenés {tareasPendientes.length} {tareasPendientes.length === 1 ? "paso pendiente" : "pasos pendientes"} para configurar tu negocio.
-                      </p>
+                      <Link
+                        to="/inicio"
+                        onClick={(e) => e.stopPropagation()}
+                        className="shrink-0 px-3.5 py-1.5 rounded-xl bg-[#190088] hover:bg-[#190088]/90 active:scale-[0.98] text-white text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                      >
+                        <span>Ver más</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </Link>
                     </div>
-                    <Link
-                      to="/inicio"
-                      onClick={(e) => e.stopPropagation()}
-                      className="shrink-0 px-3.5 py-1.5 rounded-xl bg-[#190088] hover:bg-[#190088]/90 active:scale-[0.98] text-white text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                    >
-                      <span>Ver más</span>
-                      <ChevronRight className="w-3 h-3" />
-                    </Link>
+
+                    {/* Barra de progreso visual con gradiente NECTO */}
+                    <div className="w-full h-1.5 rounded-full bg-[#ECECEC] dark:bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#97D6DF] to-[#FF3F1A] transition-all duration-500 ease-out"
+                        style={{ width: `${porcentajeCompletado}%` }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>

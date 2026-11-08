@@ -401,6 +401,10 @@ const NotificationDropdown = observer(function NotificationDropdown() {
   const todasLasTareas = tareasDeInicio();
   const tareasPendientes = todasLasTareas.filter((t) => !t.completada);
   const tareasCompletadasCount = todasLasTareas.length - tareasPendientes.length;
+  const porcentaje =
+    todasLasTareas.length > 0
+      ? Math.round((tareasCompletadasCount / todasLasTareas.length) * 100)
+      : 0;
 
   const tarjetasPuestaEnMarcha: TarjetaNotificacion[] =
     tareasPendientes.length > 0
@@ -412,7 +416,7 @@ const NotificationDropdown = observer(function NotificationDropdown() {
               bg: "bg-[#97D6DF]/20 dark:bg-[#97D6DF]/15",
               text: "text-[#190088] dark:text-[#97D6DF]",
             },
-            fecha: "Pendiente",
+            fecha: `${porcentaje}%`,
             titulo: `Puesta en marcha (${tareasCompletadasCount}/${todasLasTareas.length} completadas)`,
             detalle: `Tenés ${tareasPendientes.length} ${
               tareasPendientes.length === 1 ? "paso pendiente" : "pasos pendientes"
