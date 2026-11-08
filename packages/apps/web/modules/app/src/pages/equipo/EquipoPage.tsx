@@ -275,7 +275,7 @@ export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => 
       {vista === "roles" ? (
         <RolesTab modulo={moduloActivo} />
       ) : modoVisualizacion === "flujo" ? (
-        <OperadoresFlujoJourneyView operadores={listaFiltrada} />
+        <OperadoresFlujoJourneyView operadores={listaFiltrada} onGestionarRoles={() => setVista("roles")} />
       ) : (
         <EquipoTabla operadores={listaFiltrada} />
       )}
