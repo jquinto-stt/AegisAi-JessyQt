@@ -159,8 +159,7 @@ const RootRoute = observer(() => {
   if (!organizacionStore.usuario?.perfilCompletado || !organizacionStore.tieneOrganizacion) {
     return <Navigate to="/onboarding/bienvenida" replace />;
   }
-  const hayTareasPendientes = tareasDeInicio().some((t) => !t.completada);
-  return <Navigate to={hayTareasPendientes ? "/inicio" : "/dashboard"} replace />;
+  return <Navigate to="/dashboard" replace />;
 });
 
 export default function App() {

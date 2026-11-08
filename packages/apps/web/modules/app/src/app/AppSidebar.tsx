@@ -51,7 +51,7 @@ import {
 /**
  * Ruta del Lanzador / Inicio.
  */
-const RUTA_LANZADOR = "/inicio";
+const RUTA_LANZADOR = "/dashboard";
 
 /** Tooltip común a los dos logos: dicen lo MISMO porque hacen lo mismo. */
 const TOOLTIP_LANZADOR = "NECTO";
@@ -72,11 +72,8 @@ const TOOLTIP_LANZADOR = "NECTO";
  * ya pasa—, así que se pone donde el puntero realmente está.
  */
 const Logo = observer(() => {
-  const hayTareasPendientes = tareasDeInicio().some((t) => !t.completada);
-  const rutaDestino = hayTareasPendientes ? "/inicio" : "/dashboard";
-
   return (
-    <Link to={rutaDestino} className="flex items-center">
+    <Link to="/dashboard" className="flex items-center">
       {/*
         Logo oficial horizontal: NECTO en rojo #FF3F1A con «grow together» a la derecha.
         - Modo normal: acento N y «grow together» en azul #190088.
@@ -99,12 +96,9 @@ const Logo = observer(() => {
 });
 
 const LogoCollapsed = observer(() => {
-  const hayTareasPendientes = tareasDeInicio().some((t) => !t.completada);
-  const rutaDestino = hayTareasPendientes ? "/inicio" : "/dashboard";
-
   return (
     <Link
-      to={rutaDestino}
+      to="/dashboard"
       title={TOOLTIP_LANZADOR}
       aria-label="Inicio NECTO"
       className="group flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-gray-100/70 dark:hover:bg-white/5"
@@ -389,7 +383,6 @@ const SidebarContent = observer(() => {
   const { isExpanded: showExpanded } = useSidebarContext();
   const isActive = (path: string) => pathname === path;
   const hayTareasPendientes = tareasDeInicio().some((t) => !t.completada);
-  const rutaInicio = hayTareasPendientes ? "/inicio" : "/dashboard";
 
   const puedeVerSeccion = (modulo: Modulo, seccionId: string) =>
     sessionStore.puedeVerSeccion(modulo, seccionId);
@@ -613,7 +606,7 @@ const SidebarContent = observer(() => {
                   </div>
                 }
                 name="Inicio"
-                path={rutaInicio}
+                path="/dashboard"
                 isActive={() => pathname === "/inicio" || pathname === "/dashboard"}
               />
             </ul>
@@ -693,7 +686,7 @@ const SidebarContent = observer(() => {
         <div ref={railRef} className="flex flex-col items-center justify-center gap-2.5 w-full py-1">
           {/* Botón Inicio en Rail Mode */}
           <Link
-            to={rutaInicio}
+            to="/dashboard"
             title={hayTareasPendientes ? "Inicio · Tareas pendientes" : "Inicio"}
             aria-label="Inicio"
             className={`group relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ease-out hover:scale-110 active:scale-95 cursor-pointer ${

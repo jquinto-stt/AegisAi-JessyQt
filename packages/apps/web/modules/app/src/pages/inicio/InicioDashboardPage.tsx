@@ -770,7 +770,9 @@ export const InicioDashboardPage = observer(() => {
   const isDark = uiStore.theme === "dark";
   const inventarioBarOptions = useMemo(() => getInventarioBarOptions(isDark), [isDark]);
 
-  const tareasPendientes = tareasDeInicio().filter((t) => !t.completada);
+  const todasLasTareas = tareasDeInicio();
+  const tareasPendientes = todasLasTareas.filter((t) => !t.completada);
+  const tareasCompletadas = todasLasTareas.length - tareasPendientes.length;
   const pedidosAtencion = pedidosStore.enCurso().length;
   const hayNotificacionesGestion =
     pedidosAtencion > 0 || tareasPendientes.length > 0;
@@ -1088,42 +1090,33 @@ export const InicioDashboardPage = observer(() => {
                   </div>
                 )}
 
-                {/* Tareas de puesta en marcha pendientes: misma fuente que el checklist de
-                    Inicio, así que cada aviso se quita solo al completarse la tarea. */}
-                {tareasPendientes.map((tarea) => {
-                  const Icono = tarea.icono;
-                  return (
-                    <div
-                      key={tarea.id}
-                      onClick={() => navigate(tarea.ruta)}
-                      className="p-3 rounded-2xl bg-[#97D6DF]/15 dark:bg-[#97D6DF]/10 border border-[#97D6DF]/40 flex items-center justify-between gap-3 cursor-pointer hover:border-[#97D6DF] hover:shadow-xs transition-[border-color,background-color,transform] active:scale-[0.99]"
-                    >
-                      <div className="space-y-0.5 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          {Icono ? (
-                            <Icono className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
-                          ) : (
-                            <Layers className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF] shrink-0" />
-                          )}
-                          <p className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] truncate">
-                            {tarea.aviso.titulo}
-                          </p>
-                        </div>
-                        <p className="text-[11px] text-[#212121]/70 dark:text-[#ECECEC]/70 leading-snug">
-                          {tarea.aviso.texto}
+                {/* Tarjeta única comprimida de puesta en marcha del negocio */}
+                {tareasPendientes.length > 0 && (
+                  <div
+                    onClick={() => navigate("/inicio")}
+                    className="p-3.5 rounded-2xl bg-gradient-to-r from-[#97D6DF]/20 via-[#97D6DF]/10 to-transparent dark:from-[#97D6DF]/15 dark:to-transparent border border-[#97D6DF]/50 flex items-center justify-between gap-3 cursor-pointer hover:border-[#97D6DF] hover:shadow-xs transition-[border-color,background-color,transform] active:scale-[0.99]"
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <Layers className="w-4 h-4 text-[#190088] dark:text-[#97D6DF] shrink-0" />
+                        <p className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] truncate">
+                          Puesta en marcha ({tareasCompletadas}/{todasLasTareas.length} completadas)
                         </p>
                       </div>
-                      <Link
-                        to={tarea.ruta}
-                        onClick={(e) => e.stopPropagation()}
-                        className="shrink-0 px-3 py-1.5 rounded-xl bg-[#190088] hover:bg-[#190088]/90 text-white text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                      >
-                        <span>{tarea.aviso.accion}</span>
-                        <ChevronRight className="w-3 h-3" />
-                      </Link>
+                      <p className="text-[11px] text-[#212121]/80 dark:text-[#ECECEC]/80 leading-snug">
+                        Tenés {tareasPendientes.length} {tareasPendientes.length === 1 ? "paso pendiente" : "pasos pendientes"} para configurar tu negocio.
+                      </p>
                     </div>
-                  );
-                })}
+                    <Link
+                      to="/inicio"
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 px-3.5 py-1.5 rounded-xl bg-[#190088] hover:bg-[#190088]/90 active:scale-[0.98] text-white text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                    >
+                      <span>Ver más</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

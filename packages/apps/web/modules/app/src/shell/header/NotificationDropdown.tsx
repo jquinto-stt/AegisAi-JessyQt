@@ -397,21 +397,31 @@ const NotificationDropdown = observer(function NotificationDropdown() {
   const [vistas, setVistas] = useState<Set<string>>(leerVistas);
   const [descartadas, setDescartadas] = useState<Set<string>>(leerDescartadas);
 
-  // 1. Tareas de puesta en marcha del negocio (onboarding pendientes)
-  const tareasPendientes = tareasDeInicio().filter((t) => !t.completada);
-  const tarjetasPuestaEnMarcha: TarjetaNotificacion[] = tareasPendientes.map((t) => ({
-    id: `tarea-inicio-${t.id}`,
-    categoria: "Puesta en marcha",
-    categoriaColor: {
-      bg: "bg-[#97D6DF]/20 dark:bg-[#97D6DF]/15",
-      text: "text-[#190088] dark:text-[#97D6DF]",
-    },
-    fecha: "Pendiente",
-    titulo: t.aviso.titulo,
-    detalle: t.aviso.texto,
-    ruta: t.ruta,
-    banner: "ninguno",
-  }));
+  // 1. Tarjeta única comprimida de puesta en marcha del negocio (onboarding)
+  const todasLasTareas = tareasDeInicio();
+  const tareasPendientes = todasLasTareas.filter((t) => !t.completada);
+  const tareasCompletadasCount = todasLasTareas.length - tareasPendientes.length;
+
+  const tarjetasPuestaEnMarcha: TarjetaNotificacion[] =
+    tareasPendientes.length > 0
+      ? [
+          {
+            id: "onboarding-resumen",
+            categoria: "Puesta en marcha",
+            categoriaColor: {
+              bg: "bg-[#97D6DF]/20 dark:bg-[#97D6DF]/15",
+              text: "text-[#190088] dark:text-[#97D6DF]",
+            },
+            fecha: "Pendiente",
+            titulo: `Puesta en marcha (${tareasCompletadasCount}/${todasLasTareas.length} completadas)`,
+            detalle: `Tenés ${tareasPendientes.length} ${
+              tareasPendientes.length === 1 ? "paso pendiente" : "pasos pendientes"
+            } para configurar tu negocio. Hacé clic para ver el checklist y continuar.`,
+            ruta: "/inicio",
+            banner: "ninguno",
+          },
+        ]
+      : [];
 
   // 2. Notificaciones reales de inventario
   const alertasInventario = sessionStore.modulos.includes("inventarios")
