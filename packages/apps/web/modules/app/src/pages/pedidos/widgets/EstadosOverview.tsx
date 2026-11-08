@@ -45,29 +45,25 @@ interface EtapaMeta {
 }
 
 /**
- * Mapeo de etapas alineado estrictamente a la paleta oficial de NECTO:
+ * Mapeo de etapas alineado estrictamente a la paleta oficial de NECTO y tipografía DM Sans:
  * - #FF3F1A: Naranja NECTO
  * - #97D6DF: Cyan NECTO
  * - #ECECEC: Gris claro
- * - #190088: Azul profundo NECTO
- * - #212121: Dark (texto general)
+ * - #190088: Azul profundo NECTO → Títulos y encabezados
+ * - #212121: Dark → Texto general
  * - #EFE6D3: Cream / Complementario
  */
 const ETAPAS: EtapaMeta[] = [
   {
     id: "nuevos",
-    // El nombre de la tarjeta es el del ESTADO (`META_ESTADO_PEDIDO.nuevo`), no
-    // un alias propio: decía «Nuevos» mientras el tablero decía «Pendiente de
-    // pago» y la lista «Para Confirmación Manual». Tres nombres para la misma
-    // casilla en la misma sesión.
     nombre: "Nuevos",
     estados: ["nuevo"],
     icon: InboxStackIcon,
     colorClases: {
-      badgeBg: "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400",
-      iconColor: "text-rose-600 dark:text-rose-400",
-      barColor: "bg-rose-500",
-      borderColor: "border-rose-200/60",
+      badgeBg: "bg-[#FF3F1A]/15 text-[#FF3F1A] dark:bg-[#FF3F1A]/20 dark:text-[#FF3F1A]",
+      iconColor: "text-[#FF3F1A]",
+      barColor: "bg-[#FF3F1A]",
+      borderColor: "border-[#FF3F1A]/30",
     },
   },
   {
@@ -76,10 +72,10 @@ const ETAPAS: EtapaMeta[] = [
     estados: ["confirmado"],
     icon: CheckBadgeIcon,
     colorClases: {
-      badgeBg: "bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-400",
-      iconColor: "text-red-500 dark:text-red-400",
-      barColor: "bg-red-500",
-      borderColor: "border-red-200/60",
+      badgeBg: "bg-[#97D6DF]/25 text-[#190088] dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]",
+      iconColor: "text-[#190088] dark:text-[#97D6DF]",
+      barColor: "bg-[#97D6DF]",
+      borderColor: "border-[#97D6DF]/40",
     },
   },
   {
@@ -88,10 +84,10 @@ const ETAPAS: EtapaMeta[] = [
     estados: ["en_preparacion"],
     icon: ClockIcon,
     colorClases: {
-      badgeBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
-      iconColor: "text-amber-600 dark:text-amber-400",
-      barColor: "bg-amber-500",
-      borderColor: "border-amber-200/60",
+      badgeBg: "bg-[#EFE6D3] text-[#190088] dark:bg-[#EFE6D3]/20 dark:text-[#EFE6D3]",
+      iconColor: "text-[#190088] dark:text-[#EFE6D3]",
+      barColor: "bg-[#EFE6D3]",
+      borderColor: "border-[#EFE6D3]",
     },
   },
   {
@@ -100,10 +96,10 @@ const ETAPAS: EtapaMeta[] = [
     estados: ["listo"],
     icon: ShoppingBagIcon,
     colorClases: {
-      badgeBg: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400",
-      iconColor: "text-indigo-600 dark:text-indigo-400",
-      barColor: "bg-indigo-500",
-      borderColor: "border-indigo-200/60",
+      badgeBg: "bg-[#190088] text-white dark:bg-[#190088]/80 dark:text-white",
+      iconColor: "text-white",
+      barColor: "bg-[#190088]",
+      borderColor: "border-[#190088]/40",
     },
   },
   {
@@ -112,10 +108,10 @@ const ETAPAS: EtapaMeta[] = [
     estados: ["en_camino"],
     icon: TruckIcon,
     colorClases: {
-      badgeBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
-      iconColor: "text-blue-600 dark:text-blue-400",
-      barColor: "bg-blue-500",
-      borderColor: "border-blue-200/60",
+      badgeBg: "bg-[#97D6DF] text-[#190088] dark:bg-[#97D6DF]/30 dark:text-[#97D6DF]",
+      iconColor: "text-[#190088] dark:text-[#97D6DF]",
+      barColor: "bg-[#97D6DF]",
+      borderColor: "border-[#97D6DF]/50",
     },
   },
   {
@@ -126,10 +122,10 @@ const ETAPAS: EtapaMeta[] = [
     enBarra: false,
     destino: "/pedidos/historial",
     colorClases: {
-      badgeBg: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
-      iconColor: "text-slate-500 dark:text-slate-400",
-      barColor: "bg-slate-400",
-      borderColor: "border-slate-200/60",
+      badgeBg: "bg-[#ECECEC] text-[#212121] dark:bg-white/10 dark:text-[#ECECEC]",
+      iconColor: "text-[#212121] dark:text-[#ECECEC]",
+      barColor: "bg-[#ECECEC]",
+      borderColor: "border-[#ECECEC]",
     },
   },
 ];
@@ -153,7 +149,7 @@ const EtapaCard = observer(
     return (
       <article
         onClick={onAbrir}
-        className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
+        className="bg-white dark:bg-[#1E1E22] rounded-2xl p-4 border border-[#ECECEC] dark:border-white/10 shadow-theme-xs hover:border-[#190088]/30 dark:hover:border-white/20 transition-all flex flex-col justify-between group cursor-pointer font-sans"
       >
         <div className="flex items-center justify-between">
           <div
@@ -162,24 +158,24 @@ const EtapaCard = observer(
             <Icon className="w-5 h-5" />
           </div>
           {porcentaje !== null ? (
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100/90 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+            <span className="text-[12px] font-bold text-[#212121] dark:text-[#ECECEC] bg-[#ECECEC] dark:bg-white/10 px-2.5 py-0.5 rounded-full">
               {porcentaje}%
             </span>
           ) : (
-            <span className="text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+            <span className="text-[12px] font-normal text-[#212121]/70 dark:text-[#ECECEC]/60 bg-[#ECECEC] dark:bg-white/10 px-2 py-0.5 rounded-full">
               Historial
             </span>
           )}
         </div>
 
         <div className="mt-3">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+          <p className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF] uppercase tracking-wider truncate">
             {etapa.nombre}
           </p>
-          <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+          <p className="text-[24px] font-bold text-[#190088] dark:text-white mt-0.5">
             {cantidad.toLocaleString()}
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium truncate">
+          <p className="text-[12px] font-normal text-[#212121]/70 dark:text-[#ECECEC]/60 mt-0.5 truncate">
             {etapa.id === "nuevos" && "Por gestionar"}
             {etapa.id === "confirmados" && "Verificados"}
             {etapa.id === "preparacion" && "En cocina / armado"}

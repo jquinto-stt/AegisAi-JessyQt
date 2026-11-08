@@ -31,6 +31,7 @@ import type { Pedido } from "@/stores/pedidos.store";
 import type { ConversacionCanal } from "@/stores";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
 import { DetallePedidoModal } from "./DetallePedidoModal";
+import { AdminDashboardView } from "./AdminDashboardView";
 import {
   money,
   relativo,
@@ -729,110 +730,131 @@ export const InicioPage = observer(() => {
         description="Resumen operativo, rendimiento de ventas y tarjeta de chat multicanal."
       />
 
-      {/* ── HEADER SALUDO Y ACCIONES PRINCIPALES ── */}
-      <header className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-1">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              Bienvenido de nuevo{nombreUsuario ? <>, <span className="text-brand-600 dark:text-brand-400">{nombreUsuario}</span></> : null}
-            </h1>
-          </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-2xl">
-            Resumen claro y en tiempo real del rendimiento operativo, pedidos y atención multicanal.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start lg:self-auto">
-          <BotonSilenciar className="inline-flex items-center justify-center p-2.5 size-10 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 shadow-sm transition-all" />
-
-          <button
-            type="button"
-            onClick={() => setDisplayOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold text-sm transition-all shadow-sm hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
-          >
-            <TvIcon className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-            <span>Modo Enfoque</span>
-          </button>
-
-          {puedeCrear && (
-            <button
-              type="button"
-              onClick={() => navigate("/pedidos/crear")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm tracking-wide shadow-sm hover:shadow transition-all cursor-pointer"
-            >
-              <PlusIcon className="w-4 h-4 stroke-[2.5]" />
-              <span>Crear pedido</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setCalendarioOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
-          >
-            <CalendarIcon className="w-4 h-4 text-slate-400" />
-            <span className="capitalize">{esHoy(dia) ? fechaActualTexto : fechaCorta(dia)}</span>
-          </button>
-        </div>
-      </header>
-
-      {/* ── FILA 1: FLUJO OPERATIVO DE PEDIDOS (6 ETAPAS DEL PIPELINE) ── */}
-      <div className="mb-6">
-        <EstadosOverview />
-      </div>
-
-      {/* ── FILA 2: PEDIDO PRIORITARIO DESTACADO (~60%) + CHAT & CONVERSACIONES (~40%) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mb-6">
-        <div className={sessionStore.hasPermission("channels.read") ? "lg:col-span-7 xl:col-span-8 flex flex-col" : "lg:col-span-12 flex flex-col"}>
-          <PedidoDestacadoCard onVerDetalle={setDetalleId} />
-        </div>
-
-        {sessionStore.hasPermission("channels.read") && (
-          <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
-            <ClientesCardWidget
-              onAbrir={() => setClientesOpen(true)}
-              onChat={abrirChat}
-              className="h-full"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* ── FILA 3: CALENDARIO SEMANAL (~40%) + PEDIDOS RECIENTES & ACTIVIDAD (~60%) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
-          <CalendarioSemanalWidget
-            seleccion={dia}
-            onSeleccion={setDia}
-            onAbrirModalCompleto={() => setCalendarioOpen(true)}
-            onVerPedido={verPedido}
-            className="h-full"
-          />
-        </div>
-
-        <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
-          <div className="rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 h-full flex flex-col justify-between">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">
-                  Pedidos Recientes & Actividad
-                </h2>
-                <p className="text-xs text-gray-400 mt-0.5">Últimas transacciones y estado operativo en tiempo real</p>
+      {!esOperador ? (
+        <AdminDashboardView
+          onVerDetalle={setDetalleId}
+          onOpenChat={abrirChat}
+          onOpenChatPedido={(pedidoId) => {
+            setClientesOpen(false);
+            setChatDrawerConvId(null);
+            setChatDrawerPedidoId(pedidoId);
+          }}
+          onOpenCalendario={() => setCalendarioOpen(true)}
+          onOpenDisplay={() => setDisplayOpen(true)}
+          onOpenClientes={() => setClientesOpen(true)}
+          fechaTexto={esHoy(dia) ? fechaActualTexto : fechaCorta(dia)}
+          botonSilenciar={
+            <BotonSilenciar className="inline-flex items-center justify-center size-10 rounded-full border border-slate-200/80 bg-white text-slate-600 hover:text-slate-900 dark:border-white/10 dark:bg-[#1C1D24] dark:text-slate-300 shadow-2xs transition-all" />
+          }
+        />
+      ) : (
+        <>
+          {/* ── HEADER SALUDO Y ACCIONES PRINCIPALES ── */}
+          <header className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-1 font-sans">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <h1 className="text-[24px] md:text-[36px] font-bold text-[#190088] dark:text-white">
+                  Bienvenido de nuevo{nombreUsuario ? <>, <span className="text-[#FF3F1A]">{nombreUsuario}</span></> : null}
+                </h1>
               </div>
-              <button
-                type="button"
-                onClick={() => navigate("/pedidos")}
-                className="flex items-center gap-1 text-xs font-bold text-secondary-600 hover:underline dark:text-brand-400 cursor-pointer"
-              >
-                <span>Ver Tablero</span>
-                <ArrowUpRightIcon className="size-3.5" />
-              </button>
+              <p className="text-[14px] text-[#212121]/70 dark:text-[#ECECEC]/70 font-normal max-w-2xl">
+                Resumen claro y en tiempo real del rendimiento operativo, pedidos y atención multicanal.
+              </p>
             </div>
 
-            <PedidosEnCursoCard onVerPedido={verPedido} />
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start lg:self-auto">
+              <BotonSilenciar className="inline-flex items-center justify-center p-2.5 size-10 rounded-xl border border-[#ECECEC] bg-white text-[#212121] hover:border-[#190088]/30 hover:bg-[#ECECEC]/40 dark:border-white/10 dark:bg-[#1E1E22] dark:text-[#ECECEC] shadow-theme-xs transition-all" />
+
+              <button
+                type="button"
+                onClick={() => setDisplayOpen(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#ECECEC] bg-white text-[#212121] hover:bg-[#ECECEC]/50 font-bold text-[14px] transition-all shadow-theme-xs hover:border-[#190088]/30 dark:border-white/10 dark:bg-[#1E1E22] dark:text-[#ECECEC] dark:hover:bg-white/5 cursor-pointer"
+              >
+                <TvIcon className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />
+                <span>Modo Enfoque</span>
+              </button>
+
+              {puedeCrear && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/pedidos/crear")}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white font-bold text-[14px] shadow-theme-xs transition-all cursor-pointer"
+                >
+                  <PlusIcon className="w-4 h-4 stroke-[2.5]" />
+                  <span>Crear pedido</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setCalendarioOpen(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#ECECEC] bg-white text-[#212121] font-bold text-[14px] shadow-theme-xs hover:bg-[#ECECEC]/50 dark:border-white/10 dark:bg-[#1E1E22] dark:text-[#ECECEC] dark:hover:bg-white/5 cursor-pointer"
+              >
+                <CalendarIcon className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />
+                <span className="capitalize">{esHoy(dia) ? fechaActualTexto : fechaCorta(dia)}</span>
+              </button>
+            </div>
+          </header>
+
+          {/* ── FILA 1: FLUJO OPERATIVO DE PEDIDOS (6 ETAPAS DEL PIPELINE) ── */}
+          <div className="mb-6 font-sans">
+            <EstadosOverview />
           </div>
-        </div>
-      </div>
+
+          {/* ── FILA 2: PEDIDO PRIORITARIO DESTACADO (~60%) + CHAT & CONVERSACIONES (~40%) ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mb-6 font-sans">
+            <div className={sessionStore.hasPermission("channels.read") ? "lg:col-span-7 xl:col-span-8 flex flex-col" : "lg:col-span-12 flex flex-col"}>
+              <PedidoDestacadoCard onVerDetalle={setDetalleId} />
+            </div>
+
+            {sessionStore.hasPermission("channels.read") && (
+              <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
+                <ClientesCardWidget
+                  onAbrir={() => setClientesOpen(true)}
+                  onChat={abrirChat}
+                  className="h-full"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* ── FILA 3: CALENDARIO SEMANAL (~40%) + PEDIDOS RECIENTES & ACTIVIDAD (~60%) ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch font-sans">
+            <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
+              <CalendarioSemanalWidget
+                seleccion={dia}
+                onSeleccion={setDia}
+                onAbrirModalCompleto={() => setCalendarioOpen(true)}
+                onVerPedido={verPedido}
+                className="h-full"
+              />
+            </div>
+
+            <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
+              <div className="rounded-3xl border border-[#ECECEC] bg-white p-5 sm:p-6 shadow-theme-xs dark:border-white/10 dark:bg-[#1E1E22] h-full flex flex-col justify-between">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <h2 className="text-[16px] font-bold text-[#190088] dark:text-white">
+                      Pedidos Recientes & Actividad
+                    </h2>
+                    <p className="text-[12px] font-normal text-[#212121]/70 dark:text-[#ECECEC]/60 mt-0.5">Últimas transacciones y estado operativo en tiempo real</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/pedidos")}
+                    className="flex items-center gap-1 text-[12px] font-bold text-[#190088] hover:underline dark:text-[#97D6DF] cursor-pointer"
+                  >
+                    <span>Ver Tablero</span>
+                    <ArrowUpRightIcon className="size-3.5" />
+                  </button>
+                </div>
+
+                <PedidosEnCursoCard onVerPedido={verPedido} />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {calendarioOpen && (
         <CalendarioInicioModal
