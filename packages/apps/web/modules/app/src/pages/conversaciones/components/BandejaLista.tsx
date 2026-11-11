@@ -107,11 +107,10 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
               <button
                 type="button"
                 onClick={() => setMenuFiltrosOpen(!menuFiltrosOpen)}
-                className={`relative inline-flex h-8 w-8 items-center justify-center rounded-lg border text-xs shadow-theme-xs transition-colors cursor-pointer ${
-                  conversacionesStore.filtro !== "todas" || conversacionesStore.filtroFecha !== "todas"
+                className={`relative inline-flex h-8 w-8 items-center justify-center rounded-lg border text-xs shadow-theme-xs transition-colors cursor-pointer ${conversacionesStore.filtro !== "todas" || conversacionesStore.filtroFecha !== "todas"
                     ? "border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-500/30 dark:bg-brand-500/15 dark:text-brand-400"
                     : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
-                }`}
+                  }`}
                 title="Filtrar conversaciones"
                 aria-label="Filtrar conversaciones"
               >
@@ -155,11 +154,10 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                       onItemClick={() => {
                         conversacionesStore.setFiltroFecha(f.valor);
                       }}
-                      className={`text-xs ${
-                        conversacionesStore.filtroFecha === f.valor
+                      className={`text-xs ${conversacionesStore.filtroFecha === f.valor
                           ? "font-bold text-brand-600 bg-brand-50 dark:bg-brand-500/10 dark:text-brand-400"
                           : "font-normal text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
-                      }`}
+                        }`}
                     >
                       {f.etiqueta}
                     </DropdownItem>
@@ -176,11 +174,10 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                       onItemClick={() => {
                         conversacionesStore.setFiltro(f.valor);
                       }}
-                      className={`text-xs ${
-                        conversacionesStore.filtro === f.valor
+                      className={`text-xs ${conversacionesStore.filtro === f.valor
                           ? "font-bold text-brand-600 bg-brand-50 dark:bg-brand-500/10 dark:text-brand-400"
                           : "font-normal text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
-                      }`}
+                        }`}
                     >
                       {f.etiqueta}
                     </DropdownItem>
@@ -350,13 +347,11 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                     }
                   }}
                   style={{ animationDelay: retardoEscalonado(i) }}
-                  className={`animate-entrada-lista group flex cursor-pointer items-center transition-colors ${
-                    compacta ? "gap-2.5 rounded-xl px-3 py-2.5" : "gap-3 rounded-xl p-3"
-                  } ${
-                    seleccionada
+                  className={`animate-entrada-lista group flex cursor-pointer items-center transition-colors ${compacta ? "gap-2.5 rounded-xl px-3 py-2.5" : "gap-3 rounded-xl p-3"
+                    } ${seleccionada
                       ? "bg-brand-500/10 dark:bg-brand-500/15"
                       : "hover:bg-gray-50 dark:hover:bg-gray-800/60"
-                  }`}
+                    }`}
                 >
                   {/* Avatar con foto o canal WhatsApp/Telegram y presencia */}
                   <div className="relative shrink-0">
@@ -373,9 +368,8 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex min-w-0 items-center gap-1.5 flex-wrap">
                         <h5
-                          className={`truncate text-sm font-bold flex items-center gap-1 ${
-                            seleccionada ? "text-brand-500 dark:text-brand-400" : "text-gray-900 dark:text-white/90"
-                          }`}
+                          className={`truncate text-sm font-bold flex items-center gap-1 ${seleccionada ? "text-brand-500 dark:text-brand-400" : "text-gray-900 dark:text-white/90"
+                            }`}
                         >
                           <span className="truncate">{conv.contacto.nombre}</span>
                           {conv.destacada && (

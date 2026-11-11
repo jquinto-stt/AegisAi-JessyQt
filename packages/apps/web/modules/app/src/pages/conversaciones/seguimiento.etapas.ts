@@ -27,11 +27,10 @@
  * cliente está esperando respuesta. No se inventan un campo para fingir
  * precisión.
  *
- *   CON pedido (el pedido manda), en este orden:
+ *   CON pedido activo (el pedido manda), en este orden:
  *     1. cobro en trámite     → Validación de pago   manda el DINERO
- *     2. programado           → Oferta Enviada       agendado, aún no entró
- *     3. nuevo / confirmado   → En Cierre            falta arrancar preparación
- *     4. en_preparacion o más → null                 venta ganada: sale del embudo
+ *     2. nuevo / confirmado   → En Cierre            falta arrancar preparación
+ *     3. programado o cocina  → null                 venta agendada o en operación
  *
  * El cobro va PRIMERO a propósito. Un pedido por transferencia sin pagar que ya
  * entró a preparación sigue teniendo dinero sin confirmar, y esconderlo porque
@@ -39,11 +38,12 @@
  * El embudo de ventas puede terminar en la confirmación; la COBRANZA no termina
  * hasta que el pago está validado.
  *
- *   SIN pedido (el hilo es la única señal):
- *     abierta               → Contacto Inicial
- *     en_espera             → Seguimiento       el hilo está parado
- *     atendida              → Oferta Enviada    un asesor lo está trabajando
+ *   SIN pedido activo:
+ *     con historial de pedidos (entregado/cancelado) → null (ya cerró su ciclo)
  *     cerrada               → null              resuelto y sin venta
+ *     en_espera             → Seguimiento       el hilo está parado esperando asesor
+ *     atendida              → Oferta Enviada    un asesor envió propuesta/cotización
+ *     abierta               → Contacto Inicial
  *
  * `null` significa «fuera del embudo comercial»: la tarjeta no se pinta. Es la
  * pieza que faltaba — un embudo de ventas necesita un final, y sin él las
@@ -99,12 +99,16 @@ export function etapaDe(conv: ConversacionCanal): EtapaSeguimiento | null {
     // trámite, la tarjeta pertenece a «Validación de pago» aunque el pedido ya
     // esté en preparación. Ver la cabecera del archivo.
     if (esperaValidacionPago(pedido)) return "validacion_pago";
-    if (pedido.estado === "programado") return "oferta_enviada";
     if (pedido.estado === "nuevo" || pedido.estado === "confirmado") return "en_cierre";
-    // en_preparacion, listo, en_camino: venta cerrada y cobro resuelto. Su sitio
-    // es /pedidos, no un embudo de ventas.
+    // programado, en_preparacion, listo, en_camino: venta agendada o en operación
+    // con cobro resuelto (o contra entrega). Su sitio es /pedidos o /pedidos/programados.
     return null;
   }
+
+  // Si el contacto ya tiene pedidos terminales (entregado o cancelado) y ningún
+  // pedido activo, su venta ya concluyó y no debe rebotar a Contacto Inicial u
+  // Oferta Enviada como si fuera un prospecto sin pedido.
+  if (pedidosStore.porTelefono(conv.contacto.telefono).length > 0) return null;
 
   if (conv.estado === "cerrada") return null;
   if (conv.estado === "en_espera") return "seguimiento";

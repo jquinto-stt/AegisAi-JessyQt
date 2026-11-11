@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { observer } from 'mobx-react-lite';
 import { uiStore } from "@/stores";
 import { SidebarProvider } from "@/shell/sidebar/SidebarContext";
@@ -21,12 +21,25 @@ interface BaseAppSidebarProps {
 const MS_EXPANDIR = 340;
 const MS_CONTRAER = 280;
 
+/** Ancho de la píldora contraída. El radio es la mitad: así queda redonda sin usar 9999px. */
+const ANCHO_CONTRAIDA = 54;
+
 /**
- * BaseAppSidebar — Barra lateral unificada con altura completa en ambos modos (expandida y contraída).
+ * @kgId 4d6227f363fa
  *
- * Permanece anclada en la parte superior con altura completa (calc(100vh - 2rem))
- * y bordes redondeados (rounded-3xl / 24px) tanto expandida como encogida,
- * asegurando una estructura estilizada y homogénea en todo momento.
+ * ── Cómo se anima el cambio entre expandida y contraída ─────────────────────
+ *
+ * Expandida es una tarjeta de alto completo pegada arriba; contraída es una
+ * píldora centrada en vertical con el alto de su contenido. Antes el alto era
+ * `auto` (no se puede interpolar) y la píldora se centraba con
+ * `top-1/2 -translate-y-1/2`: al cambiar, alto y posición saltaban de golpe
+ * mientras solo el ancho se animaba, y el menú nuevo aparecía entero dentro de
+ * una barra de 54 px, desbordándola.
+ *
+ * Ahora la geometría es explícita en ambos estados —alto medido de la píldora,
+ * `top` calculado para centrarla— y ancho, alto, posición y radio viajan juntos
+ * con la misma curva. Mientras dura el viaje la barra recorta lo que sobra, y
+ * el contenido nuevo entra con un fundido que espera a que haya espacio.
  */
 export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
   logo,
@@ -39,6 +52,21 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
   const showExpanded = collapsed !== undefined
     ? !collapsed
     : uiStore.isSidebarVisible;
+
+  // Alto natural de la píldora contraída: logo + iconos + su relleno.
+  const medidor = useRef<HTMLDivElement>(null);
+  const [altoContraida, setAltoContraida] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (showExpanded || !medidor.current) return;
+    const medir = () => {
+      // 24 de `py-3` + 2 del borde.
+      if (medidor.current) setAltoContraida(medidor.current.offsetHeight + 26);
+    };
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(medidor.current);
+    return () => ro.disconnect();
+  }, [showExpanded]);
 
   // Mientras viaja, la barra recorta su contenido; al llegar lo suelta para que
   // los menús flotantes de la píldora puedan salir de ella.
@@ -62,9 +90,14 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
   }, []);
 
   const duracion = showExpanded ? MS_EXPANDIR : MS_CONTRAER;
+  const expandida: React.CSSProperties = { top: 16, height: "calc(100vh - 2rem)", borderRadius: 24 };
+  // Si aún no se conoce el alto de la píldora, el primer cuadro conserva la
+  // geometría expandida; al medir, la transición parte desde ahí.
   const geometria: React.CSSProperties = contained
     ? {}
-    : { top: 16, height: "calc(100vh - 2rem)", borderRadius: 24 };
+    : showExpanded || !altoContraida
+      ? { ...expandida, ...(showExpanded ? {} : { borderRadius: ANCHO_CONTRAIDA / 2 }) }
+      : { top: `calc(50vh - ${altoContraida / 2}px)`, height: altoContraida, borderRadius: ANCHO_CONTRAIDA / 2 };
 
   const positionClasses = contained
     ? "relative h-full"
@@ -78,16 +111,16 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
           transitionDuration: `${duracion}ms`,
         }}
         className={`barra-lateral flex flex-col border border-gray-200/80 bg-white dark:border-white/10 dark:bg-gray-900 text-gray-900
-          ${animable ? "transition-[width,padding,translate] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none" : ""}
+          ${animable ? "transition-[width,height,top,border-radius,padding,translate] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none" : ""}
           ${positionClasses}
           ${viajando ? "overflow-hidden" : ""}
-          ${showExpanded ? "w-[274px] px-5 py-0" : "w-[54px] px-1.5 py-3"}`}
+          ${showExpanded ? "w-[274px] px-5" : "w-[54px] px-1.5 py-3"}`}
       >
-        <div className="flex flex-col h-full flex-1 justify-between min-h-0">
+        <div ref={medidor} className={showExpanded ? "contents" : "flex flex-col"}>
           {/* Logo section */}
           <div
             className={`flex shrink-0 ${
-              showExpanded ? "py-8 justify-start" : "pb-3 pt-1 justify-center"
+              showExpanded ? "py-8 justify-start" : "pb-2 pt-1 justify-center"
             }`}
           >
             <div key={showExpanded ? "expandido" : "colapsado"} className="barra-lateral__entrada">
@@ -98,7 +131,9 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
           {/* Content section */}
           <div
             key={showExpanded ? "expandido" : "colapsado"}
-            className="barra-lateral__entrada flex-1 flex flex-col min-h-0 overflow-y-auto no-scrollbar"
+            className={`barra-lateral__entrada flex flex-col no-scrollbar ${
+              showExpanded ? "flex-1 overflow-y-auto" : "flex-initial"
+            }`}
           >
             {children}
           </div>

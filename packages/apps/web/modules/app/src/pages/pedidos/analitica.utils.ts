@@ -263,7 +263,7 @@ export function filtrarLista(pedidos: Pedido[], f: FiltrosLista): Pedido[] {
 /** Total monetario de un pedido. Duplicado deliberado del del store: estas
  *  utilidades son puras sobre la entidad y no tienen acceso a la instancia. */
 function totalDe(p: Pedido): number {
-  return p.items.reduce((s, it) => s + (it.precio ?? 0) * it.cantidad, 0);
+  return p.items.reduce((s, it) => s + (it.precio ?? 0) * it.cantidad, 0) + (p.costoEnvio ?? 0);
 }
 
 /**

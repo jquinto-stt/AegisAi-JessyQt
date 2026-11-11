@@ -621,13 +621,13 @@ describe("PedidosStore — analítica sobre el seed", () => {
     // primeros — un pedido de retiro no tiene entrega que pueda fallar. Con un
     // solo `listo` a domicilio, esa compuerta no se podía medir.
     expect(conteo).toEqual({
-      programado: 0,
-      nuevo: 1,
-      confirmado: 0,
-      en_preparacion: 1,
-      listo: 2,
-      en_camino: 1,
-      entregado: 1,
+      programado: 3,
+      nuevo: 5,
+      confirmado: 3,
+      en_preparacion: 5,
+      listo: 3,
+      en_camino: 4,
+      entregado: 3,
       cancelado: 1,
     });
     const suma = Object.values(conteo).reduce((s, n) => s + n, 0);
@@ -638,11 +638,10 @@ describe("PedidosStore — analítica sobre el seed", () => {
     const store = new PedidosStore();
     const dist = store.porModalidad();
     expect(dist.map((d) => d.modalidad)).toEqual(["retiro", "domicilio", "en_sitio"]);
-    // Seed: retiro (pd2, pd6) = 2, domicilio (pd1, pd4, pd5, pd7) = 4, en_sitio (pd3) = 1.
     expect(dist).toEqual([
-      { modalidad: "retiro", total: 2 },
-      { modalidad: "domicilio", total: 4 },
-      { modalidad: "en_sitio", total: 1 },
+      { modalidad: "retiro", total: 7 },
+      { modalidad: "domicilio", total: 17 },
+      { modalidad: "en_sitio", total: 3 },
     ]);
     const suma = dist.reduce((s, d) => s + d.total, 0);
     expect(suma).toBe(store.pedidos.length);
@@ -652,10 +651,9 @@ describe("PedidosStore — analítica sobre el seed", () => {
     const store = new PedidosStore();
     const dist = store.porOrigen();
     expect(dist.map((d) => d.origen)).toEqual(["whatsapp", "operador"]);
-    // Seed: whatsapp = 6, operador = 1 (pd3).
     expect(dist).toEqual([
-      { origen: "whatsapp", total: 6 },
-      { origen: "operador", total: 1 },
+      { origen: "whatsapp", total: 24 },
+      { origen: "operador", total: 3 },
     ]);
     const suma = dist.reduce((s, d) => s + d.total, 0);
     expect(suma).toBe(store.pedidos.length);
@@ -663,20 +661,19 @@ describe("PedidosStore — analítica sobre el seed", () => {
 
   it("ingresoTotalEntregados suma el total de los pedidos entregados", () => {
     const store = new PedidosStore();
-    // En el seed solo pd6 está entregado: 1× Combo (25000).
-    expect(store.ingresoTotalEntregados()).toBe(25000);
+    expect(store.ingresoTotalEntregados()).toBe(147000);
   });
 
   it("tasaCancelacion es el % de cancelados sobre el total (1 decimal)", () => {
     const store = new PedidosStore();
-    // Seed: 1 cancelado (pd7) de 7 → 1/7 = 14.285… → 14.3
-    expect(store.tasaCancelacion()).toBe(14.3);
+    // Seed: 1 cancelado (pd7) de 27 → 1/27 = 3.703… → 3.7
+    expect(store.tasaCancelacion()).toBe(3.7);
   });
 
   it("ticketPromedioEntregado es el ingreso medio por entregado (redondeado)", () => {
     const store = new PedidosStore();
-    // Un solo entregado con total 25000 → promedio 25000.
-    expect(store.ticketPromedioEntregado()).toBe(25000);
+    // 3 entregados con total 147000 → promedio 49000.
+    expect(store.ticketPromedioEntregado()).toBe(49000);
   });
 
   it("ingresosEntre acumula el total de entregados por día (finishedAt)", () => {
@@ -754,7 +751,7 @@ describe("PedidosStore — analítica: casos borde y pureza", () => {
     store.ingresosEntre(ymdLocal(new Date()), ymdLocal(new Date()));
     const despues = store.pedidos.map((p) => ({ id: p.id, estado: p.estado }));
     expect(despues).toEqual(antes);
-    expect(store.pedidos).toHaveLength(7);
+    expect(store.pedidos).toHaveLength(27);
   });
 
   it("tasaCancelacion y ticketPromedioEntregado con varios pedidos", () => {
@@ -860,7 +857,7 @@ describe("PedidosStore — analítica por rango", () => {
   it("pedidosEnRango(null) devuelve todo el histórico, ordenado desc por createdAt", () => {
     const store = new PedidosStore();
     const out = store.pedidosEnRango(null);
-    expect(out).toHaveLength(7);
+    expect(out).toHaveLength(27);
     for (let i = 1; i < out.length; i++) {
       expect(out[i - 1]!.createdAt >= out[i]!.createdAt).toBe(true);
     }

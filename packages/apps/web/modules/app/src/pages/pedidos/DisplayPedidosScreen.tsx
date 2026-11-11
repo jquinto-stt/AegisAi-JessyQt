@@ -151,13 +151,9 @@ export const DisplayPedidosScreen = observer(() => {
   // Avanzar estado al hacer click o presionar espacio
   const avanzarHero = () => {
     if (!turnoHero) return;
-    if (turnoHero.estado === "nuevo" || turnoHero.estado === "confirmado") {
-      pedidosStore.moverEstado(turnoHero.id, "en_preparacion");
-    } else if (turnoHero.estado === "en_preparacion") {
-      pedidosStore.moverEstado(turnoHero.id, "listo");
-      if (sonidoHabilitado) playChime();
-    } else if (turnoHero.estado === "listo") {
-      pedidosStore.moverEstado(turnoHero.id, "entregado");
+    const nuevoEstado = pedidosStore.avanzar(turnoHero.id);
+    if (nuevoEstado === "listo" && sonidoHabilitado) {
+      playChime();
     }
   };
 

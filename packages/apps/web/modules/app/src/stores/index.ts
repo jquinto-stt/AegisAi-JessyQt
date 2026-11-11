@@ -3,7 +3,14 @@ export { uiStore, UIStore } from '@/shell/stores';
 export type { Theme, UIPreferences } from '@/shell/stores';
 
 // Domain stores
-export { pedidosStore, PedidosStore, ETIQUETA_PAGO, META_ESTADO_PEDIDO, ORDEN_ESTADOS } from '@/stores/pedidos.store';
+export {
+  pedidosStore,
+  PedidosStore,
+  ETIQUETA_PAGO,
+  META_ESTADO_PEDIDO,
+  ORDEN_ESTADOS,
+  esperaValidacionPago,
+} from '@/stores/pedidos.store';
 export type {
   Pedido,
   PedidoEstado,

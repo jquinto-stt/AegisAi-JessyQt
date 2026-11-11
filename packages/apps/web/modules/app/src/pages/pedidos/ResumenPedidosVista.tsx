@@ -11,8 +11,9 @@ import {
   pedidosStore,
   sessionStore,
   puedeCancelarPedido,
+  esperaValidacionPago,
 } from "@/stores";
-import type { Pedido, PedidoEstado } from "@/stores/pedidos.store";
+import type { Pedido, PedidoEstado, MetodoPago } from "@/stores/pedidos.store";
 import { transportadoraPorNombre } from "@/domain/pedidos/transportadoras.catalogo";
 import { DetallePedidoModal } from "./DetallePedidoModal";
 import { construirAcciones, repartirAcciones, type AccionFila } from "./acciones-fila";
@@ -20,7 +21,7 @@ import { ProgramarModal } from "./ProgramarModal";
 import { money, ListaVacia } from "./widgets";
 import { Modal } from "@/elements/ui/modal";
 import { Button } from "@/elements/ui/button";
-import { cancelarPedido } from "./pedidos.notificaciones";
+import { avanzarPedido, cancelarPedido } from "./pedidos.notificaciones";
 import {
   CSV_ENCABEZADOS,
   CSV_GUIAS_ENCABEZADOS,
@@ -54,15 +55,39 @@ import {
 export const ETAPAS_INICIO = [
   { clave: "por_preparar", label: "Por preparar", estados: ["nuevo", "confirmado"] },
   { clave: "en_preparacion", label: "En preparación", estados: ["en_preparacion", "listo"] },
-  { clave: "en_transito", label: "En tránsito", estados: ["en_camino"] },
+  { clave: "en_transito", label: "En camino", estados: ["en_camino"] },
+  { clave: "programados", label: "Programados", estados: ["programado"] },
   { clave: "finalizadas", label: "Finalizadas", estados: ["entregado", "cancelado"] },
 ] as const satisfies ReadonlyArray<{ clave: string; label: string; estados: PedidoEstado[] }>;
 
 export type EtapaInicio = (typeof ETAPAS_INICIO)[number]["clave"];
 
-export type SubEtapaFinalizada = "entregada" | "cancelada" | "devuelta" | "reclamaciones";
-export type SubEtapaPreparacion = "por_alistar" | "por_recolectar" | "recolectado";
-export type SubEtapaPreparar = "por_confirmar" | "pendiente";
+export type SubEtapaPreparar = "todos_por_preparar" | "por_confirmar" | "confirmado_chip";
+export type SubEtapaPreparacion = "todos_preparacion" | "por_alistar" | "por_recolectar";
+export type SubEtapaFinalizada = "todos_finalizadas" | "entregada" | "cancelada";
+
+export type ColumnasVisibles =
+  | "orden"
+  | "producto"
+  | "fecha"
+  | "comprador"
+  | "estado"
+  | "tipo"
+  | "valor"
+  | "negocio"
+  | "acciones";
+
+export const COLUMNAS_RESUMEN: ReadonlyArray<{ key: ColumnasVisibles; label: string }> = [
+  { key: "orden", label: "N. Orden" },
+  { key: "producto", label: "Producto" },
+  { key: "fecha", label: "Fecha" },
+  { key: "comprador", label: "Comprador" },
+  { key: "estado", label: "Estado" },
+  { key: "tipo", label: "Modalidad y Pago" },
+  { key: "valor", label: "Valor" },
+  { key: "negocio", label: "Negocio" },
+  { key: "acciones", label: "Acciones" },
+];
 
 
 /**
@@ -104,16 +129,14 @@ function motivoCancelacionDe(p: Pedido): string | null {
   return notas || null;
 }
 
-/** Formateador de tiempo transcurrido (SLA) para N. Orden */
-function formatearTimer(isoFecha: string, etapa: EtapaInicio): string {
+/** Formateador de tiempo transcurrido (SLA) en la etapa actual para N. Orden */
+function formatearTimer(isoFecha: string): string {
   try {
-    const creacion = new Date(isoFecha).getTime();
+    const inicio = new Date(isoFecha).getTime();
+    if (isNaN(inicio)) return "00:00:00:00";
     const ahora = Date.now();
-    const difSegundos = Math.max(0, Math.floor((ahora - creacion) / 1000));
-    
-    // Si es en tránsito, agregamos un offset base representativo para imitar 00:18:47:42
-    const totalSegundos = etapa === "en_transito" ? difSegundos + 18 * 3600 + 47 * 60 : difSegundos;
-    
+    const totalSegundos = Math.max(0, Math.floor((ahora - inicio) / 1000));
+
     const dias = Math.floor(totalSegundos / 86400);
     const horas = Math.floor((totalSegundos % 86400) / 3600);
     const minutos = Math.floor((totalSegundos % 3600) / 60);
@@ -122,7 +145,23 @@ function formatearTimer(isoFecha: string, etapa: EtapaInicio): string {
     const pad = (n: number) => String(n).padStart(2, "0");
     return `${pad(dias)}:${pad(horas)}:${pad(minutos)}:${pad(segundos)}`;
   } catch {
-    return "00:00:26:27";
+    return "00:00:00:00";
+  }
+}
+
+/** Etiqueta breve de método de pago para la celda de Modalidad / Pago. */
+function metodoPagoCorto(metodo: MetodoPago): string {
+  switch (metodo) {
+    case "efectivo":
+      return "Efectivo";
+    case "transferencia":
+      return "Transferencia";
+    case "tarjeta":
+      return "Tarjeta";
+    case "contra_entrega":
+      return "Contra entrega";
+    default:
+      return pedidosStore.metodoPagoLabel(metodo);
   }
 }
 
@@ -139,7 +178,8 @@ const fechaISO = (iso: string) => {
   try {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "—";
-    return d.toISOString().split("T")[0];
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   } catch {
     return "—";
   }
@@ -394,9 +434,9 @@ export const ResumenPedidosVista = observer(
     const etapaUnica: EtapaInicio | null =
       etapasVisibles.length === 1 ? etapasVisibles[0] : null;
 
-    const [subEtapaPreparar, setSubEtapaPreparar] = useState<SubEtapaPreparar>("por_confirmar");
-    const [subEtapaPreparacion, setSubEtapaPreparacion] = useState<SubEtapaPreparacion>("recolectado");
-    const [subEtapaFinalizada, setSubEtapaFinalizada] = useState<SubEtapaFinalizada>("cancelada");
+    const [subEtapaPreparar, setSubEtapaPreparar] = useState<SubEtapaPreparar>("todos_por_preparar");
+    const [subEtapaPreparacion, setSubEtapaPreparacion] = useState<SubEtapaPreparacion>("todos_preparacion");
+    const [subEtapaFinalizada, setSubEtapaFinalizada] = useState<SubEtapaFinalizada>("todos_finalizadas");
     const [detalleId, setDetalleId] = useState<string | null>(null);
     const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set());
     const [cancelarLote, setCancelarLote] = useState(false);
@@ -416,24 +456,25 @@ export const ResumenPedidosVista = observer(
     /**
      * Los estados que aporta cada etapa según su sub-filtro activo.
      *
-     * El sub-filtro es un atajo a estados concretos: «Por alistar» es
-     * `en_preparacion` y «Por recolectar» es `listo`. Al unir varias etapas se
+     * El sub-filtro es un atajo a estados concretos: «En cocina» es
+     * `en_preparacion` y «Listos para entrega» es `listo`. Al unir varias etapas se
      * suman los estados de cada una con SU sub-filtro, no el de la primera.
      */
     const estadosDeEtapa = (etapa: EtapaInicio): PedidoEstado[] => {
       if (etapa === "por_preparar") {
-        return subEtapaPreparar === "por_confirmar" ? ["nuevo"] : ["confirmado"];
+        if (subEtapaPreparar === "por_confirmar") return ["nuevo"];
+        if (subEtapaPreparar === "confirmado_chip") return ["confirmado"];
+        return ["nuevo", "confirmado"];
       }
       if (etapa === "en_preparacion") {
         if (subEtapaPreparacion === "por_alistar") return ["en_preparacion"];
         if (subEtapaPreparacion === "por_recolectar") return ["listo"];
-        return ["listo", "en_preparacion"];
+        return ["en_preparacion", "listo"];
       }
       if (etapa === "en_transito") return ["en_camino"];
+      if (etapa === "programados") return ["programado"];
       if (subEtapaFinalizada === "entregada") return ["entregado"];
-      if (subEtapaFinalizada === "cancelada" || subEtapaFinalizada === "devuelta") {
-        return ["cancelado"];
-      }
+      if (subEtapaFinalizada === "cancelada") return ["cancelado"];
       return ["entregado", "cancelado"];
     };
 
@@ -477,22 +518,29 @@ export const ResumenPedidosVista = observer(
     /**
      * La columna central depende de cuántas etapas se estén mirando.
      *
-     * Con una sola etapa se usa la columna que pide esa etapa (confirmación,
-     * transportadora o motivo). Con varias —el filtro «Estados» es múltiple— no
-     * hay una sola respuesta correcta, así que se pinta el ESTADO del pedido,
-     * que es el dato común a todas las filas.
+     * Con una sola etapa se usa la columna contextual propia de esa etapa
+     * (confirmación, preparación/entrega, repartidor/guía, entrega programada
+     * o resultado/cierre). Con varias etapas a la vez se pinta el ESTADO del
+     * pedido, que es el dato común a todas las filas.
      */
-    const columnaEstado: "confirmacion" | "transportadora" | "motivo" | "estado" =
+    const columnaEstado:
+      | "confirmacion"
+      | "preparacion"
+      | "transito"
+      | "programados"
+      | "finalizadas"
+      | "estado" =
       etapaUnica === "por_preparar"
         ? "confirmacion"
-        : etapaUnica === "finalizadas"
-          ? "motivo"
-          : etapaUnica
-            ? "transportadora"
-            : "estado";
-
-    /** El cronómetro solo tiene sentido mientras el pedido está en curso. */
-    const mostrarTimer = etapasVisibles.some((e) => e !== "finalizadas");
+        : etapaUnica === "en_preparacion"
+          ? "preparacion"
+          : etapaUnica === "en_transito"
+            ? "transito"
+            : etapaUnica === "programados"
+              ? "programados"
+              : etapaUnica === "finalizadas"
+                ? "finalizadas"
+                : "estado";
 
     const todosSeleccionados = visibles.length > 0 && visibles.every((p) => seleccionados.has(p.id));
     const toggleSeleccionarTodos = () => {
@@ -604,7 +652,7 @@ export const ResumenPedidosVista = observer(
     // Cada botón solo se pinta si `accionesDePedido` lo marca como válido para el
     // estado de la fila, así la lista nunca ofrece una transición que el pipeline
     // (`transicionValida`) rechazaría. El avance usa `activarAhora` en
-    // `programado` y `avanzar` en el resto; la cancelación va por `cancelarPedido`
+    // `programado` y `avanzarPedido` en el resto; la cancelación va por `cancelarPedido`
     // para publicar la plantilla en el hilo del cliente. El reprogramar abre el
     // `ProgramarModal`; el resto muta el store directo.
     const pedidoAProgramar = programarId ? todos.find((p) => p.id === programarId) : undefined;
@@ -613,7 +661,7 @@ export const ResumenPedidosVista = observer(
       const acc = pedidosStore.accionesDePedido(p);
       if (!acc.puedeAvanzar) return;
       if (acc.esActivarAhora) pedidosStore.activarAhora(p.id);
-      else pedidosStore.avanzar(p.id);
+      else avanzarPedido(p.id);
     };
 
     const reintentarFila = (p: Pedido) => {
@@ -641,28 +689,31 @@ export const ResumenPedidosVista = observer(
     /** Chips de sub-filtro de cada etapa, en el orden en que se pintan. */
     const chipsDeEtapa = (
       etapa: EtapaInicio,
-    ): { clave: string; label: string; ayuda: boolean }[] => {
+    ): { clave: string; label: string; estados: PedidoEstado[]; ayuda: boolean }[] => {
       if (etapa === "por_preparar") {
         return [
-          { clave: "por_confirmar", label: "Por Confirmar", ayuda: true },
-          { clave: "pendiente", label: "Pendiente", ayuda: true },
+          { clave: "todos_por_preparar", label: "Todos", estados: ["nuevo", "confirmado"], ayuda: false },
+          { clave: "por_confirmar", label: "Nuevos (Por confirmar)", estados: ["nuevo"], ayuda: true },
+          { clave: "confirmado_chip", label: "Confirmados", estados: ["confirmado"], ayuda: true },
         ];
       }
       if (etapa === "en_preparacion") {
         return [
-          { clave: "por_alistar", label: "Por Alistar", ayuda: true },
-          { clave: "por_recolectar", label: "Por Recolectar", ayuda: true },
-          { clave: "recolectado", label: "Recolectado", ayuda: false },
+          { clave: "todos_preparacion", label: "Todos", estados: ["en_preparacion", "listo"], ayuda: false },
+          { clave: "por_alistar", label: "En cocina", estados: ["en_preparacion"], ayuda: true },
+          { clave: "por_recolectar", label: "Listos para entrega", estados: ["listo"], ayuda: true },
         ];
       }
       if (etapa === "en_transito") {
-        return [{ clave: "en_transito", label: "En tránsito", ayuda: true }];
+        return [{ clave: "en_transito", label: "En reparto", estados: ["en_camino"], ayuda: true }];
+      }
+      if (etapa === "programados") {
+        return [{ clave: "programado_chip", label: "Agendados", estados: ["programado"], ayuda: true }];
       }
       return [
-        { clave: "entregada", label: "Entregada", ayuda: true },
-        { clave: "cancelada", label: "Cancelada", ayuda: true },
-        { clave: "devuelta", label: "Devuelta", ayuda: true },
-        { clave: "reclamaciones", label: "Reclamaciones", ayuda: true },
+        { clave: "todos_finalizadas", label: "Todas", estados: ["entregado", "cancelado"], ayuda: false },
+        { clave: "entregada", label: "Entregadas", estados: ["entregado"], ayuda: true },
+        { clave: "cancelada", label: "Canceladas", estados: ["cancelado"], ayuda: true },
       ];
     };
 
@@ -671,6 +722,7 @@ export const ResumenPedidosVista = observer(
       if (etapa === "por_preparar") return subEtapaPreparar;
       if (etapa === "en_preparacion") return subEtapaPreparacion;
       if (etapa === "en_transito") return "en_transito";
+      if (etapa === "programados") return "programado_chip";
       return subEtapaFinalizada;
     };
 
@@ -728,6 +780,9 @@ export const ResumenPedidosVista = observer(
                 )}
                 {chips.map((sub) => {
                   const activo = seleccion === sub.clave;
+                  const conteoChip = todos.filter((p) =>
+                    (sub.estados as readonly PedidoEstado[]).includes(p.estado),
+                  ).length;
                   return (
                     <button
                       key={sub.clave}
@@ -740,7 +795,9 @@ export const ResumenPedidosVista = observer(
                           : "border-transparent text-[#212121]/60 hover:text-[#212121] dark:text-white/60 dark:hover:text-white"
                       }`}
                     >
-                      <span>{sub.label}</span>
+                      <span>
+                        {sub.label} ({conteoChip})
+                      </span>
                       {/* Un ícono de información, no un «?» tecleado: el signo
                           de interrogación suelto se leía como «aquí falta un
                           dato» y, al ser texto, engordaba con el bold del chip
@@ -798,14 +855,18 @@ export const ResumenPedidosVista = observer(
                 <th className="px-4 py-4">Comprador</th>
                 {columnaEstado === "confirmacion" ? (
                   <th className="px-4 py-4">Estado de Confirmación</th>
-                ) : columnaEstado === "motivo" ? (
-                  <th className="px-4 py-4">Motivo Cancelación</th>
-                ) : columnaEstado === "transportadora" ? (
-                  <th className="px-4 py-4">Transportadora</th>
+                ) : columnaEstado === "preparacion" ? (
+                  <th className="px-4 py-4">Preparación / Entrega</th>
+                ) : columnaEstado === "transito" ? (
+                  <th className="px-4 py-4">Repartidor / Guía</th>
+                ) : columnaEstado === "programados" ? (
+                  <th className="px-4 py-4">Entrega Programada</th>
+                ) : columnaEstado === "finalizadas" ? (
+                  <th className="px-4 py-4">Resultado / Cierre</th>
                 ) : (
                   <th className="px-4 py-4">Estado</th>
                 )}
-                <th className="px-4 py-4">Tipo de Pedido</th>
+                <th className="px-4 py-4">Modalidad / Pago</th>
                 {puedeVerMontos && <th className="px-4 py-4">Valor</th>}
                 <th className="px-4 py-4">Negocio</th>
                 <th className="w-32 px-4 py-4 text-center">Acciones</th>
@@ -825,6 +886,7 @@ export const ResumenPedidosVista = observer(
                   const seleccionado = seleccionados.has(p.id);
                   const transportadora = transportadoraDe(p);
                   const motivoCancelacion = motivoCancelacionDe(p);
+                  const requiereValidacionPago = esperaValidacionPago(p);
 
                   return (
                     <tr
@@ -848,14 +910,33 @@ export const ResumenPedidosVista = observer(
                         />
                       </td>
 
-                      {/* N. Orden + Timer */}
+                      {/* N. Orden + Timer / Estado puntual */}
                       <td className="px-4 py-4">
                         <div className="space-y-1">
                           <p className="font-bold text-[#212121] dark:text-white">N°: {p.numero}</p>
-                          {mostrarTimer && (
+                          {p.estado === "entregado" ? (
+                            <div className="inline-flex items-center gap-1 rounded-full bg-[#22C55E]/10 px-2 py-0.5 text-[11px] font-bold text-[#16A34A] dark:bg-[#22C55E]/15 dark:text-[#4ADE80]">
+                              <CheckCircleIcon className="size-3" />
+                              <span>Entregado</span>
+                            </div>
+                          ) : p.estado === "cancelado" ? (
+                            <div className="inline-flex items-center gap-1 rounded-full bg-[#EF4444]/10 px-2 py-0.5 text-[11px] font-bold text-[#EF4444]">
+                              <XCircleIcon className="size-3" />
+                              <span>Cancelado</span>
+                            </div>
+                          ) : p.estado === "programado" ? (
+                            <div className="inline-flex items-center gap-1 rounded-full bg-[#97D6DF]/20 px-2 py-0.5 text-[11px] font-bold text-[#190088] dark:bg-[#97D6DF]/15 dark:text-[#97D6DF]">
+                              <CalendarDaysIcon className="size-3" />
+                              <span className="tabular-nums">
+                                Programado{p.programadoPara ? ` · ${horaISO(p.programadoPara)}` : ""}
+                              </span>
+                            </div>
+                          ) : (
                             <div className="inline-flex items-center gap-1 rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[11px] font-bold text-[#92400E] dark:bg-amber-950/60 dark:text-amber-300">
                               <ClockIcon className="size-3" />
-                              <span className="tabular-nums">{formatearTimer(p.createdAt, etapaUnica ?? "por_preparar")}</span>
+                              <span className="tabular-nums">
+                                {formatearTimer(p.estadoDesde || p.createdAt)}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -864,8 +945,11 @@ export const ResumenPedidosVista = observer(
                       {/* Producto */}
                       <td className="px-4 py-4">
                         <div className="max-w-[190px]">
-                          <p className="truncate font-normal text-[#212121] dark:text-white" title={primero?.nombre}>
-                            {primero ? primero.nombre : "Sin productos"}
+                          <p
+                            className="truncate font-normal text-[#212121] dark:text-white"
+                            title={primero ? `${primero.cantidad}× ${primero.nombre}` : undefined}
+                          >
+                            {primero ? `${primero.cantidad}× ${primero.nombre}` : "Sin productos"}
                           </p>
                           {extra > 0 && (
                             <p className="text-[11px] font-light text-[#212121]/60 dark:text-white/40">
@@ -903,52 +987,66 @@ export const ResumenPedidosVista = observer(
                               Tel: {p.telefono}
                             </p>
                           )}
-                          {p.direccionEntrega?.calle && (
+                          {p.direccionEntrega?.calle ? (
                             <p className="truncate text-[11px] font-light text-[#212121]/50 dark:text-white/40">
                               {p.direccionEntrega.calle}
                               {p.direccionEntrega.ciudad ? `, ${p.direccionEntrega.ciudad}` : ""}
+                            </p>
+                          ) : (
+                            <p className="truncate text-[11px] font-light text-[#212121]/50 dark:text-white/40">
+                              {p.modalidad === "en_sitio"
+                                ? p.notas || "Consumo en salón"
+                                : "Retiro en local · Mostrador"}
                             </p>
                           )}
                         </div>
                       </td>
 
-                      {/* Estado de confirmación / Transportadora / Motivo */}
+                      {/* Columna contextual según la etapa activa */}
                       {columnaEstado === "confirmacion" ? (
                         <td className="px-4 py-4">
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                              p.estado === "confirmado"
-                                ? "bg-[#22C55E]/10 text-[#16A34A] dark:bg-[#22C55E]/15 dark:text-[#4ADE80]"
-                                : "bg-[#FEF3C7] text-[#92400E] dark:bg-amber-950/60 dark:text-amber-300"
-                            }`}
-                          >
+                          <div className="space-y-1">
                             <span
-                              className={`size-1.5 rounded-full ${
-                                p.estado === "confirmado" ? "bg-[#16A34A]" : "bg-[#D97706]"
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                                p.estado === "confirmado"
+                                  ? "bg-[#22C55E]/10 text-[#16A34A] dark:bg-[#22C55E]/15 dark:text-[#4ADE80]"
+                                  : "bg-[#FEF3C7] text-[#92400E] dark:bg-amber-950/60 dark:text-amber-300"
                               }`}
-                            />
-                            {p.estado === "confirmado" ? "Confirmado" : "Por confirmar"}
-                          </span>
+                            >
+                              <span
+                                className={`size-1.5 rounded-full ${
+                                  p.estado === "confirmado" ? "bg-[#16A34A]" : "bg-[#D97706]"
+                                }`}
+                              />
+                              {p.estado === "confirmado" ? "Confirmado" : "Por confirmar"}
+                            </span>
+                            {requiereValidacionPago && (
+                              <p className="text-[11px] font-semibold text-[#D97706] dark:text-amber-300">
+                                Validar pago · Transferencia
+                              </p>
+                            )}
+                          </div>
                         </td>
-                      ) : columnaEstado === "motivo" ? (
+                      ) : columnaEstado === "preparacion" ? (
                         <td className="px-4 py-4">
-                          {p.estado === "cancelado" ? (
-                            <div className="flex max-w-[200px] items-start gap-1.5 font-normal text-[#212121] dark:text-white">
-                              <XCircleIcon className="mt-0.5 size-3.5 shrink-0 text-[#EF4444]" />
-                              <span className="line-clamp-2">
-                                {motivoCancelacion ?? "Sin motivo registrado"}
-                              </span>
+                          {p.modalidad === "en_sitio" ? (
+                            <div className="space-y-0.5">
+                              <p className="font-bold text-[#212121] dark:text-white">Salón</p>
+                              <p className="truncate max-w-[180px] text-[11px] font-light text-[#212121]/70 dark:text-white/60">
+                                {p.notas || "En mesa"}
+                              </p>
+                            </div>
+                          ) : p.modalidad === "retiro" ? (
+                            <div className="space-y-0.5">
+                              <p className="font-bold text-[#212121] dark:text-white">Mostrador</p>
+                              <p className="text-[11px] font-light text-[#212121]/70 dark:text-white/60">
+                                Retiro por cliente
+                              </p>
                             </div>
                           ) : (
-                            <span className="text-[#212121]/35 dark:text-white/25">—</span>
-                          )}
-                        </td>
-                      ) : columnaEstado === "transportadora" ? (
-                        <td className="px-4 py-4">
-                          {transportadora ? (
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                               <div className="flex items-center gap-2">
-                                {transportadora.logo && (
+                                {transportadora?.logo && (
                                   <img
                                     src={transportadora.logo}
                                     alt=""
@@ -956,18 +1054,73 @@ export const ResumenPedidosVista = observer(
                                   />
                                 )}
                                 <span className="font-bold text-[#212121] dark:text-white">
-                                  {transportadora.nombre}
+                                  {p.repartidor || "Repartidor por asignar"}
                                 </span>
                               </div>
                               <p className="text-[11px] font-light text-[#212121]/70 dark:text-white/60">
-                                Guía #:{" "}
-                                <span className="tabular-nums font-normal">
-                                  {p.numeroGuia ?? "Sin asignar"}
-                                </span>
+                                {p.numeroGuia ? `Guía #: ${p.numeroGuia}` : "Domicilio propio"}
+                              </p>
+                            </div>
+                          )}
+                        </td>
+                      ) : columnaEstado === "transito" ? (
+                        <td className="px-4 py-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              {transportadora?.logo && (
+                                <img
+                                  src={transportadora.logo}
+                                  alt=""
+                                  className="h-4 max-w-[50px] object-contain"
+                                />
+                              )}
+                              <span className="font-bold text-[#212121] dark:text-white">
+                                {p.repartidor || "En ruta"}
+                              </span>
+                            </div>
+                            <p className="text-[11px] font-light text-[#212121]/70 dark:text-white/60">
+                              Guía #:{" "}
+                              <span className="tabular-nums font-normal">
+                                {p.numeroGuia ?? "Domicilio local"}
+                              </span>
+                            </p>
+                          </div>
+                        </td>
+                      ) : columnaEstado === "programados" ? (
+                        <td className="px-4 py-4">
+                          <div className="space-y-0.5">
+                            <p className="font-bold text-[#212121] dark:text-white tabular-nums">
+                              {p.programadoPara
+                                ? `${fechaISO(p.programadoPara)} · ${horaISO(p.programadoPara)}`
+                                : "Por definir"}
+                            </p>
+                            <p className="text-[11px] font-light text-[#212121]/70 dark:text-white/60">
+                              {pedidosStore.modalidadLabel(p.modalidad)}
+                            </p>
+                          </div>
+                        </td>
+                      ) : columnaEstado === "finalizadas" ? (
+                        <td className="px-4 py-4">
+                          {p.estado === "cancelado" ? (
+                            <div className="space-y-0.5 max-w-[200px]">
+                              <div className="flex items-center gap-1.5 font-bold text-[#EF4444]">
+                                <XCircleIcon className="size-3.5 shrink-0" />
+                                <span>Cancelado</span>
+                              </div>
+                              <p className="line-clamp-2 text-[11px] font-light text-[#212121]/70 dark:text-white/60">
+                                {motivoCancelacion ?? "Sin motivo registrado"}
                               </p>
                             </div>
                           ) : (
-                            <span className="text-[#212121]/35 dark:text-white/25">Sin asignar</span>
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-1.5 font-bold text-[#16A34A] dark:text-[#4ADE80]">
+                                <CheckCircleIcon className="size-3.5 shrink-0" />
+                                <span>Entregado con éxito</span>
+                              </div>
+                              <p className="text-[11px] font-light text-[#212121]/70 dark:text-white/60">
+                                {p.repartidor ? `Por: ${p.repartidor}` : "Entregado en mostrador"}
+                              </p>
+                            </div>
                           )}
                         </td>
                       ) : (
@@ -981,15 +1134,33 @@ export const ResumenPedidosVista = observer(
                         </td>
                       )}
 
-                      {/* Tipo de Pedido */}
+                      {/* Modalidad / Pago */}
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-1.5 font-bold text-[#212121] dark:text-white">
                             <ShoppingCartIcon className="size-3.5 text-[#212121]/50 dark:text-white/40" />
-                            <span>{p.metodoPago === "contra_entrega" ? "Con recaudo" : "Sin recaudo"}</span>
+                            <span>
+                              {pedidosStore.modalidadLabel(p.modalidad)} ·{" "}
+                              {p.origen === "whatsapp" ? "WhatsApp" : "Operador"}
+                            </span>
                           </div>
                           <p className="text-[11px] font-light text-[#212121]/60 dark:text-white/40">
-                            Soy: <span className="font-bold text-[#212121] dark:text-white">Proveedor</span>
+                            <span
+                              className={`font-bold ${
+                                p.pagado
+                                  ? "text-[#16A34A] dark:text-[#4ADE80]"
+                                  : requiereValidacionPago
+                                    ? "text-[#D97706] dark:text-amber-300"
+                                    : "text-[#212121] dark:text-white"
+                              }`}
+                            >
+                              {p.pagado
+                                ? "Pagado"
+                                : requiereValidacionPago
+                                  ? "Validar"
+                                  : "Pendiente"}
+                            </span>{" "}
+                            · {metodoPagoCorto(p.metodoPago)}
                           </p>
                         </div>
                       </td>
@@ -1221,9 +1392,11 @@ export const ResumenPedidosVista = observer(
           <DetallePedidoModal
             pedido={pedidoAbierto}
             onClose={() => setDetalleId(null)}
+            onAvanzar={() => avanzarFila(pedidoAbierto)}
             onChat={() => {
               setDetalleId(null);
-              navigate("/conversaciones");
+              if (onAbrirChat) onAbrirChat(pedidoAbierto.id);
+              else navigate("/conversaciones");
             }}
           />
         )}

@@ -100,11 +100,14 @@ export const DetallePedidoModal = observer(
     pedido,
     onClose,
     onChat,
+    onAvanzar: _onAvanzar,
   }: {
     pedido: Pedido;
     onClose: () => void;
     /** Abre el chat rápido (slide-over) con el cliente del pedido. */
     onChat: () => void;
+    /** Acción opcional de avance del pedido desde el contenedor. */
+    onAvanzar?: () => void;
   }) => {
     const [tab, setTab] = useState<TabId>("resumen");
     const [repartidorInput, setRepartidorInput] = useState(pedido.repartidor ?? "");

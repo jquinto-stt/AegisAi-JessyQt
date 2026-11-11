@@ -1113,10 +1113,10 @@ const seed = (): Pedido[] => [
     notas: "Sin cebolla en uno.", estado: "nuevo", origen: "whatsapp", pagado: false,
     createdAt: minutesAgoIso(39), estadoDesde: minutesAgoIso(39),
     direccionEntrega: {
-      calle: "Cra 43A # 18 Sur-135",
+      calle: "Cra 45 # 12-30, Apto 302",
       barrio: "El Poblado",
-      referencia: "Edificio Santillana, Apto 402",
-      indicaciones: "Dejar en portería o tocar timbre 402",
+      referencia: "Edificio Santillana, Apto 302",
+      indicaciones: "Dejar en portería o tocar timbre 302",
     },
     costoEnvio: 5000,
     metodoPago: "efectivo",
@@ -1139,7 +1139,7 @@ const seed = (): Pedido[] => [
       { nombre: "Gaseosa 400ml", cantidad: 2, precio: 5000 },
       { nombre: "Postre del día (Cheesecake)", cantidad: 1, precio: 8000 }
     ],
-    estado: "listo", origen: "whatsapp", pagado: true,
+    estado: "listo", origen: "operador", pagado: true,
     metodoPago: "transferencia",
     createdAt: minutesAgoIso(14), estadoDesde: minutesAgoIso(6),
     auditoria: [
@@ -1188,14 +1188,38 @@ const seed = (): Pedido[] => [
     estado: "listo", origen: "whatsapp", pagado: true,
     createdAt: minutesAgoIso(140), estadoDesde: minutesAgoIso(12),
     direccionEntrega: {
-      calle: "Calle 10 # 36-24",
-      barrio: "Laureles",
-      referencia: "Casa de dos pisos reja blanca",
-      indicaciones: "Timbre funciona bien",
+      calle: "Cra 70 # 45-18",
+      barrio: "Estadio",
+      referencia: "Edificio Los Almendros, Apto 501",
+      indicaciones: "Cliente solicitó cambio a Calle 10 # 36-24 (Laureles)",
     },
     costoEnvio: 4500,
     metodoPago: "transferencia",
     repartidor: "Carlos Mensajería",
+    numeroGuia: "DOM-004",
+    auditoria: [
+      {
+        id: "aud-pd4-3",
+        fecha: minutesAgoIso(12),
+        accion: "Avanzado a: Listo · Guía DOM-004 asignada a Carlos Mensajería",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+      {
+        id: "aud-pd4-2",
+        fecha: minutesAgoIso(45),
+        accion: "Comanda enviada a preparación",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+      {
+        id: "aud-pd4-1",
+        fecha: minutesAgoIso(140),
+        accion: "Pedido registrado y pago verificado",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd5", numero: "P-005", cliente: "Andrés Gil", telefono: "+573005556677", modalidad: "domicilio",
@@ -1210,9 +1234,32 @@ const seed = (): Pedido[] => [
       indicaciones: "Preguntar por Andrés",
     },
     costoEnvio: 4000,
-    metodoPago: "contra_entrega",
-    pagaCon: 30000,
+    metodoPago: "transferencia",
     repartidor: "Javier Moto 04",
+    numeroGuia: "DOM-005",
+    auditoria: [
+      {
+        id: "aud-pd5-3",
+        fecha: minutesAgoIso(15),
+        accion: "Despachado en ruta con Javier Moto 04 (Guía DOM-005)",
+        operadorNombre: "Camila Ortiz",
+        operadorCargo: "Coordinadora logística",
+      },
+      {
+        id: "aud-pd5-2",
+        fecha: minutesAgoIso(35),
+        accion: "Avanzado a: En preparación",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+      {
+        id: "aud-pd5-1",
+        fecha: minutesAgoIso(60),
+        accion: "Pedido registrado por WhatsApp",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd6", numero: "P-006", cliente: "Sofía Díaz", telefono: "+573017773344", modalidad: "retiro",
@@ -1220,15 +1267,54 @@ const seed = (): Pedido[] => [
     estado: "entregado", origen: "whatsapp", pagado: true,
     metodoPago: "transferencia",
     createdAt: minutesAgoIso(1_500), estadoDesde: minutesAgoIso(1_400), finishedAt: minutesAgoIso(1_400),
+    auditoria: [
+      {
+        id: "aud-pd6-3",
+        fecha: minutesAgoIso(1_400),
+        accion: "Pedido entregado en mostrador",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+      {
+        id: "aud-pd6-2",
+        fecha: minutesAgoIso(1_450),
+        accion: "Avanzado a: Listo para retiro",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+      {
+        id: "aud-pd6-1",
+        fecha: minutesAgoIso(1_500),
+        accion: "Pedido registrado y pago confirmado",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd7", numero: "P-007", cliente: "Valentina Ríos", telefono: "+573018889900", modalidad: "domicilio",
     items: [{ nombre: "Postre del día", cantidad: 2, precio: 8000 }],
-    notas: "Cliente no respondió.", estado: "cancelado", origen: "whatsapp",
+    notas: "Cliente no respondió.", estado: "cancelado", origen: "whatsapp", pagado: false,
     createdAt: minutesAgoIso(300), estadoDesde: minutesAgoIso(260), finishedAt: minutesAgoIso(260),
     direccionEntrega: { calle: "Transversal 39 # 74-12", barrio: "Conquistadores" },
     costoEnvio: 4000,
     metodoPago: "contra_entrega",
+    auditoria: [
+      {
+        id: "aud-pd7-2",
+        fecha: minutesAgoIso(260),
+        accion: "Pedido cancelado: Cliente no respondió.",
+        operadorNombre: "Camila Ortiz",
+        operadorCargo: "Supervisor de operaciones",
+      },
+      {
+        id: "aud-pd7-1",
+        fecha: minutesAgoIso(300),
+        accion: "Pedido registrado por WhatsApp",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd8", numero: "P-008", cliente: "Carolina Herrera", telefono: "+573019998877", modalidad: "retiro",
@@ -1239,6 +1325,22 @@ const seed = (): Pedido[] => [
     estado: "listo", origen: "whatsapp", pagado: true,
     metodoPago: "tarjeta",
     createdAt: minutesAgoIso(25), estadoDesde: minutesAgoIso(8),
+    auditoria: [
+      {
+        id: "aud-pd8-2",
+        fecha: minutesAgoIso(8),
+        accion: "Avanzado a: Listo para retiro en mostrador",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+      {
+        id: "aud-pd8-1",
+        fecha: minutesAgoIso(25),
+        accion: "Pedido registrado y pago con tarjeta verificado",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd9", numero: "P-009", cliente: "David Restrepo", telefono: "+573029991122", modalidad: "domicilio",
@@ -1252,6 +1354,22 @@ const seed = (): Pedido[] => [
     direccionEntrega: { calle: "Circular 4 # 71-45", barrio: "Laureles", referencia: "Edificio Palmeras Apto 302" },
     costoEnvio: 5000,
     metodoPago: "transferencia",
+    auditoria: [
+      {
+        id: "aud-pd9-2",
+        fecha: minutesAgoIso(15),
+        accion: "Comanda enviada a preparación",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+      {
+        id: "aud-pd9-1",
+        fecha: minutesAgoIso(28),
+        accion: "Pedido registrado por operador",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd10", numero: "P-010", cliente: "Alejandro Vélez", telefono: "+573023334455", modalidad: "domicilio",
@@ -1265,9 +1383,25 @@ const seed = (): Pedido[] => [
     costoEnvio: 4500,
     metodoPago: "efectivo",
     pagaCon: 100000,
+    auditoria: [
+      {
+        id: "aud-pd10-2",
+        fecha: minutesAgoIso(5),
+        accion: "Pedido confirmado (cobro en efectivo a la entrega)",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+      {
+        id: "aud-pd10-1",
+        fecha: minutesAgoIso(10),
+        accion: "Pedido registrado por WhatsApp",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
 
-  // ── OFERTA ENVIADA (Pedidos programados / agendados) ─────────────────────
+  // ── PEDIDOS PROGRAMADOS (Entregas futuras ya confirmadas y agendadas) ──
   {
     id: "pd11", numero: "P-011", cliente: "Camila Restrepo", telefono: "+573004567890", modalidad: "domicilio",
     items: [{ nombre: "Bandeja Paisa Gourmet", cantidad: 2, precio: 38000 }, { nombre: "Jugo Natural de Maracuyá", cantidad: 2, precio: 7500 }],
@@ -1275,12 +1409,30 @@ const seed = (): Pedido[] => [
     createdAt: minutesAgoIso(15), estadoDesde: minutesAgoIso(15), programadoPara: minutesAgoIso(-180),
     direccionEntrega: { calle: "Cl. 10 # 43E-12", barrio: "El Poblado", referencia: "Apto 601 Torre B" },
     costoEnvio: 5000,
+    auditoria: [
+      {
+        id: "aud-pd11-1",
+        fecha: minutesAgoIso(15),
+        accion: "Pedido programado y pago por transferencia verificado",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd12", numero: "P-012", cliente: "Esteban Morales", telefono: "+573105678901", modalidad: "retiro",
     items: [{ nombre: "Ceviche Mixto Peruano", cantidad: 2, precio: 42000 }, { nombre: "Tostones con Hogao", cantidad: 1, precio: 12000 }],
-    estado: "programado", origen: "operador", pagado: false, metodoPago: "efectivo", pagaCon: 100000,
+    estado: "programado", origen: "whatsapp", pagado: false, metodoPago: "efectivo", pagaCon: 100000,
     createdAt: minutesAgoIso(30), estadoDesde: minutesAgoIso(30), programadoPara: minutesAgoIso(-300),
+    auditoria: [
+      {
+        id: "aud-pd12-1",
+        fecha: minutesAgoIso(30),
+        accion: "Pedido programado para retiro en local",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd13", numero: "P-013", cliente: "Valeria Gómez", telefono: "+573206789012", modalidad: "domicilio",
@@ -1288,6 +1440,15 @@ const seed = (): Pedido[] => [
     estado: "programado", origen: "whatsapp", pagado: true, metodoPago: "tarjeta",
     createdAt: minutesAgoIso(45), estadoDesde: minutesAgoIso(45), programadoPara: minutesAgoIso(-360),
     direccionEntrega: { calle: "Cra. 70 # 32B-50", barrio: "Laureles" }, costoEnvio: 4500,
+    auditoria: [
+      {
+        id: "aud-pd13-1",
+        fecha: minutesAgoIso(45),
+        accion: "Pedido programado y pago con tarjeta verificado",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
 
   // ── EN CIERRE (Pedidos nuevos o confirmados con pago contra entrega / efectivo) ──
@@ -1297,12 +1458,37 @@ const seed = (): Pedido[] => [
     estado: "nuevo", origen: "whatsapp", pagado: false, metodoPago: "efectivo", pagaCon: 60000,
     createdAt: minutesAgoIso(22), estadoDesde: minutesAgoIso(22),
     direccionEntrega: { calle: "Cra 43A # 19A-40", barrio: "Envigado" }, costoEnvio: 5000,
+    auditoria: [
+      {
+        id: "aud-pd14-1",
+        fecha: minutesAgoIso(22),
+        accion: "Pedido registrado por WhatsApp",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd15", numero: "P-015", cliente: "Felipe Henao", telefono: "+573137890123", modalidad: "retiro",
     items: [{ nombre: "Burrito Tex-Mex Res Desmechada", cantidad: 2, precio: 25000 }, { nombre: "Limonada de Coco", cantidad: 2, precio: 8500 }],
     estado: "confirmado", origen: "whatsapp", pagado: false, metodoPago: "efectivo", pagaCon: 70000,
     createdAt: minutesAgoIso(18), estadoDesde: minutesAgoIso(10),
+    auditoria: [
+      {
+        id: "aud-pd15-2",
+        fecha: minutesAgoIso(10),
+        accion: "Pedido confirmado para retiro en mostrador",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+      {
+        id: "aud-pd15-1",
+        fecha: minutesAgoIso(18),
+        accion: "Pedido registrado por WhatsApp",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
 
   // ── VALIDACIÓN DE PAGO (Transferencias / links de tarjeta pendientes de verificar) ──
@@ -1312,12 +1498,30 @@ const seed = (): Pedido[] => [
     estado: "nuevo", origen: "whatsapp", pagado: false, metodoPago: "transferencia",
     createdAt: minutesAgoIso(15), estadoDesde: minutesAgoIso(15),
     direccionEntrega: { calle: "Calle 14 # 30-112", barrio: "El Poblado" }, costoEnvio: 4500,
+    auditoria: [
+      {
+        id: "aud-pd16-1",
+        fecha: minutesAgoIso(15),
+        accion: "Pedido registrado · pendiente validación de transferencia",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd17", numero: "P-017", cliente: "Daniela Salazar", telefono: "+573113456789", modalidad: "retiro",
     items: [{ nombre: "Bowl de Pollo Teriyaki & Quinoa", cantidad: 1, precio: 27000 }, { nombre: "Té Helado Matcha", cantidad: 1, precio: 9000 }],
     estado: "nuevo", origen: "whatsapp", pagado: false, metodoPago: "transferencia",
     createdAt: minutesAgoIso(18), estadoDesde: minutesAgoIso(18),
+    auditoria: [
+      {
+        id: "aud-pd17-1",
+        fecha: minutesAgoIso(18),
+        accion: "Pedido registrado · pendiente validación de transferencia",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd18", numero: "P-018", cliente: "Diana Bustamante", telefono: "+573148901234", modalidad: "domicilio",
@@ -1325,6 +1529,22 @@ const seed = (): Pedido[] => [
     estado: "confirmado", origen: "whatsapp", pagado: false, metodoPago: "transferencia",
     createdAt: minutesAgoIso(25), estadoDesde: minutesAgoIso(12),
     direccionEntrega: { calle: "Transversal 39 # 74-88", barrio: "Belén" }, costoEnvio: 4000,
+    auditoria: [
+      {
+        id: "aud-pd18-2",
+        fecha: minutesAgoIso(12),
+        accion: "Pedido confirmado · comprobante en revisión",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+      {
+        id: "aud-pd18-1",
+        fecha: minutesAgoIso(25),
+        accion: "Pedido registrado por WhatsApp",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd19", numero: "P-019", cliente: "Mateo Cárdenas", telefono: "+573012345678", modalidad: "domicilio",
@@ -1332,20 +1552,61 @@ const seed = (): Pedido[] => [
     estado: "nuevo", origen: "whatsapp", pagado: false, metodoPago: "tarjeta",
     createdAt: minutesAgoIso(12), estadoDesde: minutesAgoIso(12),
     direccionEntrega: { calle: "Av. Nutibara # 73-10", barrio: "Laureles", referencia: "Oficina 302" }, costoEnvio: 4000,
+    auditoria: [
+      {
+        id: "aud-pd19-1",
+        fecha: minutesAgoIso(12),
+        accion: "Pedido registrado · link de pago enviado",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
 
   // ── OPERACIÓN EN CURSO Y ENTREGADOS (En cocina, salón, en camino, entregados) ──
   {
     id: "pd20", numero: "P-020", cliente: "Alejandro Quintero", telefono: "+573169012345", modalidad: "en_sitio",
     items: [{ nombre: "Ojo de Bife 400g Angus", cantidad: 1, precio: 58000 }, { nombre: "Copa Malbec Reserva", cantidad: 2, precio: 22000 }],
-    notas: "Mesa 8 - Interior.", estado: "en_preparacion", origen: "operador", pagado: true, metodoPago: "tarjeta",
+    notas: "Mesa 8 - Interior.", estado: "en_preparacion", origen: "whatsapp", pagado: true, metodoPago: "tarjeta",
     createdAt: minutesAgoIso(30), estadoDesde: minutesAgoIso(14),
+    auditoria: [
+      {
+        id: "aud-pd20-2",
+        fecha: minutesAgoIso(14),
+        accion: "Comanda en preparación (Mesa 8 - Interior)",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+      {
+        id: "aud-pd20-1",
+        fecha: minutesAgoIso(30),
+        accion: "Pedido registrado y pagado en salón",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd21", numero: "P-021", cliente: "Carolina Méndez", telefono: "+573185678901", modalidad: "en_sitio",
     items: [{ nombre: "Nachos Supremos con Guacamole", cantidad: 1, precio: 26000 }, { nombre: "Margarita Clásica", cantidad: 2, precio: 24000 }],
-    notas: "Mesa 4 - Terraza.", estado: "en_preparacion", origen: "operador", pagado: true, metodoPago: "tarjeta",
+    notas: "Mesa 4 - Terraza.", estado: "en_preparacion", origen: "whatsapp", pagado: true, metodoPago: "tarjeta",
     createdAt: minutesAgoIso(16), estadoDesde: minutesAgoIso(8),
+    auditoria: [
+      {
+        id: "aud-pd21-2",
+        fecha: minutesAgoIso(8),
+        accion: "Comanda en preparación (Mesa 4 - Terraza)",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+      {
+        id: "aud-pd21-1",
+        fecha: minutesAgoIso(16),
+        accion: "Pedido registrado y pagado en salón",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd22", numero: "P-022", cliente: "Natalia Villegas", telefono: "+573170123456", modalidad: "domicilio",
@@ -1353,40 +1614,147 @@ const seed = (): Pedido[] => [
     estado: "en_preparacion", origen: "whatsapp", pagado: true, metodoPago: "transferencia",
     createdAt: minutesAgoIso(28), estadoDesde: minutesAgoIso(16),
     direccionEntrega: { calle: "Circular 2 # 70-34", barrio: "Laureles" }, costoEnvio: 4500,
+    auditoria: [
+      {
+        id: "aud-pd22-2",
+        fecha: minutesAgoIso(16),
+        accion: "Comanda enviada a cocina",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+      {
+        id: "aud-pd22-1",
+        fecha: minutesAgoIso(28),
+        accion: "Pedido registrado y transferencia verificada",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd23", numero: "P-023", cliente: "Mariana Duque", telefono: "+573256789012", modalidad: "domicilio",
     items: [{ nombre: "Pizza Pepperoni & Jalapeño", cantidad: 1, precio: 42000 }, { nombre: "Dips de Ajo", cantidad: 2, precio: 4000 }],
     estado: "en_camino", origen: "whatsapp", pagado: true, metodoPago: "transferencia", repartidor: "Diego R. Moto 12",
+    numeroGuia: "DOM-023",
     createdAt: minutesAgoIso(50), estadoDesde: minutesAgoIso(15),
     direccionEntrega: { calle: "Calle 33 # 76-20", barrio: "Laureles" }, costoEnvio: 4000,
+    auditoria: [
+      {
+        id: "aud-pd23-2",
+        fecha: minutesAgoIso(15),
+        accion: "Despachado en ruta con Diego R. Moto 12 (Guía DOM-023)",
+        operadorNombre: "Camila Ortiz",
+        operadorCargo: "Coordinadora logística",
+      },
+      {
+        id: "aud-pd23-1",
+        fecha: minutesAgoIso(50),
+        accion: "Pedido registrado y transferencia verificada",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd24", numero: "P-024", cliente: "Cristian Rendón", telefono: "+573267890123", modalidad: "domicilio",
     items: [{ nombre: "Tacos Birria con Consomé", cantidad: 2, precio: 26000 }],
     estado: "en_camino", origen: "whatsapp", pagado: false, metodoPago: "efectivo", pagaCon: 60000, repartidor: "Javier Moto 05",
+    numeroGuia: "DOM-024",
     createdAt: minutesAgoIso(48), estadoDesde: minutesAgoIso(18),
     direccionEntrega: { calle: "Cra 48 # 20 Sur-55", barrio: "El Poblado" }, costoEnvio: 4500,
+    auditoria: [
+      {
+        id: "aud-pd24-2",
+        fecha: minutesAgoIso(18),
+        accion: "Despachado en ruta con Javier Moto 05 (Guía DOM-024)",
+        operadorNombre: "Camila Ortiz",
+        operadorCargo: "Coordinadora logística",
+      },
+      {
+        id: "aud-pd24-1",
+        fecha: minutesAgoIso(48),
+        accion: "Pedido registrado con cobro en efectivo a la entrega",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd25", numero: "P-025", cliente: "Paola Zuleta", telefono: "+573278901234", modalidad: "domicilio",
     items: [{ nombre: "Lasagna de Carne Bolognesa", cantidad: 2, precio: 28000 }, { nombre: "Pan de Ajo", cantidad: 1, precio: 10000 }],
     estado: "en_camino", origen: "whatsapp", pagado: true, metodoPago: "tarjeta", repartidor: "Esteban Mensajería",
+    numeroGuia: "DOM-025",
     createdAt: minutesAgoIso(55), estadoDesde: minutesAgoIso(20),
     direccionEntrega: { calle: "Av. Las Palmas Km 4", barrio: "Palmas" }, costoEnvio: 6000,
+    auditoria: [
+      {
+        id: "aud-pd25-2",
+        fecha: minutesAgoIso(20),
+        accion: "Despachado en ruta con Esteban Mensajería (Guía DOM-025)",
+        operadorNombre: "Camila Ortiz",
+        operadorCargo: "Coordinadora logística",
+      },
+      {
+        id: "aud-pd25-1",
+        fecha: minutesAgoIso(55),
+        accion: "Pedido registrado y pago con tarjeta verificado",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd26", numero: "P-026", cliente: "Sebastián Betancur", telefono: "+573223456789", modalidad: "retiro",
     items: [{ nombre: "Sandwich de Pastrami Artesanal", cantidad: 2, precio: 31000 }, { nombre: "Papas chips", cantidad: 2, precio: 6000 }],
     estado: "entregado", origen: "whatsapp", pagado: true, metodoPago: "transferencia",
     createdAt: minutesAgoIso(210), estadoDesde: minutesAgoIso(180), finishedAt: minutesAgoIso(180),
+    auditoria: [
+      {
+        id: "aud-pd26-2",
+        fecha: minutesAgoIso(180),
+        accion: "Pedido entregado en mostrador",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+      {
+        id: "aud-pd26-1",
+        fecha: minutesAgoIso(210),
+        accion: "Pedido registrado y transferencia verificada",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
   {
     id: "pd27", numero: "P-027", cliente: "Clara Tamayo", telefono: "+573290123456", modalidad: "domicilio",
     items: [{ nombre: "Pollo Asado Clásico Criollo", cantidad: 1, precio: 36000 }, { nombre: "Arepas con Queso", cantidad: 1, precio: 8000 }],
     estado: "entregado", origen: "whatsapp", pagado: true, metodoPago: "transferencia", repartidor: "Carlos P.",
+    numeroGuia: "DOM-027",
     createdAt: minutesAgoIso(120), estadoDesde: minutesAgoIso(60), finishedAt: minutesAgoIso(60),
     direccionEntrega: { calle: "Cra 76 # 33-10", barrio: "Laureles" }, costoEnvio: 4000,
+    auditoria: [
+      {
+        id: "aud-pd27-3",
+        fecha: minutesAgoIso(60),
+        accion: "Pedido entregado por Carlos P. (Guía DOM-027)",
+        operadorNombre: "Camila Ortiz",
+        operadorCargo: "Coordinadora logística",
+      },
+      {
+        id: "aud-pd27-2",
+        fecha: minutesAgoIso(90),
+        accion: "Despachado en ruta con Carlos P.",
+        operadorNombre: "Camila Ortiz",
+        operadorCargo: "Coordinadora logística",
+      },
+      {
+        id: "aud-pd27-1",
+        fecha: minutesAgoIso(120),
+        accion: "Pedido registrado y transferencia verificada",
+        operadorNombre: "Mateo Vargas",
+        operadorCargo: "Operador de ventas",
+      },
+    ],
   },
 ];
 
@@ -2126,7 +2494,7 @@ export class PedidosStore {
     const etiquetaAvanzar = esActivarAhora
       ? "Activar ahora"
       : p.estado === "nuevo"
-        ? "Confirmar"
+        ? this.config.usarConfirmado ? "Confirmar" : "Preparar"
         : puedeAvanzar
           ? `Avanzar a ${this.estadoLabel(siguiente as PedidoEstado)}`
           : "Avanzar";

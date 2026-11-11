@@ -67,7 +67,7 @@ interface AnclajeManual {
  * v2 y no v1: el formato cambió (v1 guardaba solo la etapa) y migrarlo sería
  * heredar justo el defecto que se corrige. Se empieza limpio.
  */
-const LOCAL_STORAGE_STAGES_KEY = "necto_seguimiento_etapas_v3";
+const LOCAL_STORAGE_STAGES_KEY = "necto_seguimiento_etapas_v4";
 
 function leerAnclajes(): Record<string, AnclajeManual> {
   try {
@@ -93,7 +93,7 @@ function leerAnclajes(): Record<string, AnclajeManual> {
 function guardarAnclajes(mapa: Record<string, AnclajeManual>) {
   try {
     localStorage.setItem(LOCAL_STORAGE_STAGES_KEY, JSON.stringify(mapa));
-  } catch {}
+  } catch { }
 }
 
 /** Formateador de fecha amigable integrado con el estilo Necto */
@@ -276,30 +276,23 @@ const TarjetaPipeline = observer(
             {/* Tag de Estado / Pedido o Lead */}
             {pedido ? (
               <span className="inline-flex items-center rounded-full bg-[#F1E8FD] px-2.5 py-0.5 text-[11px] font-semibold text-[#5432EE] dark:bg-[#5432EE]/20 dark:text-[#C4B5FD]">
-                {etapa === "oferta_enviada" && pedido.estado === "programado"
-                  ? "Cotización"
-                  : pedidosStore.estadoLabel(pedido.estado)}
+                {pedidosStore.estadoLabel(pedido.estado)}
               </span>
             ) : (
               <span className="inline-flex items-center rounded-full bg-[#E5F9F9] px-2.5 py-0.5 text-[11px] font-semibold text-[#0E7490] dark:bg-[#0E7490]/20 dark:text-[#67E8F9]">
-                Lead
+                {etapa === "oferta_enviada" ? "Cotización" : "Lead"}
               </span>
             )}
 
             {/* Tag de Pago (si existe pedido) */}
             {pedido && (
               <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                  pedido.pagado
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${pedido.pagado
                     ? "bg-[#E8F8EA] text-[#1E7E34] dark:bg-[#1E7E34]/20 dark:text-[#4ADE80]"
                     : "bg-[#FEF3C7] text-[#B45309] dark:bg-[#B45309]/20 dark:text-[#FBBF24]"
-                }`}
+                  }`}
               >
-                {pedido.pagado
-                  ? ETIQUETA_PAGO.pagado
-                  : etapa === "oferta_enviada" && pedido.estado === "programado"
-                  ? "Por confirmar"
-                  : ETIQUETA_PAGO.sinPagar}
+                {pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
               </span>
             )}
 
@@ -394,20 +387,18 @@ const TarjetaPipeline = observer(
           <div className="flex items-center -space-x-1.5 overflow-hidden">
             {/* Avatar 1: Iniciales del contacto */}
             <div
-              className={`relative flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ring-2 ring-white dark:ring-[#18181b] ${
-                PALETA_AVATAR[indice % PALETA_AVATAR.length]
-              }`}
+              className={`relative flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ring-2 ring-white dark:ring-[#18181b] ${PALETA_AVATAR[indice % PALETA_AVATAR.length]
+                }`}
               title={conv.contacto.nombre}
             >
               {iniciales}
               <span
-                className={`absolute -bottom-0.5 -right-0.5 size-2 rounded-full ring-1 ring-white dark:ring-gray-900 ${
-                  presencia === "online"
+                className={`absolute -bottom-0.5 -right-0.5 size-2 rounded-full ring-1 ring-white dark:ring-gray-900 ${presencia === "online"
                     ? "bg-[#25D366]"
                     : presencia === "busy"
-                    ? "bg-brand-500"
-                    : "bg-gray-400"
-                }`}
+                      ? "bg-brand-500"
+                      : "bg-gray-400"
+                  }`}
               />
             </div>
 
@@ -441,11 +432,10 @@ const TarjetaPipeline = observer(
 
             {/* Mensajes / Chat */}
             <div
-              className={`flex items-center gap-1 text-[11px] font-medium ${
-                conv.noLeidos > 0
+              className={`flex items-center gap-1 text-[11px] font-medium ${conv.noLeidos > 0
                   ? "font-bold text-[#FF3F1A]"
                   : "text-gray-400 dark:text-gray-500"
-              }`}
+                }`}
               title={
                 conv.noLeidos > 0
                   ? `${conv.noLeidos} mensajes no leídos`
@@ -511,11 +501,10 @@ const ColumnaPipeline = observer(
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`flex h-full max-h-full min-h-0 w-full flex-col overflow-hidden rounded-3xl border transition-all duration-200 ${
-          isOver
+        className={`flex h-full max-h-full min-h-0 w-full flex-col overflow-hidden rounded-3xl border transition-all duration-200 ${isOver
             ? "border-brand-500 bg-brand-50/30 ring-2 ring-brand-500/20 dark:border-brand-500 dark:bg-brand-950/20"
             : "border-gray-100/80 bg-gray-50/90 dark:border-gray-800/60 dark:bg-white/[0.02]"
-        } p-3 shadow-theme-xs`}
+          } p-3 shadow-theme-xs`}
       >
         {/* Cabecera de la columna al estilo del diseño de referencia */}
         <header className="mb-3 shrink-0 px-1 pt-1 flex items-center justify-between">
@@ -782,11 +771,10 @@ export const SeguimientoPipelineView = observer(
                 aria-expanded={buscadorAbierto}
                 aria-label={buscadorAbierto ? "Ocultar el buscador" : "Buscar prospectos"}
                 title={buscadorAbierto ? "Ocultar el buscador" : "Buscar prospectos"}
-                className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
-                  buscadorAbierto
+                className={`flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer ${buscadorAbierto
                     ? "border-gray-400 bg-gray-100 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                     : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-                }`}
+                  }`}
               >
                 <MagnifyingGlassIcon className="size-4" />
               </button>
@@ -800,9 +788,8 @@ export const SeguimientoPipelineView = observer(
                 className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-gray-200/90 bg-white text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-50 cursor-pointer dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
               >
                 <ArrowPathIcon
-                  className={`size-4 text-gray-600 dark:text-gray-400 ${
-                    recargando ? "animate-spin" : ""
-                  }`}
+                  className={`size-4 text-gray-600 dark:text-gray-400 ${recargando ? "animate-spin" : ""
+                    }`}
                 />
               </button>
 
@@ -846,19 +833,17 @@ export const SeguimientoPipelineView = observer(
                           key={e.clave}
                           type="button"
                           onClick={() => toggleEtapaFiltro(e.clave)}
-                          className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors cursor-pointer ${
-                            seleccionada
+                          className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors cursor-pointer ${seleccionada
                               ? "bg-gray-100 font-semibold text-gray-900 dark:bg-gray-800 dark:text-white"
                               : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/60"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-2">
                             <div
-                              className={`flex size-4 items-center justify-center rounded border ${
-                                seleccionada
+                              className={`flex size-4 items-center justify-center rounded border ${seleccionada
                                   ? "border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-900"
                                   : "border-gray-300 dark:border-gray-600"
-                              }`}
+                                }`}
                             >
                               {seleccionada && <CheckIcon className="size-3 stroke-[3]" />}
                             </div>
@@ -942,9 +927,8 @@ export const SeguimientoPipelineView = observer(
           {columnasVisibles.map((config) => (
             <div
               key={config.clave}
-              className={`flex min-h-0 ${
-                columnasVisibles.length === 1 ? "w-full max-w-md" : "min-w-[260px] max-w-[380px] flex-1"
-              }`}
+              className={`flex min-h-0 ${columnasVisibles.length === 1 ? "w-full max-w-md" : "min-w-[260px] max-w-[380px] flex-1"
+                }`}
             >
               <ColumnaPipeline
                 config={config}

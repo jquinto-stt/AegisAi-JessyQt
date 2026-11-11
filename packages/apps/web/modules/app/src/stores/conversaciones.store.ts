@@ -39,7 +39,7 @@ import type {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Clave propia del módulo en `localStorage` (Req 9.1). Versionada para invalidar mocks viejos. */
-const STORAGE_KEY = "necto.conversaciones_v7";
+const STORAGE_KEY = "necto.conversaciones_v9";
 
 /**
  * Límite de caracteres del mensaje del cliente en `/wa` (Req 6.2/6.3): se
